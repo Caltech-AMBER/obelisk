@@ -14,3 +14,6 @@ conda env create -f environment.yml --name <my_env>
 conda activate <my_env>
 pip install -e .[dev]
 ```
+
+### Building Docs
+In the repository root, to build the docs locally, run `sphinx-build -M html docs/source/ docs/build/`.
