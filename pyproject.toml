@@ -24,4 +24,5 @@ docs = [
 
 dev = [
     "obelisk[docs]",
+    "typeguard>=4.3.0",
 ]
