@@ -92,7 +92,7 @@ torch118 = { features=["cuda118", "torch118"], solve-group="cuda118" }
 torch121 = { features=["cuda121", "torch121"], solve-group="cuda121" }
 
 # test
-test_workflow = { features=["test", "dev"], solve-group="default" }
+test-workflow = { features=["test", "dev"], solve-group="default" }
 test = { features=["cuda121", "torch121", "test"], solve-group="cuda121" }
 
 # dev

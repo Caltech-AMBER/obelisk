@@ -29,13 +29,13 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Run Ruff Linter
         run: |
-          pixi run --environment test_workflow ruff check docs/ obelisk/ tests/ --output-format=github
+          pixi run --environment test-workflow ruff check docs/ obelisk/ tests/ --output-format=github
       - name: Run Ruff Formatter
         run: |
-          pixi run --environment test_workflow ruff format docs/ obelisk/ tests/ --diff
+          pixi run --environment test-workflow ruff format docs/ obelisk/ tests/ --diff
       - name: Run Pyright
         run: |
-          pixi run --environment test_workflow pyright
+          pixi run --environment test-workflow pyright
       - name: Test with pytest
         run: |
-          pixi run --environment test_workflow pytest
+          pixi run --environment test-workflow pytest
