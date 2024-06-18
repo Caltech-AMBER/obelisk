@@ -20,7 +20,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             docker run --rm -it --net=host --ipc=host -e DISPLAY=$DISPLAY \
             --security-opt seccomp=unconfined --cap-add=NET_ADMIN \
             -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-            -v $PWD/dev_ws/src:/home/dev_ws/src \
+            -v $PWD/dev_ws:/home/dev_ws \
             -v $HOME/.Xauthority:/root/.Xauthority:rw \
             -e NVIDIA_DRIVER_CAPABILITIES=all \
             --privileged --runtime nvidia --gpus all \
