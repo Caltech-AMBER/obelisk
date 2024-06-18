@@ -1,0 +1,16 @@
+{
+    "include": ["obelisk/python/obelisk_py"],
+    "exclude": [
+        "**/__pycache__"
+    ],
+    "defineConstants": {
+        "DEBUG": true
+    },
+    "reportMissingImports": "warning",
+    "reportMissingTypeStubs": false,
+    "reportPrivateImportUsage": false,
+    "python": {
+        "version": "3.11",
+        "platform": "Linux"
+    }
+}

@@ -3,26 +3,17 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "obelisk"
+name = "obelisk_py"
 version = "0.0.1"
 description = "Repository for fast robust grasp generation"
 readme = "README.md"
 license = {text="MIT"}
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
 ]
 dependencies = []
 
-[project.optional-dependencies]
-docs = [
-    "myst-parser>=3.0.1",
-    "sphinx>=7.3.7",
-    "sphinx-rtd-theme>=2.0.0",
-]
-
-dev = [
-    "obelisk[docs]",
-    "typeguard>=4.3.0",
-]
+[tool.setuptools.packages.find]
+include = ["obelisk_py*"]

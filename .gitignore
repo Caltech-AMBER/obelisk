@@ -207,3 +207,8 @@ Thumbs.db
 # Build directories
 doctrees
 html
+
+# #### #
+# PIXI #
+# #### #
+.pixi

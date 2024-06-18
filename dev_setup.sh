@@ -33,3 +33,10 @@ if (($(nvidia-smi -L | wc -l) > 0)); then
 	sudo apt-get update
 	sudo apt-get install -y nvidia-container-toolkit
 fi
+
+# pixi, uv, and Node
+curl -fsSL https://pixi.sh/install.sh | bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
