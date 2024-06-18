@@ -34,9 +34,11 @@ if (($(nvidia-smi -L | wc -l) > 0)); then
 	sudo apt-get install -y nvidia-container-toolkit
 fi
 
-# pixi, uv, and Node
+# pixi and Node (for pyright)
 curl -fsSL https://pixi.sh/install.sh | bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 source ~/.bashrc
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 nvm install 20
