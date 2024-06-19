@@ -6,7 +6,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("Dummy test", "[test]") {
+TEST_CASE("Dummy test", "[dummy-test]") {
     int i = 1;
     REQUIRE(i == 1);
 }

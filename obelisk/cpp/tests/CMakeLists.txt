@@ -14,5 +14,12 @@ FetchContent_MakeAvailable(Catch2)
 # Copy additional test data to the build directory
 file(COPY test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(dummy_test dummy_test.cpp)
-target_link_libraries(dummy_test Catch2::Catch2WithMain)
+add_executable(dummy_test
+        dummy_test.cpp
+        dummy_test_2.cpp)
+target_link_libraries(dummy_test PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(dummy_test PUBLIC lib1)
+
+include(Catch)
+include(CTest)
+catch_discover_tests(dummy_test)
