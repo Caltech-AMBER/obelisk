@@ -1,0 +1,23 @@
+BasedOnStyle: Google
+TabWidth: 4
+
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+BreakConstructorInitializers: BeforeColon
+EmptyLineBeforeAccessModifier: LogicalBlock
+NamespaceIndentation: All
+PackConstructorInitializers: NextLineOnly
