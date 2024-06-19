@@ -131,6 +131,7 @@ cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
 
+# configure cmake
 [feature.cpp-build.tasks.configure]
 cmd = [
     "cmake",
@@ -141,6 +142,7 @@ cmd = [
 inputs = ["obelisk/cpp/CMakeLists.txt"]
 outputs = ["obelisk/cpp/build/CMakeFiles/"]
 
+# cmake build
 [feature.cpp-build.tasks.build]
 cmd = ["cmake", "--build", "obelisk/cpp/build"]
 depends-on = ["configure"]
@@ -175,10 +177,12 @@ docs = { features = ["docs"] }
 # builds in the obelisk_ws directory only if src has changes
 build =  { cmd = "colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs = ["src"] }
 
+# run the dummy tests
 [tasks.cpp-test-dummy]
 cmd = "obelisk/cpp/build/tests/dummy_test"
 depends-on = "build"
 
+# run ctest
 [tasks.cpp-ctest]
 cwd = "obelisk/cpp/build/tests"
 cmd = "ctest"
