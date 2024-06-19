@@ -32,15 +32,6 @@ RUN apt-get update -y && \
     python3-argcomplete && \
     rm -rf /var/lib/apt/lists/*
 
-# pixi and nvm (for pyright)
-RUN curl -fsSL https://pixi.sh/install.sh | bash && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    source ~/.bashrc && \
-    export NVM_DIR="$HOME/.nvm" && \
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
-    nvm install 20
-
 # create non-root user with sudo privileges for certain commands
 RUN groupadd --gid $USER_GID $USERNAME && \
     useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d /home/${USERNAME} --shell /usr/bin/bash && \
@@ -48,19 +39,22 @@ RUN groupadd --gid $USER_GID $USERNAME && \
     usermod -aG sudo ${USERNAME} && \
     echo "%sudo ALL=NOPASSWD:/usr/bin/apt-get update, /usr/bin/apt-get upgrade, /usr/bin/apt-get install, /usr/bin/apt-get remove" >> /etc/sudoers
 
-# create obelisk folder and change ownership to new user
-RUN mkdir /obelisk && chown ${USER_UID}:${USER_GID} /obelisk
-
-# copying the entrypoint file
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # switch to new user and workdir
 USER ${USER_UID}
-WORKDIR /home/${USERNAME}
+
+# pixi and nvm (for pyright)
+RUN curl -fsSL https://pixi.sh/install.sh | bash && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+    source /home/${USERNAME}/.bashrc && \
+    export NVM_DIR="$HOME/.nvm" && \
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
+    nvm install 20
+RUN echo 'export PATH=$PATH:/home/$USERNAME/.pixi/bin' >> /home/${USERNAME}/.bashrc && \
+    echo 'export NVM_DIR=$HOME/.nvm' >> /home/${USERNAME}/.bashrc && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/${USERNAME}/.bashrc && \
+    echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /home/${USERNAME}/.bashrc
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"
-
-# run entrypoint script
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+WORKDIR /home/${USERNAME}
