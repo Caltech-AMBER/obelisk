@@ -212,3 +212,11 @@ html
 # PIXI #
 # #### #
 .pixi
+
+# #### #
+# ROS2 #
+# #### #
+build
+install
+log
+.built_by

@@ -21,14 +21,20 @@ if ! command -v docker &> /dev/null; then
 	sudo apt-get update
 	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-	sudo groupadd docker
-	sudo usermod -aG docker $USER
-
-	# ensure docker group changes take effect without interrupting the script
-	sg docker -c 'sudo chmod 660 /var/run/docker.sock && sudo systemctl restart docker'
 	echo "Docker setup complete. Continuing with the script."
 else
     echo "Docker is already installed. Skipping Docker installation."
+fi
+
+# check docker group exists
+if ! getent group docker &> /dev/null; then
+	echo "Docker group does not exist. Creating Docker group and adding user..."
+
+	sudo groupadd docker
+	sudo usermod -aG docker $USER
+	sg docker -c 'sudo chmod 660 /var/run/docker.sock && sudo systemctl restart docker'
+else
+	echo "Docker group already exists. Skipping Docker group creation."
 fi
 
 # if the system has nvidia GPUs, install nvidia-container-toolkit
@@ -44,6 +50,8 @@ if ! is_nvidia_container_toolkit_installed; then
 			sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 		sudo apt-get update
 		sudo apt-get install -y nvidia-container-toolkit
+		sudo nvidia-ctk runtime configure --runtime=docker
+		sudo systemctl restart docker
 		echo "NVIDIA Container Toolkit installation complete."
     else
         echo "NVIDIA GPU not detected. Skipping NVIDIA Container Toolkit installation."
@@ -67,8 +75,19 @@ export NVM_DIR="$HOME/.nvm"
 if ! command -v nvm &> /dev/null; then
 	echo "nvm is not installed. Installing nvm..."
 	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+	export NVM_DIR="$HOME/.nvm"
+	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+	[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 	source ~/.bashrc
 	nvm install 20
 else
 	echo "nvm is already installed. Skipping NVM installation."
+fi
+
+# TODO(ahl): replace the functionality of newgrp
+if ! groups | grep -q "\bdocker\b"; then
+	echo "Restarting shell to apply Docker group changes..."
+	newgrp docker
+else
+	echo "Docker group changes already applied. Skipping shell restart."
 fi

@@ -45,10 +45,13 @@ select = [
     "PLW",  # Pylint warnings
 ]
 ignore = [
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
     "D100",  # missing docstring in public module
     "D104",  # missing docstring in public package
+    "D203",  # blank line before class docstring
     "D211",  # no blank line before class
     "D212",  # multi-line docstring summary at first line
+    "D213",  # multi-line docstring summary at second line
 ]
 
 [lint.isort]

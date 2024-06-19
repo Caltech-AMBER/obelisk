@@ -12,6 +12,9 @@ description = "The AMBER Lab's generic robot control interface."
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
+[activation]
+scripts = ["obelisk_ws/install/setup.sh"]
+
 
 # ############ #
 # FEATURE SETS #
@@ -28,6 +31,7 @@ numpy=">=1.26"
 obelisk_py = { path = "./obelisk/python", editable = true }
 
 
+# TODO(ahl): once obelisk is stable, check if cuda deps are needed
 # cuda
 [feature.cuda118]
 channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
@@ -61,7 +65,8 @@ pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
 channels = ["robostack-staging"]
 
 [feature.ros2base.dependencies]
-ros-humble-ros-base = { version = "*" }
+ros-humble-ros-base = "*"
+colcon-common-extensions = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -105,6 +110,7 @@ myst-parser=">=3.0.1"
 sphinx=">=7.3.7"
 sphinx-rtd-theme=">=2.0.0"
 
+
 # test
 [feature.test.pypi-dependencies]
 pytest=">=7.1.2"
@@ -116,7 +122,7 @@ pre-commit=">=3.7.1"
 pytest-xdist=">=3.6.1"
 typeguard=">=4.3.0"
 ruff=">=0.4.9"
-pyright=">=1.1.367"
+pyright=">=1.1.368"
 
 
 # ################ #
@@ -142,3 +148,7 @@ docs = { features = ["docs"] }
 # ##### #
 # TASKS #
 # ##### #
+
+[tasks]
+# builds in the obelisk_ws directory only if src has changes
+build =  { cmd = "colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs = ["src"] }
