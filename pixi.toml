@@ -1,0 +1,160 @@
+# ########### #
+# BOILERPLATE #
+# ########### #
+
+[project]
+name = "obelisk"
+authors = [
+    "Albert Li <alberthli@caltech.edu>",
+    "Zach Olkin <zolkin@caltech.edu>",
+]
+description = "The AMBER Lab's generic robot control interface."
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[activation]
+scripts = ["obelisk_ws/install/setup.sh"]
+
+
+# ############ #
+# FEATURE SETS #
+# ############ #
+
+# minimal
+[dependencies]
+python = ">=3.10"
+pip = ">=24.0"
+
+[pypi-dependencies]
+matplotlib = ">=3.9.0"
+numpy = ">=1.26"
+obelisk_py = { path="./obelisk/python", editable=true }
+
+
+# TODO(ahl): once obelisk is stable, check if cuda deps are needed
+# cuda
+[feature.cuda118]
+channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
+system-requirements = {cuda="11.8.0"}
+
+[feature.cuda118.dependencies]
+cuda = { version="*", channel="nvidia/label/cuda-11.8.0" }
+
+[feature.cuda121]
+channels = ["nvidia", "nvidia/label/cuda-12.1.0"]
+system-requirements = {cuda="12.1.0"}
+
+[feature.cuda121.dependencies]
+cuda = { version="*", channel="nvidia/label/cuda-12.1.0" }
+
+
+# torch
+[feature.torch118]
+channels = ["nvidia", "pytorch"]
+dependencies = { pytorch-cuda="11.8.0" }
+pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
+
+[feature.torch121]
+channels = ["nvidia", "pytorch"]
+dependencies = {pytorch-cuda="12.1.0"}
+pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
+
+
+# ros2
+[feature.ros2base]
+channels = ["robostack-staging"]
+
+[feature.ros2base.dependencies]
+ros-humble-ros-base = "*"
+colcon-common-extensions = "*"
+
+# TODO(ahl): this was just a test to see if we could install many
+# prune these away to a true minimal set later
+# [NOTE] on humble, we should expect python 3.10
+# ros-humble-control-msgs = "*"
+# ros-humble-xacro = "*"
+# ros-humble-angles = "*"
+# ros-humble-ros2-control = "*"
+# ros-humble-realtime-tools = "*"
+# ros-humble-control-toolbox = "*"
+# ros-humble-moveit = "*"
+# ros-humble-moveit-common = "*"
+# ros-humble-moveit-ros-planning = "*"
+# ros-humble-moveit-ros-planning-interface = "*"
+# ros-humble-moveit-ros-visualization = "*"
+# ros-humble-moveit-visual-tools = "*"
+# ros-humble-rviz-visual-tools = "*"
+# ros-humble-ros2-controllers = "*"
+# ros-humble-joint-state-publisher = "*"
+# ros-humble-joint-state-publisher-gui = "*"
+# ros-humble-diagnostic-updater = "*"
+# ros-humble-geographic-msgs = "*"
+# ros-humble-robot-localization = "*"
+# ros-humble-rosidl-generator-cpp = "*"
+# ros-humble-rosidl-default-generators = "*"
+# ros-humble-image-transport = "*"
+# ros-humble-ament-lint-auto = "*"
+# ros-humble-ament-cmake-copyright = "*"
+# ros-humble-ament-cmake-cppcheck = "*"
+# ros-humble-ament-cmake-lint-cmake = "*"
+# ros-humble-ament-cmake-pep257 = "*"
+# ros-humble-ament-cmake-uncrustify = "*"
+# ros-humble-ament-cmake-xmllint = "*"
+# ros-humble-graph-msgs = "*"
+# ros-humble-rqt = "*"
+# ros-humble-test-msgs = "*"
+
+
+# docs
+[feature.docs.pypi-dependencies]
+myst-parser = ">=3.0.1"
+sphinx = ">=7.3.7"
+sphinx-rtd-theme = ">=2.0.0"
+
+
+# test
+[feature.test.pypi-dependencies]
+pytest = ">=7.1.2"
+
+
+# dev
+[feature.dev.pypi-dependencies]
+pre-commit = ">=3.7.1"
+pytest-xdist = ">=3.6.1"
+typeguard = ">=4.3.0"
+ruff = ">=0.4.9"
+pyright = ">=1.1.368"
+
+
+# ################ #
+# ENVIRONMENT SETS #
+# ################ #
+
+[environments]
+default = { solve-group="default" }
+
+# torch
+torch118 = { features=["cuda118", "torch118"] }
+torch121 = { features=["cuda121", "torch121"] }
+
+# test
+# TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
+test-workflow = { features=["test", "dev"] }
+test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev" }
+
+# ros2
+ros2-install = { features=["ros2base"] }
+
+# dev
+dev = { features=["cuda121", "torch121", "ros2base", "test", "dev"], solve-group="dev" }
+docs = { features=["docs"] }
+
+# ##### #
+# TASKS #
+# ##### #
+
+[tasks]
+# builds in the obelisk_ws directory only if src has changes
+source_rosbase = { cmd="bash source_rosbase.sh", cwd="scripts", env={ NOOB="true" } }
+build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source_rosbase"] }
+source_obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["build"], env={ NOOB="true" } }

@@ -207,3 +207,16 @@ Thumbs.db
 # Build directories
 doctrees
 html
+
+# #### #
+# PIXI #
+# #### #
+.pixi
+
+# #### #
+# ROS2 #
+# #### #
+build
+install
+log
+.built_by
