@@ -28,6 +28,7 @@ exclude=[
     "site-packages",
     "venv",
     ".pixi",  # .pixi directory
+    "install",  # installation directories from ROS2
 ]
 
 [lint]

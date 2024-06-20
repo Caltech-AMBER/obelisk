@@ -4,7 +4,7 @@ This repository hosts generic interfaces for controlling the lab's robots with R
 [Docs](https://caltech-amber.github.io/obelisk/)
 
 ## Development
-We recommend developing using `pixi` for dependency management. First, install required system-level dependencies for development and setting environment variables by running the following script:
+We recommend developing using `pixi` for dependency management. First, install required system-level dependencies for development and set environment variables by running the following script:
 ```
 source dev_setup.sh
 newgrp docker
