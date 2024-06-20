@@ -142,6 +142,9 @@ torch121 = { features=["cuda121", "torch121"] }
 test-workflow = { features=["test", "dev"] }
 test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev" }
 
+# ros2
+ros2-install = { features=["ros2base"] }
+
 # dev
 dev = { features=["cuda121", "torch121", "ros2base", "test", "dev"], solve-group="dev" }
 docs = { features=["docs"] }
