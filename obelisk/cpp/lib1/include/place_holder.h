@@ -7,7 +7,7 @@
 #define OBELISK_CPP_PLACE_HOLDER_H
 
 namespace obelisk::lib1 {
-    int Func1(int i,  int j);
-} // namespace obelisk::lib1
+    int Func1(int i, int j);
+}  // namespace obelisk::lib1
 
 #endif  // OBELISK_CPP_PLACE_HOLDER_H
