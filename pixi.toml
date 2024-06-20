@@ -133,22 +133,22 @@ ninja = "1.12.1"
 make = ">=4.3,<5"
 
 # configure cmake
-[feature.cpp-build.tasks.configure]
-cmd = [
-    "cmake",
-    "-GNinja",
-    "-Sobelisk/cpp/",
-    "-Bobelisk/cpp/build"
-]
-inputs = ["obelisk/cpp/CMakeLists.txt"]
-outputs = ["obelisk/cpp/build/CMakeFiles/"]
+# [feature.cpp-build.tasks.configure]
+# cmd = [
+#     "cmake",
+#     "-GNinja",
+#     "-Sobelisk/cpp/",
+#     "-Bobelisk/cpp/build"
+# ]
+# inputs = ["obelisk/cpp/CMakeLists.txt"]
+# outputs = ["obelisk/cpp/build/CMakeFiles/"]
 
-# cmake build
-[feature.cpp-build.tasks.build]
-cmd = ["cmake", "--build", "obelisk/cpp/build"]
-depends-on = ["configure"]
-inputs = ["CMakeLists.txt", "obelisk/cpp/*"]
-outputs = ["obelisk/cpp/build/"]
+# # cmake build
+# [feature.cpp-build.tasks.cpp-build]
+# cmd = ["cmake", "--build", "obelisk/cpp/build"]
+# depends-on = ["configure"]
+# inputs = ["CMakeLists.txt", "obelisk/cpp/*"]
+# outputs = ["obelisk/cpp/build/"]
 
 # ################ #
 # ENVIRONMENT SETS #
@@ -180,16 +180,22 @@ docs = { features=["docs"] }
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
 source_rosbase = { cmd="bash source_rosbase.sh", cwd="scripts", env={ NOOB="true" } }
-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source_rosbase"] }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source_rosbase"] }
 source_obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["build"], env={ NOOB="true" } }
 
 # run the dummy tests
-[tasks.cpp-test-dummy]
-cmd = "obelisk/cpp/build/tests/dummy_test"
-depends-on = "build"
+cpp-test-dummy = {cmd = "obelisk/cpp/build/tests/dummy_test", depends-on = ["cpp-build"]}
 
 # run ctest
-[tasks.cpp-ctest]
-cwd = "obelisk/cpp/build/tests"
-cmd = "ctest"
-depends-on = "build"
+cpp-ctest = {cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build"}
+
+# cmake
+cmake = {cmd = [
+    "cmake",
+    "-GNinja",
+    "-Sobelisk/cpp/",
+    "-Bobelisk/cpp/build"
+], inputs = ["obelisk/cpp/CMakeLists.txt"], outputs = ["obelisk/cpp/build/CMakeFiles/"]}
+
+# build the cpp code
+cpp-build = {cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"]}
