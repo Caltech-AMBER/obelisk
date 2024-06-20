@@ -1,6 +1,6 @@
 {
     "name": "Obelisk Dev Container",
-    "dockerComposeFile": "docker-compose.yml",
+    "dockerComposeFile": "../docker/docker-compose.yml",
     "service": "obelisk",
     "workspaceFolder": "${localWorkspaceFolder}",
     "shutdownAction": "stopCompose",
@@ -15,5 +15,8 @@
             ]
         }
     },
-    "initializeCommand": "echo \"USERNAME=$USER\nUID=$(id -u $USER)\nGID=$(id -g $USER)\" > .devcontainer/.env"
+    "initializeCommand": "export OBELISK_ROOT=${localWorkspaceFolder}",
+    "remoteEnv": {
+        "OBELISK_ROOT": "${localEnv: OBELISK_ROOT}"
+    },
 }

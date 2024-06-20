@@ -26,32 +26,32 @@ python = ">=3.10"
 pip = ">=24.0"
 
 [pypi-dependencies]
-matplotlib=">=3.9.0"
-numpy=">=1.26"
-obelisk_py = { path = "./obelisk/python", editable = true }
+matplotlib = ">=3.9.0"
+numpy = ">=1.26"
+obelisk_py = { path="./obelisk/python", editable=true }
 
 
 # TODO(ahl): once obelisk is stable, check if cuda deps are needed
 # cuda
 [feature.cuda118]
 channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
-system-requirements = {cuda = "11.8.0"}
+system-requirements = {cuda="11.8.0"}
 
 [feature.cuda118.dependencies]
-cuda = { version = "*", channel="nvidia/label/cuda-11.8.0" }
+cuda = { version="*", channel="nvidia/label/cuda-11.8.0" }
 
 [feature.cuda121]
 channels = ["nvidia", "nvidia/label/cuda-12.1.0"]
-system-requirements = {cuda = "12.1.0"}
+system-requirements = {cuda="12.1.0"}
 
 [feature.cuda121.dependencies]
-cuda = { version = "*", channel="nvidia/label/cuda-12.1.0" }
+cuda = { version="*", channel="nvidia/label/cuda-12.1.0" }
 
 
 # torch
 [feature.torch118]
 channels = ["nvidia", "pytorch"]
-dependencies = {pytorch-cuda="11.8.0"}
+dependencies = { pytorch-cuda="11.8.0" }
 pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
 
 [feature.torch121]
@@ -70,6 +70,7 @@ colcon-common-extensions = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
+# [NOTE] on humble, we should expect python 3.10
 ros-humble-control-msgs = "*"
 ros-humble-xacro = "*"
 ros-humble-angles = "*"
@@ -106,23 +107,23 @@ ros-humble-test-msgs = "*"
 
 # docs
 [feature.docs.pypi-dependencies]
-myst-parser=">=3.0.1"
-sphinx=">=7.3.7"
-sphinx-rtd-theme=">=2.0.0"
+myst-parser = ">=3.0.1"
+sphinx = ">=7.3.7"
+sphinx-rtd-theme = ">=2.0.0"
 
 
 # test
 [feature.test.pypi-dependencies]
-pytest=">=7.1.2"
+pytest = ">=7.1.2"
 
 
 # dev
 [feature.dev.pypi-dependencies]
-pre-commit=">=3.7.1"
-pytest-xdist=">=3.6.1"
-typeguard=">=4.3.0"
-ruff=">=0.4.9"
-pyright=">=1.1.368"
+pre-commit = ">=3.7.1"
+pytest-xdist = ">=3.6.1"
+typeguard = ">=4.3.0"
+ruff = ">=0.4.9"
+pyright = ">=1.1.368"
 
 
 # build
@@ -154,7 +155,7 @@ outputs = ["obelisk/cpp/build/"]
 # ################ #
 
 [environments]
-default = { solve-group = "default" }
+default = { solve-group="default" }
 
 # torch
 torch118 = { features=["cuda118", "torch118"] }
@@ -163,11 +164,14 @@ torch121 = { features=["cuda121", "torch121"] }
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
 test-workflow = { features=["test", "dev"] }
-test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group = "dev" }
+test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev" }
+
+# ros2
+ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "ros2base", "test", "dev", "cpp-build"], solve-group = "dev" }
-docs = { features = ["docs"] }
+dev = { features=["cuda121", "torch121", "ros2base", "test", "dev", "cpp-build"], solve-group="dev" }
+docs = { features=["docs"] }
 
 # ##### #
 # TASKS #
@@ -175,7 +179,9 @@ docs = { features = ["docs"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-build =  { cmd = "colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs = ["src"] }
+source_rosbase = { cmd="bash source_rosbase.sh", cwd="scripts", env={ NOOB="true" } }
+build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source_rosbase"] }
+source_obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["build"], env={ NOOB="true" } }
 
 # run the dummy tests
 [tasks.cpp-test-dummy]
