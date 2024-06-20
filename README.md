@@ -7,6 +7,7 @@ This repository hosts generic interfaces for controlling the lab's robots with R
 We recommend developing using `pixi` for dependency management. First, install required system-level dependencies for development and setting environment variables by running the following script:
 ```
 source dev_setup.sh
+newgrp docker
 ```
 This will do the following:
 1. install `docker`
@@ -24,6 +25,10 @@ docker compose -f docker/docker-compose.yml run --build obelisk
 To enter the container without rebuilding or to join from a different terminal window, run
 ```
 docker compose -f docker/docker-compose.yml run obelisk
+```
+If you are running on a machine with no Nvidia GPUs, you can instead run
+```
+docker compose -f docker/docker-compose-no-gpu.yml run --build obelisk
 ```
 
 ### Building Docs
