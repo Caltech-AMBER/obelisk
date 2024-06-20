@@ -39,3 +39,6 @@ jobs:
       - name: Test with pytest
         run: |
           pixi run --environment test-workflow pytest
+      - name: Test with CTest
+        run: |
+          pixi run --environment test-workflow cpp-ctest
