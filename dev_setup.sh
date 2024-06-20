@@ -7,7 +7,7 @@ sudo apt-get install -y \
 # docker
 # also, see https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue
 if ! command -v docker &> /dev/null; then
-    echo "Docker is not installed. Installing Docker..."
+    echo -e "\033[1;32mDocker is not installed. Installing Docker...\033[0m"
 
 	sudo apt-get update
 	sudo apt-get install ca-certificates curl
@@ -21,20 +21,20 @@ if ! command -v docker &> /dev/null; then
 	sudo apt-get update
 	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-	echo "Docker setup complete. Continuing with the script."
+	echo -e "\033[1;32mDocker setup complete. Continuing with the script.\033[0m"
 else
-    echo "Docker is already installed. Skipping Docker installation."
+    echo -e "\033[1;33mDocker is already installed. Skipping Docker installation.\033[0m"
 fi
 
 # check docker group exists
 if ! getent group docker &> /dev/null; then
-	echo "Docker group does not exist. Creating Docker group and adding user..."
+	echo -e "\033[1;32mDocker group does not exist. Creating Docker group and adding user...\033[0m"
 
 	sudo groupadd docker
 	sudo usermod -aG docker $USER
 	sg docker -c 'sudo chmod 660 /var/run/docker.sock && sudo systemctl restart docker'
 else
-	echo "Docker group already exists. Skipping Docker group creation."
+	echo -e "\033[1;33mDocker group already exists. Skipping Docker group creation.\033[0m"
 fi
 
 # if the system has nvidia GPUs, install nvidia-container-toolkit
@@ -42,7 +42,7 @@ is_nvidia_container_toolkit_installed() {
     dpkg -s nvidia-container-toolkit &> /dev/null
 }
 if ! is_nvidia_container_toolkit_installed; then
-    echo "NVIDIA Container Toolkit is not installed. Installing..."
+    echo -e "\033[1;32mNVIDIA Container Toolkit is not installed. Installing...\033[0m"
 	if (($(nvidia-smi -L | wc -l) > 0)); then
 		curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg -y && \
 			curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
@@ -52,20 +52,28 @@ if ! is_nvidia_container_toolkit_installed; then
 		sudo apt-get install -y nvidia-container-toolkit
 		sudo nvidia-ctk runtime configure --runtime=docker
 		sudo systemctl restart docker
-		echo "NVIDIA Container Toolkit installation complete."
+		echo -e "\033[1;32mNVIDIA Container Toolkit installation complete!\033[0m"
     else
-        echo "NVIDIA GPU not detected. Skipping NVIDIA Container Toolkit installation."
+        echo -e "\033[1;33mNVIDIA GPU not detected. Skipping NVIDIA Container Toolkit installation.\033[0m"
     fi
 else
-    echo "NVIDIA Container Toolkit is already installed. Skipping installation."
+    echo -e "\033[1;33mNVIDIA Container Toolkit is already installed. Skipping installation.\033[0m"
 fi
 
 # installing pixi
 if ! command -v pixi &> /dev/null; then
-	echo "Pixi is not installed. Installing Pixi..."
+	echo -e "\033[1;32mPixi is not installed. Installing Pixi...\033[0m"
 	curl -fsSL https://pixi.sh/install.sh | bash
 else
-	echo "Pixi is already installed. Skipping Pixi installation."
+	echo -e "\033[1;33mPixi is already installed. Skipping Pixi installation.\033[0m"
+fi
+
+# installing uv
+if ! command -v uv &> /dev/null; then
+	echo -e "\033[1;32muv is not installed. Installing uv...\033[0m"
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+else
+	echo -e "\033[1;33muv is already installed. Skipping uv installation.\033[0m"
 fi
 
 # installing nvm
@@ -73,7 +81,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 if ! command -v nvm &> /dev/null; then
-	echo "nvm is not installed. Installing nvm..."
+	echo -e "\033[1;32mnvm is not installed. Installing nvm...\033[0m"
 	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 	export NVM_DIR="$HOME/.nvm"
 	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -81,13 +89,14 @@ if ! command -v nvm &> /dev/null; then
 	source ~/.bashrc
 	nvm install 20
 else
-	echo "nvm is already installed. Skipping NVM installation."
+	echo -e "\033[1;33mnvm is already installed. Skipping NVM installation.\033[0m"
 fi
 
-# TODO(ahl): replace the functionality of newgrp
-if ! groups | grep -q "\bdocker\b"; then
-	echo "Restarting shell to apply Docker group changes..."
-	newgrp docker
+# set OBELISK_ROOT to the directory where dev_setup.sh is located if it doesn't exist already
+if [ -z "$OBELISK_ROOT" ]; then
+	export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	echo "export OBELISK_ROOT=$OBELISK_ROOT" >> ~/.bashrc
+	echo -e "\033[1;32mOBELISK_ROOT is now set to $OBELISK_ROOT!\033[0m"
 else
-	echo "Docker group changes already applied. Skipping shell restart."
+	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
 fi

@@ -5,12 +5,12 @@ FROM ubuntu:22.04 as base
 SHELL ["/bin/bash", "-c"]
 
 # username, uid, gid
-ARG USERNAME=user
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-ENV USERNAME=$USERNAME
-ENV USER_UID=$USER_UID
-ENV USER_GID=$USER_GID
+ARG USER=user
+ARG UID=1000
+ARG GID=1000
+ENV USER=$USER
+ENV UID=$UID
+ENV GID=$GID
 
 # set timezone
 ENV TZ=America/Los_Angeles
@@ -29,28 +29,30 @@ RUN apt-get update -y && \
     python3-dev \
     python-is-python3 \
     python3-pip \
-    python3-argcomplete && \
+    python3-argcomplete \
+    sudo && \
     rm -rf /var/lib/apt/lists/*
 
 # create non-root user with sudo privileges for certain commands
-RUN groupadd --gid $USER_GID $USERNAME && \
-    useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d /home/${USERNAME} --shell /usr/bin/bash && \
-    echo "${USERNAME}:password" | chpasswd && \
-    usermod -aG sudo ${USERNAME} && \
-    echo "%sudo ALL=NOPASSWD:/usr/bin/apt-get update, /usr/bin/apt-get upgrade, /usr/bin/apt-get install, /usr/bin/apt-get remove" >> /etc/sudoers
+RUN groupadd --gid $GID $USER && \
+    useradd --uid $UID --gid $GID -m $USER -d /home/${USER} --shell /usr/bin/bash && \
+    echo "${USER}:password" | chpasswd && \
+    usermod -aG sudo ${USER} && \
+    echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # switch to new user and workdir
-USER ${USER_UID}
+USER ${UID}
 
-# pixi and nvm (for pyright)
+# pixi, uv, and nvm (for pyright)
 RUN curl -fsSL https://pixi.sh/install.sh | bash && \
+curl -LsSf https://astral.sh/uv/install.sh | sh && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    source /home/${USERNAME}/.bashrc && \
+    source /home/${USER}/.bashrc && \
     export NVM_DIR="$HOME/.nvm" && \
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
     nvm install 20
 
 # add local user binary folder to PATH variable
-ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"
-WORKDIR /home/${USERNAME}
+ENV PATH="${PATH}:/home/${USER}/.local/bin"
+WORKDIR /home/${USER}

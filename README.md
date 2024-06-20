@@ -4,24 +4,26 @@ This repository hosts generic interfaces for controlling the lab's robots with R
 [Docs](https://caltech-amber.github.io/obelisk/)
 
 ## Development
-We recommend developing using `pixi` for dependency management. First, install required system-level dependencies for development by running the following script:
+We recommend developing using `pixi` for dependency management. First, install required system-level dependencies for development and setting environment variables by running the following script:
 ```
-bash dev_setup.sh
+source dev_setup.sh
 ```
 This will do the following:
 1. install `docker`
 2. install `nvidia-container-toolkit`
 3. install `pixi`
-4. install `nvm` (required for `pyright`)
+4. install `uv`
+5. install `nvm` (required for `pyright`)
+6. set the `OBELISK_ROOT` environment variable to the repo root
 
 ### Docker
-We recommend developing on `obelisk` using a Docker container (we provide `.devcontainer` support if you use an IDE supporting it). To configure the build for your username for permission-sharing reasons, build the container with the command
+We recommend developing on `obelisk` using a Docker container (we provide `.devcontainer` support if you use an IDE supporting it). You can also bring up a container using docker-compose as follows from the repository root:
 ```
-docker image build --build-arg USERNAME=${USER} --build-arg USER_UID=${UID} -t obelisk .
+docker compose -f docker/docker-compose.yml run --build obelisk
 ```
-To run the container, run
+To enter the container without rebuilding or to join from a different terminal window, run
 ```
-bash startup.sh -n obelisk
+docker compose -f docker/docker-compose.yml run obelisk
 ```
 
 ### Building Docs
