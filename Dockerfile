@@ -50,10 +50,6 @@ RUN curl -fsSL https://pixi.sh/install.sh | bash && \
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
     nvm install 20
-RUN echo 'export PATH=$PATH:/home/$USERNAME/.pixi/bin' >> /home/${USERNAME}/.bashrc && \
-    echo 'export NVM_DIR=$HOME/.nvm' >> /home/${USERNAME}/.bashrc && \
-    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/${USERNAME}/.bashrc && \
-    echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /home/${USERNAME}/.bashrc
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"
