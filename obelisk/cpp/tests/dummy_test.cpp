@@ -1,6 +1,6 @@
 /*
  * Obelisk Software Framework.
- * Developed in the Amber Lab at Caltech. 
+ * Developed in the Amber Lab at Caltech.
  * Copyright (c) 2024 Amber Lab. All rights reserved.
  */
 

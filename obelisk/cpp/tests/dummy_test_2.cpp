@@ -12,7 +12,5 @@ TEST_CASE("Dummy test 2", "[dummy-test]") {
     int j = 3;
     REQUIRE(j == 3);
 
-    SECTION("Test section") {
-        REQUIRE(obelisk::lib1::Func1(2,2) == 4);
-    }
+    SECTION("Test section") { REQUIRE(obelisk::lib1::Func1(2, 2) == 4); }
 }

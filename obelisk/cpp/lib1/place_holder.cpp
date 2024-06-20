@@ -7,7 +7,5 @@
 #include "place_holder.h"
 
 namespace obelisk::lib1 {
-    int Func1(int i, int j) {
-        return i + j;
-    }
-} // namespace obelisk::lib1
+    int Func1(int i, int j) { return i + j; }
+}  // namespace obelisk::lib1
