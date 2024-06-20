@@ -127,28 +127,10 @@ pyright = ">=1.1.368"
 
 
 # build
-[feature.cpp-build.dependencies]
+[feature.dev.dependencies]
 cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
-
-# configure cmake
-# [feature.cpp-build.tasks.configure]
-# cmd = [
-#     "cmake",
-#     "-GNinja",
-#     "-Sobelisk/cpp/",
-#     "-Bobelisk/cpp/build"
-# ]
-# inputs = ["obelisk/cpp/CMakeLists.txt"]
-# outputs = ["obelisk/cpp/build/CMakeFiles/"]
-
-# # cmake build
-# [feature.cpp-build.tasks.cpp-build]
-# cmd = ["cmake", "--build", "obelisk/cpp/build"]
-# depends-on = ["configure"]
-# inputs = ["CMakeLists.txt", "obelisk/cpp/*"]
-# outputs = ["obelisk/cpp/build/"]
 
 # ################ #
 # ENVIRONMENT SETS #
@@ -170,7 +152,7 @@ test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev"
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "ros2base", "test", "dev", "cpp-build"], solve-group="dev" }
+dev = { features=["cuda121", "torch121", "ros2base", "test", "dev"], solve-group="dev" }
 docs = { features=["docs"] }
 
 # ##### #
