@@ -70,6 +70,7 @@ colcon-common-extensions = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
+# [NOTE] on humble, we should expect python 3.10
 ros-humble-control-msgs = "*"
 ros-humble-xacro = "*"
 ros-humble-angles = "*"

@@ -1,8 +1,9 @@
-from typing import Any, Self
+from typing import Any
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from typing_extensions import Self
 
 
 class MinimalPublisher(Node):
