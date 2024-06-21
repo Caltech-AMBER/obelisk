@@ -2,7 +2,7 @@ name: Deploy Sphinx documentation to Pages
 
 on:
   push:
-    branches: [deploy-sphinx]
+    branches: [main]
 
 jobs:
   pages:
@@ -14,6 +14,12 @@ jobs:
       pages: write
       id-token: write
     steps:
+    - name: install myst-parser
+      run: |
+        pip install myst-parser
+    - name: install sphinx-rtd-theme
+      run: |
+        pip install sphinx_rtd_theme
     - id: deployment
       uses: sphinx-notes/pages@v3
       with:

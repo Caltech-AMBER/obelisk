@@ -5,8 +5,8 @@ services:
       context: .
       args:
         USER: $USER
-        UID: $GID
-        GID: $GID
+        UID: $UID
+        GID: $UID
       dockerfile: Dockerfile
     network_mode: host
     ipc: host
