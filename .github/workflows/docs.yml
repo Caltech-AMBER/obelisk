@@ -14,6 +14,9 @@ jobs:
       pages: write
       id-token: write
     steps:
+    - uses: install myst-parser
+      run: |
+        pip install myst-parser
     - id: deployment
       uses: sphinx-notes/pages@v3
       with:
