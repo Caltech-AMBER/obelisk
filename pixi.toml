@@ -115,13 +115,13 @@ sphinx-rtd-theme = ">=2.0.0"
 # test
 [feature.test.pypi-dependencies]
 pytest = ">=7.1.2"
+pytest-xdist = ">=3.6.1"
+typeguard = ">=4.3.0"
 
 
 # dev
 [feature.dev.pypi-dependencies]
 pre-commit = ">=3.7.1"
-pytest-xdist = ">=3.6.1"
-typeguard = ">=4.3.0"
 ruff = ">=0.4.9"
 pyright = ">=1.1.368"
 
