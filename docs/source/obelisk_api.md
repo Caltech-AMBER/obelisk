@@ -1,0 +1,10 @@
+# Obelisk API
+The Obelisk API defines a consistent set of interfaces to modularize the development of robotics stacks. At the core of Obelisk is ROS2, which provides a Publish-Subscribe (or Pub-Sub) interface for heterogenous nodes to interact with each other. Obelisk provides unified interfaces to simulators, hardware, state estimators, controllers, and other utilities like visualization and logging.
+
+This abstract interface is achieved by defining a set of common [messages](https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html) and [topics](https://docs.ros.org/en/humble/Concepts/Basic/About-Topics.html). Standardizing these messages and topics within the lab will allow anyone to interface with a robot that is in the Obelisk ecosystem without hassle. Similarily, this will make is easy to test code on any simulator in the ecosystem. Each simulator and robot will need to be brought into the ecosystem through a Obelisk wrapper that will allow it to interface with the Obelisk API. Once a robot is in the ecosystem anyone can use it easily without needing to re-create the entire stack.
+
+As part of accomplishing this, Obelisk defines a standardized "world" interface. The Obelisk wrappers let the simulators or robots expose the world interface that the rest of the robot stack can then interface with. Beyond the convinece of interfacing with other robots, this design choice should make moving from simulation to hardware seamless and increase the chances that a working simulation implies a working robot in the real world.
+
+Beyond unifying the simulation and hardware interface, Obelisk users should be able to use other modules that are designed to fit into the Obelisk API easily. For example, if person A has written a state estimator for a robot, then person B should be able to write a controller that uses those state esimates easily and without modifying the source code for their controller or person A's state estimator. This will allow for more code sharing and collaboration.
+
+Obelisk has been designed to provide these conviences at minimal overhead.
