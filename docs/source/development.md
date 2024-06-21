@@ -44,8 +44,7 @@ While in the `pixi` shell and/or Docker container, all changes made in the repos
 ## Building and Running C++ Code
 We can easily run C++ code using `Pixi`. From within the `dev` enviroment, the available commands are:
 - `cpp-ctest` will run all tests registered with `CTest`. This is the command used in the CI to verify unit tests, so every test should be registered with CTest - see [below](#testing).
-<!-- TODO (@zolkin): Remove this when we don't have the dummy test -->
-- `cpp-test-dummy` will run just the dummy tests and will do so using the Catch2 framework. This command will be removed in the future and either replaced with commands to run specific tests or replaced with nothing at all.
+- `cpp-test-dummy` will run just the dummy tests and will do so using the Catch2 framework. This command will be removed in the future and either replaced with commands to run specific tests or replaced with nothing at all. <!-- TODO (@zolkin): Remove this when we don't have the dummy test -->
 - `cmake` which will re-build the cmake.
 - `cpp-build` which will compile the code.
 
@@ -61,5 +60,6 @@ The C++ libraries in `obelisk/cpp` are built with CMake.
 
 All `obelisk` C++ libraries are placed in `obelisk/`. Each library should have its own folder. Within that folder there should be a `include` folder, a `CMakeLists.txt`, and the source files (i.e. not the header files - those go in `include`).
 
+(testing)=
 ### Testing
 Unit tests are managed with [`Catch2`](https://github.com/catchorg/Catch2). Ultimately we plan to run the tests with [`CTest`](https://cmake.org/cmake/help/book/mastering-cmake/chapter/Testing%20With%20CMake%20and%20CTest.html), and therefore all unit tests need to be registered with `CTest`, see [here](https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md). The tests are all placed within `tests/tests_cpp`.

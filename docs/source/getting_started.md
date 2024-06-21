@@ -17,10 +17,10 @@ echo "source install/setup.sh" >> ~/.bashrc
 ```
 to build our packages and manually install them as an underlay.
 
-TODO(ahl): when the `obelisk_py` and `obelisk_cpp` packages have content, include instructions for how to install them as well.
+<!-- TODO(@ahl): when the `obelisk_py` and `obelisk_cpp` packages have content, include instructions for how to install them as well. -->
 
 ## Option 2: Isolation
-TODO(ahl): look this over and verify how to use isolation to do dependency management. Update docs in a separate PR.
+<!-- TODO(@ahl): look this over and verify how to use isolation to do dependency management. Update docs in a separate PR. -->
 <!-- Once you have cloned this repository, you can run in the repo root:
 ```
 docker compose -f docker/docker-compose.yml run --build obelisk
