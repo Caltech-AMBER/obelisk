@@ -2,7 +2,7 @@ name: Deploy Sphinx documentation to Pages
 
 on:
   push:
-    branches: [cpp-setup]
+    branches: [main]
 
 jobs:
   pages:
