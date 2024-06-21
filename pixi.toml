@@ -127,7 +127,7 @@ pyright = ">=1.1.368"
 
 
 # build
-[feature.dev.dependencies]
+[feature.build.dependencies]
 cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
@@ -145,15 +145,17 @@ torch121 = { features=["cuda121", "torch121"] }
 
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
-test-workflow = { features=["test", "dev"] }
+test-workflow = { features=["test", "dev", "build"] }
 test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev" }
 
 # ros2
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "ros2base", "test", "dev"], solve-group="dev" }
+dev = { features=["cuda121", "torch121", "ros2base", "test", "dev", "build"], solve-group="dev" }
 docs = { features=["docs"] }
+
+build = { features = ["cuda121", "torch121", "build"] }
 
 # ##### #
 # TASKS #
@@ -166,18 +168,21 @@ ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", 
 source_obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["build"], env={ NOOB="true" } }
 
 # run the dummy tests
-cpp-test-dummy = {cmd = "obelisk/cpp/build/tests/dummy_test", depends-on = ["cpp-build"]}
+cpp-test-dummy = { cmd = "obelisk/cpp/build/tests/dummy_test", depends-on = ["cpp-build"] }
 
 # run ctest
-cpp-ctest = {cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build"}
+cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }
 
 # cmake
-cmake = {cmd = [
+cmake = { cmd = [
     "cmake",
     "-GNinja",
     "-Sobelisk/cpp/",
     "-Bobelisk/cpp/build"
-], inputs = ["obelisk/cpp/CMakeLists.txt"], outputs = ["obelisk/cpp/build/CMakeFiles/"]}
+], inputs = ["obelisk/cpp/CMakeLists.txt"], outputs = ["obelisk/cpp/build/CMakeFiles/"] }
 
 # build the cpp code
-cpp-build = {cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"]}
+cpp-build = { cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
+
+# run python and c++ tests
+all-tests = { cmd = ["pytest", "&&", " ctest"] }
