@@ -1,7 +1,7 @@
 /*
  * Obelisk Software Framework.
- * Developed in the Amber Lab at Caltech.
- * Copyright (c) 2024 Amber Lab. All rights reserved.
+ * Developed in the AMBER Lab at Caltech.
+ * Copyright (c) 2024 AMBER Lab. All rights reserved.
  */
 
 #include <catch2/catch_test_macros.hpp>
