@@ -14,7 +14,7 @@ jobs:
       pages: write
       id-token: write
     steps:
-    - uses: install myst-parser
+    - name: install myst-parser
       run: |
         pip install myst-parser
     - id: deployment
