@@ -40,3 +40,25 @@ pixi shell --environment dev
 The environment `dev` contains the most critical development dependencies. However, you can view the available environment sets in the `pixi.toml` to start a different environment if you would like. For example, if you are only updating the docs, you can do this by setting the environment flag to `docs`.
 
 While in the `pixi` shell and/or Docker container, all changes made in the repository or to the `~/.bashrc` file persist in your local file system. You can also use `git` with no issue to push changes.
+
+## Building and Running C++ Code
+We can easily run C++ code using `Pixi`.
+From within the `dev` enviroment, the available commands are:
+- `cpp-ctest` will run all tests registered with `CTest`. This is the command used in the CI to verify unit tests, so every tests should be registered with CTest - see [below](#testing).
+- `cpp-test-dummy` will run just the dummy tests and will do so using the Catch2 framework. This command will be removed in the future and either replaced with commands to run specific tests or replaced with nothing at all.
+- `cmake` which will re-build the cmake.
+- `cpp-build` which will compile the code.
+
+Note that all the commands will automatically run the commands they depend on. For this reason to re-build the cmake, compile the code, and run the tests, all we need to do is run `cpp-ctest`.
+
+We can enter the `dev` enviroment with `pixi shell -e dev` or we can run those commands from the normal shell by pre-pending with `pixi run -e dev`. For example, to run the ctests, `pixi run -e dev cpp-ctest`.
+
+In the future we will add more commands to run other parts of the code.
+
+## C++ Code Structure
+The C++ libraries in `obelisk/` are built with CMake.
+
+All `obelisk` C++ libraries are placed in `obelisk/`. Each library should have its own folder. Within that folder there should be a `include` folder, a `CMakeLists.txt`, and the source files (i.e. not the header files - those go in `include`).
+
+### Testing
+Unit tests are managed with [`Catch2`](https://github.com/catchorg/Catch2). Ultimatey we plan to run the tests with [`CTest`](https://cmake.org/cmake/help/book/mastering-cmake/chapter/Testing%20With%20CMake%20and%20CTest.html), and therefore all unit tests need to be registered with `CTest`, see [here](https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md). The tests are all placed within `tests/tests_cpp`.
