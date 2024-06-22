@@ -8,9 +8,8 @@ from rclpy.qos_event import PublisherEventCallbacks, SubscriptionEventCallbacks
 from rclpy.qos_overriding_options import QoSOverridingOptions
 from rclpy.subscription import Subscription
 
-from obelisk_py import OBELISK_MSG_TYPES, ROS_ALLOWED_MSG_TYPES
 from obelisk_py.exceptions import ObeliskMsgError
-from obelisk_py.obelisk_typing import ObeliskMsgType
+from obelisk_py.obelisk_typing import ObeliskAllowedMsgType
 
 
 class ObeliskNode(LifecycleNode):
@@ -18,7 +17,7 @@ class ObeliskNode(LifecycleNode):
 
     def create_publisher(
         self,
-        msg_type: Type[ObeliskMsgType],
+        msg_type: Type[ObeliskAllowedMsgType],
         topic: str,
         qos_profile: Union[QoSProfile, int],
         *,
@@ -34,9 +33,10 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if msg_type not in OBELISK_MSG_TYPES + ROS_ALLOWED_MSG_TYPES:
+        if not issubclass(msg_type, ObeliskAllowedMsgType):
             raise ObeliskMsgError(
-                f"msg_type must be one of {[t.__name__ for t in OBELISK_MSG_TYPES]}. Got {msg_type.__name__}."
+                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsgType.__args__]}. "
+                "Got {msg_type.__name__}."
             )
 
         return super().create_publisher(
@@ -51,9 +51,9 @@ class ObeliskNode(LifecycleNode):
 
     def create_subscription(
         self,
-        msg_type: Type[ObeliskMsgType],
+        msg_type: Type[ObeliskAllowedMsgType],
         topic: str,
-        callback: Callable[[ObeliskMsgType], None],
+        callback: Callable[[ObeliskAllowedMsgType], None],
         qos_profile: Union[QoSProfile, int],
         *,
         callback_group: Optional[CallbackGroup] = None,
@@ -68,9 +68,10 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if msg_type not in OBELISK_MSG_TYPES + ROS_ALLOWED_MSG_TYPES:
+        if not issubclass(msg_type, ObeliskAllowedMsgType):
             raise ObeliskMsgError(
-                f"msg_type must be one of {[t.__name__ for t in OBELISK_MSG_TYPES]}. Got {msg_type.__name__}."
+                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsgType.__args__]}. "
+                "Got {msg_type.__name__}."
             )
 
         return super().create_subscription(
