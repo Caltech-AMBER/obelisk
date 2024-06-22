@@ -15,7 +15,7 @@ ObeliskMsgType = TypeVar("ObeliskMsgType")
 
 
 class ObeliskNode(LifecycleNode):
-    """A class for interfacing with the Obelisk system."""
+    """A lifecycle node whose publishers and subscribers can only publish and subscribe to Obelisk messages."""
 
     def create_publisher(
         self,
