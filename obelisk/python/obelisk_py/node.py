@@ -9,7 +9,7 @@ from rclpy.qos_overriding_options import QoSOverridingOptions
 from rclpy.subscription import Subscription
 
 from obelisk_py.exceptions import ObeliskMsgError
-from obelisk_py.obelisk_typing import ObeliskAllowedMsgType
+from obelisk_py.obelisk_typing import ObeliskAllowedMsg
 
 
 class ObeliskNode(LifecycleNode):
@@ -17,7 +17,7 @@ class ObeliskNode(LifecycleNode):
 
     def create_publisher(
         self,
-        msg_type: Type[ObeliskAllowedMsgType],
+        msg_type: Type[ObeliskAllowedMsg],
         topic: str,
         qos_profile: Union[QoSProfile, int],
         *,
@@ -33,9 +33,9 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if not issubclass(msg_type, ObeliskAllowedMsgType):
+        if not issubclass(msg_type, ObeliskAllowedMsg):
             raise ObeliskMsgError(
-                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsgType.__args__]}. "
+                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsg.__args__]}. "
                 "Got {msg_type.__name__}."
             )
 
@@ -51,9 +51,9 @@ class ObeliskNode(LifecycleNode):
 
     def create_subscription(
         self,
-        msg_type: Type[ObeliskAllowedMsgType],
+        msg_type: Type[ObeliskAllowedMsg],
         topic: str,
-        callback: Callable[[ObeliskAllowedMsgType], None],
+        callback: Callable[[ObeliskAllowedMsg], None],
         qos_profile: Union[QoSProfile, int],
         *,
         callback_group: Optional[CallbackGroup] = None,
@@ -68,9 +68,9 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if not issubclass(msg_type, ObeliskAllowedMsgType):
+        if not issubclass(msg_type, ObeliskAllowedMsg):
             raise ObeliskMsgError(
-                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsgType.__args__]}. "
+                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsg.__args__]}. "
                 "Got {msg_type.__name__}."
             )
 
