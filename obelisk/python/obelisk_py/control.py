@@ -21,8 +21,12 @@ class ObeliskController(ABC):
         self.x_hat = None  # the most recent state estimate
 
     @abstractmethod
-    def update_x_hat(self, x_hat: ObeliskEstimatorMsg) -> None:
-        """Update the state estimate."""
+    def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
+        """Update the state estimate.
+
+        Parameters:
+            x_hat_msg: The Obelisk message containing the state estimate.
+        """
         # TODO(ahl): fill this implementation when we know what the EstimatedState message looks like
 
     @abstractmethod
