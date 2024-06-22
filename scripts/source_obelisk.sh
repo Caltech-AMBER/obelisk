@@ -6,8 +6,6 @@ if [ "$NOOB" != "true" ]; then
     exit 0
 fi
 
-# source-rosbase = { cmd="bash source_rosbase.sh", cwd="scripts", env={ NOOB="true" } }
-# ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source-rosbase"] }
 # sources the obelisk installations if not already sourced
 cmd="source $OBELISK_ROOT/obelisk_ws/install/setup.sh"
 grep -qxF "$cmd" ~/.bashrc || (echo "$cmd" >> ~/.bashrc && $cmd && echo -e "\033[1;32mObelisk sourced!\033[0m")
