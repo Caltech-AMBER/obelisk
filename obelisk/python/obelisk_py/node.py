@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Type, TypeVar, Union
+from typing import Callable, Optional, Type, Union
 
 from rclpy.callback_groups import CallbackGroup
 from rclpy.lifecycle import LifecycleNode
@@ -10,8 +10,7 @@ from rclpy.subscription import Subscription
 
 from obelisk_py import OBELISK_MSG_TYPES, ROS_ALLOWED_MSG_TYPES
 from obelisk_py.exceptions import ObeliskMsgError
-
-ObeliskMsgType = TypeVar("ObeliskMsgType")
+from obelisk_py.obelisk_typing import ObeliskMsgType
 
 
 class ObeliskNode(LifecycleNode):
