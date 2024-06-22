@@ -105,6 +105,11 @@ colcon-common-extensions = "*"
 # ros-humble-test-msgs = "*"
 
 
+# obelisk
+[feature.obelisk.pypi-dependencies]
+
+
+
 # docs
 [feature.docs.pypi-dependencies]
 myst-parser = ">=3.0.1"
@@ -143,16 +148,19 @@ default = { solve-group="default" }
 torch118 = { features=["cuda118", "torch118"] }
 torch121 = { features=["cuda121", "torch121"] }
 
+# obelisk
+obelisk = { features=["obelisk"] }
+
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
-test-workflow = { features=["test", "dev", "build"] }
-test = { features=["cuda121", "torch121", "ros2base", "test"], solve-group="dev" }
+test-workflow = { features=["obelisk", "test", "dev", "build"] }
+test = { features=["cuda121", "torch121", "obelisk", "ros2base", "test"], solve-group="dev" }
 
 # ros2
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "ros2base", "test", "dev", "build"], solve-group="dev" }
+dev = { features=["cuda121", "torch121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
 docs = { features=["docs"] }
 
 build = { features = ["cuda121", "torch121", "build"] }
@@ -163,9 +171,9 @@ build = { features = ["cuda121", "torch121", "build"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-source-rosbase = { cmd="bash source_rosbase.sh", cwd="scripts", env={ NOOB="true" } }
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["source_rosbase"] }
-source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["build"], env={ NOOB="true" } }
+workarounds = { cmd="bash workarounds.sh", cwd="scripts" }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["workarounds"] }
+source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
 # run the dummy tests
 cpp-test-dummy = { cmd = "obelisk/cpp/build/tests/dummy_test", depends-on = ["cpp-build"] }
