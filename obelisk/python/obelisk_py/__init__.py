@@ -3,19 +3,11 @@ from rcl_interfaces.msg import ParameterEvent
 from obelisk_py.internal_utils import get_classes_in_module
 
 try:
+    import obelisk_control_msgs.msg
+    import obelisk_estimator_msgs.msg
     import obelisk_sensor_msgs.msg
 except ImportError as err:
-    raise ImportError("The obelisk_sensor_msgs package is not installed! Build the packages in obelisk_ws.") from err
-
-try:
-    import obelisk_control_msgs.msg
-except ImportError as err:
-    raise ImportError("The obelisk_control_msgs package is not installed! Build the packages in obelisk_ws.") from err
-
-try:
-    import obelisk_estimator_msgs.msg
-except ImportError as err:
-    raise ImportError("The obelisk_estimator_msgs package is not installed! Build the packages in obelisk_ws.") from err
+    raise ImportError("The obelisk_msgs packages are not installed! Build the packages in obelisk_ws.") from err
 
 
 OBELISK_MSG_TYPES = (
