@@ -44,8 +44,8 @@ is_nvidia_container_toolkit_installed() {
 if ! is_nvidia_container_toolkit_installed; then
     echo -e "\033[1;32mNVIDIA Container Toolkit is not installed. Installing...\033[0m"
 	if (($(nvidia-smi -L | wc -l) > 0)); then
-		curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg -y && \
-			curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+		curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+		&& curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
 			sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
 			sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 		sudo apt-get update
