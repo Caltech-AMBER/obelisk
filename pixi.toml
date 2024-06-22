@@ -163,7 +163,8 @@ build = { features = ["cuda121", "torch121", "build"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"] }
+workarounds = { cmd="bash workarounds.sh", cwd="scripts" }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["workarounds"] }
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
 # run the dummy tests
