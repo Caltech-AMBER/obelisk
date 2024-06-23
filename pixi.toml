@@ -118,8 +118,12 @@ sphinx-rtd-theme = ">=2.0.0"
 
 
 # test
+# TODO(ahl): pytest bounded until issue resolved
+# https://github.com/prefix-dev/pixi/issues/1529
+[feature.test.dependencies]
+pytest = "<=8.0.0"
+
 [feature.test.pypi-dependencies]
-pytest = ">=7.1.2"
 pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
@@ -171,8 +175,7 @@ build = { features = ["cuda121", "torch121", "build"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-workarounds = { cmd="bash workarounds.sh", cwd="scripts" }
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"], depends-on=["workarounds"] }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src"] }
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
 # run the dummy tests
