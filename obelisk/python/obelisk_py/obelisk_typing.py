@@ -8,8 +8,8 @@ from rcl_interfaces.msg import ParameterEvent
 from obelisk_py.internal_utils import get_classes_in_module
 
 
-def create_union_type(classes: List[Type]) -> Type:
-    """Create a Union type from a list of classes.
+def _create_union_type(classes: List[Type]) -> Type:
+    """Create a Union type from a list of classes (internal typing util).
 
     This is a hack for the Union type, which does not accept a list of classes as an argument. This also means that it's
     not technically compatible with static type checking, since the type of the Union is not known before computing the
@@ -18,6 +18,11 @@ def create_union_type(classes: List[Type]) -> Type:
     if not classes:
         raise ValueError("At least one class is required for the Union type")
     return Union[tuple(classes)] if len(classes) > 1 else classes[0]  # type: ignore
+
+
+# ############## #
+# EXTERNAL UTILS #
+# ############## #
 
 
 def is_in_bound(type: Type, typevar: TypeVar) -> bool:
@@ -34,14 +39,15 @@ def is_in_bound(type: Type, typevar: TypeVar) -> bool:
         return type == bound
 
 
+# define Obelisk message types
 ocm_classes = get_classes_in_module(ocm)
 oem_classes = get_classes_in_module(oem)
 osm_classes = get_classes_in_module(osm)
 
-ObeliskControlMsg = TypeVar("ObeliskControlMsg", bound=create_union_type(ocm_classes))
-ObeliskEstimatorMsg = TypeVar("ObeliskEstimatorMsg", bound=create_union_type(oem_classes))
-ObeliskSensorMsg = TypeVar("ObeliskSensorMsg", bound=create_union_type(osm_classes))
-ObeliskMsg = TypeVar("ObeliskMsg", bound=create_union_type(ocm_classes + oem_classes + osm_classes))
+ObeliskControlMsg = TypeVar("ObeliskControlMsg", bound=_create_union_type(ocm_classes))
+ObeliskEstimatorMsg = TypeVar("ObeliskEstimatorMsg", bound=_create_union_type(oem_classes))
+ObeliskSensorMsg = TypeVar("ObeliskSensorMsg", bound=_create_union_type(osm_classes))
+ObeliskMsg = TypeVar("ObeliskMsg", bound=_create_union_type(ocm_classes + oem_classes + osm_classes))
 ObeliskAllowedMsg = TypeVar(
-    "ObeliskAllowedMsg", bound=create_union_type(ocm_classes + oem_classes + osm_classes + [ParameterEvent])
-)
+    "ObeliskAllowedMsg", bound=_create_union_type(ocm_classes + oem_classes + osm_classes + [ParameterEvent])
+)  # [NOTE] ParameterEvent is a special case - all nodes have a ParameterEvent publisher in ROS2
