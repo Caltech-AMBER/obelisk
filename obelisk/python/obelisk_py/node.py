@@ -76,7 +76,7 @@ class ObeliskNode(LifecycleNode):
         See: github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1316
 
         Parameters:
-            non_obelisk: If True, the publisher can publish non-Obelisk messages. Default is False.
+            non_obelisk: If True, the subscriber can receive non-Obelisk messages. Default is False.
 
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
