@@ -181,7 +181,9 @@ class ObeliskController(ABC, ObeliskNode):
     def compute_control(self) -> ObeliskControlMsg:
         """Compute the control signal.
 
-        This is the control timer callback and is expected to call self.publisher_ctrl internally.
+        This is the control timer callback and is expected to call self.publisher_ctrl internally. Note that the control
+        message is still returned afterwards, mostly for logging/debugging purposes. The publish call is the important
+        part, NOT the returned value, since the topic is what the WorldInterface subscribes to.
 
         Returns:
             obelisk_control_msg: An Obelisk message type containing the control signal and relevant metadata.

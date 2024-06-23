@@ -1,5 +1,5 @@
-import obelisk_control_msgs.msg
-import obelisk_estimator_msgs.msg
+import obelisk_control_msgs.msg as ocm
+import obelisk_estimator_msgs.msg as oem
 import pytest
 import rclpy
 import rclpy.exceptions
@@ -17,7 +17,7 @@ class TestObeliskController(ObeliskController):
 
     def compute_control(self) -> ObeliskControlMsg:
         """Compute the control signal."""
-        obk_ctrl_msg = obelisk_control_msgs.msg.PositionSetpoint()  # [NOTE] dummy implementation
+        obk_ctrl_msg = ocm.PositionSetpoint()  # [NOTE] dummy implementation
         return obk_ctrl_msg
 
 
@@ -85,12 +85,12 @@ def test_obelisk_controller() -> None:
     # check that we can configure the node again then update the state estimate and compute the control signal
     test_controller.on_configure(test_controller._state_machine.current_state)
 
-    estimated_state_msg = obelisk_estimator_msgs.msg.EstimatedState()  # [NOTE] dummy message
+    estimated_state_msg = oem.EstimatedState()  # [NOTE] dummy message
     test_controller.update_x_hat(estimated_state_msg)
     assert test_controller.x_hat == 1
 
     obk_ctrl_msg = test_controller.compute_control()
-    assert isinstance(obk_ctrl_msg, obelisk_control_msgs.msg.PositionSetpoint)
+    assert isinstance(obk_ctrl_msg, ocm.PositionSetpoint)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskControlMsg)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskMsg)
 
