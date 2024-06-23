@@ -97,4 +97,7 @@ def test_obelisk_controller() -> None:
     assert isinstance(obk_ctrl_msg, obelisk_control_msgs.msg.PositionSetpoint)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskControlMsg)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskMsg)
+
+    # destroy node and shutdown rclpy session
     test_controller.destroy_node()
+    rclpy.shutdown()
