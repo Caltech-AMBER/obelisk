@@ -11,10 +11,6 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, Ob
 class TestObeliskController(ObeliskController):
     """Test ObeliskController class."""
 
-    def __init__(self, node_name: str) -> None:
-        """Initialize the controller."""
-        super().__init__(node_name)
-
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate."""
         self.x_hat = 1  # [NOTE] dummy implementation
