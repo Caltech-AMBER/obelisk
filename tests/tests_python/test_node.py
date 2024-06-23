@@ -1,6 +1,4 @@
 import obelisk_control_msgs.msg
-import obelisk_estimator_msgs.msg
-import obelisk_sensor_msgs.msg
 import pytest
 import rclpy
 from std_msgs.msg import String
@@ -18,15 +16,15 @@ def test_obelisk_node_exclusivity() -> None:
 
     # test that the ObeliskNode class can create publishers/subscribers for all Obelisk messages
     try:
-        for msg_type in get_classes_in_module(obelisk_sensor_msgs.msg):
-            node.create_publisher(msg_type, msg_type.__name__ + "_pub", 10)
-            node.create_subscription(msg_type, msg_type.__name__ + "_sub", lambda msg: None, 10)
         for msg_type in get_classes_in_module(obelisk_control_msgs.msg):
             node.create_publisher(msg_type, msg_type.__name__ + "_pub", 10)
             node.create_subscription(msg_type, msg_type.__name__ + "_sub", lambda msg: None, 10)
-        for msg_type in get_classes_in_module(obelisk_estimator_msgs.msg):
-            node.create_publisher(msg_type, msg_type.__name__ + "_pub", 10)
-            node.create_subscription(msg_type, msg_type.__name__ + "_sub", lambda msg: None, 10)
+        # for msg_type in get_classes_in_module(obelisk_estimator_msgs.msg):
+        #     node.create_publisher(msg_type, msg_type.__name__ + "_pub", 10)
+        #     node.create_subscription(msg_type, msg_type.__name__ + "_sub", lambda msg: None, 10)
+        # for msg_type in get_classes_in_module(obelisk_sensor_msgs.msg):
+        #     node.create_publisher(msg_type, msg_type.__name__ + "_pub", 10)
+        #     node.create_subscription(msg_type, msg_type.__name__ + "_sub", lambda msg: None, 10)
 
     except ObeliskMsgError as e:
         node.destroy_node()

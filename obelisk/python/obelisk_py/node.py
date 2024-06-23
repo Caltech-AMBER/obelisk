@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Optional, Type, Union, get_args, get_origin
 
 from rclpy.callback_groups import CallbackGroup
 from rclpy.lifecycle import LifecycleNode
@@ -9,7 +9,7 @@ from rclpy.qos_overriding_options import QoSOverridingOptions
 from rclpy.subscription import Subscription
 
 from obelisk_py.exceptions import ObeliskMsgError
-from obelisk_py.obelisk_typing import ObeliskAllowedMsg
+from obelisk_py.obelisk_typing import ObeliskAllowedMsg, is_in_bound
 
 
 class ObeliskNode(LifecycleNode):
@@ -17,7 +17,7 @@ class ObeliskNode(LifecycleNode):
 
     def create_publisher(
         self,
-        msg_type: Type[ObeliskAllowedMsg],
+        msg_type: ObeliskAllowedMsg,
         topic: str,
         qos_profile: Union[QoSProfile, int],
         *,
@@ -37,9 +37,13 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if not non_obelisk and not issubclass(msg_type, ObeliskAllowedMsg):
+        if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
+            if get_origin(ObeliskAllowedMsg.__bound__) is Union:
+                valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
+            else:
+                valid_msg_types = [ObeliskAllowedMsg.__name__]
             raise ObeliskMsgError(
-                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsg.__args__]}. "
+                f"msg_type must be one of {valid_msg_types}. "
                 "Got {msg_type.__name__}. If you are sure that the message type is correct, "
                 "set non_obelisk=True. Note that this may cause certain API incompatibilies."
             )
@@ -56,7 +60,7 @@ class ObeliskNode(LifecycleNode):
 
     def create_subscription(
         self,
-        msg_type: Type[ObeliskAllowedMsg],
+        msg_type: ObeliskAllowedMsg,
         topic: str,
         callback: Callable[[ObeliskAllowedMsg], None],
         qos_profile: Union[QoSProfile, int],
@@ -77,9 +81,13 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
-        if not non_obelisk and not issubclass(msg_type, ObeliskAllowedMsg):
+        if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
+            if get_origin(ObeliskAllowedMsg.__bound__) is Union:
+                valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
+            else:
+                valid_msg_types = [ObeliskAllowedMsg.__name__]
             raise ObeliskMsgError(
-                f"msg_type must be one of {[a.__name__ for a in ObeliskAllowedMsg.__args__]}. "
+                f"msg_type must be one of {valid_msg_types}. "
                 "Got {msg_type.__name__}. If you are sure that the message type is correct, "
                 "set non_obelisk=True. Note that this may cause certain API incompatibilies."
             )
