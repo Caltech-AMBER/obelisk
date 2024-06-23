@@ -34,7 +34,15 @@ def test_obelisk_node_exclusivity() -> None:
 
     # test that the ObeliskNode class cannot create publishers/subscribers for other messages
     with pytest.raises(ObeliskMsgError):
-        node.create_publisher(String, "string", 10)
+        node.create_publisher(String, "/obelisk/test/string", 10)
+
+    # test that publishers and subscribers for non-Obelisk messages can be created using the non_obelisk flag
+    try:
+        node.create_publisher(String, "/obelisk/test/string_pub", 10, non_obelisk=True)
+        node.create_subscription(String, "/obelisk/test/string_sub", lambda msg: None, 10, non_obelisk=True)
+    except ObeliskMsgError as e:
+        node.destroy_node()
+        pytest.fail(f"Test raised ObeliskMsgError unexpectedly when non_obelisk=True: {e}")
 
     node.destroy_node()
     rclpy.shutdown()
