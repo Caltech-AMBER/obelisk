@@ -12,9 +12,8 @@ set(OBELISK_CPP_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 set(OBELISK_CPP_HEADER_LIST
         "${OBELISK_CPP_INC}/obelisk_node.h")
 
-add_library(ObeliskCpp
-    obelisk_node.cpp
-    ${OBELISK_CPP_HEADER_LIST})
+add_library(ObeliskCpp ${OBELISK_CPP_HEADER_LIST})
+set_target_properties(ObeliskCpp PROPERTIES LINKER_LANGUAGE CXX)
 
 target_include_directories(ObeliskCpp PUBLIC
     $<BUILD_INTERFACE:${OBELISK_CPP_INC}>
@@ -22,4 +21,3 @@ target_include_directories(ObeliskCpp PUBLIC
 
 target_link_libraries(ObeliskCpp PUBLIC rclcpp::rclcpp)
 target_link_libraries(ObeliskCpp PUBLIC rclcpp_lifecycle::rclcpp_lifecycle)
-target_link_libraries(ObeliskCpp PUBLIC rcl::rcl)
