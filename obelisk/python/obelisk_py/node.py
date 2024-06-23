@@ -13,7 +13,29 @@ from obelisk_py.obelisk_typing import ObeliskAllowedMsg, is_in_bound
 
 
 class ObeliskNode(LifecycleNode):
-    """A lifecycle node whose publishers and subscribers can only publish and subscribe to Obelisk messages."""
+    """A lifecycle node whose publishers and subscribers can only publish and subscribe to Obelisk messages.
+
+    By convention, the initialization function should only declare ROS parameters and define stateful quantities.
+    Some guidelines for the on_configure, on_activate, and on_deactivate callbacks are provided below.
+
+    The on_configure callback should do the following:
+        * Instantiate required ROS parameters.
+        * Instantiate optional ROS parameters.
+        * Declare publishers, timers, and subscribers (any timers should be deactivated here).
+
+    The on_activate callback should do the following:
+        * Activate any timers that were declared in on_configure (by calling reset()).
+        * Resetting any variables or stateful quantities that need particular initial values upon activation.
+
+    The on_deactivate callback should do the following:
+        * Deactivate any timers that were activated in on_activate (by calling cancel()).
+
+    The on_cleanup callback should do the following:
+        * Clean up any resources that were allocated in on_configure.
+
+    The on_shutdown callback should do the following:
+        * Also perform clean up. The main difference is that if shutting down, the node cannot reactivate.
+    """
 
     def create_publisher(
         self,
