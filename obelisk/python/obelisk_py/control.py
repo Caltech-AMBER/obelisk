@@ -41,7 +41,6 @@ class ObeliskController(ABC, ObeliskNode):
             cb_group_est: The callback group for the state estimate message subscriber.
         """
         super().__init__(node_name)
-        self.node_name = node_name
 
         # required parameters
         self.declare_parameter("dt_ctrl", rclpy.Parameter.Type.DOUBLE)
@@ -133,22 +132,14 @@ class ObeliskController(ABC, ObeliskNode):
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Activate the controller."""
         super().on_activate(state)
-
-        # activate the control timer
-        self.timer_ctrl.reset()
-
-        # reset stateful quantities
-        self.x_hat = None
-
+        self.timer_ctrl.reset()  # activate the control timer
+        self.x_hat = None  # reset stateful quantities
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Deactivate the controller."""
         super().on_deactivate(state)
-
-        # deactivate the control timer
-        self.timer_ctrl.cancel()
-
+        self.timer_ctrl.cancel()  # deactivate the control timer
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:

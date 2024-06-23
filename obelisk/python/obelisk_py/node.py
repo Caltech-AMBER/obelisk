@@ -37,6 +37,15 @@ class ObeliskNode(LifecycleNode):
         * Also perform clean up. The main difference is that if shutting down, the node cannot reactivate.
     """
 
+    def __init__(self, node_name: str) -> None:
+        """Initialize the Obelisk node."""
+        super().__init__(node_name)
+
+    @property
+    def node_name(self) -> str:
+        """Get the name of the node."""
+        return self.get_name()
+
     def create_publisher(
         self,
         msg_type: ObeliskAllowedMsg,
