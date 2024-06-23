@@ -5,7 +5,7 @@ import obelisk_estimator_msgs.msg as oem
 import obelisk_sensor_msgs.msg as osm
 from rcl_interfaces.msg import ParameterEvent
 
-from obelisk_py.internal_utils import get_classes_in_module
+from obelisk_py.utils import get_classes_in_module
 
 
 def _create_union_type(classes: List[Type]) -> Type:

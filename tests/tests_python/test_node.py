@@ -6,8 +6,8 @@ import rclpy
 from std_msgs.msg import String
 
 from obelisk_py.exceptions import ObeliskMsgError
-from obelisk_py.internal_utils import get_classes_in_module
 from obelisk_py.node import ObeliskNode
+from obelisk_py.utils import get_classes_in_module
 
 
 def test_obelisk_node_exclusivity() -> None:

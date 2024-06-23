@@ -5,9 +5,9 @@ import rclpy
 from rclpy.callback_groups import CallbackGroup
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
-from obelisk_py.internal_utils import get_classes_in_module
 from obelisk_py.node import ObeliskNode
 from obelisk_py.obelisk_typing import ObeliskEstimatorMsg
+from obelisk_py.utils import get_classes_in_module
 
 
 class ObeliskEstimator(ABC, ObeliskNode):

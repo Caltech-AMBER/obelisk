@@ -2,7 +2,6 @@ import obelisk_control_msgs.msg
 import obelisk_estimator_msgs.msg
 import obelisk_sensor_msgs.msg
 
-from obelisk_py.internal_utils import get_classes_in_module
 from obelisk_py.obelisk_typing import (
     ObeliskAllowedMsg,
     ObeliskControlMsg,
@@ -11,6 +10,7 @@ from obelisk_py.obelisk_typing import (
     ObeliskSensorMsg,
     is_in_bound,
 )
+from obelisk_py.utils import get_classes_in_module
 
 
 def test_obelisk_types() -> None:
