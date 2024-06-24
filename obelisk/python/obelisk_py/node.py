@@ -456,7 +456,7 @@ class ObeliskNode(LifecycleNode):
             )
         except RCLError as e:
             self.get_logger().error(
-                "Failed to create publisher: verify that you haven't declared the same topic twice!"
+                "Failed to create subscription: verify that you haven't declared the same topic twice!"
             )
             raise e
 
