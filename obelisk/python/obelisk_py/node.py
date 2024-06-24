@@ -2,6 +2,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, Union, get_args,
 
 from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode
+from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
 from rclpy.qos import QoSProfile
 from rclpy.qos_event import PublisherEventCallbacks, SubscriptionEventCallbacks
@@ -54,6 +55,9 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
+
+        # declare config string parameters
+        self.declare_parameter("callback_group_config_strs", [""])
 
     @property
     def node_name(self) -> str:
@@ -157,7 +161,7 @@ class ObeliskNode(LifecycleNode):
             field_names.extend(field_name)
             value_names.extend(value_name)
 
-        if not field_names and not value_names:
+        if (not field_names and not value_names) or config_strs == [""]:
             return {}  # case: no callback groups to create
 
         allowable_value_names = ["MutuallyExclusiveCallbackGroup", "ReentrantCallbackGroup"]
@@ -436,3 +440,42 @@ class ObeliskNode(LifecycleNode):
             qos_overriding_options=qos_overriding_options,
             raw=raw,
         )
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the node."""
+        super().on_configure(state)
+
+        # parsing config strings
+        self.callback_group_config_strs = (
+            self.get_parameter("callback_group_config_strs").get_parameter_value().string_array_value
+        )
+
+        # create callback groups
+        assert isinstance(self.callback_group_config_strs, list), (
+            "Expected callback_group_config_strs to be a list, but got: " f"{type(self.callback_group_config_strs)}"
+        )
+        assert all(isinstance(item, str) for item in self.callback_group_config_strs), (
+            "Expected all items in callback_group_config_strs to be strings, but got: "
+            f"{[type(item) for item in self.callback_group_config_strs]}"
+        )
+        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_config_strs)
+        for callback_group_name, callback_group in callback_group_dict.items():
+            setattr(self, callback_group_name, callback_group)
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Clean up the controller."""
+        super().on_cleanup(state)
+
+        # destroy callback groups
+        for callback_group_config_str in self.callback_group_config_strs:
+            delattr(self, callback_group_config_str.split(":")[0])
+
+        del self.callback_group_config_strs
+
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Shut down the controller."""
+        super().on_shutdown(state)
+        self.on_cleanup(state)
+        return TransitionCallbackReturn.SUCCESS

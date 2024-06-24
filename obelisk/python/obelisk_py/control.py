@@ -39,7 +39,6 @@ class ObeliskController(ABC, ObeliskNode):
         super().__init__(node_name)
 
         # declare config string parameters
-        self.declare_parameter("callback_group_config_strs", [""])
         self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
@@ -52,24 +51,9 @@ class ObeliskController(ABC, ObeliskNode):
         super().on_configure(state)
 
         # parsing config strings
-        self.callback_group_config_strs = (
-            self.get_parameter("callback_group_config_strs").get_parameter_value().string_array_value
-        )
         self.timer_ctrl_config_str = self.get_parameter("timer_ctrl_config_str").get_parameter_value().string_value
         self.pub_ctrl_config_str = self.get_parameter("pub_ctrl_config_str").get_parameter_value().string_value
         self.sub_est_config_str = self.get_parameter("sub_est_config_str").get_parameter_value().string_value
-
-        # create callback groups
-        assert isinstance(self.callback_group_config_strs, list), (
-            "Expected callback_group_config_strs to be a list, but got: " f"{type(self.callback_group_config_strs)}"
-        )
-        assert all(isinstance(item, str) for item in self.callback_group_config_strs), (
-            "Expected all items in callback_group_config_strs to be strings, but got: "
-            f"{[type(item) for item in self.callback_group_config_strs]}"
-        )
-        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_config_strs)
-        for callback_group_name, callback_group in callback_group_dict.items():
-            setattr(self, callback_group_name, callback_group)
 
         # create publishers+timers/subscribers
         self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_config_str)
@@ -94,28 +78,19 @@ class ObeliskController(ABC, ObeliskNode):
         """Clean up the controller."""
         super().on_cleanup(state)
 
-        # destroy callback group, publishers+timers, and subscribers
+        # destroy publishers+timers and subscribers
         self.destroy_timer(self.timer_ctrl)
         self.destroy_publisher(self.publisher_ctrl)
         self.destroy_subscription(self.subscriber_est)
         del self.timer_ctrl
         del self.publisher_ctrl
         del self.subscriber_est
-        for callback_group_config_str in self.callback_group_config_strs:
-            delattr(self, callback_group_config_str.split(":")[0])
 
         # delete config strings
-        del self.callback_group_config_strs
         del self.timer_ctrl_config_str
         del self.pub_ctrl_config_str
         del self.sub_est_config_str
 
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Shut down the controller."""
-        super().on_shutdown(state)
-        self.on_cleanup(state)
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
