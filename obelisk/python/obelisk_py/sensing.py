@@ -10,6 +10,9 @@ class ObeliskSensor(ObeliskNode):
     Obelisk sensors interface directly with sensing hardware. This could mean that this node runs from the robot, runs
     from some offboard computer which connects to the sensors, or anything else. ObeliskSensors don't nominally need to
     subscribe to any topics. They simply expect to publish some number of sensor messages.
+
+    This node is not abstract, but it isn't functional. We expect that the end user implements some functionality that
+    will call some of the publishers configured by the configuration string.
     """
 
     def __init__(self, node_name: str) -> None:
@@ -25,6 +28,9 @@ class ObeliskSensor(ObeliskNode):
         self.pub_sensor_config_strs = (
             self.get_parameter("pub_sensor_config_strs").get_parameter_value().string_array_value
         )
+        assert (
+            self.pub_sensor_config_strs != [""] and len(self.pub_sensor_config_strs) > 0
+        ), "pub_sensor_config_strs must be a non-empty list of strings."
 
         # create publishers
         self.publisher_sensors = []
