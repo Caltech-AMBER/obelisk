@@ -70,6 +70,9 @@ class ObeliskNode(LifecycleNode):
         Returns:
             field_names: A list of field names.
             value_names: A list of values.
+
+        Raises:
+            ValueError: If the configuration string is invalid.
         """
         assert config_str, "config_str must not be empty!"
         config_str = config_str.replace(" ", "")  # remove all spaces
@@ -128,6 +131,12 @@ class ObeliskNode(LifecycleNode):
         Parameters:
             config_str: The configuration string.
             msg_attr_suffix: The suffix to append to the attribute name when adding the Obelisk message attribute.
+
+        Returns:
+            publisher: The created publisher.
+
+        Raises:
+            ObeliskMsgError: If the message type is not an Obelisk message.
         """
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
@@ -173,6 +182,12 @@ class ObeliskNode(LifecycleNode):
         Parameters:
             config_str: The configuration string.
             msg_attr_suffix: The suffix to append to the attribute name when adding the Obelisk message attribute.
+
+        Returns:
+            subscription: The created subscription.
+
+        Raises:
+            ObeliskMsgError: If the message type is not an Obelisk message.
         """
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
@@ -212,12 +227,11 @@ class ObeliskNode(LifecycleNode):
     def _create_timer_from_config_str(self, config_str: str) -> Timer:
         """Create a timer from a configuration string.
 
-        [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
-        For now, we assume the only property of the QoS profile the user will set is history depth, and we don't even
-        expose the event_callbacks, qos_overriding_options, or raw parameters.
-
         Parameters:
             config_str: The configuration string.
+
+        Returns:
+            timer: The created timer.
         """
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
