@@ -41,7 +41,7 @@ class ObeliskSensor(ObeliskNode):
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the estimator."""
+        """Clean up the sensor."""
         super().on_cleanup(state)
 
         # destroy publishers + config strings
