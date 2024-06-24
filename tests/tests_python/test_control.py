@@ -26,13 +26,9 @@ def test_obelisk_controller() -> None:
     rclpy.init()
     test_controller = TestObeliskController("test_controller")
     parameter_names = [
-        "dt_ctrl",
-        "msg_type_ctrl",
-        "msg_type_est",
-        "history_depth_ctrl",
-        "history_depth_est",
-        "cb_group_ctrl",
-        "cb_group_est",
+        "timer_ctrl_config_str",
+        "pub_ctrl_config_str",
+        "sub_est_config_str",
     ]
 
     # check that accessing parameters without initializing them raises an error
@@ -42,13 +38,34 @@ def test_obelisk_controller() -> None:
     # set parameters
     test_controller.set_parameters(
         [
-            rclpy.parameter.Parameter("dt_ctrl", rclpy.Parameter.Type.DOUBLE, 0.1),
-            rclpy.parameter.Parameter("msg_type_ctrl", rclpy.Parameter.Type.STRING, "PositionSetpoint"),
-            rclpy.parameter.Parameter("msg_type_est", rclpy.Parameter.Type.STRING, "EstimatedState"),
-            rclpy.parameter.Parameter("history_depth_ctrl", rclpy.Parameter.Type.INTEGER, 10),
-            rclpy.parameter.Parameter("history_depth_est", rclpy.Parameter.Type.INTEGER, 10),
-            rclpy.parameter.Parameter("cb_group_ctrl", rclpy.Parameter.Type.STRING, "None"),
-            rclpy.parameter.Parameter("cb_group_est", rclpy.Parameter.Type.STRING, "None"),
+            rclpy.parameter.Parameter(
+                "timer_ctrl_config_str",
+                rclpy.Parameter.Type.STRING,
+                ("timer_period_sec:0.001," "callback:compute_control," "callback_group:None"),
+            ),
+            rclpy.parameter.Parameter(
+                "pub_ctrl_config_str",
+                rclpy.Parameter.Type.STRING,
+                (
+                    "msg_type:PositionSetpoint,"
+                    "topic:/obelisk/test_controller/control,"
+                    "history_depth:10,"
+                    "callback_group:None,"
+                    "non_obelisk:False"
+                ),
+            ),
+            rclpy.parameter.Parameter(
+                "sub_est_config_str",
+                rclpy.Parameter.Type.STRING,
+                (
+                    "msg_type:EstimatedState,"
+                    "topic:/obelisk/test_controller/state_estimate,"
+                    "callback:update_x_hat,"
+                    "history_depth:10,"
+                    "callback_group:None,"
+                    "non_obelisk:False"
+                ),
+            ),
         ]
     )
 

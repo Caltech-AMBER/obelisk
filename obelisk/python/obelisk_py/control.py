@@ -1,14 +1,10 @@
 from abc import ABC, abstractmethod
 
-import obelisk_control_msgs.msg as ocm
-import obelisk_estimator_msgs.msg as oem
 import rclpy
-from rclpy.callback_groups import CallbackGroup
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
-from obelisk_py.utils import get_classes_in_module
 
 
 class ObeliskController(ABC, ObeliskNode):
@@ -42,16 +38,10 @@ class ObeliskController(ABC, ObeliskNode):
         """
         super().__init__(node_name)
 
-        # required parameters
-        self.declare_parameter("dt_ctrl", rclpy.Parameter.Type.DOUBLE)
-        self.declare_parameter("msg_type_ctrl", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("msg_type_est", rclpy.Parameter.Type.STRING)
-
-        # optional parameters
-        self.declare_parameter("history_depth_ctrl", 10)
-        self.declare_parameter("history_depth_est", 10)
-        self.declare_parameter("cb_group_ctrl", "None")
-        self.declare_parameter("cb_group_est", "None")
+        # declare config string parameters
+        self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
 
         # stateful quantities
         self.x_hat = None  # the most recent state estimate
@@ -60,73 +50,15 @@ class ObeliskController(ABC, ObeliskNode):
         """Configure the controller."""
         super().on_configure(state)
 
-        # ################################### #
-        # instantiate required ROS parameters #
-        # ################################### #
-        # control frequency
-        self.dt_ctrl: float = self.get_parameter("dt_ctrl").get_parameter_value().double_value
+        # parsing config strings
+        self.timer_ctrl_config_str = self.get_parameter("timer_ctrl_config_str").get_parameter_value().string_value
+        self.pub_ctrl_config_str = self.get_parameter("pub_ctrl_config_str").get_parameter_value().string_value
+        self.sub_est_config_str = self.get_parameter("sub_est_config_str").get_parameter_value().string_value
 
-        # control message type
-        _msg_type_ctrl: str = self.get_parameter("msg_type_ctrl").get_parameter_value().string_value
-        ocm_type_names = [t.__name__ for t in get_classes_in_module(ocm)]
-        assert _msg_type_ctrl in ocm_type_names, f"msg_type_ctrl must be one of {ocm_type_names}"
-        for ocm_type_name in ocm_type_names:
-            if _msg_type_ctrl == ocm_type_name:
-                self.msg_type_ctrl = getattr(ocm, ocm_type_name)
-                break
-
-        # state estimate message type
-        _msg_type_est: str = self.get_parameter("msg_type_est").get_parameter_value().string_value
-        oem_type_names = [t.__name__ for t in get_classes_in_module(oem)]
-        assert _msg_type_est in oem_type_names, f"msg_type_est must be one of {oem_type_names}"
-        for oem_type_name in oem_type_names:
-            if _msg_type_est == oem_type_name:
-                self.msg_type_est = getattr(oem, oem_type_name)
-                break
-
-        # ################################### #
-        # instantiate optional ROS parameters #
-        # ################################### #
-        # control/state estimate message history depth
-        self.history_depth_ctrl: int = self.get_parameter("history_depth_ctrl").get_parameter_value().integer_value
-        self.history_depth_est: int = self.get_parameter("history_depth_est").get_parameter_value().integer_value
-
-        # control/state estimate callback groups
-        valid_cbg_names = ["ReentrantCallbackGroup", "MutuallyExclusiveCallbackGroup", "None"]
-        _cb_group_ctrl_name: str = self.get_parameter("cb_group_ctrl").get_parameter_value().string_value
-        _cb_group_est_name: str = self.get_parameter("cb_group_est").get_parameter_value().string_value
-        assert _cb_group_ctrl_name in valid_cbg_names, f"cb_group_ctrl must be one of {valid_cbg_names}"
-        assert _cb_group_est_name in valid_cbg_names, f"cb_group_est must be one of {valid_cbg_names}"
-        self.cb_group_ctrl = None if _cb_group_ctrl_name == "None" else getattr(CallbackGroup, _cb_group_ctrl_name)()
-        self.cb_group_est = None if _cb_group_est_name == "None" else getattr(CallbackGroup, _cb_group_est_name)()
-
-        # ##################################### #
-        # declare publishers+timers/subscribers #
-        # ##################################### #
-        # TODO(ahl): should the publisher/timer cb groups always be the same?
-        # [NOTE] bad type declaration in rclpy's create_timer definition
-        # github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1484
-        # PR(ahl): github.com/ros2/rclpy/pull/1306
-        self.timer_ctrl = self.create_timer(
-            self.dt_ctrl,
-            self.compute_control,
-            callback_group=self.cb_group_ctrl,  # type: ignore
-            # autostart=False,  # TODO(ahl): feature only available after humble
-        )
-        self.timer_ctrl.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
-        self.publisher_ctrl = self.create_publisher(
-            self.msg_type_ctrl,
-            f"/obelisk/{self.node_name}/control",
-            self.history_depth_ctrl,
-            callback_group=self.cb_group_ctrl,
-        )
-        self.subscriber_est = self.create_subscription(
-            self.msg_type_est,
-            f"/obelisk/{self.node_name}/state_estimate",
-            self.update_x_hat,
-            self.history_depth_est,
-            callback_group=self.cb_group_est,
-        )
+        # create publishers+timers/subscribers
+        self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_config_str)
+        self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_config_str, "ctrl")
+        self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_config_str, "est")
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -147,13 +79,9 @@ class ObeliskController(ABC, ObeliskNode):
         super().on_cleanup(state)
 
         # delete attributes
-        del self.dt_ctrl
-        del self.msg_type_ctrl
-        del self.msg_type_est
-        del self.history_depth_ctrl
-        del self.history_depth_est
-        del self.cb_group_ctrl
-        del self.cb_group_est
+        del self.timer_ctrl_config_str
+        del self.pub_ctrl_config_str
+        del self.sub_est_config_str
 
         # destroy publishers+timers and subscribers
         self.destroy_timer(self.timer_ctrl)
@@ -183,7 +111,7 @@ class ObeliskController(ABC, ObeliskNode):
 
         This is the control timer callback and is expected to call self.publisher_ctrl internally. Note that the control
         message is still returned afterwards, mostly for logging/debugging purposes. The publish call is the important
-        part, NOT the returned value, since the topic is what the WorldInterface subscribes to.
+        part, NOT the returned value, since the topic is what the ObeliskRobot subscribes to.
 
         Returns:
             obelisk_control_msg: An Obelisk message type containing the control signal and relevant metadata.
