@@ -61,7 +61,7 @@ class ObeliskNode(LifecycleNode):
         return self.get_name()
 
     @staticmethod
-    def _parse_config_str(config_str: str) -> Tuple[List[str], List[Union[str, int]]]:
+    def _parse_config_str(config_str: str) -> Tuple[List[str], List[Union[str, float, int]]]:
         """Parse a configuration string into a list of field names and a list of values.
 
         Parameters:
