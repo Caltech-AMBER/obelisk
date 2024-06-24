@@ -146,8 +146,11 @@ class ObeliskNode(LifecycleNode):
         config_dict = dict(zip(field_names, value_names))
 
         # create the publisher
-        if "non_obelisk" not in config_dict or config_dict["non_obelisk"].lower() != "true":
-            check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
+        assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
+        if "non_obelisk" not in config_dict:
+            assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
+            if config_dict["non_obelisk"].lower() != "true":
+                check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
         else:
             self.get_logger().warn(
                 "Creating a publisher that can publish non-Obelisk messages. "
@@ -156,6 +159,7 @@ class ObeliskNode(LifecycleNode):
             check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskAllowedMsg, msg_attr_suffix)
 
         callback_group_name = config_dict.get("callback_group", "None")
+        assert isinstance(callback_group_name, str), "The 'callback_group' field must be a string!"
         if callback_group_name.lower() == "none":
             callback_group = None
         elif hasattr(self, callback_group_name):
@@ -164,12 +168,19 @@ class ObeliskNode(LifecycleNode):
             self.get_logger().warn(f"Callback group {callback_group_name} not found in node. Using None instead.")
             callback_group = None
 
+        # run type assertions and return the publisher
+        history_depth = config_dict.get("history_depth", 10)
+        non_obelisk_field = config_dict.get("non_obelisk", "False")
+        assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
+        assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
+        assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
+
         return self.create_publisher(
             msg_type=getattr(self, f"msg_type_{msg_attr_suffix}"),
             topic=config_dict["topic"],
-            qos_profile=config_dict.get("history_depth", 10),
+            qos_profile=history_depth,
             callback_group=callback_group,
-            non_obelisk=config_dict.get("non_obelisk", "False").lower() == "true",
+            non_obelisk=non_obelisk_field.lower() == "true",
         )
 
     def _create_subscription_from_config_str(self, config_str: str, msg_attr_suffix: str) -> Subscription:
@@ -197,8 +208,11 @@ class ObeliskNode(LifecycleNode):
         config_dict = dict(zip(field_names, value_names))
 
         # create the subscription
-        if "non_obelisk" not in config_dict or config_dict["non_obelisk"].lower() != "true":
-            check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
+        assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
+        if "non_obelisk" not in config_dict:
+            assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
+            if config_dict["non_obelisk"].lower() != "true":
+                check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
         else:
             self.get_logger().warn(
                 "Creating a publisher that can publish non-Obelisk messages. "
@@ -207,6 +221,7 @@ class ObeliskNode(LifecycleNode):
             check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskAllowedMsg, msg_attr_suffix)
 
         callback_group_name = config_dict.get("callback_group", "None")
+        assert isinstance(callback_group_name, str), "The 'callback_group' field must be a string!"
         if callback_group_name.lower() == "none":
             callback_group = None
         elif hasattr(self, callback_group_name):
@@ -215,13 +230,22 @@ class ObeliskNode(LifecycleNode):
             self.get_logger().warn(f"Callback group {callback_group_name} not found in node. Using None instead.")
             callback_group = None
 
+        # run type assertions and return the subscription
+        history_depth = config_dict.get("history_depth", 10)
+        non_obelisk_field = config_dict.get("non_obelisk", "False")
+        assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
+        assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
+        assert isinstance(config_dict["callback"], str), "The 'callback' field must be a string!"
+        assert hasattr(self, config_dict["callback"]), f"Callback {config_dict['callback']} not found in node!"
+        assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
+
         return self.create_subscription(
             msg_type=getattr(self, f"msg_type_{msg_attr_suffix}"),
             topic=config_dict["topic"],
             callback=getattr(self, config_dict["callback"]),
-            qos_profile=config_dict.get("history_depth", 10),
+            qos_profile=history_depth,
             callback_group=callback_group,
-            non_obelisk=config_dict.get("non_obelisk", "False").lower() == "true",
+            non_obelisk=non_obelisk_field.lower() == "true",
         )
 
     def _create_timer_from_config_str(self, config_str: str) -> Timer:
@@ -242,6 +266,7 @@ class ObeliskNode(LifecycleNode):
 
         # create the timer
         callback_group_name = config_dict.get("callback_group", "None")
+        assert isinstance(callback_group_name, str), "The 'callback_group' field must be a string!"
         if callback_group_name.lower() == "none":
             callback_group = None
         elif hasattr(self, callback_group_name):
@@ -251,6 +276,13 @@ class ObeliskNode(LifecycleNode):
             callback_group = None
 
         callback_group: Optional[CallbackGroup]
+
+        # run type assertions and return the timer
+        assert isinstance(
+            config_dict["timer_period_sec"], (int, float)
+        ), "The 'timer_period_sec' field must be a number!"
+        assert isinstance(config_dict["callback"], str), "The 'callback' field must be a string!"
+        assert hasattr(self, config_dict["callback"]), f"Callback {config_dict['callback']} not found in node!"
 
         timer = self.create_timer(
             config_dict["timer_period_sec"],
