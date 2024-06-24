@@ -203,7 +203,7 @@ class ObeliskNode(LifecycleNode):
 
         # create the publisher
         assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
-        if "non_obelisk" not in config_dict:
+        if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             if config_dict["non_obelisk"].lower() != "true":
                 check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
@@ -265,13 +265,13 @@ class ObeliskNode(LifecycleNode):
 
         # create the subscription
         assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
-        if "non_obelisk" not in config_dict:
+        if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             if config_dict["non_obelisk"].lower() != "true":
                 check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
         else:
             self.get_logger().warn(
-                "Creating a publisher that can publish non-Obelisk messages. "
+                "Creating a subscription that can publish non-Obelisk messages. "
                 "This may cause certain API incompatibilities."
             )
             check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskAllowedMsg, msg_attr_suffix)

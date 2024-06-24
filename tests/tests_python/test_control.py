@@ -26,6 +26,7 @@ def test_obelisk_controller() -> None:
     rclpy.init()
     test_controller = TestObeliskController("test_controller")
     parameter_names = [
+        "callback_group_config_strs",
         "timer_ctrl_config_str",
         "pub_ctrl_config_str",
         "sub_est_config_str",
@@ -101,10 +102,14 @@ def test_obelisk_controller() -> None:
     assert hasattr(test_controller, "subscriber_est")
 
     # check that on_cleanup resets the attributes in the node
-    # TODO(ahl): how do we test that the publisher, timer, and subscriber are destroyed?
     test_controller.on_cleanup(test_controller._state_machine.current_state)
     for name in parameter_names:
         assert not hasattr(test_controller, name)
+
+    assert not hasattr(test_controller, "test_cbg")
+    assert not hasattr(test_controller, "publisher_ctrl")
+    assert not hasattr(test_controller, "timer_ctrl")
+    assert not hasattr(test_controller, "subscriber_est")
 
     # check that we can configure the node again then update the state estimate and compute the control signal
     test_controller.on_configure(test_controller._state_machine.current_state)

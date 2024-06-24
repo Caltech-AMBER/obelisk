@@ -39,7 +39,7 @@ class ObeliskController(ABC, ObeliskNode):
         super().__init__(node_name)
 
         # declare config string parameters
-        self.declare_parameter("callback_group_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("callback_group_config_strs", [""])
         self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
@@ -94,15 +94,21 @@ class ObeliskController(ABC, ObeliskNode):
         """Clean up the controller."""
         super().on_cleanup(state)
 
-        # delete attributes
-        del self.timer_ctrl_config_str
-        del self.pub_ctrl_config_str
-        del self.sub_est_config_str
-
-        # destroy publishers+timers and subscribers
+        # destroy callback group, publishers+timers, and subscribers
         self.destroy_timer(self.timer_ctrl)
         self.destroy_publisher(self.publisher_ctrl)
         self.destroy_subscription(self.subscriber_est)
+        del self.timer_ctrl
+        del self.publisher_ctrl
+        del self.subscriber_est
+        for callback_group_config_str in self.callback_group_config_strs:
+            delattr(self, callback_group_config_str.split(":")[0])
+
+        # delete config strings
+        del self.callback_group_config_strs
+        del self.timer_ctrl_config_str
+        del self.pub_ctrl_config_str
+        del self.sub_est_config_str
 
         return TransitionCallbackReturn.SUCCESS
 
