@@ -36,14 +36,22 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     /**
      * @brief Creates a publisher, but first verifies if it is a Obelisk
      * allowed message type.
+     *
+     * @param topic_name the topic
+     * @param qos
+     * @param non_obelisk determines if we are allowed to publish non-obelisk
+     * messages
+     * @param options
+     * @return the publisher
      */
     template <typename MessageT, typename AllocatorT = std::allocator<void>>
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
     create_publisher(
         const std::string& topic_name, const rclcpp::QoS& qos,
+        bool non_obelisk = false,
         const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
-            (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>()),
-        bool non_obelisk = false) {
+            (rclcpp_lifecycle::create_default_publisher_options<
+                AllocatorT>())) {
         // Check if the message type is valid
         if (!non_obelisk) {
             if (!(ValidMessage<MessageT, ObeliskMsgs>::value ||
@@ -51,6 +59,11 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
                 throw std::runtime_error(
                     "Provided message type is not a valid Obelisk message!");
             }
+        } else {
+            RCLCPP_WARN_STREAM(
+                this->get_logger(),
+                "Creating a publisher that can publish non-Obelisk messages. "
+                "This may cause certain API incompatibilities.");
         }
 
         return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT,
@@ -61,6 +74,14 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     /**
      * @brief Creates a subscriber, but first verifies if it is a Obelisk
      * allowed message type.
+     *
+     * @param topic_name the topic
+     * @param qos
+     * @param callback the callback function
+     * @param non_obelisk determines if we are allowed to subscribe to
+     * non-obelisk messages. Logs warning if true.
+     * @param options
+     * @return the subscription
      */
     template <
         typename MessageT, typename CallbackT,
@@ -82,6 +103,11 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
                 throw std::runtime_error(
                     "Provided message type is not a valid Obelisk message!");
             }
+        } else {
+            RCLCPP_WARN_STREAM(
+                this->get_logger(),
+                "Creating a subscriber that can publish non-Obelisk messages. "
+                "This may cause certain API incompatibilities.");
         }
 
         return rclcpp_lifecycle::LifecycleNode::create_subscription<
@@ -91,38 +117,55 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     };
 
   protected:
-    // The subscription type depends on the message type, which means that
-    // the return type of this function depends on the message type
+    /**
+     * @brief Create a subscriber from a configuration string.
+     *
+     * @param config the configuration string
+     * @param callback the callback function (generall of the form
+     * std::bind(&MyFunc, this, _1))
+     * @return the subscription
+     */
     template <
-        typename MessageT, typename AllocatorT = std::allocator<void>,
+        typename MessageT, typename CallbackT,
+        typename AllocatorT    = std::allocator<void>,
         typename SubscriptionT = rclcpp::Subscription<MessageT, AllocatorT>>
     std::shared_ptr<SubscriptionT>
-    CreateSubscriptionFromConfigStr(const std::string& config) {
-        auto config_map   = ParseConfigStr(config);
-        std::string topic = GetTopic(config_map);
-        int depth         = GetHistoryDepth(config_map);
-        bool non_obelsik  = !GetIsObeliskMsg(config_map);
+    CreateSubscriptionFromConfigStr(const std::string& config,
+                                    CallbackT&& callback) {
+        // Parse the configuration string
+        const auto config_map   = ParseConfigStr(config);
+        const std::string topic = GetTopic(config_map);
+        const int depth         = GetHistoryDepth(config_map);
+        const bool non_obelisk  = !GetIsObeliskMsg(config_map);
 
-        auto sub =
-            create_subscription<obelisk_control_msgs::msg::PositionSetpoint>(
-                topic, depth,
-                std::bind(&ObeliskNode::TestCallback, this,
-                          std::placeholders::_1),
-                non_obelsik);
-        return sub;
-        // id_funcs.at(0).second()
+        // Create the subscriber
+        return create_subscription<MessageT>(topic, depth, std::move(callback),
+                                             non_obelisk);
     }
 
-    // template<typename MessageT>
-    void TestCallback(const obelisk_control_msgs::msg::PositionSetpoint& msg) {
-        std::cout << "Test callback" << std::endl;
-    }
+    /**
+     * @brief Create a publisher from a configuration string
+     *
+     * @param config the configuration string
+     * @return the publisher
+     */
+    template <typename MessageT, typename AllocatorT = std::allocator<void>>
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
+    CreatePublisherFromConfigStr(const std::string& config) {
+        // Parse the configuration string
+        const auto config_map   = ParseConfigStr(config);
+        const std::string topic = GetTopic(config_map);
+        const int depth         = GetHistoryDepth(config_map);
+        const bool non_obelisk  = !GetIsObeliskMsg(config_map);
 
-    // typedef void (ObeliskNode::*FunctionPointer)();
-    // std::vector<std::pair<std::string, std::function<void(std::any)>>>
-    // id_funcs;
+        return create_publisher<MessageT>(topic, depth, non_obelisk);
+    }
 
   private:
+    /**
+     * @brief Parses the configuration string into a map from strings to
+     * strings. the value strings are meant to be parsed in other functions.
+     */
     std::map<std::string, std::string> ParseConfigStr(std::string config) {
         const std::string val_delim  = ":";
         const std::string type_delim = ",";
@@ -155,6 +198,9 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return config_map;
     }
 
+    /**
+     * @brief Parses the configuration string map to see if there is a topic
+     */
     std::string GetTopic(const std::map<std::string, std::string>& config_map) {
         std::string topic;
         for (auto& it : config_map) {
@@ -172,6 +218,10 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return topic;
     }
 
+    /**
+     * @brief Parses the configuration string map to see if there is a history
+     * depth
+     */
     int GetHistoryDepth(const std::map<std::string, std::string>& config_map) {
         int depth = DEFAULT_DEPTH;
         for (auto& it : config_map) {
@@ -184,12 +234,16 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return depth;
     }
 
+    /**
+     * @brief Parses the configuration string map to see if this is restricted
+     * to only obelisk messages
+     */
     bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
         bool obk_msg = DEFAULT_IS_OBK_MSG;
         for (auto& it : config_map) {
             if (it.first == "non_obelisk") {
                 if (it.second == "true") {
-                    obk_msg = true;
+                    obk_msg = false;
                 }
                 break;
             }
@@ -199,7 +253,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     }
 
     static constexpr int DEFAULT_DEPTH       = 10;
-    static constexpr bool DEFAULT_IS_OBK_MSG = false;
+    static constexpr bool DEFAULT_IS_OBK_MSG = true;
 
     // Allowed Obelisk message types
     using ObeliskMsgs = std::tuple<obelisk_control_msgs::msg::PositionSetpoint,
