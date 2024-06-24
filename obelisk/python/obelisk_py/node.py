@@ -1,5 +1,6 @@
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union, get_args, get_origin
 
+from rclpy._rclpy_pybind11 import RCLError
 from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
@@ -55,8 +56,6 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
-
-        # declare config string parameters
         self.declare_parameter("callback_group_config_strs", [""])
 
     @property
@@ -153,6 +152,9 @@ class ObeliskNode(LifecycleNode):
 
         Returns:
             callback_group_dict: A dict whose keys are the callback group names and values are the callback groups.
+
+        Raises:
+            ValueError: If the configuration string is invalid.
         """
         # parse and check the configuration string
         field_names, value_names = [], []
@@ -196,6 +198,7 @@ class ObeliskNode(LifecycleNode):
             publisher: The created publisher.
 
         Raises:
+            AssertionError: If the configuration string is invalid.
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
         # parse and check the configuration string
@@ -258,6 +261,7 @@ class ObeliskNode(LifecycleNode):
             subscription: The created subscription.
 
         Raises:
+            AssertionError: If the configuration string is invalid.
             ObeliskMsgError: If the message type is not an Obelisk message.
         """
         # parse and check the configuration string
@@ -316,6 +320,9 @@ class ObeliskNode(LifecycleNode):
 
         Returns:
             timer: The created timer.
+
+        Raises:
+            AssertionError: If the configuration string is invalid.
         """
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
@@ -386,15 +393,21 @@ class ObeliskNode(LifecycleNode):
                 "set non_obelisk=True. Note that this may cause certain API incompatibilies."
             )
 
-        return super().create_publisher(
-            msg_type=msg_type,
-            topic=topic,
-            qos_profile=qos_profile,
-            callback_group=callback_group,
-            event_callbacks=event_callbacks,
-            qos_overriding_options=qos_overriding_options,
-            publisher_class=publisher_class,
-        )
+        try:
+            return super().create_publisher(
+                msg_type=msg_type,
+                topic=topic,
+                qos_profile=qos_profile,
+                callback_group=callback_group,
+                event_callbacks=event_callbacks,
+                qos_overriding_options=qos_overriding_options,
+                publisher_class=publisher_class,
+            )
+        except RCLError as e:
+            self.get_logger().error(
+                "Failed to create publisher: verify that you haven't declared the same topic twice!"
+            )
+            raise e
 
     def create_subscription(
         self,
@@ -430,19 +443,29 @@ class ObeliskNode(LifecycleNode):
                 "set non_obelisk=True. Note that this may cause certain API incompatibilies."
             )
 
-        return super().create_subscription(
-            msg_type=msg_type,
-            topic=topic,
-            callback=callback,
-            qos_profile=qos_profile,
-            callback_group=callback_group,
-            event_callbacks=event_callbacks,
-            qos_overriding_options=qos_overriding_options,
-            raw=raw,
-        )
+        try:
+            return super().create_subscription(
+                msg_type=msg_type,
+                topic=topic,
+                callback=callback,
+                qos_profile=qos_profile,
+                callback_group=callback_group,
+                event_callbacks=event_callbacks,
+                qos_overriding_options=qos_overriding_options,
+                raw=raw,
+            )
+        except RCLError as e:
+            self.get_logger().error(
+                "Failed to create publisher: verify that you haven't declared the same topic twice!"
+            )
+            raise e
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the node."""
+        """Configure the node.
+
+        Raises:
+            AssertionError: If the configuration string is invalid.
+        """
         super().on_configure(state)
 
         # parsing config strings
