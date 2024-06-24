@@ -1,4 +1,5 @@
 import obelisk_estimator_msgs.msg as oem
+import obelisk_sensor_msgs.msg as osm
 import pytest
 import rclpy
 import rclpy.exceptions
@@ -9,6 +10,14 @@ from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskMsg, is_in_bou
 
 class TestObeliskEstimator(ObeliskEstimator):
     """Test ObeliskEstimator class."""
+
+    def sensor_callback1(self, msg: ObeliskMsg) -> None:
+        """Sensor callback 1."""
+        pass
+
+    def sensor_callback2(self, msg: ObeliskMsg) -> None:
+        """Sensor callback 2."""
+        pass
 
     def compute_state_estimate(self) -> ObeliskEstimatorMsg:
         """Compute the state estimate."""
@@ -21,10 +30,10 @@ def test_obelisk_estimator() -> None:
     rclpy.init()
     test_estimator = TestObeliskEstimator("test_estimator")
     parameter_names = [
-        "dt_est",
-        "msg_type_est",
-        "history_depth_est",
-        "cb_group_est",
+        "callback_group_config_strs",
+        "timer_est_config_str",
+        "pub_est_config_str",
+        "sub_sensor_config_strs",
     ]
 
     # check that accessing parameters without initializing them raises an error
@@ -34,10 +43,49 @@ def test_obelisk_estimator() -> None:
     # set parameters
     test_estimator.set_parameters(
         [
-            rclpy.parameter.Parameter("dt_est", rclpy.Parameter.Type.DOUBLE, 0.1),
-            rclpy.parameter.Parameter("msg_type_est", rclpy.Parameter.Type.STRING, "EstimatedState"),
-            rclpy.parameter.Parameter("history_depth_est", rclpy.Parameter.Type.INTEGER, 10),
-            rclpy.parameter.Parameter("cb_group_est", rclpy.Parameter.Type.STRING, "None"),
+            rclpy.parameter.Parameter(
+                "callback_group_config_strs",
+                rclpy.Parameter.Type.STRING_ARRAY,
+                ["test_cbg:ReentrantCallbackGroup"],
+            ),
+            rclpy.parameter.Parameter(
+                "timer_est_config_str",
+                rclpy.Parameter.Type.STRING,
+                "timer_period_sec:0.001,callback:compute_state_estimate,callback_group:None",
+            ),
+            rclpy.parameter.Parameter(
+                "pub_est_config_str",
+                rclpy.Parameter.Type.STRING,
+                (
+                    "msg_type:EstimatedState,"
+                    "topic:/obelisk/test_estimator/state_estimate,"
+                    "history_depth:10,"
+                    "callback_group:None,"
+                    "non_obelisk:False"
+                ),
+            ),
+            rclpy.parameter.Parameter(
+                "sub_sensor_config_strs",
+                rclpy.Parameter.Type.STRING_ARRAY,
+                [
+                    (
+                        "msg_type:JointEncoder,"
+                        "topic:/obelisk/test_estimator/sensor1,"
+                        "callback:sensor_callback1,"
+                        "history_depth:10,"
+                        "callback_group:None,"
+                        "non_obelisk:False"
+                    ),
+                    (
+                        "msg_type:JointEncoder,"
+                        "topic:/obelisk/test_estimator/sensor2,"
+                        "callback:sensor_callback2,"
+                        "history_depth:10,"
+                        "callback_group:None,"
+                        "non_obelisk:False"
+                    ),
+                ],
+            ),
         ]
     )
 
@@ -51,23 +99,30 @@ def test_obelisk_estimator() -> None:
     for name in parameter_names:
         assert not hasattr(test_estimator, name)
 
-    # also check that the publisher, timer, and subscriber are not set
+    # also check that the publisher, timer, and subscriber list are not set
     assert not hasattr(test_estimator, "publisher_est")
     assert not hasattr(test_estimator, "timer_est")
+    assert not hasattr(test_estimator, "subscriber_sensors")
 
     # check that calling on_configure sets attributes in the node
     test_estimator.on_configure(test_estimator._state_machine.current_state)
     for name in parameter_names:
         assert hasattr(test_estimator, name)
 
+    assert hasattr(test_estimator, "test_cbg")
     assert hasattr(test_estimator, "publisher_est")
     assert hasattr(test_estimator, "timer_est")
+    assert hasattr(test_estimator, "subscriber_sensors")
 
     # check that on_cleanup resets the attributes in the node
-    # TODO(ahl): how do we test that the publisher and timer are destroyed?
     test_estimator.on_cleanup(test_estimator._state_machine.current_state)
     for name in parameter_names:
         assert not hasattr(test_estimator, name)
+
+    assert not hasattr(test_estimator, "test_cbg")
+    assert not hasattr(test_estimator, "publisher_est")
+    assert not hasattr(test_estimator, "timer_est")
+    assert not hasattr(test_estimator, "subscriber_sensors")
 
     # check that we can configure the node again and compute the state estimate
     test_estimator.on_configure(test_estimator._state_machine.current_state)
@@ -76,6 +131,19 @@ def test_obelisk_estimator() -> None:
     assert isinstance(obk_estimator_msg, oem.EstimatedState)
     assert is_in_bound(type(obk_estimator_msg), ObeliskEstimatorMsg)
     assert is_in_bound(type(obk_estimator_msg), ObeliskMsg)
+
+    # verify that we can call the sensor callbacks
+    obk_sensor1_msg = osm.JointEncoder()  # [NOTE] dummy message
+    try:
+        test_estimator.sensor_callback1(obk_sensor1_msg)
+    except AttributeError:
+        pytest.fail("Failed to call sensor_callback1")
+
+    obk_sensor2_msg = osm.JointEncoder()  # [NOTE] dummy message
+    try:
+        test_estimator.sensor_callback2(obk_sensor2_msg)
+    except AttributeError:
+        pytest.fail("Failed to call sensor_callback2")
 
     # destroy node and shutdown rclpy session
     test_estimator.destroy_node()

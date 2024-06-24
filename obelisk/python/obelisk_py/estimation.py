@@ -1,13 +1,10 @@
 from abc import ABC, abstractmethod
 
-import obelisk_estimator_msgs.msg as oem
 import rclpy
-from rclpy.callback_groups import CallbackGroup
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
 from obelisk_py.obelisk_typing import ObeliskEstimatorMsg
-from obelisk_py.utils import get_classes_in_module
 
 
 class ObeliskEstimator(ABC, ObeliskNode):
@@ -31,71 +28,35 @@ class ObeliskEstimator(ABC, ObeliskNode):
         # internal logic that extracts quantity X from the message...
         self.X = X  # update the internal state
     ```
-
-    [NOTE] there are no default sensors; the sensor subscriber must be created by the user in the derived class. You can
-    follow the example of the estimator configuration to set up each sensor.
     """
 
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk estimator."""
         super().__init__(node_name)
 
-        # required parameters
-        self.declare_parameter("dt_est", rclpy.Parameter.Type.DOUBLE)
-        self.declare_parameter("msg_type_est", rclpy.Parameter.Type.STRING)
-
-        # optional parameters
-        self.declare_parameter("history_depth_est", 10)
-        self.declare_parameter("cb_group_est", "None")
+        # declare config string parameters
+        self.declare_parameter("timer_est_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_est_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("sub_sensor_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
         super().on_configure(state)
 
-        # ################################### #
-        # instantiate required ROS parameters #
-        # ################################### #
-        # estimator frequency
-        self.dt_est: float = self.get_parameter("dt_est").get_parameter_value().double_value
-
-        # state estimate message type
-        _msg_type_est: str = self.get_parameter("msg_type_est").get_parameter_value().string_value
-        oem_type_names = [t.__name__ for t in get_classes_in_module(oem)]
-        assert _msg_type_est in oem_type_names, f"msg_type_est must be one of {oem_type_names}"
-        for oem_type_name in oem_type_names:
-            if _msg_type_est == oem_type_name:
-                self.msg_type_est = getattr(oem, oem_type_name)
-                break
-
-        # ################################### #
-        # instantiate optional ROS parameters #
-        # ################################### #
-        # control/state estimate message history depth
-        self.history_depth_est: int = self.get_parameter("history_depth_est").get_parameter_value().integer_value
-
-        # control/state estimate callback groups
-        valid_cbg_names = ["ReentrantCallbackGroup", "MutuallyExclusiveCallbackGroup", "None"]
-        _cb_group_est_name: str = self.get_parameter("cb_group_est").get_parameter_value().string_value
-        assert _cb_group_est_name in valid_cbg_names, f"cb_group_ctrl must be one of {valid_cbg_names}"
-        self.cb_group_est = None if _cb_group_est_name == "None" else getattr(CallbackGroup, _cb_group_est_name)()
-
-        # ##################################### #
-        # declare publishers+timers/subscribers #
-        # ##################################### #
-        # [NOTE] bad type declaration in rclpy's create_timer definition
-        # github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1484
-        # PR(ahl): github.com/ros2/rclpy/pull/1306
-        self.timer_est = self.create_timer(
-            self.dt_est,
-            self.compute_state_estimate,
-            callback_group=self.cb_group_est,  # type: ignore
+        # parsing config strings
+        self.timer_est_config_str = self.get_parameter("timer_est_config_str").get_parameter_value().string_value
+        self.pub_est_config_str = self.get_parameter("pub_est_config_str").get_parameter_value().string_value
+        self.sub_sensor_config_strs = (
+            self.get_parameter("sub_sensor_config_strs").get_parameter_value().string_array_value
         )
-        self.publisher_est = self.create_publisher(
-            self.msg_type_est,
-            f"/obelisk/{self.node_name}/state_estimate",
-            self.history_depth_est,
-            callback_group=self.cb_group_est,
-        )
+
+        # create publishers+timers and subscribers
+        self.timer_est = self._create_timer_from_config_str(self.timer_est_config_str)
+        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_config_str, "est")
+        self.subscriber_sensors = []
+        for sensor_config_str in self.sub_sensor_config_strs:
+            sub_sensor = self._create_subscription_from_config_str(sensor_config_str, "sensor")
+            self.subscriber_sensors.append(sub_sensor)
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -115,22 +76,21 @@ class ObeliskEstimator(ABC, ObeliskNode):
         """Clean up the estimator."""
         super().on_cleanup(state)
 
-        # delete attributes
-        del self.dt_est
-        del self.msg_type_est
-        del self.history_depth_est
-        del self.cb_group_est
-
         # destroy publishers+timers and subscribers
         self.destroy_timer(self.timer_est)
         self.destroy_publisher(self.publisher_est)
+        for sensor_subscriber in self.subscriber_sensors:
+            self.destroy_subscription(sensor_subscriber)
 
-        return TransitionCallbackReturn.SUCCESS
+        del self.timer_est
+        del self.publisher_est
+        del self.subscriber_sensors
 
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Shut down the estimator."""
-        super().on_shutdown(state)
-        self.on_cleanup(state)
+        # delete config strings
+        del self.timer_est_config_str
+        del self.pub_est_config_str
+        del self.sub_sensor_config_strs
+
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
