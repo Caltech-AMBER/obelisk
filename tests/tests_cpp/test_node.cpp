@@ -2,20 +2,66 @@
 #include <iostream>
 
 #include "obelisk_node.h"
-#include "std_msgs/msg/header.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "rcl_interfaces/msg/parameter_event.hpp"
+
+using std::placeholders::_1;
+
+namespace obelisk {
+    class ObeliskNodeTester : public ObeliskNode {
+        public:
+            ObeliskNodeTester()
+            : ObeliskNode("obelisk_tester") {}
+
+            // Templated generic callback to facilitate easy testing
+            template <typename MessageT>
+            void GenericCallback(const MessageT& msg) {}
+    };
+} // namespace obelisk
 
 TEST_CASE("Obelisk Node Tests", "[obelisk_node]") {
-    std::cout << "Hello3." << std::endl;
     rclcpp::init(0, nullptr);
 
-    rclcpp_lifecycle::LifecycleNode node("hello_world");
-    node.create_publisher<std_msgs::msg::String>("topic", 10);
+    obelisk::ObeliskNodeTester node;
 
-    obelisk::ObeliskNode node2("hello_world2");
-    node2.create_publisher<std_msgs::msg::String>("topic", 10);
+    SECTION("Publishers") {
+        // Verify that a dissalowed message throws an error
+        REQUIRE_THROWS(node.create_publisher<std_msgs::msg::String>("topic", 10));
+
+        // Verify that allowed messages are fine
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_control_msgs::msg::PositionSetpoint>("topic", 10));
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_estimator_msgs::msg::EstimatedState>("topic", 10));
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::JointEncoder>("topic", 10));
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::JointEncoders>("topic", 10));
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::TrueSimState>("topic", 10));
+    }
+
+    SECTION("Subscribers") {
+        // Verify that allowed messages are fine
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_control_msgs::msg::PositionSetpoint>(
+            "topic", 10, 
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_control_msgs::msg::PositionSetpoint>, &node, _1)));
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_estimator_msgs::msg::EstimatedState>(
+            "topic", 10,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_estimator_msgs::msg::EstimatedState>, &node, _1)));
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::JointEncoders>(
+            "topic", 10,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::JointEncoders>, &node, _1)));
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::TrueSimState>(
+            "topic", 10,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::TrueSimState>, &node, _1)));
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::JointEncoder>(
+            "topic", 10,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::JointEncoder>, &node, _1)));
+        REQUIRE_NOTHROW(node.create_subscription<rcl_interfaces::msg::ParameterEvent>(
+            "topic", 10,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<rcl_interfaces::msg::ParameterEvent>, &node, _1)));
+
+        // Verify that a dissalowed message throws an error
+        REQUIRE_THROWS(node.create_subscription<std_msgs::msg::String>(
+            "topic", 10, 
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<std_msgs::msg::String>, &node, _1)));
+    }
 
     rclcpp::shutdown();
-
-    REQUIRE(1 == 1);
 }

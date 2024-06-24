@@ -1,10 +1,15 @@
 #pragma once
-#include <variant>
+#include <tuple>
 
-#include "obelisk_control_msgs/msg/PositionSetpoint.hpp"
 #include "rcl_interfaces/msg/parameter_event.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+
+#include "obelisk_control_msgs/msg/position_setpoint.hpp"
+#include "obelisk_estimator_msgs/msg/estimated_state.hpp"
+#include "obelisk_sensor_msgs/msg/joint_encoder.hpp"
+#include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
+#include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 
 /**
  * ObeliskNode class.
@@ -27,6 +32,11 @@ namespace obelisk {
             : LifecycleNode(node_name, namespace_, options,
                   enable_communication_interface) {};
 
+        // TODO (@zolkin): Should this be public or protected?
+        /**
+         * @brief Creates a publisher, but first verifies if it is a Obelisk allowed
+         *  message type.
+         */
         template <typename MessageT, typename AllocatorT = std::allocator<void>>
         std::shared_ptr<
             rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
@@ -36,7 +46,7 @@ namespace obelisk {
                     AllocatorT>())) {
             // Check if the message type is valid
             if (ValidMessage<MessageT, ObeliskMsgs>::value ||
-                ValidMessage<MessageT, ROSAllowedMsg>::value) {
+                ValidMessage<MessageT, ROSAllowedMsgs>::value) {
                 return rclcpp_lifecycle::LifecycleNode::create_publisher<
                     MessageT, AllocatorT>(topic_name, qos, options);
             }
@@ -45,6 +55,10 @@ namespace obelisk {
                 "Provided message type is not a valid Obelisk message!");
         };
 
+        /**
+         * @brief Creates a subscriber, but first verifies if it is a Obelisk allowed
+         *  message type.
+         */
         template <typename MessageT, typename CallbackT,
             typename AllocatorT    = std::allocator<void>,
             typename SubscriptionT = rclcpp::Subscription<MessageT, AllocatorT>,
@@ -60,10 +74,11 @@ namespace obelisk {
                 (MessageMemoryStrategyT::create_default())) {
             // Check if the message type is valid
             if (ValidMessage<MessageT, ObeliskMsgs>::value ||
-                ValidMessage<MessageT, ROSAllowedMsg>::value) {
+                ValidMessage<MessageT, ROSAllowedMsgs>::value) {
                 return rclcpp_lifecycle::LifecycleNode::create_subscription<
                     MessageT, CallbackT, AllocatorT, SubscriptionT,
-                    MessageMemoryStrategyT>(topic_name, qos, callback, options);
+                    MessageMemoryStrategyT>(topic_name, qos, std::move(callback), options,
+                        msg_mem_strat);
             }
 
             throw std::runtime_error(
@@ -71,10 +86,24 @@ namespace obelisk {
         };
 
        private:
-        using ObeliskMsgs    = std::tuple<rcl_interfaces::msg::ParameterEvent>;
+
+        // Allowed Obelisk message types
+        using ObeliskMsgs    = std::tuple<
+            obelisk_control_msgs::msg::PositionSetpoint,
+            obelisk_estimator_msgs::msg::EstimatedState,
+            obelisk_sensor_msgs::msg::JointEncoder,
+            obelisk_sensor_msgs::msg::JointEncoders,
+            obelisk_sensor_msgs::msg::TrueSimState
+            >;
+        // Allowed non-obelisk message types
         using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
-        // Helper functions for determining if we have a valid message
+        /**
+         * Helper functions for determining if we have a valid message.
+         * These functions recursively dissamble a tuple to check if the type
+         * matches. See this stack overflow post:
+         * https://stackoverflow.com/questions/25958259/how-do-i-find-out-if-a-tuple-contains-a-type
+         */
         template <typename T, typename Tuple>
         struct has_type;
 
