@@ -20,7 +20,7 @@ namespace obelisk {
     };
 }  // namespace obelisk
 
-TEST_CASE("Obelisk Node Tests", "[obelisk_node]") {
+TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
     rclcpp::init(0, nullptr);
 
     obelisk::ObeliskNodeTester node;
@@ -94,6 +94,16 @@ TEST_CASE("Obelisk Node Tests", "[obelisk_node]") {
                               std_msgs::msg::String>,
                     &node, _1)));
     }
+
+    rclcpp::shutdown();
+}
+
+TEST_CASE("Subscriber from string", "[obelisk_node]") {
+    rclcpp::init(0, nullptr);
+
+    obelisk::ObeliskNodeTester node;
+
+    node.CreateSubscriptionFromConfigStr("test1");
 
     rclcpp::shutdown();
 }
