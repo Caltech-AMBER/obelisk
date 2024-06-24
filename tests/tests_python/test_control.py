@@ -39,9 +39,14 @@ def test_obelisk_controller() -> None:
     test_controller.set_parameters(
         [
             rclpy.parameter.Parameter(
+                "callback_group_config_strs",
+                rclpy.Parameter.Type.STRING_ARRAY,
+                ["test_cbg:ReentrantCallbackGroup"],
+            ),
+            rclpy.parameter.Parameter(
                 "timer_ctrl_config_str",
                 rclpy.Parameter.Type.STRING,
-                ("timer_period_sec:0.001," "callback:compute_control," "callback_group:None"),
+                "timer_period_sec:0.001,callback:compute_control,callback_group:None",
             ),
             rclpy.parameter.Parameter(
                 "pub_ctrl_config_str",
@@ -79,7 +84,8 @@ def test_obelisk_controller() -> None:
     for name in parameter_names:
         assert not hasattr(test_controller, name)
 
-    # also check that the publisher, timer, and subscriber are not set
+    # also check that the callback group, publisher, timer, and subscriber are not set
+    assert not hasattr(test_controller, "test_cbg")
     assert not hasattr(test_controller, "publisher_ctrl")
     assert not hasattr(test_controller, "timer_ctrl")
     assert not hasattr(test_controller, "subscriber_est")
@@ -89,6 +95,7 @@ def test_obelisk_controller() -> None:
     for name in parameter_names:
         assert hasattr(test_controller, name)
 
+    assert hasattr(test_controller, "test_cbg")
     assert hasattr(test_controller, "publisher_ctrl")
     assert hasattr(test_controller, "timer_ctrl")
     assert hasattr(test_controller, "subscriber_est")

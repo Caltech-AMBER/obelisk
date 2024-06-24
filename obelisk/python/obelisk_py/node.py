@@ -1,6 +1,6 @@
-from typing import Callable, List, Optional, Tuple, Type, Union, get_args, get_origin
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union, get_args, get_origin
 
-from rclpy.callback_groups import CallbackGroup
+from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode
 from rclpy.publisher import Publisher
 from rclpy.qos import QoSProfile
@@ -74,7 +74,9 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ValueError: If the configuration string is invalid.
         """
-        assert config_str, "config_str must not be empty!"
+        if not config_str:
+            return [], []
+
         config_str = config_str.replace(" ", "")  # remove all spaces
         config_str = config_str.replace("\n", "")  # remove all newlines
         field_value_pairs = config_str.split(",")  # split by comma
@@ -120,6 +122,60 @@ class ObeliskNode(LifecycleNode):
             }""",
             "Currently-supported fields in Obelisk are: {required_field_names + optional_field_names}",
         )
+
+    @staticmethod
+    def _check_values(value_names: List[str], allowable_value_names: List[str]) -> None:
+        """Check if the values in a configuration string are valid.
+
+        Parameters:
+            value_names: The list of values.
+            allowable_value_names: The allowable values.
+
+        Raises:
+            AssertionError: If the values are invalid.
+        """
+        assert all([value in allowable_value_names for value in value_names]), (
+            f"""The following values in the config_str are invalid: {
+                set(value_names) - set(allowable_value_names)
+            }. """,
+            f"Currently-supported values in Obelisk are: {allowable_value_names}",
+        )
+
+    def _create_callback_groups_from_config_str(self, config_strs: List[str]) -> Dict[str, CallbackGroup]:
+        """Create callback groups from a configuration string.
+
+        Parameters:
+            config_strs: The list of configuration strings.
+
+        Returns:
+            callback_group_dict: A dict whose keys are the callback group names and values are the callback groups.
+        """
+        # parse and check the configuration string
+        field_names, value_names = [], []
+        for config_str in config_strs:
+            field_name, value_name = ObeliskNode._parse_config_str(config_str)
+            field_names.extend(field_name)
+            value_names.extend(value_name)
+
+        if not field_names and not value_names:
+            return {}  # case: no callback groups to create
+
+        allowable_value_names = ["MutuallyExclusiveCallbackGroup", "ReentrantCallbackGroup"]
+        ObeliskNode._check_values(value_names, allowable_value_names)
+        config_dict = dict(zip(field_names, value_names))
+
+        # create the callback groups
+        callback_group_dict = {}
+        for callback_group_name, callback_group_type in config_dict.items():
+            if callback_group_type == "MutuallyExclusiveCallbackGroup":
+                callback_group = MutuallyExclusiveCallbackGroup()
+            elif callback_group_type == "ReentrantCallbackGroup":
+                callback_group = ReentrantCallbackGroup()
+            else:
+                raise ValueError(f"Invalid callback group type: {callback_group_type}")
+            callback_group_dict[callback_group_name] = callback_group
+
+        return callback_group_dict
 
     def _create_publisher_from_config_str(self, config_str: str, msg_attr_suffix: str) -> Publisher:
         """Create a publisher from a configuration string.

@@ -39,6 +39,7 @@ class ObeliskController(ABC, ObeliskNode):
         super().__init__(node_name)
 
         # declare config string parameters
+        self.declare_parameter("callback_group_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
         self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
@@ -51,9 +52,24 @@ class ObeliskController(ABC, ObeliskNode):
         super().on_configure(state)
 
         # parsing config strings
+        self.callback_group_config_strs = (
+            self.get_parameter("callback_group_config_strs").get_parameter_value().string_array_value
+        )
         self.timer_ctrl_config_str = self.get_parameter("timer_ctrl_config_str").get_parameter_value().string_value
         self.pub_ctrl_config_str = self.get_parameter("pub_ctrl_config_str").get_parameter_value().string_value
         self.sub_est_config_str = self.get_parameter("sub_est_config_str").get_parameter_value().string_value
+
+        # create callback groups
+        assert isinstance(self.callback_group_config_strs, list), (
+            "Expected callback_group_config_strs to be a list, but got: " f"{type(self.callback_group_config_strs)}"
+        )
+        assert all(isinstance(item, str) for item in self.callback_group_config_strs), (
+            "Expected all items in callback_group_config_strs to be strings, but got: "
+            f"{[type(item) for item in self.callback_group_config_strs]}"
+        )
+        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_config_strs)
+        for callback_group_name, callback_group in callback_group_dict.items():
+            setattr(self, callback_group_name, callback_group)
 
         # create publishers+timers/subscribers
         self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_config_str)
