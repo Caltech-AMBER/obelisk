@@ -24,9 +24,7 @@ namespace obelisk {
             const rclcpp::NodeOptions& options  = rclcpp::NodeOptions(),
             bool enable_communication_interface = true)
             : LifecycleNode(
-                  node_name, options, enable_communication_interface) {
-                  // id_funcs.emplace_back("test1", &ObeliskNode::TestCallback);
-              };
+                  node_name, options, enable_communication_interface) {};
 
         ObeliskNode(const std::string& node_name, const std::string& namespace_,
             const rclcpp::NodeOptions& options  = rclcpp::NodeOptions(),
@@ -89,37 +87,23 @@ namespace obelisk {
 
         // The subscription type depends on the message type, which means that
         // the return type of this function depends on the message type
-        // template<typename MessageT,
-        //     typename AllocatorT = std::allocator<void>,
-        //     typename SubscriptionT = rclcpp::Subscription<MessageT,
-        //     AllocatorT>>
-        std::shared_ptr<std::any> CreateSubscriptionFromConfigStr(
+        template <typename MessageT, typename AllocatorT = std::allocator<void>,
+            typename SubscriptionT = rclcpp::Subscription<MessageT, AllocatorT>>
+        std::shared_ptr<SubscriptionT> CreateSubscriptionFromConfigStr(
             const std::string& config) {
-            auto sub = create_subscription<
-                obelisk_control_msgs::msg::PositionSetpoint>("topic", 10,
-                std::bind(
+            auto config_map   = ParseConfigStr(config);
+            std::string topic = GetTopic(config_map);
+            int depth         = GetHistoryDepth(config_map);
+
+            auto sub          = create_subscription<
+                         obelisk_control_msgs::msg::PositionSetpoint>(topic, depth,
+                         std::bind(
                     &ObeliskNode::TestCallback, this, std::placeholders::_1));
             return sub;
             // id_funcs.at(0).second()
         }
 
        protected:
-        // If GetCallback is templated then multiple functions are compiled
-        //  so in the above code it will need to know which function should be
-        //  called, therefore, there will need to be some type of if/switch
-        //  statement
-        // template<typename CallbackT>
-        // CallbackT GetCallback(const std::string& cb_identifier) {
-        //     if (cb_identifier == "test1") {
-        //         return
-        //         std::bind(&ObeliskNode::TestCallback<rcl_interfaces::msg::ParameterEvent>,
-        //             this, std::placeholders::_1);
-        //     }
-
-        //     throw std::runtime_error(
-        //         "Bad callback identifier");
-        // }
-
         // template<typename MessageT>
         void TestCallback(
             const obelisk_control_msgs::msg::PositionSetpoint& msg) {
@@ -131,6 +115,87 @@ namespace obelisk {
         // id_funcs;
 
        private:
+        std::map<std::string, std::string> ParseConfigStr(std::string config) {
+            const std::string val_delim  = ":";
+            const std::string type_delim = ",";
+
+            std::map<std::string, std::string> config_map;
+
+            // Parse the string
+            size_t type_idx;
+            while (!config.empty()) {
+                type_idx = config.find(type_delim);
+                if (type_idx == std::string::npos) {
+                    type_idx = config.length();
+                }
+
+                size_t val_idx = config.find(val_delim);
+                if (val_idx == std::string::npos) {
+                    throw std::runtime_error(
+                        "Invalid configuration string! Missing `:` before last "
+                        "`,`.");
+                }
+
+                std::string config_id = config.substr(0, val_idx);
+
+                std::string val =
+                    config.substr(val_idx + 1, type_idx - (val_idx + 1));
+                config_map.emplace(config_id, val);
+                config.erase(0, type_idx + type_delim.length());
+            }
+
+            return config_map;
+        }
+
+        std::string GetTopic(
+            const std::map<std::string, std::string>& config_map) {
+            std::string topic;
+            for (auto& it : config_map) {
+                if (it.first == "topic") {
+                    topic = it.second;
+                    break;
+                }
+            }
+
+            if (topic.empty()) {
+                throw std::runtime_error(
+                    "No topic name was provided in the configuration string.");
+            }
+
+            return topic;
+        }
+
+        int GetHistoryDepth(
+            const std::map<std::string, std::string>& config_map) {
+            int depth = DEFAULT_DEPTH;
+            for (auto& it : config_map) {
+                if (it.first == "history_depth") {
+                    depth = std::stoi(it.second);
+                    break;
+                }
+            }
+
+            return depth;
+        }
+
+        bool GetIsObeliskMsg(
+            const std::map<std::string, std::string>& config_map) {
+            bool obk_msg = DEFAULT_IS_OBK_MSG;
+            for (auto& it : config_map) {
+                if (it.first == "non_obelisk") {
+                    if (it.second == "true") {
+                        obk_msg = true;
+                    }
+                    break;
+                }
+            }
+
+            return obk_msg;
+        }
+
+        static constexpr int DEFAULT_DEPTH       = 10;
+        static constexpr bool DEFAULT_IS_OBK_MSG = false;
+
         // Allowed Obelisk message types
         using ObeliskMsgs =
             std::tuple<obelisk_control_msgs::msg::PositionSetpoint,
@@ -164,23 +229,3 @@ namespace obelisk {
         using ValidMessage = typename has_type<T, Tuple>::type;
     };
 }  // namespace obelisk
-
-// ChatGPT class
-// class TestClass {
-//     TestClass() {
-//         // add a function pointer to the vector
-//         id_funcs.emplace_back("test1", &ObeliskNode::TestCallback);
-//     }
-
-//     // Create an object based on the string
-//     // Templated return type
-//     template<typename MessageT,
-//     typename AllocatorT = std::allocator<void>,
-//     typename SubscriptionT = rclcpp::Subscription<MessageT, AllocatorT>>
-//     std::shared_ptr<SubscriptionT> CreateSubscriptionFromConfigStr(
-//         const std::string& config) {
-//         create_subscription<obelisk_control_msgs::msg::PositionSetpoint>(
-//             "topic", 10, std::bind(id_funcs.at(0).second(), this,
-//             std::placeholders::_1));
-//     }
-// }

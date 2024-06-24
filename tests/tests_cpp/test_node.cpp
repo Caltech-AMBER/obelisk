@@ -103,7 +103,19 @@ TEST_CASE("Subscriber from string", "[obelisk_node]") {
 
     obelisk::ObeliskNodeTester node;
 
-    node.CreateSubscriptionFromConfigStr("test1");
+    // Check with good config string
+    REQUIRE_NOTHROW(node.CreateSubscriptionFromConfigStr<
+                    obelisk_control_msgs::msg::PositionSetpoint>(
+        "topic:test1,depth:10"));
+
+    // Check without topic
+    REQUIRE_THROWS(node.CreateSubscriptionFromConfigStr<
+                   obelisk_control_msgs::msg::PositionSetpoint>("depth:10"));
+
+    // Check when missing a colon
+    REQUIRE_THROWS(node.CreateSubscriptionFromConfigStr<
+                   obelisk_control_msgs::msg::PositionSetpoint>(
+        "topic:test1,depth 10"));
 
     rclcpp::shutdown();
 }
