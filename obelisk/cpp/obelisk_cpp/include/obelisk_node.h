@@ -1,6 +1,7 @@
 #pragma once
 #include <variant>
 
+#include "obelisk_control_msgs/msg/PositionSetpoint.hpp"
 #include "rcl_interfaces/msg/parameter_event.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -33,7 +34,9 @@ namespace obelisk {
             const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
                 (rclcpp_lifecycle::create_default_publisher_options<
                     AllocatorT>())) {
-            if (ValidMessage<MessageT, ObeliskMsgs>::value) {
+            // Check if the message type is valid
+            if (ValidMessage<MessageT, ObeliskMsgs>::value ||
+                ValidMessage<MessageT, ROSAllowedMsg>::value) {
                 return rclcpp_lifecycle::LifecycleNode::create_publisher<
                     MessageT, AllocatorT>(topic_name, qos, options);
             }
@@ -55,15 +58,17 @@ namespace obelisk {
                     AllocatorT>(),
             typename MessageMemoryStrategyT::SharedPtr msg_mem_strat =
                 (MessageMemoryStrategyT::create_default())) {
-            return rclcpp_lifecycle::LifecycleNode::create_subscription<
-                MessageT, CallbackT, AllocatorT, SubscriptionT,
-                MessageMemoryStrategyT>(topic_name, qos, callback, options);
-        };
+            // Check if the message type is valid
+            if (ValidMessage<MessageT, ObeliskMsgs>::value ||
+                ValidMessage<MessageT, ROSAllowedMsg>::value) {
+                return rclcpp_lifecycle::LifecycleNode::create_subscription<
+                    MessageT, CallbackT, AllocatorT, SubscriptionT,
+                    MessageMemoryStrategyT>(topic_name, qos, callback, options);
+            }
 
-        template <typename scalar, typename scalar_2>
-        scalar SimpleFunc(scalar a, scalar_2 b) {
-            return a;
-        }
+            throw std::runtime_error(
+                "Provided message type is not a valid Obelisk message!");
+        };
 
        private:
         using ObeliskMsgs    = std::tuple<rcl_interfaces::msg::ParameterEvent>;
