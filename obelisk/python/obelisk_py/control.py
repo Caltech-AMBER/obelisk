@@ -37,8 +37,6 @@ class ObeliskController(ABC, ObeliskNode):
             cb_group_est: The callback group for the state estimate message subscriber.
         """
         super().__init__(node_name)
-
-        # declare config string parameters
         self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)

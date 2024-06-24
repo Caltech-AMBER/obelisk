@@ -33,8 +33,6 @@ class ObeliskEstimator(ABC, ObeliskNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk estimator."""
         super().__init__(node_name)
-
-        # declare config string parameters
         self.declare_parameter("timer_est_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_est_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_sensor_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
