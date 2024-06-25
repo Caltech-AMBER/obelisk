@@ -60,6 +60,7 @@ class ObeliskRobot(ABC, ObeliskNode):
 
         del self.subscriber_ctrl
         del self.publisher_sensors
+        del self.sub_ctrl_config_str
         del self.pub_sensor_config_strs
         return TransitionCallbackReturn.SUCCESS
 
