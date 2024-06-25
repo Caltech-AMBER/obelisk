@@ -4,6 +4,11 @@ import obelisk_estimator_msgs.msg as oem
 import obelisk_sensor_msgs.msg as osm
 import pytest
 import rclpy
+from rclpy.exceptions import ParameterUninitializedException
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
+from rclpy.timer import Timer
 
 from obelisk_py.estimation import ObeliskEstimator
 from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskMsg, is_in_bound
@@ -18,16 +23,15 @@ class TestObeliskEstimator(ObeliskEstimator):
 
     def sensor_callback1(self, msg: ObeliskMsg) -> None:
         """Sensor callback 1."""
-        pass
+        self.sensor1_data = 1
 
     def sensor_callback2(self, msg: ObeliskMsg) -> None:
         """Sensor callback 2."""
-        pass
+        self.sensor2_data = 2
 
     def compute_state_estimate(self) -> ObeliskEstimatorMsg:
         """Compute the state estimate."""
-        obk_est_msg = oem.EstimatedState()  # [NOTE] dummy implementation
-        return obk_est_msg
+        return oem.EstimatedState()
 
 
 @pytest.fixture
@@ -79,7 +83,7 @@ def configured_estimator(
 
 @pytest.fixture
 def parameter_names() -> List[str]:
-    """Parameter names for the ObeliskEstimator class."""
+    """Return the parameter names for the estimator."""
     return [
         "callback_group_config_strs",
         "timer_est_config_str",
@@ -112,7 +116,7 @@ def test_configuration(
     check_node_attributes: Callable[[Any, List[str], bool], None],
     parameter_names: List[str],
 ) -> None:
-    """Test node configuration."""
+    """Test the configuration of the estimator."""
     component_names = ["test_cbg", "publisher_est", "timer_est", "subscriber_sensors"]
     check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=True)
 
@@ -122,27 +126,136 @@ def test_cleanup(
     check_node_attributes: Callable[[Any, List[str], bool], None],
     parameter_names: List[str],
 ) -> None:
-    """Test node cleanup."""
+    """Test the cleanup of the estimator."""
     component_names = ["test_cbg", "publisher_est", "timer_est", "subscriber_sensors"]
     configured_estimator.on_cleanup(configured_estimator._state_machine.current_state)
     check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=False)
 
 
 def test_estimator_functionality(configured_estimator: TestObeliskEstimator) -> None:
-    """Test estimator functionality."""
-    obk_estimator_msg = configured_estimator.compute_state_estimate()
-    assert isinstance(obk_estimator_msg, oem.EstimatedState)
-    assert is_in_bound(type(obk_estimator_msg), ObeliskEstimatorMsg)
-    assert is_in_bound(type(obk_estimator_msg), ObeliskMsg)
+    """Test the functionality of the estimator."""
+    joint_encoder_msg1 = osm.JointEncoder()
+    joint_encoder_msg2 = osm.JointEncoder()
 
-    obk_sensor1_msg = osm.JointEncoder()  # [NOTE] dummy message
-    try:
-        configured_estimator.sensor_callback1(obk_sensor1_msg)
-    except AttributeError:
-        pytest.fail("Failed to call sensor_callback1")
+    configured_estimator.sensor_callback1(joint_encoder_msg1)
+    configured_estimator.sensor_callback2(joint_encoder_msg2)
 
-    obk_sensor2_msg = osm.JointEncoder()  # [NOTE] dummy message
-    try:
-        configured_estimator.sensor_callback2(obk_sensor2_msg)
-    except AttributeError:
-        pytest.fail("Failed to call sensor_callback2")
+    assert configured_estimator.sensor1_data == 1
+    assert configured_estimator.sensor2_data == 2  # noqa: PLR2004
+
+    obk_est_msg = configured_estimator.compute_state_estimate()
+    assert isinstance(obk_est_msg, oem.EstimatedState)
+    assert is_in_bound(type(obk_est_msg), ObeliskEstimatorMsg)
+    assert is_in_bound(type(obk_est_msg), ObeliskMsg)
+
+
+def test_on_configure_success(configured_estimator: TestObeliskEstimator) -> None:
+    """Test successful configuration of the estimator."""
+    result = configured_estimator.on_configure(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    assert hasattr(configured_estimator, "timer_est")
+    assert isinstance(configured_estimator.timer_est, Timer)
+    assert hasattr(configured_estimator, "publisher_est")
+    assert isinstance(configured_estimator.publisher_est, Publisher)
+    assert hasattr(configured_estimator, "subscriber_sensors")
+    assert isinstance(configured_estimator.subscriber_sensors, list)
+    assert all(isinstance(sub, Subscription) for sub in configured_estimator.subscriber_sensors)
+
+
+def test_on_configure_missing_parameters(test_estimator: TestObeliskEstimator) -> None:
+    """Test configuration with missing parameters."""
+    with pytest.raises(ParameterUninitializedException):
+        test_estimator.on_configure(None)
+
+
+def test_on_cleanup(configured_estimator: TestObeliskEstimator) -> None:
+    """Test cleanup of the estimator."""
+    result = configured_estimator.on_cleanup(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    assert not hasattr(configured_estimator, "timer_est")
+    assert not hasattr(configured_estimator, "publisher_est")
+    assert not hasattr(configured_estimator, "subscriber_sensors")
+    assert not hasattr(configured_estimator, "timer_est_config_str")
+    assert not hasattr(configured_estimator, "pub_est_config_str")
+    assert not hasattr(configured_estimator, "sub_sensor_config_strs")
+
+
+def test_on_activate(configured_estimator: TestObeliskEstimator) -> None:
+    """Test activation of the estimator."""
+    result = configured_estimator.on_activate(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    # Check if timer is reset (this might need to be mocked in a real implementation)
+
+
+def test_on_deactivate(configured_estimator: TestObeliskEstimator) -> None:
+    """Test deactivation of the estimator."""
+    configured_estimator.on_activate(None)
+    result = configured_estimator.on_deactivate(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    # Check if timer is cancelled (this might need to be mocked in a real implementation)
+
+
+def test_sensor_callbacks(configured_estimator: TestObeliskEstimator) -> None:
+    """Test the sensor callback methods."""
+    joint_encoder_msg1 = osm.JointEncoder()
+    joint_encoder_msg2 = osm.JointEncoder()
+
+    configured_estimator.sensor_callback1(joint_encoder_msg1)
+    configured_estimator.sensor_callback2(joint_encoder_msg2)
+
+    assert configured_estimator.sensor1_data == 1
+    assert configured_estimator.sensor2_data == 2  # noqa: PLR2004
+
+
+def test_compute_state_estimate(configured_estimator: TestObeliskEstimator) -> None:
+    """Test the compute_state_estimate method."""
+    estimate_msg = configured_estimator.compute_state_estimate()
+    assert isinstance(estimate_msg, oem.EstimatedState)
+    assert is_in_bound(type(estimate_msg), ObeliskEstimatorMsg)
+    assert is_in_bound(type(estimate_msg), ObeliskMsg)
+
+
+def test_timer_callback_assignment(configured_estimator: TestObeliskEstimator) -> None:
+    """Test that the compute_state_estimate method is set as the timer callback."""
+    assert configured_estimator.timer_est.callback == configured_estimator.compute_state_estimate
+
+
+def test_subscriber_callback_assignments(configured_estimator: TestObeliskEstimator) -> None:
+    """Test that the sensor callback methods are set as the subscriber callbacks."""
+    assert configured_estimator.subscriber_sensors[0].callback == configured_estimator.sensor_callback1
+    assert configured_estimator.subscriber_sensors[1].callback == configured_estimator.sensor_callback2
+
+
+@pytest.mark.parametrize(
+    "invalid_config",
+    [
+        {"timer_est_config_str": "invalid_config_string"},
+        {"pub_est_config_str": "invalid_config_string"},
+        {"sub_sensor_config_strs": ["invalid_config_string"]},
+    ],
+)
+def test_invalid_configuration(test_estimator: TestObeliskEstimator, invalid_config: Dict[str, Any]) -> None:
+    """Test handling of invalid configuration strings."""
+    for key, value in invalid_config.items():
+        test_estimator.set_parameters([rclpy.Parameter(key, value=value)])
+    with pytest.raises(Exception) as exc_info:  # The exact exception type may vary based on implementation
+        test_estimator.on_configure(None)
+    assert isinstance(exc_info.value, Exception)
+
+
+def test_lifecycle_transitions(configured_estimator: TestObeliskEstimator) -> None:
+    """Test full lifecycle transitions of the estimator."""
+    assert configured_estimator.on_configure(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_estimator.on_activate(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_estimator.on_deactivate(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_estimator.on_cleanup(None) == TransitionCallbackReturn.SUCCESS
+
+    assert configured_estimator.on_configure(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_estimator.on_shutdown(None) == TransitionCallbackReturn.SUCCESS
+
+
+def test_inheritance(configured_estimator: TestObeliskEstimator) -> None:
+    """Test that ObeliskEstimator correctly inherits from ObeliskNode."""
+    from obelisk_py.node import ObeliskNode
+
+    assert isinstance(configured_estimator, ObeliskNode)
