@@ -179,6 +179,12 @@ class ObeliskSimRobot(ObeliskRobot):
         del self.timer_true_sim_state_config_str
         del self.pub_true_sim_state_config_str
 
+        # delete other properties
+        del self.shared_ctrl
+        del self.lock
+        del self.sim_process
+        del self.n_u
+
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod

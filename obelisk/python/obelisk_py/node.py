@@ -123,7 +123,7 @@ class ObeliskNode(LifecycleNode):
             f"""The following fields in the config_str are invalid: {
                 set(field_names) - set(required_field_names + optional_field_names)
             }""",
-            "Currently-supported fields in Obelisk are: {required_field_names + optional_field_names}",
+            f"Currently-supported fields in Obelisk are: {required_field_names + optional_field_names}",
         )
 
     @staticmethod
