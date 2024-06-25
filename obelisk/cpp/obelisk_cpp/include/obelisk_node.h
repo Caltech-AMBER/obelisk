@@ -26,15 +26,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         const rclcpp::NodeOptions& options  = rclcpp::NodeOptions(),
         bool enable_communication_interface = true)
         : LifecycleNode(node_name, options, enable_communication_interface) {
-        AddRosParameters(pub_config_param_names);
-        AddRosParameters(sub_config_param_names);
-        AddRosParameters(timer_config_param_names);
-        AddRosParameters(cb_config_param_names);
-
-        pub_config_param_names_   = pub_config_param_names;
-        sub_config_param_names_   = sub_config_param_names;
-        timer_config_param_names_ = timer_config_param_names;
-        cb_config_param_names_    = timer_config_param_names;
+        this->declare_parameter<std::string>("callback_group_config_strs");
     };
 
     ObeliskNode(const std::string& node_name, const std::string& namespace_,
@@ -42,15 +34,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
                 bool enable_communication_interface = true)
         : LifecycleNode(node_name, namespace_, options,
                         enable_communication_interface) {
-        AddRosParameters(pub_config_param_names);
-        AddRosParameters(sub_config_param_names);
-        AddRosParameters(timer_config_param_names);
-        AddRosParameters(cb_config_param_names);
-
-        pub_config_param_names_   = pub_config_param_names;
-        sub_config_param_names_   = sub_config_param_names;
-        timer_config_param_names_ = timer_config_param_names;
-        cb_config_param_names_    = timer_config_param_names;
+        this->declare_parameter<std::string>("callback_group_config_strs");
     };
 
     // TODO (@zolkin): Should this be public or protected?
@@ -199,6 +183,8 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         const double period_sec = GetPeriod(config_map); // Period in seconds
         const auto period_dur   = std::chrono::duration<double, DurationT>(
             period_sec); // Convert period str to DurationT
+        const std::string cb_group =
+            callback_groups_.at(GetCallbackGroup(config));
 
         return this->create_wall_timer(
             period_dur, std::move(callback)); // TODO: Add call back group
@@ -246,20 +232,13 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
      * @brief Parses the configuration string map to see if there is a topic
      */
     std::string GetTopic(const std::map<std::string, std::string>& config_map) {
-        std::string topic;
-        for (auto& it : config_map) {
-            if (it.first == "topic") {
-                topic = it.second;
-                break;
-            }
-        }
-
-        if (topic.empty()) {
+        try {
+            std::string topic = config_map.at("topic");
+            return topic;
+        } catch (const std::exception& e) {
             throw std::runtime_error(
                 "No topic name was provided in the configuration string.");
         }
-
-        return topic;
     }
 
     /**
@@ -268,11 +247,9 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
      */
     int GetHistoryDepth(const std::map<std::string, std::string>& config_map) {
         int depth = DEFAULT_DEPTH;
-        for (auto& it : config_map) {
-            if (it.first == "history_depth") {
-                depth = std::stoi(it.second);
-                break;
-            }
+        try {
+            depth = std::stoi(config_map.at("history_depth"));
+        } catch (const std::exception& e) {
         }
 
         return depth;
@@ -284,46 +261,47 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
      */
     bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
         bool obk_msg = DEFAULT_IS_OBK_MSG;
-        for (auto& it : config_map) {
-            if (it.first == "non_obelisk") {
-                if (it.second == "true") {
-                    obk_msg = false;
-                }
-                break;
+        try {
+            if (config_map.at("non_obelisk") == "true") {
+                obk_msg = false;
             }
+        } catch (const std::exception& e) {
         }
 
         return obk_msg;
     }
 
     double GetPeriod(const std::map<std::string, std::string>& config_map) {
-        double period = -1;
-        for (auto& it : config_map) {
-            if (it.first == "timer_period_sec") {
-                period = std::stod(it.second);
-                break;
-            }
-        }
-
-        if (period <= 0) {
+        try {
+            return std::stod(config_map.at("timer_period_sec"));
+        } catch (const std::exception& e) {
             throw std::runtime_error("Invalid timer period time provided");
         }
-
-        return period;
     }
 
     std::string
     GetMessageName(const std::map<std::string, std::string>& config_map) {
-        for (auto& it : config_map) {
-            if (it.first == "message_type") {
-                return it.second;
-            }
+        try {
+            return config_map.at("message_type");
+        } catch (const std::exception& e) {
+            throw std::runtime_error(
+                "No message type provided in this config string!");
         }
-
-        throw std::runtime_error(
-            "No message type provided in this config string!");
     }
+
+    void ParseCallbackGroupConfig(const std::string& config) {
+        callback_groups_ = ParseConfigStr(config);
+    }
+
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+    on_configure(const rclcpp_lifecycle::State& prev_state) {
+        // Parse the configuration groups for this node
+        ParseConfigGroups(
+            this->get_parameter("callback_group_config_strs").as_string());
+    }
+
     // --------- Member Variables --------- //
+    std::map<std::string, std::string> callback_groups_;
 
   private:
     // --------- Member Variables --------- //

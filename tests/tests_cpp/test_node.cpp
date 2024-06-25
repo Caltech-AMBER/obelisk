@@ -37,10 +37,8 @@ class ObeliskNodeTester : public ObeliskNode {
 };
 
 class ObeliskControllerTester
-    : public ObeliskController<
-          obelisk::MessagePack<obelisk_control_msgs::msg::PositionSetpoint,
-                               obelisk_sensor_msgs::msg::JointEncoder>,
-          obelisk::MessagePack<obelisk_estimator_msgs::msg::EstimatedState>> {
+    : public ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
+                               obelisk_estimator_msgs::msg::EstimatedState> {
   public:
     ObeliskControllerTester() : ObeliskController("obelisk_controller_tester") {
         // std::get<ObeliskController::PublisherType<obelisk_control_msgs::msg::PositionSetpoint>>(control_publishers_)
@@ -55,7 +53,7 @@ class ObeliskControllerTester
         //     (control_publishers_) != nullptr);
         // REQUIRE(std::get<ObeliskController::PublisherType<obelisk_sensor_msgs::msg::JointEncoder>>
         //     (control_publishers_) != nullptr);
-        on_configure(this->get_current_state());
+        ObeliskController::on_configure(this->get_current_state());
     }
 };
 } // namespace obelisk
