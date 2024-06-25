@@ -18,15 +18,11 @@ struct MessagePack {
 };
 
 // TODO: Consider multiple types here (variadic)
-template <typename ControlMessagesT, typename EstimatorMessagesT>
+template <typename RequiredControlMessageT, typename RequiredEstimatorMessagesT,
+          typename ControlMessagesT, typename EstimatorMessagesT>
 class ObeliskController : public ObeliskNode {
   public:
-    explicit ObeliskController(
-        const std::string& name,
-        const std::vector<std::string>& pub_config_param_names   = {},
-        const std::vector<std::string>& sub_config_param_names   = {},
-        const std::vector<std::string>& timer_config_param_names = {},
-        const std::vector<std::string>& cb_config_param_names    = {})
+    explicit ObeliskController(const std::string& name)
         : ObeliskNode(name, pub_config_param_names, sub_config_param_names,
                       timer_config_param_names, cb_config_param_names) {
         // Declare all paramters
@@ -39,9 +35,6 @@ class ObeliskController : public ObeliskNode {
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_configure(const rclcpp_lifecycle::State& prev_state) {
-        // Parse ros parameters in ObeliskNode
-        ParseRosParamters();
-
         // Get the config strings that we know about
         config_strs_.emplace_back(
             this->get_parameter("pub_ctrl_config_str").as_string());

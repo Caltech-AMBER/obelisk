@@ -96,7 +96,8 @@
         "atomic": "cpp",
         "rope": "cpp",
         "slist": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "__split_buffer": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
