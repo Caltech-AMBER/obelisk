@@ -56,6 +56,11 @@ class ObeliskEstimator(ABC, ObeliskNode):
             sub_sensor = self._create_subscription_from_config_str(sensor_config_str, "sensor")
             self.subscriber_sensors.append(sub_sensor)
 
+        # checks
+        assert (
+            self.timer_est.callback == self.compute_state_estimate
+        ), f"The timer callback must be compute_state_estimate! Is {self.timer_est.callback}."
+
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
