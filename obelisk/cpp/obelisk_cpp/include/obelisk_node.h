@@ -162,7 +162,13 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return create_publisher<MessageT>(topic, depth, non_obelisk);
     }
 
-    template <typename CallbackT> // typename DurationT = std::milli
+    /**
+     * @brief Create a wall timer from a configuration string
+     *
+     * @param config the configuration string
+     * @param callback the callback function
+     */
+    template <typename DurationT = std::milli, typename CallbackT>
     typename rclcpp::GenericTimer<CallbackT>::SharedPtr
     CreateWallTimerFromConfigStr(const std::string& config,
                                  CallbackT&& callback) {
@@ -171,7 +177,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
 
         const auto config_map   = ParseConfigStr(config);
         const double period_sec = GetPeriod(config_map); // Period in seconds
-        const auto period_dur   = std::chrono::duration<double, std::milli>(
+        const auto period_dur   = std::chrono::duration<double, DurationT>(
             period_sec); // Convert period str to DurationT
 
         return this->create_wall_timer(
