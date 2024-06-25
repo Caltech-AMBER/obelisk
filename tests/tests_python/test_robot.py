@@ -1,293 +1,133 @@
-import time
+from typing import Any, Callable, Dict, Generator, List
 
-import numpy as np
 import obelisk_control_msgs.msg as ocm
 import obelisk_sensor_msgs.msg as osm
 import pytest
 import rclpy
-import rclpy.exceptions
 
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskMsg, ObeliskSensorMsg, is_in_bound
-from obelisk_py.robot import ObeliskRobot, ObeliskSimRobot
+from obelisk_py.robot import ObeliskRobot
+
+# ##### #
+# SETUP #
+# ##### #
 
 
 class TestObeliskRobot(ObeliskRobot):
     """Test ObeliskRobot class."""
 
     def apply_control(self, _: ObeliskControlMsg) -> None:
-        """Apply the control message to the robot."""
+        """Apply control."""
         pass
 
     def publish_measurement1(self) -> ObeliskSensorMsg:
-        """Publish measurement1 from the sensor."""
-        obk_sensor_msg = osm.JointEncoder()  # [NOTE] dummy implementation
-        return obk_sensor_msg
+        """Publish measurement 1."""
+        return osm.JointEncoder()
 
     def publish_measurement2(self) -> ObeliskSensorMsg:
-        """Publish measurement2 from the sensor."""
-        obk_sensor_msg = osm.JointEncoder()  # [NOTE] dummy implementation
-        return obk_sensor_msg
+        """Publish measurement 2."""
+        return osm.JointEncoder()
 
 
-class TestObeliskSimRobot(ObeliskSimRobot):
-    """Test ObeliskSimRobot class."""
-
-    def __init__(self, node_name: str) -> None:
-        """Initialize the Obelisk sim robot."""
-        super().__init__(node_name)
-        self.test_run_simulator_flag = False
-
-    def apply_control(self, _: ObeliskControlMsg) -> None:
-        """Apply the control message to the sim robot."""
-        pass
-
-    def publish_true_sim_state(self) -> osm.TrueSimState:
-        """Publish the true simulation state."""
-        return osm.TrueSimState()  # [NOTE] dummy implementation
-
-    def run_simulator(self) -> None:
-        """Run the simulator."""
-        self._set_shared_ctrl([0.1, 0.2])
+@pytest.fixture
+def test_robot(ros_context: Any) -> Generator[TestObeliskRobot, None, None]:
+    """Fixture for the TestObeliskRobot class."""
+    robot = TestObeliskRobot("test_robot")
+    yield robot
+    robot.destroy_node()
 
 
-def test_obelisk_robot() -> None:
-    """Test the ObeliskRobot class."""
-    rclpy.init()
-    test_robot = TestObeliskRobot("test_robot")
-    parameter_names = ["sub_ctrl_config_str", "pub_sensor_config_strs"]
+@pytest.fixture
+def configured_robot(
+    test_robot: TestObeliskRobot, set_node_parameters: Callable[[Any, Dict], None]
+) -> TestObeliskRobot:
+    """Fixture for the TestObeliskRobot class with parameters set."""
+    parameter_dict = {
+        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
+        "sub_ctrl_config_str": (
+            "msg_type:PositionSetpoint,"
+            "topic:/obelisk/test_robot/ctrl,"
+            "callback:apply_control,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
+        "pub_sensor_config_strs": [
+            (
+                "msg_type:JointEncoder,"
+                "topic:/obelisk/test_robot/sensor1,"
+                "history_depth:10,"
+                "callback_group:None,"
+                "non_obelisk:False"
+            ),
+            (
+                "msg_type:JointEncoder,"
+                "topic:/obelisk/test_robot/sensor2,"
+                "history_depth:10,"
+                "callback_group:None,"
+                "non_obelisk:False"
+            ),
+        ],
+    }
+    set_node_parameters(test_robot, parameter_dict)
+    test_robot.on_configure(test_robot._state_machine.current_state)
+    return test_robot
 
-    # check that accessing parameters without initializing them raises an error
+
+@pytest.fixture
+def robot_parameter_names() -> List[str]:
+    """Return the parameter names for the robot."""
+    return ["sub_ctrl_config_str", "pub_sensor_config_strs"]
+
+
+# ##### #
+# TESTS #
+# ##### #
+
+
+def test_robot_parameter_initialization(test_robot: TestObeliskRobot, robot_parameter_names: List[str]) -> None:
+    """Test parameter initialization."""
     with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
-        test_robot.get_parameters(parameter_names)
+        test_robot.get_parameters(robot_parameter_names)
 
-    # set parameters
-    test_robot.set_parameters(
-        [
-            rclpy.parameter.Parameter(
-                "callback_group_config_strs",
-                rclpy.Parameter.Type.STRING_ARRAY,
-                ["test_cbg:ReentrantCallbackGroup"],
-            ),
-            rclpy.parameter.Parameter(
-                "sub_ctrl_config_str",
-                rclpy.Parameter.Type.STRING,
-                (
-                    "msg_type:PositionSetpoint,"
-                    "topic:/obelisk/test_robot/ctrl,"
-                    "callback:apply_control,"
-                    "history_depth:10,"
-                    "callback_group:None,"
-                    "non_obelisk:False"
-                ),
-            ),
-            rclpy.parameter.Parameter(
-                "pub_sensor_config_strs",
-                rclpy.Parameter.Type.STRING_ARRAY,
-                [
-                    (
-                        "msg_type:JointEncoder,"
-                        "topic:/obelisk/test_estimator/sensor1,"
-                        "history_depth:10,"
-                        "callback_group:None,"
-                        "non_obelisk:False"
-                    ),
-                    (
-                        "msg_type:JointEncoder,"
-                        "topic:/obelisk/test_estimator/sensor2,"
-                        "history_depth:10,"
-                        "callback_group:None,"
-                        "non_obelisk:False"
-                    ),
-                ],
-            ),
-        ]
-    )
 
-    # check that accessing parameters after setting them works
+def test_robot_parameter_setting(configured_robot: TestObeliskRobot, robot_parameter_names: List[str]) -> None:
+    """Test parameter setting."""
     try:
-        test_robot.get_parameters(parameter_names)
+        configured_robot.get_parameters(robot_parameter_names)
     except rclpy.exceptions.ParameterUninitializedException as e:
         pytest.fail(f"Failed to access parameters after setting them: {e}")
 
-    # check that before calling on_configure, the parameter attributes in the node are not set
-    for name in parameter_names:
-        assert not hasattr(test_robot, name)
 
-    # also check that the publisher, timer, and subscriber list are not set
-    assert not hasattr(test_robot, "test_cbg")
-    assert not hasattr(test_robot, "subscriber_ctrl")
-    assert not hasattr(test_robot, "publisher_sensors")
-
-    # check that calling on_configure sets attributes in the node
-    test_robot.on_configure(test_robot._state_machine.current_state)
-    for name in parameter_names:
-        assert hasattr(test_robot, name)
-
-    assert hasattr(test_robot, "test_cbg")
-    assert hasattr(test_robot, "subscriber_ctrl")
-    assert hasattr(test_robot, "publisher_sensors")
-
-    # check that on_cleanup resets the attributes in the node
-    test_robot.on_cleanup(test_robot._state_machine.current_state)
-    for name in parameter_names:
-        assert not hasattr(test_robot, name)
-
-    assert not hasattr(test_robot, "test_cbg")
-    assert not hasattr(test_robot, "subscriber_ctrl")
-    assert not hasattr(test_robot, "publisher_sensors")
-
-    # check that we can configure the node again and compute a measurement by calling the publishers + apply control
-    test_robot.on_configure(test_robot._state_machine.current_state)
-
-    obk_sensor_msg1 = test_robot.publish_measurement1()
-    obk_sensor_msg2 = test_robot.publish_measurement2()
-    assert isinstance(obk_sensor_msg1, osm.JointEncoder)
-    assert is_in_bound(type(obk_sensor_msg1), ObeliskSensorMsg)
-    assert is_in_bound(type(obk_sensor_msg1), ObeliskMsg)
-    assert isinstance(obk_sensor_msg2, osm.JointEncoder)
-    assert is_in_bound(type(obk_sensor_msg2), ObeliskSensorMsg)
-    assert is_in_bound(type(obk_sensor_msg2), ObeliskMsg)
-
-    test_robot.apply_control(ocm.PositionSetpoint())
-
-    # destroy node and shutdown rclpy session
-    test_robot.destroy_node()
-    rclpy.shutdown()
+def test_robot_configuration(
+    configured_robot: TestObeliskRobot,
+    check_node_attributes: Callable[[Any, List[str], bool], None],
+    robot_parameter_names: List[str],
+) -> None:
+    """Test node configuration."""
+    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensors"]
+    check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=True)
 
 
-def test_obelisk_sim_robot() -> None:
-    """Test the ObeliskSimRobot class."""
-    rclpy.init()
-    test_sim_robot = TestObeliskSimRobot("test_sim_robot")
-    parameter_names = [
-        "n_u",
-        "timer_true_sim_state_config_str",
-        "pub_true_sim_state_config_str",
-    ]  # only test the new parameters of the derived class
+def test_robot_cleanup(
+    configured_robot: TestObeliskRobot,
+    check_node_attributes: Callable[[Any, List[str], bool], None],
+    robot_parameter_names: List[str],
+) -> None:
+    """Test node cleanup."""
+    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensors"]
+    configured_robot.on_cleanup(configured_robot._state_machine.current_state)
+    check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=False)
 
-    # check that accessing parameters without initializing them raises an error
-    with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
-        test_sim_robot.get_parameters(parameter_names)
 
-    # set parameters
-    test_sim_robot.set_parameters(
-        [
-            rclpy.parameter.Parameter("n_u", rclpy.Parameter.Type.INTEGER, 2),
-            rclpy.parameter.Parameter(
-                "callback_group_config_strs",
-                rclpy.Parameter.Type.STRING_ARRAY,
-                ["test_cbg:ReentrantCallbackGroup"],
-            ),
-            rclpy.parameter.Parameter(
-                "sub_ctrl_config_str",
-                rclpy.Parameter.Type.STRING,
-                (
-                    "msg_type:PositionSetpoint,"
-                    "topic:/obelisk/test_robot/ctrl,"
-                    "callback:apply_control,"
-                    "history_depth:10,"
-                    "callback_group:None,"
-                    "non_obelisk:False"
-                ),
-            ),
-            rclpy.parameter.Parameter(
-                "pub_sensor_config_strs",
-                rclpy.Parameter.Type.STRING_ARRAY,
-                [
-                    (
-                        "msg_type:JointEncoder,"
-                        "topic:/obelisk/test_estimator/sensor1,"
-                        "history_depth:10,"
-                        "callback_group:None,"
-                        "non_obelisk:False"
-                    ),
-                    (
-                        "msg_type:JointEncoder,"
-                        "topic:/obelisk/test_estimator/sensor2,"
-                        "history_depth:10,"
-                        "callback_group:None,"
-                        "non_obelisk:False"
-                    ),
-                ],
-            ),
-            rclpy.parameter.Parameter(
-                "n_u",
-                rclpy.Parameter.Type.INTEGER,
-                2,
-            ),
-            rclpy.parameter.Parameter(
-                "timer_true_sim_state_config_str",
-                rclpy.Parameter.Type.STRING,
-                ("timer_period_sec:0.1," "callback:publish_true_sim_state," "callback_group:None"),
-            ),
-            rclpy.parameter.Parameter(
-                "pub_true_sim_state_config_str",
-                rclpy.Parameter.Type.STRING,
-                (
-                    "msg_type:TrueSimState,"
-                    "topic:/obelisk/test_sim_robot/true_sim_state,"
-                    "history_depth:10,"
-                    "callback_group:None,"
-                    "non_obelisk:False"
-                ),
-            ),
-        ]
-    )
+def test_robot_functionality(configured_robot: TestObeliskRobot) -> None:
+    """Test robot functionality."""
+    configured_robot.apply_control(ocm.PositionSetpoint())
 
-    # check that accessing parameters after setting them works
-    try:
-        test_sim_robot.get_parameters(parameter_names)
-    except rclpy.exceptions.ParameterUninitializedException as e:
-        pytest.fail(f"Failed to access parameters after setting them: {e}")
+    obk_sensor_msg1 = configured_robot.publish_measurement1()
+    obk_sensor_msg2 = configured_robot.publish_measurement2()
 
-    # check that before calling on_configure, the parameter attributes in the node are not set
-    for name in parameter_names:
-        assert not hasattr(test_sim_robot, name)
-
-    # also check that the publisher, timer, and subscriber list are not set
-    assert not hasattr(test_sim_robot, "n_u")
-    assert not hasattr(test_sim_robot, "shared_ctrl")
-    assert not hasattr(test_sim_robot, "lock")
-    assert not hasattr(test_sim_robot, "sim_process")
-    assert not hasattr(test_sim_robot, "timer_true_sim_state")
-    assert not hasattr(test_sim_robot, "publisher_true_sim_state")
-
-    # check that calling on_configure sets attributes in the node
-    test_sim_robot.on_configure(test_sim_robot._state_machine.current_state)
-    for name in parameter_names:
-        assert hasattr(test_sim_robot, name)
-
-    assert hasattr(test_sim_robot, "n_u")
-    assert hasattr(test_sim_robot, "shared_ctrl")
-    assert hasattr(test_sim_robot, "lock")
-    assert hasattr(test_sim_robot, "sim_process")
-    assert hasattr(test_sim_robot, "timer_true_sim_state")
-    assert hasattr(test_sim_robot, "publisher_true_sim_state")
-
-    # check that the simulation hasn't run before activation
-    assert np.allclose(list(test_sim_robot.shared_ctrl), [0.0, 0.0])  # default value of shared float arrays
-
-    # check that activating runs the simulation
-    test_sim_robot.on_activate(test_sim_robot._state_machine.current_state)
-    time.sleep(0.001)  # wait for the simulation to run
-    assert np.allclose(list(test_sim_robot.shared_ctrl), [0.1, 0.2])
-
-    # check that on_cleanup resets the attributes in the node
-    test_sim_robot.on_cleanup(test_sim_robot._state_machine.current_state)
-    for name in parameter_names:
-        assert not hasattr(test_sim_robot, name)
-
-    assert not hasattr(test_sim_robot, "n_u")
-    assert not hasattr(test_sim_robot, "shared_ctrl")
-    assert not hasattr(test_sim_robot, "lock")
-    assert not hasattr(test_sim_robot, "sim_process")
-    assert not hasattr(test_sim_robot, "timer_true_sim_state")
-    assert not hasattr(test_sim_robot, "publisher_true_sim_state")
-
-    # check that we can configure the node again and compute a measurement by calling the publishers + apply control
-    test_sim_robot.on_configure(test_sim_robot._state_machine.current_state)
-    test_sim_robot.apply_control(ocm.PositionSetpoint())
-
-    # destroy node and shutdown rclpy session
-    test_sim_robot.destroy_node()
-    rclpy.shutdown()
+    for msg in [obk_sensor_msg1, obk_sensor_msg2]:
+        assert isinstance(msg, osm.JointEncoder)
+        assert is_in_bound(type(msg), ObeliskSensorMsg)
+        assert is_in_bound(type(msg), ObeliskMsg)

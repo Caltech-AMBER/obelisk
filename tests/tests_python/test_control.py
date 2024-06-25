@@ -1,11 +1,16 @@
+from typing import Any, Callable, Dict, Generator, List
+
 import obelisk_control_msgs.msg as ocm
 import obelisk_estimator_msgs.msg as oem
 import pytest
 import rclpy
-import rclpy.exceptions
 
 from obelisk_py.control import ObeliskController
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, ObeliskMsg, is_in_bound
+
+# ##### #
+# SETUP #
+# ##### #
 
 
 class TestObeliskController(ObeliskController):
@@ -13,116 +18,108 @@ class TestObeliskController(ObeliskController):
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate."""
-        self.x_hat = 1  # [NOTE] dummy implementation
+        self.x_hat = 1
 
     def compute_control(self) -> ObeliskControlMsg:
-        """Compute the control signal."""
-        obk_ctrl_msg = ocm.PositionSetpoint()  # [NOTE] dummy implementation
-        return obk_ctrl_msg
+        """Compute the control."""
+        return ocm.PositionSetpoint()
 
 
-def test_obelisk_controller() -> None:
-    """Test the ObeliskController class."""
-    rclpy.init()
-    test_controller = TestObeliskController("test_controller")
-    parameter_names = [
+@pytest.fixture
+def test_controller(ros_context: Any) -> Generator[TestObeliskController, None, None]:
+    """Fixture for the TestObeliskController class."""
+    controller = TestObeliskController("test_controller")
+    yield controller
+    controller.destroy_node()
+
+
+@pytest.fixture
+def configured_controller(
+    test_controller: TestObeliskController, set_node_parameters: Callable[[Any, Dict], None]
+) -> TestObeliskController:
+    """Fixture for the TestObeliskController class with parameters set."""
+    parameter_dict = {
+        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
+        "timer_ctrl_config_str": "timer_period_sec:0.001,callback:compute_control,callback_group:None",
+        "pub_ctrl_config_str": (
+            "msg_type:PositionSetpoint,"
+            "topic:/obelisk/test_controller/control,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
+        "sub_est_config_str": (
+            "msg_type:EstimatedState,"
+            "topic:/obelisk/test_controller/state_estimate,"
+            "callback:update_x_hat,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
+    }
+    set_node_parameters(test_controller, parameter_dict)
+    test_controller.on_configure(test_controller._state_machine.current_state)
+    return test_controller
+
+
+@pytest.fixture
+def parameter_names() -> List[str]:
+    """Return the parameter names for the controller."""
+    return [
         "callback_group_config_strs",
         "timer_ctrl_config_str",
         "pub_ctrl_config_str",
         "sub_est_config_str",
     ]
 
-    # check that accessing parameters without initializing them raises an error
+
+# ##### #
+# TESTS #
+# ##### #
+
+
+def test_parameter_initialization(test_controller: TestObeliskController, parameter_names: List[str]) -> None:
+    """Test parameter initialization."""
     with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
         test_controller.get_parameters(parameter_names)
 
-    # set parameters
-    test_controller.set_parameters(
-        [
-            rclpy.parameter.Parameter(
-                "callback_group_config_strs",
-                rclpy.Parameter.Type.STRING_ARRAY,
-                ["test_cbg:ReentrantCallbackGroup"],
-            ),
-            rclpy.parameter.Parameter(
-                "timer_ctrl_config_str",
-                rclpy.Parameter.Type.STRING,
-                "timer_period_sec:0.001,callback:compute_control,callback_group:None",
-            ),
-            rclpy.parameter.Parameter(
-                "pub_ctrl_config_str",
-                rclpy.Parameter.Type.STRING,
-                (
-                    "msg_type:PositionSetpoint,"
-                    "topic:/obelisk/test_controller/control,"
-                    "history_depth:10,"
-                    "callback_group:None,"
-                    "non_obelisk:False"
-                ),
-            ),
-            rclpy.parameter.Parameter(
-                "sub_est_config_str",
-                rclpy.Parameter.Type.STRING,
-                (
-                    "msg_type:EstimatedState,"
-                    "topic:/obelisk/test_controller/state_estimate,"
-                    "callback:update_x_hat,"
-                    "history_depth:10,"
-                    "callback_group:None,"
-                    "non_obelisk:False"
-                ),
-            ),
-        ]
-    )
 
-    # check that accessing parameters after setting them works
+def test_parameter_setting(configured_controller: TestObeliskController, parameter_names: List[str]) -> None:
+    """Test parameter setting."""
     try:
-        test_controller.get_parameters(parameter_names)
+        configured_controller.get_parameters(parameter_names)
     except rclpy.exceptions.ParameterUninitializedException as e:
         pytest.fail(f"Failed to access parameters after setting them: {e}")
 
-    # check that before calling on_configure, the parameter attributes in the node are not set
-    for name in parameter_names:
-        assert not hasattr(test_controller, name)
 
-    # also check that the callback group, publisher, timer, and subscriber are not set
-    assert not hasattr(test_controller, "test_cbg")
-    assert not hasattr(test_controller, "publisher_ctrl")
-    assert not hasattr(test_controller, "timer_ctrl")
-    assert not hasattr(test_controller, "subscriber_est")
+def test_configuration(
+    configured_controller: TestObeliskController,
+    check_node_attributes: Callable[[Any, List[str], bool], None],
+    parameter_names: List[str],
+) -> None:
+    """Test the configuration of the controller."""
+    component_names = ["test_cbg", "publisher_ctrl", "timer_ctrl", "subscriber_est"]
+    check_node_attributes(configured_controller, parameter_names + component_names, should_exist=True)
 
-    # check that calling on_configure sets attributes in the node
-    test_controller.on_configure(test_controller._state_machine.current_state)
-    for name in parameter_names:
-        assert hasattr(test_controller, name)
 
-    assert hasattr(test_controller, "test_cbg")
-    assert hasattr(test_controller, "publisher_ctrl")
-    assert hasattr(test_controller, "timer_ctrl")
-    assert hasattr(test_controller, "subscriber_est")
+def test_cleanup(
+    configured_controller: TestObeliskController,
+    check_node_attributes: Callable[[Any, List[str], bool], None],
+    parameter_names: List[str],
+) -> None:
+    """Test the cleanup of the controller."""
+    component_names = ["test_cbg", "publisher_ctrl", "timer_ctrl", "subscriber_est"]
+    configured_controller.on_cleanup(configured_controller._state_machine.current_state)
+    check_node_attributes(configured_controller, parameter_names + component_names, should_exist=False)
 
-    # check that on_cleanup resets the attributes in the node
-    test_controller.on_cleanup(test_controller._state_machine.current_state)
-    for name in parameter_names:
-        assert not hasattr(test_controller, name)
 
-    assert not hasattr(test_controller, "test_cbg")
-    assert not hasattr(test_controller, "publisher_ctrl")
-    assert not hasattr(test_controller, "timer_ctrl")
-    assert not hasattr(test_controller, "subscriber_est")
+def test_controller_functionality(configured_controller: TestObeliskController) -> None:
+    """Test the functionality of the controller."""
+    estimated_state_msg = oem.EstimatedState()
+    configured_controller.update_x_hat(estimated_state_msg)
+    assert configured_controller.x_hat == 1
 
-    # check that we can configure the node again then update the state estimate and compute the control signal
-    test_controller.on_configure(test_controller._state_machine.current_state)
-
-    estimated_state_msg = oem.EstimatedState()  # [NOTE] dummy message
-    test_controller.update_x_hat(estimated_state_msg)
-    assert test_controller.x_hat == 1
-
-    obk_ctrl_msg = test_controller.compute_control()
+    obk_ctrl_msg = configured_controller.compute_control()
     assert isinstance(obk_ctrl_msg, ocm.PositionSetpoint)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskControlMsg)
     assert is_in_bound(type(obk_ctrl_msg), ObeliskMsg)
-
-    # destroy node and shutdown rclpy session
-    test_controller.destroy_node()
-    rclpy.shutdown()
