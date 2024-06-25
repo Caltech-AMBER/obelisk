@@ -23,15 +23,43 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
   public:
     explicit ObeliskNode(
         const std::string& node_name,
+        const std::vector<std::string>& pub_config_param_names   = {},
+        const std::vector<std::string>& sub_config_param_names   = {},
+        const std::vector<std::string>& timer_config_param_names = {},
+        const std::vector<std::string>& cb_config_param_names    = {},
         const rclcpp::NodeOptions& options  = rclcpp::NodeOptions(),
         bool enable_communication_interface = true)
-        : LifecycleNode(node_name, options, enable_communication_interface) {};
+        : LifecycleNode(node_name, options, enable_communication_interface) {
+        AddRosParameters(pub_config_param_names);
+        AddRosParameters(sub_config_param_names);
+        AddRosParameters(timer_config_param_names);
+        AddRosParameters(cb_config_param_names);
+
+        pub_config_param_names_   = pub_config_param_names;
+        sub_config_param_names_   = sub_config_param_names;
+        timer_config_param_names_ = timer_config_param_names;
+        cb_config_param_names_    = timer_config_param_names;
+    };
 
     ObeliskNode(const std::string& node_name, const std::string& namespace_,
+                const std::vector<std::string>& pub_config_param_names   = {},
+                const std::vector<std::string>& sub_config_param_names   = {},
+                const std::vector<std::string>& timer_config_param_names = {},
+                const std::vector<std::string>& cb_config_param_names    = {},
                 const rclcpp::NodeOptions& options  = rclcpp::NodeOptions(),
                 bool enable_communication_interface = true)
         : LifecycleNode(node_name, namespace_, options,
-                        enable_communication_interface) {};
+                        enable_communication_interface) {
+        AddRosParameters(pub_config_param_names);
+        AddRosParameters(sub_config_param_names);
+        AddRosParameters(timer_config_param_names);
+        AddRosParameters(cb_config_param_names);
+
+        pub_config_param_names_   = pub_config_param_names;
+        sub_config_param_names_   = sub_config_param_names;
+        timer_config_param_names_ = timer_config_param_names;
+        cb_config_param_names_    = timer_config_param_names;
+    };
 
     // TODO (@zolkin): Should this be public or protected?
     /**
@@ -304,10 +332,50 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
             "No message type provided in this config string!");
     }
 
+    void ParseRosParamters() {
+        pub_config_strs_.clear();
+        sub_config_strs_.clear();
+        timer_config_strs_.clear();
+        cb_config_strs_.clear();
+
+        for (const auto& name : pub_config_param_names_) {
+            pub_config_strs_.emplace_back(
+                this->get_parameter(name).as_string());
+        }
+
+        for (const auto& name : sub_config_param_names_) {
+            sub_config_strs_.emplace_back(
+                this->get_parameter(name).as_string());
+        }
+
+        for (const auto& name : timer_config_param_names_) {
+            timer_config_strs_.emplace_back(
+                this->get_parameter(name).as_string());
+        }
+
+        for (const auto& name : cb_config_param_names_) {
+            cb_config_strs_.emplace_back(this->get_parameter(name).as_string());
+        }
+    }
+
     // --------- Member Variables --------- //
-    std::vector<std::string> config_strs_;
+    std::vector<std::string> pub_config_strs_;
+    std::vector<std::string> sub_config_strs_;
+    std::vector<std::string> timer_config_strs_;
+    std::vector<std::string> cb_config_strs_;
+
+    std::vector<std::string> pub_config_param_names_;
+    std::vector<std::string> sub_config_param_names_;
+    std::vector<std::string> timer_config_param_names_;
+    std::vector<std::string> cb_config_param_names_;
 
   private:
+    void AddRosParameters(const std::vector<std::string>& param_names) {
+        for (const auto& name : param_names) {
+            this->declare_parameter<std::string>(name);
+        }
+    }
+
     // --------- Member Variables --------- //
     static constexpr int DEFAULT_DEPTH       = 10;
     static constexpr bool DEFAULT_IS_OBK_MSG = true;

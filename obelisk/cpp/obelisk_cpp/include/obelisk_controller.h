@@ -21,23 +21,27 @@ struct MessagePack {
 template <typename ControlMessagesT, typename EstimatorMessagesT>
 class ObeliskController : public ObeliskNode {
   public:
-    explicit ObeliskController(const std::string& name) : ObeliskNode(name) {
+    explicit ObeliskController(
+        const std::string& name,
+        const std::vector<std::string>& pub_config_param_names   = {},
+        const std::vector<std::string>& sub_config_param_names   = {},
+        const std::vector<std::string>& timer_config_param_names = {},
+        const std::vector<std::string>& cb_config_param_names    = {})
+        : ObeliskNode(name, pub_config_param_names, sub_config_param_names,
+                      timer_config_param_names, cb_config_param_names) {
         // Declare all paramters
-        // TODO: Change the defaults
-        this->declare_parameter("callback_group_config_strs",
-                                "topic:topc1,message_type:EstimatedState");
-        this->declare_parameter("timer_ctrl_config_str",
-                                "topic:topc1,message_type:JointEncoder");
-        this->declare_parameter("pub_ctrl_config_str",
-                                "topic:topic1,message_type:PositionSetpoint");
-        this->declare_parameter("sub_est_config_str",
-                                "topic:topic1,message_type:PositionSetpoint");
-
-        this->declare_parameter("user_param_name", "topic:topic1");
+        this->declare_parameter<std::string>("callback_group_config_strs");
+        this->declare_parameter<std::string>("timer_ctrl_config_str");
+        this->declare_parameter<std::string>("pub_ctrl_config_str");
+        this->declare_parameter<std::string>("sub_est_config_str");
+        // "topic:topic1,message_type:PositionSetpoint"
     }
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_configure(const rclcpp_lifecycle::State& prev_state) {
+        // Parse ros parameters in ObeliskNode
+        ParseRosParamters();
+
         // Get the config strings that we know about
         config_strs_.emplace_back(
             this->get_parameter("pub_ctrl_config_str").as_string());
