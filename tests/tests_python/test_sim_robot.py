@@ -165,5 +165,5 @@ def test_sim_robot_functionality(configured_sim_robot: TestObeliskSimRobot) -> N
     assert isinstance(true_sim_state, osm.TrueSimState)
 
     configured_sim_robot.on_activate(configured_sim_robot._state_machine.current_state)
-    time.sleep(0.001)
+    time.sleep(0.01)
     assert np.allclose(list(configured_sim_robot.shared_ctrl), [0.1, 0.2])

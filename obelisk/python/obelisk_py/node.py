@@ -94,7 +94,8 @@ class ObeliskNode(LifecycleNode):
                 return value
 
         try:
-            field_names, value_names = zip(*[pair.split(":") for pair in field_value_pairs])  # split by colon
+            field_names, value_names = list(zip(*[pair.split(":") for pair in field_value_pairs]))  # split by colon
+            field_names = list(field_names)  # Convert to list
             value_names = [_convert_values(value) for value in value_names]  # convert ints/floats
         except ValueError as e:
             raise ValueError(
@@ -484,6 +485,8 @@ class ObeliskNode(LifecycleNode):
         callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_config_strs)
         for callback_group_name, callback_group in callback_group_dict.items():
             setattr(self, callback_group_name, callback_group)
+
+        return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Clean up the controller."""
