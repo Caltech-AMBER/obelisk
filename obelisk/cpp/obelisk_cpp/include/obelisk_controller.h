@@ -1,4 +1,5 @@
 #include "obelisk_node.h"
+// #include "rclcpp_lifecycle/lifecycle_node_interface.hpp"
 
 namespace obelisk {
 template <typename... MessagesT>
@@ -22,10 +23,35 @@ class ObeliskController : public ObeliskNode {
   public:
     explicit ObeliskController(const std::string& name) : ObeliskNode(name) {
         // Declare all paramters
-        this->declare_parameter("callback_group_config_strs", "topic:topc1");
-        this->declare_parameter("timer_ctrl_config_str", "topic:topc1");
-        this->declare_parameter("pub_ctrl_config_str", "topic:topic1");
-        this->declare_parameter("sub_est_config_str", "topic:topic1");
+        // TODO: Change the defaults
+        this->declare_parameter("callback_group_config_strs",
+                                "topic:topc1,message_type:EstimatedState");
+        this->declare_parameter("timer_ctrl_config_str",
+                                "topic:topc1,message_type:JointEncoder");
+        this->declare_parameter("pub_ctrl_config_str",
+                                "topic:topic1,message_type:PositionSetpoint");
+        this->declare_parameter("sub_est_config_str",
+                                "topic:topic1,message_type:PositionSetpoint");
+
+        this->declare_parameter("user_param_name", "topic:topic1");
+    }
+
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+    on_configure(const rclcpp_lifecycle::State& prev_state) {
+        // Get the config strings that we know about
+        config_strs_.emplace_back(
+            this->get_parameter("pub_ctrl_config_str").as_string());
+        config_strs_.emplace_back(
+            this->get_parameter("sub_est_config_str").as_string());
+        config_strs_.emplace_back(
+            this->get_parameter("timer_ctrl_config_str").as_string());
+        config_strs_.emplace_back(
+            this->get_parameter("callback_group_config_strs").as_string());
+
+        CreateAllControllerPublishers();
+
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+            CallbackReturn::SUCCESS;
     }
 
     // template <typename CallbackT>
@@ -42,7 +68,8 @@ class ObeliskController : public ObeliskNode {
     // // the stack of types and call this on the proper publisher tuple)
     void CreateAllControllerPublishers() {
         // TODO: Verify this assigns correctly
-        std::apply(CreatePubWithStr, control_publishers_);
+        std::apply([this](auto&... ts) { (..., CreatePubWithStr(ts)); },
+                   ctrl_messages_);
     };
 
     // // TODO: What does the timer take?
@@ -75,6 +102,9 @@ class ObeliskController : public ObeliskNode {
     // List of all the subscribers
     SubscriberTuple estimator_subscribers_;
 
+    // Tuple used just for the types
+    ControlMessagesTuple ctrl_messages_;
+
     // typename rclcpp::Publisher<ControlMessageT>::SharedPtr
     // control_publisher_; typename
     // rclcpp::Subscription<StateMessageT>::SharedPtr
@@ -89,10 +119,35 @@ class ObeliskController : public ObeliskNode {
     // back
 
   private:
-    template <typename MessageT>
-    void CreatePubWithStr(PublisherType<MessageT>& publisher) {
-        publisher = CreatePublisherFromConfigStr<MessageT>(
-            this->get_parameter("pub_ctrl_config_str"));
+    template <typename MessageT> void CreatePubWithStr(const MessageT& msg) {
+        // TODO: need to associate the message type with the config string
+        // The config string will have a message_type field
+        // All obelisk messages will have a constant string field MESSAGE_NAME
+        // At runtime loop through these and use the config string that has
+        // message_type = MESSAGE_NAME
+        // TODO: Probably best to make a map between the message type and its
+        // NAME, so the user can append more if they want
+        bool message_found = false;
+        for (const auto& config : config_strs_) {
+            // Parse the string into a map
+            const auto config_map = ParseConfigStr(config);
+            // Check if the message name matches the name in a message
+            if (GetMessageName(config_map) == MessageT::MESSAGE_NAME) {
+                // RCLCPP_INFO_STREAM(
+                // this->get_logger(),
+                // "Message name:" << MessageT::MESSAGE_NAME);
+                std::cout << "Message name: " << MessageT::MESSAGE_NAME
+                          << std::endl;
+                std::get<PublisherType<MessageT>>(control_publishers_) =
+                    CreatePublisherFromConfigStr<MessageT>(config);
+                message_found = true;
+            }
+        }
+
+        if (!message_found) {
+            throw std::runtime_error(
+                "No config string contains the desired message type!");
+        }
     }
 
     // template <typename... Args>

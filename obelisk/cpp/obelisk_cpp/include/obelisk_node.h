@@ -186,7 +186,6 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         // TODO: Config the callback group
     }
 
-  private:
     /**
      * @brief Parses the configuration string into a map from strings to
      * strings. the value strings are meant to be parsed in other functions.
@@ -293,6 +292,22 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return period;
     }
 
+    std::string
+    GetMessageName(const std::map<std::string, std::string>& config_map) {
+        for (auto& it : config_map) {
+            if (it.first == "message_type") {
+                return it.second;
+            }
+        }
+
+        throw std::runtime_error(
+            "No message type provided in this config string!");
+    }
+
+    // --------- Member Variables --------- //
+    std::vector<std::string> config_strs_;
+
+  private:
     // --------- Member Variables --------- //
     static constexpr int DEFAULT_DEPTH       = 10;
     static constexpr bool DEFAULT_IS_OBK_MSG = true;

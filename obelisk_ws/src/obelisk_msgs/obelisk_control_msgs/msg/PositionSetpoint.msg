@@ -1,1 +1,1 @@
-int64 num
+string MESSAGE_NAME="PositionSetpoint"
