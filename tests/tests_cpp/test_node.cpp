@@ -37,11 +37,16 @@ class ObeliskNodeTester : public ObeliskNode {
 };
 
 class ObeliskControllerTester
-    : public ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
-                               obelisk_estimator_msgs::msg::EstimatedState> {
+    : public ObeliskController<
+          obelisk::MessagePack<obelisk_control_msgs::msg::PositionSetpoint>,
+          obelisk::MessagePack<obelisk_estimator_msgs::msg::EstimatedState>> {
   public:
-    ObeliskControllerTester()
-        : ObeliskController("obelisk_controller_tester") {}
+    ObeliskControllerTester() : ObeliskController("obelisk_controller_tester") {
+        // std::get<ObeliskController::PublisherType<obelisk_control_msgs::msg::PositionSetpoint>>(control_publishers_)
+        //     =
+        //     CreatePublisherFromConfigStr<obelisk_control_msgs::msg::PositionSetpoint>("topic:topic1");
+        CreateAllControllerPublishers();
+    }
 };
 } // namespace obelisk
 
