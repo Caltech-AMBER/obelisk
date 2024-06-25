@@ -4,6 +4,10 @@ import obelisk_control_msgs.msg as ocm
 import obelisk_sensor_msgs.msg as osm
 import pytest
 import rclpy
+from rclpy.exceptions import ParameterUninitializedException
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskMsg, ObeliskSensorMsg, is_in_bound
 from obelisk_py.robot import ObeliskRobot
@@ -131,3 +135,72 @@ def test_robot_functionality(configured_robot: TestObeliskRobot) -> None:
         assert isinstance(msg, osm.JointEncoder)
         assert is_in_bound(type(msg), ObeliskSensorMsg)
         assert is_in_bound(type(msg), ObeliskMsg)
+
+
+def test_on_configure_success(configured_robot: TestObeliskRobot) -> None:
+    """Test successful configuration of the robot."""
+    result = configured_robot.on_configure(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    assert hasattr(configured_robot, "subscriber_ctrl")
+    assert isinstance(configured_robot.subscriber_ctrl, Subscription)
+    assert len(configured_robot.publisher_sensors) == 2  # noqa: PLR2004
+    assert all(isinstance(pub, Publisher) for pub in configured_robot.publisher_sensors)
+
+
+def test_on_configure_missing_parameters(test_robot: TestObeliskRobot) -> None:
+    """Test configuration with missing parameters."""
+    with pytest.raises(ParameterUninitializedException):
+        test_robot.on_configure(None)
+
+
+def test_on_cleanup(configured_robot: TestObeliskRobot) -> None:
+    """Test cleanup of the robot."""
+    result = configured_robot.on_cleanup(None)
+    assert result == TransitionCallbackReturn.SUCCESS
+    assert not hasattr(configured_robot, "subscriber_ctrl")
+    assert not hasattr(configured_robot, "publisher_sensors")
+    assert not hasattr(configured_robot, "sub_ctrl_config_str")
+    assert not hasattr(configured_robot, "pub_sensor_config_strs")
+
+
+def test_apply_control_callback(configured_robot: TestObeliskRobot) -> None:
+    """Test that the apply_control method is set as the subscriber callback."""
+    assert configured_robot.subscriber_ctrl.callback == configured_robot.apply_control
+
+
+def test_publisher_creation(configured_robot: TestObeliskRobot) -> None:
+    """Test creation of publishers based on configuration strings."""
+    assert len(configured_robot.publisher_sensors) == 2  # noqa: PLR2004
+    assert all(isinstance(pub, Publisher) for pub in configured_robot.publisher_sensors)
+
+
+@pytest.mark.parametrize(
+    "invalid_config",
+    [
+        {"sub_ctrl_config_str": "invalid_config_string"},
+        {"pub_sensor_config_strs": ["invalid_config_string"]},
+    ],
+)
+def test_invalid_configuration(test_robot: TestObeliskRobot, invalid_config: Dict[str, Any]) -> None:
+    """Test handling of invalid configuration strings."""
+    for key, value in invalid_config.items():
+        test_robot.set_parameters([rclpy.Parameter(key, value=value)])
+    with pytest.raises(Exception) as exc_info:  # The exact exception type may vary based on implementation
+        test_robot.on_configure(None)
+    assert isinstance(exc_info.value, Exception)
+
+
+def test_lifecycle_transitions(configured_robot: TestObeliskRobot) -> None:
+    """Test full lifecycle transitions of the robot."""
+    assert configured_robot.on_configure(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_robot.on_cleanup(None) == TransitionCallbackReturn.SUCCESS
+
+    assert configured_robot.on_configure(None) == TransitionCallbackReturn.SUCCESS
+    assert configured_robot.on_shutdown(None) == TransitionCallbackReturn.SUCCESS
+
+
+def test_inheritance(configured_robot: TestObeliskRobot) -> None:
+    """Test that ObeliskRobot correctly inherits from ObeliskNode."""
+    from obelisk_py.node import ObeliskNode
+
+    assert isinstance(configured_robot, ObeliskNode)
