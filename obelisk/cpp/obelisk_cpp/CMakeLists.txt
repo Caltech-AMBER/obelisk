@@ -18,17 +18,18 @@ find_package(obelisk_estimator_msgs REQUIRED)
 
 set(OBELISK_CPP_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 set(OBELISK_CPP_HEADER_LIST
-        "${OBELISK_CPP_INC}/obelisk_node.h")
+        "${OBELISK_CPP_INC}/obelisk_node.h"
+        "${OBELISK_CPP_INC}/obelisk_controller.h")
 
 add_library(ObeliskCpp ${OBELISK_CPP_HEADER_LIST})
 set_target_properties(ObeliskCpp PROPERTIES LINKER_LANGUAGE CXX)
 
-ament_target_dependencies(ObeliskCpp 
-  rclcpp 
-  rclcpp_lifecycle 
+ament_target_dependencies(ObeliskCpp
+  rclcpp
+  rclcpp_lifecycle
   obelisk_control_msgs
   obelisk_estimator_msgs
-  obelisk_sensor_msgs 
+  obelisk_sensor_msgs
   std_msgs)
 
 target_include_directories(ObeliskCpp PUBLIC

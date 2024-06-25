@@ -26,17 +26,22 @@ class ObeliskNodeTester : public ObeliskNode {
         CreatePublisherFromConfigStr<MessageT>(config);
     }
 
+    void TimerConfigFromStrTester(const std::string& config) {
+        CreateWallTimerFromConfigStr(
+            config, std::bind(&ObeliskNodeTester::SimpleCallback, this));
+    }
+    void SimpleCallback() {}
+
     // Templated generic callback to facilitate easy testing
     template <typename MessageT> void GenericCallback(const MessageT& msg) {}
 };
 
-class ObeliskControllerTester : public ObeliskController {
+class ObeliskControllerTester
+    : public ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
+                               obelisk_estimator_msgs::msg::EstimatedState> {
   public:
     ObeliskControllerTester()
         : ObeliskController("obelisk_controller_tester") {}
-
-  protected:
-  private:
 };
 } // namespace obelisk
 
@@ -178,6 +183,20 @@ TEST_CASE("Subscriber from string", "[obelisk_node]") {
         REQUIRE_THROWS(node.PublishConfigStrTester<
                        obelisk_control_msgs::msg::PositionSetpoint>(
             "topic:test1,depth 10"));
+    }
+
+    SECTION("Timers") {
+        // Check with good config string
+        REQUIRE_NOTHROW(node.TimerConfigFromStrTester("timer_period_sec:2"));
+
+        REQUIRE_NOTHROW(node.TimerConfigFromStrTester("timer_period_sec:.5"));
+
+        // Check without period
+        REQUIRE_THROWS(node.TimerConfigFromStrTester("depth:10"));
+
+        // Check when missing a colon
+        REQUIRE_THROWS(
+            node.TimerConfigFromStrTester("timer_period_sec:2, test"));
     }
 
     rclcpp::shutdown();

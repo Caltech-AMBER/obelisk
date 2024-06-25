@@ -1,5 +1,6 @@
 #pragma once
 #include <any>
+#include <chrono>
 #include <tuple>
 
 #include "obelisk_control_msgs/msg/position_setpoint.hpp"
@@ -161,6 +162,24 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return create_publisher<MessageT>(topic, depth, non_obelisk);
     }
 
+    template <typename CallbackT> // typename DurationT = std::milli
+    typename rclcpp::GenericTimer<CallbackT>::SharedPtr
+    CreateWallTimerFromConfigStr(const std::string& config,
+                                 CallbackT&& callback) {
+        // Finest frequency is determined by DurationT
+        using namespace std::chrono_literals;
+
+        const auto config_map   = ParseConfigStr(config);
+        const double period_sec = GetPeriod(config_map); // Period in seconds
+        const auto period_dur   = std::chrono::duration<double, std::milli>(
+            period_sec); // Convert period str to DurationT
+
+        return this->create_wall_timer(
+            period_dur, std::move(callback)); // TODO: Add call back group
+
+        // TODO: Config the callback group
+    }
+
   private:
     /**
      * @brief Parses the configuration string into a map from strings to
@@ -252,6 +271,23 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return obk_msg;
     }
 
+    double GetPeriod(const std::map<std::string, std::string>& config_map) {
+        double period = -1;
+        for (auto& it : config_map) {
+            if (it.first == "timer_period_sec") {
+                period = std::stod(it.second);
+                break;
+            }
+        }
+
+        if (period <= 0) {
+            throw std::runtime_error("Invalid timer period time provided");
+        }
+
+        return period;
+    }
+
+    // --------- Member Variables --------- //
     static constexpr int DEFAULT_DEPTH       = 10;
     static constexpr bool DEFAULT_IS_OBK_MSG = true;
 
