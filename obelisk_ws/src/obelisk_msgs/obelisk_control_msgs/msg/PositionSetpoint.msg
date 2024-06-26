@@ -1,1 +1,2 @@
-int64 dim
+string MESSAGE_NAME="PositionSetpoint"
+float32[] u

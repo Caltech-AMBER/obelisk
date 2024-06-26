@@ -23,6 +23,8 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "example_position_setpoint_controller = obelisk_control_py.example_position_setpoint_controller:main",
+        ],
     },
 )
