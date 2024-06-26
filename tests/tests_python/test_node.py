@@ -115,8 +115,8 @@ def test_create_callback_groups_from_config_str(test_node: ObeliskNode) -> None:
 
 def test_create_publisher_from_config_str(test_node: ObeliskNode) -> None:
     """Test creating a publisher from a configuration string."""
-    config_str = "msg_type:JointEncoder,topic:/test/create_publisher_from_config_str,history_depth:20"
-    publisher = test_node._create_publisher_from_config_str(config_str, "odom")
+    config_str = "msg_type:JointEncoders,topic:/test/create_publisher_from_config_str,history_depth:20"
+    publisher = test_node._create_publisher_from_config_str(config_str)
     assert isinstance(publisher, Publisher)
     assert publisher.topic_name == "/test/create_publisher_from_config_str"
 
@@ -124,14 +124,12 @@ def test_create_publisher_from_config_str(test_node: ObeliskNode) -> None:
 def test_create_subscription_from_config_str(test_node: ObeliskNode) -> None:
     """Test creating a subscription from a configuration string."""
 
-    def dummy_callback(_: osm.JointEncoder) -> None:
+    def dummy_callback(_: osm.JointEncoders) -> None:
         pass
 
     test_node.dummy_callback = dummy_callback
-    config_str = (
-        "msg_type:JointEncoder,topic:/test/create_subscription_from_config_str,callback:dummy_callback,history_depth:20"
-    )
-    subscription = test_node._create_subscription_from_config_str(config_str, "odom")
+    config_str = "msg_type:JointEncoders,topic:/test/create_subscription_from_config_str,history_depth:20"
+    subscription = test_node._create_subscription_from_config_str(config_str, test_node.dummy_callback)
     assert isinstance(subscription, Subscription)
     assert subscription.topic_name == "/test/create_subscription_from_config_str"
 
@@ -144,8 +142,8 @@ def test_create_timer_from_config_str(test_node: ObeliskNode) -> None:
 
     test_node.dummy_timer_callback = dummy_timer_callback
     period = 0.1
-    config_str = f"timer_period_sec:{period},callback:dummy_timer_callback"
-    timer = test_node._create_timer_from_config_str(config_str)
+    config_str = f"timer_period_sec:{period}"
+    timer = test_node._create_timer_from_config_str(config_str, test_node.dummy_timer_callback)
     assert isinstance(timer, Timer)
     assert timer.timer_period_ns == period * 1e9
 

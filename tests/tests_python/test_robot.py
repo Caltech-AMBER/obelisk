@@ -26,11 +26,11 @@ class TestObeliskRobot(ObeliskRobot):
 
     def publish_measurement1(self) -> ObeliskSensorMsg:
         """Publish measurement 1."""
-        return osm.JointEncoder()
+        return osm.JointEncoders()
 
     def publish_measurement2(self) -> ObeliskSensorMsg:
         """Publish measurement 2."""
-        return osm.JointEncoder()
+        return osm.JointEncoders()
 
 
 @pytest.fixture
@@ -51,21 +51,20 @@ def configured_robot(
         "sub_ctrl_config_str": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_robot/ctrl,"
-            "callback:apply_control,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
         ),
         "pub_sensor_config_strs": [
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_robot/sensor1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
             ),
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_robot/sensor2,"
                 "history_depth:10,"
                 "callback_group:None,"
@@ -132,7 +131,7 @@ def test_robot_functionality(configured_robot: TestObeliskRobot) -> None:
     obk_sensor_msg2 = configured_robot.publish_measurement2()
 
     for msg in [obk_sensor_msg1, obk_sensor_msg2]:
-        assert isinstance(msg, osm.JointEncoder)
+        assert isinstance(msg, osm.JointEncoders)
         assert is_in_bound(type(msg), ObeliskSensorMsg)
         assert is_in_bound(type(msg), ObeliskMsg)
 

@@ -6,6 +6,7 @@ import pytest
 import rclpy
 from rclpy.exceptions import ParameterUninitializedException
 from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.lifecycle.node import LifecycleState
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
@@ -20,6 +21,24 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, Ob
 
 class TestObeliskController(ObeliskController):
     """Test ObeliskController class."""
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the controller."""
+        super().on_configure(state)
+        self.x_hat = None  # initialize a stateful quantity
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Activate the controller."""
+        super().on_activate(state)
+        self.x_hat = None
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state: LifecycleState) -> Any:
+        """Clean up the controller."""
+        super().on_cleanup(state)
+        del self.x_hat
+        return TransitionCallbackReturn.SUCCESS
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate."""
@@ -45,7 +64,7 @@ def configured_controller(
     """Fixture for the TestObeliskController class with parameters set."""
     parameter_dict = {
         "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "timer_ctrl_config_str": "timer_period_sec:0.001,callback:compute_control,callback_group:None",
+        "timer_ctrl_config_str": "timer_period_sec:0.001,callback_group:None",
         "pub_ctrl_config_str": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_controller/control,"
@@ -56,7 +75,6 @@ def configured_controller(
         "sub_est_config_str": (
             "msg_type:EstimatedState,"
             "topic:/obelisk/test_controller/state_estimate,"
-            "callback:update_x_hat,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"

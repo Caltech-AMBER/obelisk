@@ -56,21 +56,20 @@ def configured_sim_robot(
         "sub_ctrl_config_str": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_sim_robot/ctrl,"
-            "callback:apply_control,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
         ),
         "pub_sensor_config_strs": [
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sim_robot/sensor1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
             ),
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sim_robot/sensor2,"
                 "history_depth:10,"
                 "callback_group:None,"
@@ -78,9 +77,7 @@ def configured_sim_robot(
             ),
         ],
         "n_u": 2,
-        "timer_true_sim_state_config_str": (
-            "timer_period_sec:0.1," "callback:publish_true_sim_state," "callback_group:None"
-        ),
+        "timer_true_sim_state_config_str": ("timer_period_sec:0.1,callback_group:None"),
         "pub_true_sim_state_config_str": (
             "msg_type:TrueSimState,"
             "topic:/obelisk/test_sim_robot/true_sim_state,"
