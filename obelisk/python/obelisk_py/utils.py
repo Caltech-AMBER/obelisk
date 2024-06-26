@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Type, TypeVar, Union, get_args
+from typing import Optional, Type, TypeVar, Union, get_args
 
 from rclpy.node import Node
 
@@ -19,7 +19,7 @@ def get_classes_in_module(module: ModuleType) -> list[Type]:
 
 
 def check_and_add_obelisk_msg_attr(
-    node: Node, msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar], attr_suffix: str
+    node: Node, msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar], attr_suffix: Optional[str] = None
 ) -> None:
     """Check if a message type is in a module and add it as an attribute to a node in place.
 
@@ -36,14 +36,16 @@ def check_and_add_obelisk_msg_attr(
     if isinstance(msg_module_or_type, TypeVar):
         msg_module_type_names = [a.__name__ for a in get_args(msg_module_or_type.__bound__)]
         assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
-        for a in get_args(msg_module_or_type.__bound__):
-            if msg_type_name == a.__name__:
-                setattr(node, f"msg_type_{attr_suffix}", a)
-                break
+        if attr_suffix is not None:
+            for a in get_args(msg_module_or_type.__bound__):
+                if msg_type_name == a.__name__:
+                    setattr(node, f"msg_type_{attr_suffix}", a)
+                    break
     else:
         msg_module_type_names = [t.__name__ for t in get_classes_in_module(msg_module_or_type)]
         assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
-        for msg_module_type_name in msg_module_type_names:
-            if msg_type_name == msg_module_type_name:
-                setattr(node, f"msg_type_{attr_suffix}", getattr(msg_module_or_type, msg_type_name))
-                break
+        if attr_suffix is not None:
+            for msg_module_type_name in msg_module_type_names:
+                if msg_type_name == msg_module_type_name:
+                    setattr(node, f"msg_type_{attr_suffix}", getattr(msg_module_or_type, msg_type_name))
+                    break
