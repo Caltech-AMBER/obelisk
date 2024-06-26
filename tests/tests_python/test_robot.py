@@ -51,7 +51,6 @@ def configured_robot(
         "sub_ctrl_config_str": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_robot/ctrl,"
-            "callback:apply_control,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"

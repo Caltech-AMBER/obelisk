@@ -48,18 +48,17 @@ class ObeliskEstimator(ABC, ObeliskNode):
             self.get_parameter("sub_sensor_config_strs").get_parameter_value().string_array_value
         )
 
-        # create publishers+timers and subscribers
-        self.timer_est = self._create_timer_from_config_str(self.timer_est_config_str)
+        # create publisher+timer
+        self.timer_est = self._create_timer_from_config_str(self.timer_est_config_str, self.compute_state_estimate)
         self.publisher_est = self._create_publisher_from_config_str(self.pub_est_config_str)
         self.subscriber_sensors = []
-        for sensor_config_str in self.sub_sensor_config_strs:
-            sub_sensor = self._create_subscription_from_config_str(sensor_config_str)
-            self.subscriber_sensors.append(sub_sensor)
 
-        # checks
-        assert (
-            self.timer_est.callback == self.compute_state_estimate
-        ), f"The timer callback must be compute_state_estimate! Is {self.timer_est.callback}."
+        # in the derived class, you must create your own sensor subscribers
+        """
+        for sensor_config_str in self.sub_sensor_config_strs:
+            sub_sensor = self._create_subscription_from_config_str(sensor_config_str, self.<sensor_callback>)
+            self.subscriber_sensors.append(sub_sensor)
+        """
 
         return TransitionCallbackReturn.SUCCESS
 

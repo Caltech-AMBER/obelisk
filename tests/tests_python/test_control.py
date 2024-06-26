@@ -45,7 +45,7 @@ def configured_controller(
     """Fixture for the TestObeliskController class with parameters set."""
     parameter_dict = {
         "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "timer_ctrl_config_str": "timer_period_sec:0.001,callback:compute_control,callback_group:None",
+        "timer_ctrl_config_str": "timer_period_sec:0.001,callback_group:None",
         "pub_ctrl_config_str": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_controller/control,"
@@ -56,7 +56,6 @@ def configured_controller(
         "sub_est_config_str": (
             "msg_type:EstimatedState,"
             "topic:/obelisk/test_controller/state_estimate,"
-            "callback:update_x_hat,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
