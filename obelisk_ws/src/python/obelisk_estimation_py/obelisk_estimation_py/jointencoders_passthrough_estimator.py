@@ -12,9 +12,9 @@ from obelisk_py.estimation import ObeliskEstimator
 class JointEncodersPassthroughEstimator(ObeliskEstimator):
     """Passthrough estimator for joint encoder sensors."""
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self) -> None:
         """Initialize the joint encoders passthrough estimator."""
-        super().__init__(node_name)
+        super().__init__("joint_encoders_passthrough_estimator")
         self.joint_encoder_values = None
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:

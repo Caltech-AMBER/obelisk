@@ -12,6 +12,10 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 class ExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
+    def __init__(self) -> None:
+        """Initialize the example position setpoint controller."""
+        super().__init__("example_position_setpoint_controller")
+
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate.
 
