@@ -107,7 +107,7 @@ colcon-common-extensions = "*"
 
 # obelisk
 [feature.obelisk.pypi-dependencies]
-
+mujoco = ">=3.1.0"
 
 
 # docs
