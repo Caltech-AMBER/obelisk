@@ -6,7 +6,7 @@ from obelisk_control_msgs.msg import PositionSetpoint
 from rclpy.executors import MultiThreadedExecutor
 
 from obelisk_py.control import ObeliskController
-from obelisk_py.typing import ObeliskControlMsg, ObeliskEstimatorMsg
+from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 
 
 class ExamplePositionSetpointController(ObeliskController):

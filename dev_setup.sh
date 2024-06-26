@@ -101,6 +101,14 @@ else
 	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
 fi
 
+# set PYRIGHT_PYTHON_FORCE_VERSION=latest and add to .bashrc
+if ! grep -q "PYRIGHT_PYTHON_FORCE_VERSION=latest" ~/.bashrc; then
+	echo "export PYRIGHT_PYTHON_FORCE_VERSION=latest" >> ~/.bashrc
+	echo -e "\033[1;32mPYRIGHT_PYTHON_FORCE_VERSION=latest added to ~/.bashrc!\033[0m"
+else
+	echo -e "\033[1;33mPYRIGHT_PYTHON_FORCE_VERSION=latest already exists in ~/.bashrc, skipping...\033[0m"
+fi
+
 # create a .env file under the docker directory with the USER, UID, and GID of the local system
 if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
 	echo "USER=$USER" > $OBELISK_ROOT/docker/.env
