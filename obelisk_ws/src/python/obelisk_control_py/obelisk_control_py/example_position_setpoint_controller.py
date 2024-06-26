@@ -3,7 +3,7 @@ from typing import List, Optional
 import numpy as np
 import rclpy
 from obelisk_control_msgs.msg import PositionSetpoint
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor
 
 from obelisk_py.control import ObeliskController
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
@@ -31,17 +31,17 @@ class ExamplePositionSetpointController(ObeliskController):
         u = 0.1 * np.sin(t)  # example state-independent control input
 
         # setting the message
-        position_setpoint = PositionSetpoint()
-        position_setpoint.u = u
-        self.publisher_ctrl.publish(position_setpoint)
-        return position_setpoint
+        position_setpoint_msg = PositionSetpoint()
+        position_setpoint_msg.u = u
+        self.publisher_ctrl.publish(position_setpoint_msg)
+        return position_setpoint_msg
 
 
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
     rclpy.init(args=args)
     example_position_setpoint_controller = ExamplePositionSetpointController()
-    executor = MultiThreadedExecutor()
+    executor = SingleThreadedExecutor()
     executor.add_node(example_position_setpoint_controller)
     executor.spin()
     example_position_setpoint_controller.destroy_node()

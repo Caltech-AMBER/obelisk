@@ -23,6 +23,8 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "jointencoders_passthrough_estimator = obelisk_estimation_py.jointencoders_passthrough_estimator:main",
+        ],
     },
 )
