@@ -70,14 +70,14 @@ def configured_estimator(
         ),
         "sub_sensor_config_strs": [
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_estimator/sensor1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
             ),
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_estimator/sensor2,"
                 "history_depth:10,"
                 "callback_group:None,"
@@ -143,8 +143,8 @@ def test_cleanup(
 
 def test_estimator_functionality(configured_estimator: TestObeliskEstimator) -> None:
     """Test the functionality of the estimator."""
-    joint_encoder_msg1 = osm.JointEncoder()
-    joint_encoder_msg2 = osm.JointEncoder()
+    joint_encoder_msg1 = osm.JointEncoders()
+    joint_encoder_msg2 = osm.JointEncoders()
 
     configured_estimator.sensor_callback1(joint_encoder_msg1)
     configured_estimator.sensor_callback2(joint_encoder_msg2)
@@ -206,8 +206,8 @@ def test_on_deactivate(configured_estimator: TestObeliskEstimator) -> None:
 
 def test_sensor_callbacks(configured_estimator: TestObeliskEstimator) -> None:
     """Test the sensor callback methods."""
-    joint_encoder_msg1 = osm.JointEncoder()
-    joint_encoder_msg2 = osm.JointEncoder()
+    joint_encoder_msg1 = osm.JointEncoders()
+    joint_encoder_msg2 = osm.JointEncoders()
 
     configured_estimator.sensor_callback1(joint_encoder_msg1)
     configured_estimator.sensor_callback2(joint_encoder_msg2)

@@ -20,11 +20,11 @@ class TestObeliskSensor(ObeliskSensor):
 
     def publish_measurement1(self) -> ObeliskSensorMsg:
         """Publish measurement 1."""
-        return osm.JointEncoder()
+        return osm.JointEncoders()
 
     def publish_measurement2(self) -> ObeliskSensorMsg:
         """Publish measurement 2."""
-        return osm.JointEncoder()
+        return osm.JointEncoders()
 
 
 @pytest.fixture
@@ -44,14 +44,14 @@ def configured_sensor(
         "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
         "pub_sensor_config_strs": [
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sensor/sensor1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
             ),
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sensor/sensor2,"
                 "history_depth:10,"
                 "callback_group:None,"
@@ -116,7 +116,7 @@ def test_sensor_functionality(configured_sensor: TestObeliskSensor) -> None:
     obk_sensor_msg2 = configured_sensor.publish_measurement2()
 
     for msg in [obk_sensor_msg1, obk_sensor_msg2]:
-        assert isinstance(msg, osm.JointEncoder)
+        assert isinstance(msg, osm.JointEncoders)
         assert is_in_bound(type(msg), ObeliskSensorMsg)
         assert is_in_bound(type(msg), ObeliskMsg)
 
@@ -161,7 +161,7 @@ def test_publisher_creation(configured_sensor: TestObeliskSensor) -> None:
     [
         ["invalid_config_string"],
         ["msg_type:InvalidType,topic:/test/topic"],
-        ["msg_type:JointEncoder,topic:/test/topic,invalid_key:value"],
+        ["msg_type:JointEncoders,topic:/test/topic,invalid_key:value"],
     ],
 )
 def test_invalid_publisher_config(test_sensor: TestObeliskSensor, invalid_config: List[str]) -> None:
@@ -176,8 +176,8 @@ def test_publish_measurement_type(configured_sensor: TestObeliskSensor) -> None:
     """Test that published measurements are of the correct type."""
     measurement1 = configured_sensor.publish_measurement1()
     measurement2 = configured_sensor.publish_measurement2()
-    assert isinstance(measurement1, osm.JointEncoder)
-    assert isinstance(measurement2, osm.JointEncoder)
+    assert isinstance(measurement1, osm.JointEncoders)
+    assert isinstance(measurement2, osm.JointEncoders)
 
 
 @pytest.mark.parametrize("method_name", ["publish_measurement1", "publish_measurement2"])
@@ -193,9 +193,9 @@ def test_multiple_sensors(test_sensor: TestObeliskSensor, set_node_parameters: C
     """Test configuration with multiple sensors."""
     parameter_dict = {
         "pub_sensor_config_strs": [
-            "msg_type:JointEncoder,topic:/sensor1,history_depth:10,callback_group:None,non_obelisk:False",
-            "msg_type:JointEncoder,topic:/sensor2,history_depth:5,callback_group:None,non_obelisk:False",
-            "msg_type:JointEncoder,topic:/sensor3,history_depth:1,callback_group:None,non_obelisk:False",
+            "msg_type:JointEncoders,topic:/sensor1,history_depth:10,callback_group:None,non_obelisk:False",
+            "msg_type:JointEncoders,topic:/sensor2,history_depth:5,callback_group:None,non_obelisk:False",
+            "msg_type:JointEncoders,topic:/sensor3,history_depth:1,callback_group:None,non_obelisk:False",
         ],
     }
     set_node_parameters(test_sensor, parameter_dict)

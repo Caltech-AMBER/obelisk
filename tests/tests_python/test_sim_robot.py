@@ -62,14 +62,14 @@ def configured_sim_robot(
         ),
         "pub_sensor_config_strs": [
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sim_robot/sensor1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
             ),
             (
-                "msg_type:JointEncoder,"
+                "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sim_robot/sensor2,"
                 "history_depth:10,"
                 "callback_group:None,"
