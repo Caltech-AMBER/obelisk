@@ -3,7 +3,7 @@ from glob import glob
 
 from setuptools import setup
 
-package_name = "example_py"
+package_name = "obelisk_sim_py"
 
 setup(
     name=package_name,
@@ -19,12 +19,10 @@ setup(
     zip_safe=True,
     maintainer="alberthli",
     maintainer_email="alberthli@caltech.edu",
-    description="Example package.",
+    description="Python Obelisk ROS2 package for simulation.",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [
-            "example_py = example_py.example_py:main",
-        ],
+        "console_scripts": [],
     },
 )

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>obelisk_sim_py</name>
+  <version>0.0.1</version>
+  <description>Python Obelisk ROS2 package for simulation.</description>
+  <maintainer email="alberthli@caltech.edu">alberthli</maintainer>
+  <license>MIT</license>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
