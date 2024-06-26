@@ -9,6 +9,11 @@ namespace obelisk {
             this->declare_parameter<std::vector<std::string>>("sub_sensor_config_strs", {""});
         }
 
+        /**
+         * @brief Configures all the required ROS components. Specifcially this
+         * registers the estimator_publisher_, and the estimator_timer_. Also makes a call to ObeliskNode on configure
+         * to parse and create the callback group map.
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
@@ -85,6 +90,7 @@ namespace obelisk {
          */
         virtual EstimatorMessageT ComputeStateEstimate() = 0;
 
+        // Publishes the estimated state
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<EstimatorMessageT>> estimator_publisher_;
 
         // timer to activate ComputeControl
