@@ -6,6 +6,7 @@ import pytest
 import rclpy
 from rclpy.exceptions import ParameterUninitializedException
 from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.lifecycle.node import LifecycleState
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
@@ -20,6 +21,16 @@ from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskMsg, is_in_bou
 
 class TestObeliskEstimator(ObeliskEstimator):
     """Test ObeliskEstimator class."""
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the estimator."""
+        super().on_configure(state)
+        sensor_callbacks = [self.sensor_callback1, self.sensor_callback2]
+        for sensor_config_str, sensor_callback in zip(self.sub_sensor_config_strs, sensor_callbacks):
+            sub_sensor = self._create_subscription_from_config_str(sensor_config_str, sensor_callback)
+            self.subscriber_sensors.append(sub_sensor)
+
+        return TransitionCallbackReturn.SUCCESS
 
     def sensor_callback1(self, msg: ObeliskMsg) -> None:
         """Sensor callback 1."""
@@ -49,7 +60,7 @@ def configured_estimator(
     """Fixture for the TestObeliskEstimator class with parameters set."""
     parameter_dict = {
         "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "timer_est_config_str": "timer_period_sec:0.001,callback:compute_state_estimate,callback_group:None",
+        "timer_est_config_str": "timer_period_sec:0.001,callback_group:None",
         "pub_est_config_str": (
             "msg_type:EstimatedState,"
             "topic:/obelisk/test_estimator/state_estimate,"
@@ -61,7 +72,6 @@ def configured_estimator(
             (
                 "msg_type:JointEncoder,"
                 "topic:/obelisk/test_estimator/sensor1,"
-                "callback:sensor_callback1,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
@@ -69,7 +79,6 @@ def configured_estimator(
             (
                 "msg_type:JointEncoder,"
                 "topic:/obelisk/test_estimator/sensor2,"
-                "callback:sensor_callback2,"
                 "history_depth:10,"
                 "callback_group:None,"
                 "non_obelisk:False"
