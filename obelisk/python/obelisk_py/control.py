@@ -55,8 +55,8 @@ class ObeliskController(ABC, ObeliskNode):
 
         # create publishers+timers/subscribers
         self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_config_str)
-        self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_config_str, "ctrl")
-        self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_config_str, "est")
+        self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_config_str)
+        self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_config_str)
 
         # checks
         assert (

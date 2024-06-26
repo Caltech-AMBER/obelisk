@@ -13,7 +13,7 @@ from rclpy.timer import Timer
 
 from obelisk_py.exceptions import ObeliskMsgError
 from obelisk_py.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
-from obelisk_py.utils import check_and_add_obelisk_msg_attr
+from obelisk_py.utils import check_and_get_obelisk_msg_type
 
 
 class ObeliskNode(LifecycleNode):
@@ -184,7 +184,7 @@ class ObeliskNode(LifecycleNode):
 
         return callback_group_dict
 
-    def _create_publisher_from_config_str(self, config_str: str, msg_attr_suffix: str) -> Publisher:
+    def _create_publisher_from_config_str(self, config_str: str, msg_type: Optional[Type] = None) -> Publisher:
         """Create a publisher from a configuration string.
 
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
@@ -193,7 +193,7 @@ class ObeliskNode(LifecycleNode):
 
         Parameters:
             config_str: The configuration string.
-            msg_attr_suffix: The suffix to append to the attribute name when adding the Obelisk message attribute.
+            msg_type: The message type. If passed, we just use this directly.
 
         Returns:
             publisher: The created publisher.
@@ -209,19 +209,22 @@ class ObeliskNode(LifecycleNode):
         ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
-        # create the publisher
+        # parse the message type
         assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
         if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             if config_dict["non_obelisk"].lower() != "true":
-                check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
+                msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskMsg)
         else:
             self.get_logger().warn(
                 "Creating a publisher that can publish non-Obelisk messages. "
                 "This may cause certain API incompatibilities."
             )
-            check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskAllowedMsg, msg_attr_suffix)
+            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskAllowedMsg)
 
+        assert msg_type is not None, "Could not find message type or none supplied!"
+
+        # set the callback group
         callback_group_name = config_dict.get("callback_group", "None")
         assert isinstance(callback_group_name, str), "The 'callback_group' field must be a string!"
         if callback_group_name.lower() == "none":
@@ -240,14 +243,14 @@ class ObeliskNode(LifecycleNode):
         assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
 
         return self.create_publisher(
-            msg_type=getattr(self, f"msg_type_{msg_attr_suffix}"),
+            msg_type=msg_type,
             topic=config_dict["topic"],
             qos_profile=history_depth,
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
 
-    def _create_subscription_from_config_str(self, config_str: str, msg_attr_suffix: str) -> Subscription:
+    def _create_subscription_from_config_str(self, config_str: str, msg_type: Optional[Type] = None) -> Subscription:
         """Create a subscription from a configuration string.
 
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
@@ -256,7 +259,7 @@ class ObeliskNode(LifecycleNode):
 
         Parameters:
             config_str: The configuration string.
-            msg_attr_suffix: The suffix to append to the attribute name when adding the Obelisk message attribute.
+            msg_type: The message type. If passed, we just use this directly.
 
         Returns:
             subscription: The created subscription.
@@ -272,19 +275,22 @@ class ObeliskNode(LifecycleNode):
         ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
-        # create the subscription
+        # parse the message type
         assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
         if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             if config_dict["non_obelisk"].lower() != "true":
-                check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskMsg, msg_attr_suffix)
+                msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskMsg)
         else:
             self.get_logger().warn(
                 "Creating a subscription that can publish non-Obelisk messages. "
                 "This may cause certain API incompatibilities."
             )
-            check_and_add_obelisk_msg_attr(self, config_dict["msg_type"], ObeliskAllowedMsg, msg_attr_suffix)
+            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskAllowedMsg)
 
+        assert msg_type is not None, "Could not find message type or none supplied!"
+
+        # set the callback group
         callback_group_name = config_dict.get("callback_group", "None")
         assert isinstance(callback_group_name, str), "The 'callback_group' field must be a string!"
         if callback_group_name.lower() == "none":
@@ -305,7 +311,7 @@ class ObeliskNode(LifecycleNode):
         assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
 
         return self.create_subscription(
-            msg_type=getattr(self, f"msg_type_{msg_attr_suffix}"),
+            msg_type=msg_type,
             topic=config_dict["topic"],
             callback=getattr(self, config_dict["callback"]),
             qos_profile=history_depth,

@@ -36,10 +36,10 @@ class ObeliskRobot(ABC, ObeliskNode):
         )
 
         # create publishers and subscriber
-        self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_config_str, "ctrl")
+        self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_config_str)
         self.publisher_sensors = []
         for sensor_config_str in self.pub_sensor_config_strs:
-            pub_sensor = self._create_publisher_from_config_str(sensor_config_str, "sensor")
+            pub_sensor = self._create_publisher_from_config_str(sensor_config_str)
             self.publisher_sensors.append(pub_sensor)
 
         # checks
@@ -129,9 +129,7 @@ class ObeliskSimRobot(ObeliskRobot):
 
         if self.pub_true_sim_state_config_str != [""]:
             self.timer_true_sim_state = self._create_timer_from_config_str(self.timer_true_sim_state_config_str)
-            self.publisher_true_sim_state = self._create_publisher_from_config_str(
-                self.pub_true_sim_state_config_str, "true_sim_state"
-            )
+            self.publisher_true_sim_state = self._create_publisher_from_config_str(self.pub_true_sim_state_config_str)
 
             # checks
             assert (

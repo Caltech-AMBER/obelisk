@@ -35,7 +35,7 @@ class ObeliskSensor(ObeliskNode):
         # create publishers
         self.publisher_sensors = []
         for sensor_config_str in self.pub_sensor_config_strs:
-            pub_sensor = self._create_publisher_from_config_str(sensor_config_str, "sensor")
+            pub_sensor = self._create_publisher_from_config_str(sensor_config_str)
             self.publisher_sensors.append(pub_sensor)
 
         return TransitionCallbackReturn.SUCCESS

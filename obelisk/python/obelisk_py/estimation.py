@@ -50,10 +50,10 @@ class ObeliskEstimator(ABC, ObeliskNode):
 
         # create publishers+timers and subscribers
         self.timer_est = self._create_timer_from_config_str(self.timer_est_config_str)
-        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_config_str, "est")
+        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_config_str)
         self.subscriber_sensors = []
         for sensor_config_str in self.sub_sensor_config_strs:
-            sub_sensor = self._create_subscription_from_config_str(sensor_config_str, "sensor")
+            sub_sensor = self._create_subscription_from_config_str(sensor_config_str)
             self.subscriber_sensors.append(sub_sensor)
 
         # checks
