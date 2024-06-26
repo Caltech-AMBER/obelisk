@@ -66,6 +66,11 @@ class ObeliskNode(LifecycleNode):
         """Get the name of the node."""
         return self.get_name()
 
+    @property
+    def t(self) -> float:
+        """Get the current time in seconds."""
+        return self.get_clock().now().nanoseconds / 1e9
+
     @staticmethod
     def _parse_config_str(config_str: str) -> Tuple[List[str], List[Union[str, float, int]]]:
         """Parse a configuration string into a list of field names and a list of values.
