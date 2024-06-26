@@ -29,11 +29,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
           CB_GROUP_NONE("None"),
           CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"),
           CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-        this->declare_parameter<std::string>("callback_group_config_strs");
-        cbg_mutually_exec_ = this->create_callback_group(
-            rclcpp::CallbackGroupType::MutuallyExclusive);
-        cbg_reentrant_ =
-            this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+        this->declare_parameter<std::string>("callback_group_config_strs", "");
     };
 
     ObeliskNode(const std::string& node_name, const std::string& namespace_,
@@ -45,10 +41,6 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
           CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"),
           CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
         this->declare_parameter<std::string>("callback_group_config_strs");
-        cbg_mutually_exec_ = this->create_callback_group(
-            rclcpp::CallbackGroupType::MutuallyExclusive);
-        cbg_reentrant_ =
-            this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     };
 
     // TODO (@zolkin): Should this be public or protected?
@@ -152,14 +144,24 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     CreateSubscriptionFromConfigStr(const std::string& config,
                                     CallbackT&& callback) {
         // Parse the configuration string
-        const auto config_map   = ParseConfigStr(config);
-        const std::string topic = GetTopic(config_map);
-        const int depth         = GetHistoryDepth(config_map);
-        const bool non_obelisk  = !GetIsObeliskMsg(config_map);
+        const auto config_map                = ParseConfigStr(config);
+        const std::string topic              = GetTopic(config_map);
+        const int depth                      = GetHistoryDepth(config_map);
+        const bool non_obelisk               = !GetIsObeliskMsg(config_map);
+
+        rclcpp::CallbackGroup::SharedPtr cbg = nullptr; // default group
+        try {
+            // Get the callback group based on the string name
+            cbg = callback_groups_.at(GetCallbackGroupName(config_map));
+        } catch (const std::exception& e) {
+        }
+
+        rclcpp::SubscriptionOptions options;
+        options.callback_group = cbg;
 
         // Create the subscriber
         return create_subscription<MessageT>(topic, depth, std::move(callback),
-                                             non_obelisk);
+                                             non_obelisk, options);
     }
 
     /**
@@ -198,18 +200,15 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         const auto period_dur   = std::chrono::duration<double, DurationT>(
             period_sec); // Convert period str to DurationT
 
-        std::string cbg = callback_groups_.at(GetCallbackGroup(config_map));
-        if (cbg == CB_GROUP_NONE) {
-            return this->create_wall_timer(period_dur, std::move(callback));
-        } else if (cbg == CB_GROUP_MUTUALLY_EXEC) {
-            return this->create_wall_timer(period_dur, std::move(callback),
-                                           cbg_mutually_exec_);
-        } else if (cbg == CB_GROUP_REENTRANT) {
-            return this->create_wall_timer(period_dur, std::move(callback),
-                                           cbg_reentrant_);
+        rclcpp::CallbackGroup::SharedPtr cbg = nullptr; // default group
+        try {
+            // Get the callback group based on the string name
+            cbg = callback_groups_.at(GetCallbackGroupName(config_map));
+        } catch (const std::exception& e) {
         }
 
-        throw std::runtime_error("Invalid callback group type");
+        // Create the timer
+        return this->create_wall_timer(period_dur, std::move(callback), cbg);
     }
 
     /**
@@ -310,8 +309,8 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     }
 
     std::string
-    GetCallbackGroup(const std::map<std::string, std::string>& config_map) {
-        std::string cbg = "None";
+    GetCallbackGroupName(const std::map<std::string, std::string>& config_map) {
+        std::string cbg = CB_GROUP_NONE;
         try {
             cbg = config_map.at("callback_group");
         } catch (const std::exception& e) {
@@ -321,7 +320,31 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     }
 
     void ParseCallbackGroupConfig(const std::string& config) {
-        callback_groups_ = ParseConfigStr(config);
+        // Parse the config string into group name, group type
+        const auto callback_group_names = ParseConfigStr(config);
+
+        callback_groups_.clear();
+
+        // Iterate through all the group names
+        for (const auto& cbg : callback_group_names) {
+            // If the name is associated with a specific type, then make that
+            // type If the name is not then assign to the default callback group
+            if (cbg.second == CB_GROUP_MUTUALLY_EXEC) {
+                callback_groups_.emplace(
+                    cbg.first,
+                    this->create_callback_group(
+                        rclcpp::CallbackGroupType::MutuallyExclusive));
+            } else if (cbg.second == CB_GROUP_REENTRANT) {
+                callback_groups_.emplace(
+                    cbg.first, this->create_callback_group(
+                                   rclcpp::CallbackGroupType::Reentrant));
+            } else {
+                // Node's default callback group
+                callback_groups_.emplace(cbg.first, nullptr);
+            }
+        }
+
+        callback_groups_.emplace(CB_GROUP_NONE, nullptr);
     }
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -339,9 +362,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     const std::string CB_GROUP_MUTUALLY_EXEC;
     const std::string CB_GROUP_REENTRANT;
 
-    std::map<std::string, std::string> callback_groups_;
-    rclcpp::CallbackGroup::SharedPtr cbg_mutually_exec_;
-    rclcpp::CallbackGroup::SharedPtr cbg_reentrant_;
+    std::map<std::string, rclcpp::CallbackGroup::SharedPtr> callback_groups_;
 
   private:
     // --------- Member Variables --------- //

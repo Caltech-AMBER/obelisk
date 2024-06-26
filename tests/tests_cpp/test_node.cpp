@@ -41,8 +41,25 @@ class ObeliskControllerTester
                                obelisk_estimator_msgs::msg::EstimatedState> {
   public:
     ObeliskControllerTester() : ObeliskController("obelisk_controller_tester") {
+        this->set_parameter(
+            rclcpp::Parameter("timer_ctrl_config_str", "timer_period_sec:1"));
+        this->set_parameter(
+            rclcpp::Parameter("pub_ctrl_config_str", "topic:topic1"));
+        this->set_parameter(
+            rclcpp::Parameter("sub_est_config_str", "topic:topic2"));
+        this->set_parameter(
+            rclcpp::Parameter("callback_group_config_strs", ""));
+
         this->on_configure(this->get_current_state());
     }
+
+  protected:
+    void UpdateXHat(
+        const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
+    obelisk_control_msgs::msg::PositionSetpoint ComputeControl() override {
+        obelisk_control_msgs::msg::PositionSetpoint msg;
+        return msg;
+    };
 };
 } // namespace obelisk
 
@@ -139,7 +156,7 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
     rclcpp::shutdown();
 }
 
-TEST_CASE("Subscriber from string", "[obelisk_node]") {
+TEST_CASE("Components from string", "[obelisk_node]") {
     rclcpp::init(0, nullptr);
 
     obelisk::ObeliskNodeTester node;
@@ -192,10 +209,10 @@ TEST_CASE("Subscriber from string", "[obelisk_node]") {
 
         REQUIRE_NOTHROW(node.TimerConfigFromStrTester("timer_period_sec:.5"));
 
-        // Check without period
+        // // Check without period
         REQUIRE_THROWS(node.TimerConfigFromStrTester("depth:10"));
 
-        // Check when missing a colon
+        // // Check when missing a colon
         REQUIRE_THROWS(
             node.TimerConfigFromStrTester("timer_period_sec:2, test"));
     }
