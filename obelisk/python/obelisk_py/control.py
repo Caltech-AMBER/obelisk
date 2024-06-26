@@ -41,9 +41,6 @@ class ObeliskController(ABC, ObeliskNode):
         self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
         self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
 
-        # stateful quantities
-        self.x_hat = None  # the most recent state estimate
-
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
@@ -58,20 +55,12 @@ class ObeliskController(ABC, ObeliskNode):
         self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_config_str)
         self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_config_str, self.update_x_hat)
 
-        # checks
-        assert (
-            self.timer_ctrl.callback == self.compute_control
-        ), f"Timer callback must be compute_control! Is {self.timer_ctrl.callback}."
-        assert (
-            self.subscriber_est.callback == self.update_x_hat
-        ), f"Subscriber callback must be update_x_hat! Is {self.subscriber_est.callback}."
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Activate the controller."""
         super().on_activate(state)
         self.timer_ctrl.reset()  # activate the control timer
-        self.x_hat = None  # reset stateful quantities
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -106,7 +95,6 @@ class ObeliskController(ABC, ObeliskNode):
         Parameters:
             x_hat_msg: The Obelisk message containing the state estimate.
         """
-        # TODO(ahl): fill this implementation when we know what the EstimatedState message looks like
 
     @abstractmethod
     def compute_control(self) -> ObeliskControlMsg:

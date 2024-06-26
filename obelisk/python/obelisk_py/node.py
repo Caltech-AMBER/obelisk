@@ -30,6 +30,7 @@ class ObeliskNode(LifecycleNode):
         * Instantiate required ROS parameters.
         * Instantiate optional ROS parameters.
         * Declare publishers, timers, and subscribers (any timers should be deactivated here).
+        * Initialize stateful quantities.
 
     The on_activate callback should do the following:
         * Activate any timers that were declared in on_configure (by calling reset()).

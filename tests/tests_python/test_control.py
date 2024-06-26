@@ -6,6 +6,7 @@ import pytest
 import rclpy
 from rclpy.exceptions import ParameterUninitializedException
 from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.lifecycle.node import LifecycleState
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
@@ -20,6 +21,24 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, Ob
 
 class TestObeliskController(ObeliskController):
     """Test ObeliskController class."""
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the controller."""
+        super().on_configure(state)
+        self.x_hat = None  # initialize a stateful quantity
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Activate the controller."""
+        super().on_activate(state)
+        self.x_hat = None
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state: LifecycleState) -> Any:
+        """Clean up the controller."""
+        super().on_cleanup(state)
+        del self.x_hat
+        return TransitionCallbackReturn.SUCCESS
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate."""
