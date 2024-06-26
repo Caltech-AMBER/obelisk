@@ -50,8 +50,7 @@ class ExamplePositionSetpointController(ObeliskController):
             obelisk_control_msg: The control message.
         """
         # computing the control input
-        t = self.get_clock().now().to_msg().sec + self.get_clock().now().to_msg().nanosec * 1e-9
-        u = 0.1 * np.sin(t)  # example state-independent control input
+        u = 0.1 * np.sin(self.t)  # example state-independent control input
 
         # setting the message
         position_setpoint_msg = PositionSetpoint()
