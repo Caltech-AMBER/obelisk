@@ -21,7 +21,10 @@ file(COPY test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # target_link_libraries(dummy_test PUBLIC lib1)
 
 add_executable(NodeTest
-    test_node.cpp)
+    test_node.cpp
+    test_controller.cpp
+    test_estimator.cpp)
+
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC ObeliskCpp)
 
