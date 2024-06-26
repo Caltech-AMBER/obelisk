@@ -15,7 +15,7 @@ class ObeliskController(ABC, ObeliskNode):
     asynchronously. Similarly, the control action may be queried asynchronously.
 
     When implementing a new ObeliskController, the user should declare all quantities required to compute the control
-    input in the constructor. These quantities should be updated by various update_X methods. Finally, the
+    input in on_configure. These quantities should be updated by various update_X methods. Finally, the
     compute_control method should be implemented to compute the control signal using the updated quantities. Note that
     the control message should be of type ObeliskControlMsg to be compatible with the Obelisk ecosystem.
     """
