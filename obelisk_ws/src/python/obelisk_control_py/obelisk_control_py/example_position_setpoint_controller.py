@@ -4,6 +4,7 @@ import numpy as np
 import rclpy
 from obelisk_control_msgs.msg import PositionSetpoint
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.control import ObeliskController
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
@@ -15,6 +16,24 @@ class ExamplePositionSetpointController(ObeliskController):
     def __init__(self) -> None:
         """Initialize the example position setpoint controller."""
         super().__init__("example_position_setpoint_controller")
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the controller."""
+        super().on_configure(state)
+        self.x_hat = None
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Activate the controller."""
+        super().on_activate(state)
+        self.x_hat = None
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Clean up the controller."""
+        super().on_cleanup(state)
+        del self.x_hat
+        return TransitionCallbackReturn.SUCCESS
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate.

@@ -15,7 +15,12 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
     def __init__(self) -> None:
         """Initialize the joint encoders passthrough estimator."""
         super().__init__("joint_encoders_passthrough_estimator")
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the estimator."""
+        super().on_configure(state)
         self.joint_encoder_values = None
+        return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Activate the estimator."""
