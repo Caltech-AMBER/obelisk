@@ -16,7 +16,7 @@ class ObeliskEstimator(ABC, ObeliskNode):
     asynchronously. Similarly, the state estimate may be queried asynchronously.
 
     When implementing a new ObeliskEstimator, the user should declare all quantities required to compute the state
-    estimate in the constructor. These quantities should be updated by various update_X methods. Finally, the
+    estimate in on_configure. These quantities should be updated by various update_X methods. Finally, the
     compute_estimate method should be implemented to compute the state estimate using the updated quantities. Note that
     the estimate message should be of type ObeliskEstimatorMsg to be compatible with the Obelisk ecosystem.
 
