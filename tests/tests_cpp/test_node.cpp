@@ -12,7 +12,12 @@ namespace obelisk {
 // Helper class for testing
 class ObeliskNodeTester : public ObeliskNode {
   public:
-    ObeliskNodeTester() : ObeliskNode("obelisk_tester") {}
+    ObeliskNodeTester() : ObeliskNode("obelisk_tester") {
+        this->set_parameter(
+            rclcpp::Parameter("callback_group_config_strs", "my_cbg:None"));
+
+        on_configure(this->get_current_state());
+    }
 
     template <typename MessageT>
     void SubscriptionConfigStrTester(const std::string& config) {
@@ -50,7 +55,17 @@ class ObeliskControllerTester
         this->set_parameter(
             rclcpp::Parameter("callback_group_config_strs", ""));
 
-        this->on_configure(this->get_current_state());
+        REQUIRE(this->control_publisher_ == nullptr);
+        REQUIRE(this->control_timer_ == nullptr);
+        REQUIRE(this->state_estimator_subscriber_ == nullptr);
+
+        REQUIRE(this->on_configure(this->get_current_state()) ==
+                rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+                    CallbackReturn::SUCCESS);
+
+        REQUIRE(this->control_publisher_ != nullptr);
+        REQUIRE(this->control_timer_ != nullptr);
+        REQUIRE(this->state_estimator_subscriber_ != nullptr);
     }
 
   protected:
@@ -228,8 +243,6 @@ TEST_CASE("Obelisk Controller Default Pub/Sub",
     rclcpp::init(0, nullptr);
 
     obelisk::ObeliskControllerTester node;
-
-    // SECTION("Create ")
 
     rclcpp::shutdown();
 }

@@ -40,7 +40,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
           CB_GROUP_NONE("None"),
           CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"),
           CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-        this->declare_parameter<std::string>("callback_group_config_strs");
+        this->declare_parameter<std::string>("callback_group_config_strs", "");
     };
 
     // TODO (@zolkin): Should this be public or protected?
@@ -187,6 +187,8 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
      *
      * @param config the configuration string
      * @param callback the callback function
+     *
+     * @return the timer
      */
     template <typename DurationT = std::milli, typename CallbackT>
     typename rclcpp::GenericTimer<CallbackT>::SharedPtr
@@ -214,6 +216,8 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     /**
      * @brief Parses the configuration string into a map from strings to
      * strings. the value strings are meant to be parsed in other functions.
+     *
+     * @return a map of configuration options to their settings as strings
      */
     std::map<std::string, std::string> ParseConfigStr(std::string config) {
         const std::string val_delim  = ":";
@@ -248,7 +252,11 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     }
 
     /**
-     * @brief Parses the configuration string map to see if there is a topic
+     * @brief Parses the configuration string map to see if there is a topic.
+     *  Throws an error if there is no topic.
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return the topic
      */
     std::string GetTopic(const std::map<std::string, std::string>& config_map) {
         try {
@@ -263,6 +271,9 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     /**
      * @brief Parses the configuration string map to see if there is a history
      * depth
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return the message history depth
      */
     int GetHistoryDepth(const std::map<std::string, std::string>& config_map) {
         int depth = DEFAULT_DEPTH;
@@ -277,6 +288,9 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     /**
      * @brief Parses the configuration string map to see if this is restricted
      * to only obelisk messages
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return use obelisk messages or not
      */
     bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
         bool obk_msg = DEFAULT_IS_OBK_MSG;
@@ -290,6 +304,14 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return obk_msg;
     }
 
+    /**
+     * @brief Parse the configuration string map to get the period of the timer.
+     *  Throws an error if there is no period.
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return the period (in seconds)
+     *
+     */
     double GetPeriod(const std::map<std::string, std::string>& config_map) {
         try {
             return std::stod(config_map.at("timer_period_sec"));
@@ -298,6 +320,13 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         }
     }
 
+    /**
+     * @brief Parses the configuration string map to get the message name from a
+     * config string. Throws an error if there is no message name.
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return the message name
+     */
     std::string
     GetMessageName(const std::map<std::string, std::string>& config_map) {
         try {
@@ -308,6 +337,13 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         }
     }
 
+    /**
+     * @brief Parses the configuration string map to get the callback group
+     * name.
+     *
+     * @param config_map the map created by ParseConfigStr
+     * @return the callback group name
+     */
     std::string
     GetCallbackGroupName(const std::map<std::string, std::string>& config_map) {
         std::string cbg = CB_GROUP_NONE;
@@ -319,6 +355,12 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         return cbg;
     }
 
+    /**
+     * @brief Parses a configuration string to determine the names and types of
+     * callback groups. Sets callback_groups_.
+     *
+     * @param config the configuration string
+     */
     void ParseCallbackGroupConfig(const std::string& config) {
         // Parse the config string into group name, group type
         const auto callback_group_names = ParseConfigStr(config);
@@ -347,6 +389,13 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
         callback_groups_.emplace(CB_GROUP_NONE, nullptr);
     }
 
+    /**
+     * @brief Configures the node.
+     *  Specifically, here we parse the the configuration string that determines
+     * the callback groups and names.
+     *
+     * @return success if everything is executed.
+     */
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_configure(const rclcpp_lifecycle::State& prev_state) {
         // Parse the configuration groups for this node
@@ -362,6 +411,7 @@ class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
     const std::string CB_GROUP_MUTUALLY_EXEC;
     const std::string CB_GROUP_REENTRANT;
 
+    // Map callback group names to their callbacks
     std::map<std::string, rclcpp::CallbackGroup::SharedPtr> callback_groups_;
 
   private:
