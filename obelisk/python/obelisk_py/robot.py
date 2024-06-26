@@ -104,7 +104,7 @@ class ObeliskSimRobot(ObeliskRobot):
             ctrl: The control array of length n_u.
         """
         with self.lock:
-            self.shared_ctrl[:] = [ctypes.c_float(value) for value in ctrl]
+            self.shared_ctrl[:] = [ctypes.c_double(value) for value in ctrl]
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulation."""
@@ -139,7 +139,7 @@ class ObeliskSimRobot(ObeliskRobot):
             self.publisher_true_sim_state = None
 
         # setting up the simulator
-        self.shared_ctrl = multiprocessing.Array(ctypes.c_float, self.n_u, lock=True)
+        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u, lock=True)
         self.lock = self.shared_ctrl.get_lock()
         self.sim_process = multiprocessing.Process(target=self.run_simulator)
 

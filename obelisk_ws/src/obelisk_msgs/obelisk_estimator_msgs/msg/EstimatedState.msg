@@ -1,2 +1,2 @@
 string MESSAGE_NAME="EstimatedState"
-float32[] x_hat
+float64[] x_hat

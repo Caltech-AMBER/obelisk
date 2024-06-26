@@ -1,2 +1,2 @@
 string MESSAGE_NAME="PositionSetpoint"
-float32[] u
+float64[] u
