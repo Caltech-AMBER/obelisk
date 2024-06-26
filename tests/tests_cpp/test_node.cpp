@@ -41,19 +41,7 @@ class ObeliskControllerTester
                                obelisk_estimator_msgs::msg::EstimatedState> {
   public:
     ObeliskControllerTester() : ObeliskController("obelisk_controller_tester") {
-        // std::get<ObeliskController::PublisherType<obelisk_control_msgs::msg::PositionSetpoint>>(control_publishers_)
-        //     =
-        //     CreatePublisherFromConfigStr<obelisk_control_msgs::msg::PositionSetpoint>("topic:topic1");
-        // REQUIRE(std::get<ObeliskController::PublisherType<obelisk_control_msgs::msg::PositionSetpoint>>
-        //     (control_publishers_) == nullptr);
-        // REQUIRE(std::get<ObeliskController::PublisherType<obelisk_sensor_msgs::msg::JointEncoder>>
-        //     (control_publishers_) == nullptr);
-        // CreateAllControllerPublishers();
-        // REQUIRE(std::get<ObeliskController::PublisherType<obelisk_control_msgs::msg::PositionSetpoint>>
-        //     (control_publishers_) != nullptr);
-        // REQUIRE(std::get<ObeliskController::PublisherType<obelisk_sensor_msgs::msg::JointEncoder>>
-        //     (control_publishers_) != nullptr);
-        ObeliskController::on_configure(this->get_current_state());
+        this->on_configure(this->get_current_state());
     }
 };
 } // namespace obelisk

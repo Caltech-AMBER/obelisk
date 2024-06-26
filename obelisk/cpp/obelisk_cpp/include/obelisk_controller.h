@@ -22,9 +22,7 @@ namespace obelisk {
 template <typename ControlMessagesT, typename EstimatorMessagesT>
 class ObeliskController : public ObeliskNode {
   public:
-    explicit ObeliskController(const std::string& name)
-        : ObeliskNode(name, pub_config_param_names, sub_config_param_names,
-                      timer_config_param_names, cb_config_param_names) {
+    explicit ObeliskController(const std::string& name) : ObeliskNode(name) {
         // Declare all paramters
         this->declare_parameter<std::string>("timer_ctrl_config_str");
         this->declare_parameter<std::string>("pub_ctrl_config_str");
@@ -35,19 +33,21 @@ class ObeliskController : public ObeliskNode {
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_configure(const rclcpp_lifecycle::State& prev_state) {
         // Create the publishers, subscribers, and timers
-        control_publisher_ = CreatePublisherFromConfigStr(
+        control_publisher_ = CreatePublisherFromConfigStr<ControlMessagesT>(
             this->get_parameter("pub_ctrl_config_str").as_string());
 
-        state_estimator_subscriber_ = CreateSubscriptionFromConfigStr(
-            this->get_parameter("sub_est_config_str").as_string(),
-            csub_allback);
+        state_estimator_subscriber_ =
+            CreateSubscriptionFromConfigStr<EstimatorMessagesT>(
+                this->get_parameter("sub_est_config_str").as_string(),
+                std::bind(&ObeliskController::SimpleSubCB<EstimatorMessagesT>,
+                          this, std::placeholders::_1));
 
-        timer_ = CreateWallTimerFromConfigStr(
+        control_timer_ = CreateWallTimerFromConfigStr(
             this->get_parameter("timer_ctrl_config_str").as_string(),
-            timer_callback)
+            std::bind(&ObeliskController::SimpleTimerCB, this));
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
-                CallbackReturn::SUCCESS;
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+            CallbackReturn::SUCCESS;
     }
 
     // template <typename CallbackT>
@@ -60,9 +60,11 @@ class ObeliskController : public ObeliskNode {
     // };
 
   protected:
-    typename rclcpp::Publisher<RequiredControlMessageT>::SharedPtr
-        control_publisher_;
-    typename rclcpp::Subscription<RequiredEstimatorMessagesT>::SharedPtr
+    void SimpleTimerCB() {}
+    template <typename MessageT> void SimpleSubCB(const MessageT& msg) {}
+
+    typename rclcpp::Publisher<ControlMessagesT>::SharedPtr control_publisher_;
+    typename rclcpp::Subscription<EstimatorMessagesT>::SharedPtr
         state_estimator_subscriber_;
     rclcpp::TimerBase::SharedPtr control_timer_;
 
@@ -75,36 +77,37 @@ class ObeliskController : public ObeliskNode {
     // back
 
   private:
-    template <typename MessageT> void CreatePubWithStr(const MessageT& msg) {
-        // TODO: need to associate the message type with the config string
-        // The config string will have a message_type field
-        // All obelisk messages will have a constant string field MESSAGE_NAME
-        // At runtime loop through these and use the config string that has
-        // message_type = MESSAGE_NAME
-        // TODO: Probably best to make a map between the message type and its
-        // NAME, so the user can append more if they want
-        bool message_found = false;
-        for (const auto& config : config_strs_) {
-            // Parse the string into a map
-            const auto config_map = ParseConfigStr(config);
-            // Check if the message name matches the name in a message
-            if (GetMessageName(config_map) == MessageT::MESSAGE_NAME) {
-                // RCLCPP_INFO_STREAM(
-                // this->get_logger(),
-                // "Message name:" << MessageT::MESSAGE_NAME);
-                std::cout << "Message name: " << MessageT::MESSAGE_NAME
-                          << std::endl;
-                std::get<PublisherType<MessageT>>(control_publishers_) =
-                    CreatePublisherFromConfigStr<MessageT>(config);
-                message_found = true;
-            }
-        }
+    // template <typename MessageT> void CreatePubWithStr(const MessageT& msg) {
+    //     // TODO: need to associate the message type with the config string
+    //     // The config string will have a message_type field
+    //     // All obelisk messages will have a constant string field
+    //     MESSAGE_NAME
+    //     // At runtime loop through these and use the config string that has
+    //     // message_type = MESSAGE_NAME
+    //     // TODO: Probably best to make a map between the message type and its
+    //     // NAME, so the user can append more if they want
+    //     bool message_found = false;
+    //     for (const auto& config : config_strs_) {
+    //         // Parse the string into a map
+    //         const auto config_map = ParseConfigStr(config);
+    //         // Check if the message name matches the name in a message
+    //         if (GetMessageName(config_map) == MessageT::MESSAGE_NAME) {
+    //             // RCLCPP_INFO_STREAM(
+    //             // this->get_logger(),
+    //             // "Message name:" << MessageT::MESSAGE_NAME);
+    //             std::cout << "Message name: " << MessageT::MESSAGE_NAME
+    //                       << std::endl;
+    //             std::get<PublisherType<MessageT>>(control_publishers_) =
+    //                 CreatePublisherFromConfigStr<MessageT>(config);
+    //             message_found = true;
+    //         }
+    //     }
 
-        if (!message_found) {
-            throw std::runtime_error(
-                "No config string contains the desired message type!");
-        }
-    }
+    //     if (!message_found) {
+    //         throw std::runtime_error(
+    //             "No config string contains the desired message type!");
+    //     }
+    // }
 
     // template <typename... Args>
     // void CreatePublisher() {
