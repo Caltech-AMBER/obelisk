@@ -20,6 +20,8 @@ namespace obelisk {
                                                             std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
 
             // The downstream user must create all their sensor subscribers
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -83,11 +85,11 @@ namespace obelisk {
          */
         virtual EstimatorMessageT ComputeStateEstimate() = 0;
 
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<ControlMessageT>> estimator_publisher_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<EstimatorMessageT>> estimator_publisher_;
 
         // timer to activate ComputeControl
         rclcpp::TimerBase::SharedPtr estimator_timer_;
 
       private:
-    }
+    };
 } // namespace obelisk
