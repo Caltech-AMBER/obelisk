@@ -20,5 +20,6 @@ AlignTrailingComments:
   OverEmptyLines: 1
 # BreakConstructorInitializers: BeforeColon
 # EmptyLineBeforeAccessModifier: LogicalBlock
-# NamespaceIndentation: All
+NamespaceIndentation: All
+ColumnLimit: 120
 # PackConstructorInitializers: NextLineOnly
