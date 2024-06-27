@@ -36,9 +36,11 @@ class ObeliskRobot(ABC, ObeliskNode):
         # create publishers and subscriber
         self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_setting, self.apply_control)
         self.publisher_sensors = []
-        for sensor_setting in self.pub_sensor_settings:
-            pub_sensor = self._create_publisher_from_config_str(sensor_setting)
-            self.publisher_sensors.append(pub_sensor)
+        # TODO(ahl): under this current version of the code, we cannot auto-create the publishers because we don't know
+        # the message types in both the python and c++ versions of the code.
+        # for sensor_setting in self.pub_sensor_settings:
+        #     pub_sensor = self._create_publisher_from_config_str(sensor_setting)
+        #     self.publisher_sensors.append(pub_sensor)
 
         return TransitionCallbackReturn.SUCCESS
 
