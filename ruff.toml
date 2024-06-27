@@ -32,6 +32,7 @@ exclude=[
 ]
 
 [lint]
+pydocstyle.convention = "google"
 select = [
     "ANN",  # annotations
     "N",  # naming conventions
@@ -46,6 +47,7 @@ select = [
     "PLW",  # Pylint warnings
 ]
 ignore = [
+    "ANN101",  # Missing type annotation for self
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
     "D100",  # missing docstring in public module
     "D104",  # missing docstring in public package
@@ -53,6 +55,7 @@ ignore = [
     "D211",  # no blank line before class
     "D212",  # multi-line docstring summary at first line
     "D213",  # multi-line docstring summary at second line
+    "PLR0913",  # Too many arguments in function definition
 ]
 
 [lint.isort]

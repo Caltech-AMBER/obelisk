@@ -13,6 +13,7 @@ Documentation for ``obelisk``
 
    getting_started.md
    development.md
+   obelisk_api.md
 
 Overview
 --------

@@ -7,5 +7,5 @@ if [ "$NOOB" != "true" ]; then
 fi
 
 # sources the obelisk installations if not already sourced
-cmd="source $(pwd)/install/setup.sh"
-grep -qxF "$cmd" ~/.bashrc || echo "$cmd" >> ~/.bashrc && echo -e "\033[1;32mObelisk sourced!\033[0m"
+cmd="source $OBELISK_ROOT/obelisk_ws/install/setup.sh"
+grep -qxF "$cmd" ~/.bashrc || (echo "$cmd" >> ~/.bashrc && $cmd && echo -e "\033[1;32mObelisk sourced!\033[0m")

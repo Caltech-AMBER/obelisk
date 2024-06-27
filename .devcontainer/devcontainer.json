@@ -10,6 +10,8 @@
                 "mutantdino.resourcemonitor",
                 "ms-azuretools.vscode-docker",
                 "nvidia.nsight-vscode-edition",
+                "ritwickdey.liveserver",
+                "ms-vscode.cmake-tools",
                 "ms-python.python",
                 "charliermarsh.ruff"
             ]
