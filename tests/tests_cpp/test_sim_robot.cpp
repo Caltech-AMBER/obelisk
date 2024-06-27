@@ -39,8 +39,19 @@ namespace obelisk {
 
       protected:
         void ApplyControl(const obelisk_control_msgs::msg::PositionSetpoint& msg) {}
-        void RunSimulator() {}
-        obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() {}
+        void RunSimulator() {
+            REQUIRE(stop_thread_ == false);
+            while (!stop_thread_) {
+                std::cout << "In the thread." << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+
+            REQUIRE(stop_thread_ == true);
+        }
+        obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() {
+            obelisk_sensor_msgs::msg::TrueSimState msg;
+            return msg;
+        }
     };
 } // namespace obelisk
 

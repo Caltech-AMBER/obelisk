@@ -10,6 +10,7 @@ namespace obelisk {
             this->template declare_parameter<int>("n_u", -1);
             this->template declare_parameter<std::string>("timer_true_sim_state_setting", "");
             this->template declare_parameter<std::string>("pub_true_sim_state_setting", "");
+            stop_thread_ = false;
         }
 
         /**
@@ -39,7 +40,12 @@ namespace obelisk {
                 true_sim_state_publisher_ = nullptr;
             }
 
-            // TODO: Setup anything for setting up the simulator
+            shared_data_.resize(n_u_);
+            stop_thread_ = false;
+
+            // Start the simulator
+            sim_thread_ = std::thread(&ObeliskSimRobot::RunSimulator, this);
+            RCLCPP_INFO_STREAM(this->get_logger(), "Simulation thread started.");
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -60,6 +66,15 @@ namespace obelisk {
             true_sim_state_publisher_.reset();
 
             // TODO: Cleanup the sim thread
+            bool current_thread_status = stop_thread_;
+            stop_thread_               = true;
+            if (sim_thread_.joinable()) {
+                sim_thread_.join();
+            }
+
+            if (!current_thread_status) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Simulation thread stopped.");
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -73,18 +88,24 @@ namespace obelisk {
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_shutdown(prev_state);
 
-            // Reset data
-            n_u_ = -1;
-
-            // Release the shared pointers
-            true_sim_state_publisher_.reset();
-
-            // TODO: Cleanup the sim thread
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return on_cleanup(prev_state);
         }
 
       protected:
+        void SetSharedData(const std::vector<double>& data) {
+            std::lock_guard<std::mutex> lock(shared_data_mut_);
+
+            // Copy data in
+            shared_data_ = data;
+        }
+
+        void GetSharedData(std::vector<double>& data) {
+            std::lock_guard<std::mutex> lock(shared_data_mut_);
+
+            // Copy data out
+            data = shared_data_;
+        }
+
         /**
          * @brief Publish the TrueSimState of the simulator.
          *
@@ -103,6 +124,9 @@ namespace obelisk {
          * The control input into the simulator is accessed through the shared control array. If any simulator
          * configuration needs to occur, then the on_configure function should be overridden. This function should run
          * the simulator loop and update the state of the simulator as long as the node is active.
+         *
+         * This is where the simulation loop is run. The simulation loop should always be check the stop_thread_ flag to
+         * determine when to stop.
          */
         virtual void RunSimulator() = 0;
 
@@ -114,6 +138,12 @@ namespace obelisk {
 
         // Timer to publish the true sim state
         rclcpp::TimerBase::SharedPtr true_sim_state_timer_;
+
+        std::vector<double> shared_data_;
+
+        std::thread sim_thread_;
+        std::mutex shared_data_mut_;
+        std::atomic<bool> stop_thread_;
 
       private:
     };
