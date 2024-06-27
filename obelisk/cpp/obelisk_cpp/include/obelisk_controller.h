@@ -17,7 +17,7 @@ namespace obelisk {
          * control_timer_. Also makes a call to ObeliskNode on configure to parse
          * and create the callback group map.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          * @return success if everything completes.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -39,9 +39,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates the node
+         * @brief activates the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) {
@@ -52,9 +52,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates the node
+         * @brief deactivates the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_deactivate(const rclcpp_lifecycle::State& prev_state) {
@@ -65,9 +65,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node
+         * @brief cleans up the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
@@ -80,9 +80,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the ros node
+         * @brief shutsdown the ros node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {

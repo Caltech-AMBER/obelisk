@@ -135,10 +135,10 @@ namespace obelisk {
         }
 
         /**
-         * @brief Create a publisher from a configuration string
+         * @brief Create a publisher from a configuration string.
          *
-         * @param config the configuration string
-         * @return the publisher
+         * @param config the configuration string.
+         * @return the publisher.
          */
         template <typename MessageT, typename AllocatorT = std::allocator<void>>
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
@@ -153,12 +153,12 @@ namespace obelisk {
         }
 
         /**
-         * @brief Create a wall timer from a configuration string
+         * @brief Create a wall timer from a configuration string.
          *
-         * @param config the configuration string
-         * @param callback the callback function
+         * @param config the configuration string.
+         * @param callback the callback function.
          *
-         * @return the timer
+         * @return the timer.
          */
         template <typename DurationT = std::milli, typename CallbackT>
         typename rclcpp::GenericTimer<CallbackT>::SharedPtr CreateWallTimerFromConfigStr(const std::string& config,
@@ -186,7 +186,7 @@ namespace obelisk {
          * @brief Parses the configuration string into a map from strings to
          * strings. the value strings are meant to be parsed in other functions.
          *
-         * @return a map of configuration options to their settings as strings
+         * @return a map of configuration options to their settings as strings.
          */
         std::map<std::string, std::string> ParseConfigStr(std::string config) {
             const std::string val_delim  = ":";
@@ -222,8 +222,8 @@ namespace obelisk {
          * @brief Parses the configuration string map to see if there is a topic.
          *  Throws an error if there is no topic.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return the topic
+         * @param config_map the map created by ParseConfigStr.
+         * @return the topic.
          */
         std::string GetTopic(const std::map<std::string, std::string>& config_map) {
             try {
@@ -236,47 +236,44 @@ namespace obelisk {
 
         /**
          * @brief Parses the configuration string map to see if there is a history
-         * depth
+         * depth.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return the message history depth
+         * @param config_map the map created by ParseConfigStr.
+         * @return the message history depth.
          */
         int GetHistoryDepth(const std::map<std::string, std::string>& config_map) {
-            int depth = DEFAULT_DEPTH;
             try {
-                depth = std::stoi(config_map.at("history_depth"));
+                return std::stoi(config_map.at("history_depth"));
             } catch (const std::exception& e) {
+                return DEFAULT_DEPTH;
             }
-
-            return depth;
         }
 
         /**
          * @brief Parses the configuration string map to see if this is restricted
-         * to only obelisk messages
+         * to only obelisk messages.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return use obelisk messages or not
+         * @param config_map the map created by ParseConfigStr.
+         * @return use obelisk messages or not.
          */
         bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
-            bool obk_msg = DEFAULT_IS_OBK_MSG;
             try {
                 if (config_map.at("non_obelisk") == "true") {
-                    obk_msg = false;
+                    return false;
+                } else {
+                    return true;
                 }
             } catch (const std::exception& e) {
+                return DEFAULT_IS_OBK_MSG;
             }
-
-            return obk_msg;
         }
 
         /**
          * @brief Parse the configuration string map to get the period of the timer.
          *  Throws an error if there is no period.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return the period (in seconds)
-         *
+         * @param config_map the map created by ParseConfigStr.
+         * @return the period (in seconds).
          */
         double GetPeriod(const std::map<std::string, std::string>& config_map) {
             try {
@@ -290,8 +287,8 @@ namespace obelisk {
          * @brief Parses the configuration string map to get the message name from a
          * config string. Throws an error if there is no message name.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return the message name
+         * @param config_map the map created by ParseConfigStr.
+         * @return the message name.
          */
         std::string GetMessageName(const std::map<std::string, std::string>& config_map) {
             try {
@@ -305,24 +302,22 @@ namespace obelisk {
          * @brief Parses the configuration string map to get the callback group
          * name.
          *
-         * @param config_map the map created by ParseConfigStr
-         * @return the callback group name
+         * @param config_map the map created by ParseConfigStr.
+         * @return the callback group name.
          */
         std::string GetCallbackGroupName(const std::map<std::string, std::string>& config_map) {
-            std::string cbg = CB_GROUP_NONE;
             try {
-                cbg = config_map.at("callback_group");
+                return config_map.at("callback_group");
             } catch (const std::exception& e) {
+                return CB_GROUP_NONE;
             }
-
-            return cbg;
         }
 
         /**
          * @brief Parses a configuration string to determine the names and types of
          * callback groups. Sets callback_groups_.
          *
-         * @param config the configuration string
+         * @param config the configuration string.
          */
         void ParseCallbackGroupConfig(const std::string& config) {
             // Parse the config string into group name, group type
@@ -387,8 +382,8 @@ namespace obelisk {
 
         /**
          * Helper functions for determining if we have a valid message.
-         * These functions recursively dissamble a tuple to check if the type
-         * matches. See this stack overflow post:
+         * These functions recursively disassemble a tuple to check if the type
+         * matches. See this stackoverflow post:
          * https://stackoverflow.com/questions/25958259/how-do-i-find-out-if-a-tuple-contains-a-type
          */
         template <typename T, typename Tuple> struct has_type;

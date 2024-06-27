@@ -39,9 +39,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates the node
+         * @brief activates the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) {
@@ -52,9 +52,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates the node
+         * @brief deactivates the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_deactivate(const rclcpp_lifecycle::State& prev_state) {
@@ -65,9 +65,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node
+         * @brief cleans up the node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
@@ -79,9 +79,9 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the ros node
+         * @brief shutsdown the ros node.
          *
-         * @param prev_state the state of the ros node
+         * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
