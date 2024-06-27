@@ -1,30 +1,39 @@
 #include "obelisk_node.h"
 
 namespace obelisk {
-    class ObeliskSensor : public ObeliskNode {
+    template <typename ControlMessageT> class ObeliskRobot : public ObeliskNode {
       public:
-        explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) {
+        explicit ObeliskRobot(const std::string& name) : ObeliskNode(name) {
+            this->declare_parameter<std::string>("sub_ctrl_settings", "");
             this->declare_parameter<std::vector<std::string>>("pub_sensor_settings", {""});
         }
 
+        /**
+         * @brief Configures all the required ROS components. Specifcially this
+         * registers the estimator_publisher_, and the estimator_timer_. Also makes a call to ObeliskNode on configure
+         * to parse and create the callback group map.
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
+            // Create the subscriber to the control input
+            control_subscriber_ = CreateSubscriptionFromConfigStr<ControlMessageT>(
+                this->get_parameter("sub_ctrl_settings").as_string(),
+                std::bind(&ObeliskRobot::ApplyControl, this, std::placeholders::_1));
+
+            // The downstream user must create all their sensor subscribers using these config strings
             pub_sensor_config_strs_ = this->get_parameter("pub_sensor_settings").as_string_array();
 
             // If there are no string, or just the default one, then warn the user
             if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
                 pub_sensor_config_strs_.empty()) {
-                throw std::runtime_error("No configuration strings were provided for the sensor publishers.");
+                RCLCPP_WARN_STREAM(this->get_logger(),
+                                   "No configuration strings found for the robot sensor publishers.");
             }
-            // The downstream user must create all their sensor subscribers
 
-            // TODO (@zolkin): Will want to add automatic registration of publishers here.
-            //  The key is that the publishers publish different types and thus everything is of a different type
-            //  I think the way to go about this is to use tuplecat to create a tuple with all the resulting publishers.
-            //  This can be done inside of a function that is called from a std::apply (the message types are already in
-            //  a tuple). Then the hardpart is creating compile indicies and mapping them to the names.
+            // For now the downstream user needs to register the sensor publishers
+            // TODO (@zolkin): Implement registration of all these publishers
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -36,6 +45,9 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+            // Release the shared pointers
+            control_subscriber_.reset();
+
             // Clear the config strings
             pub_sensor_config_strs_.clear();
 
@@ -43,12 +55,15 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the node.
+         * @brief shutsdown the node the node.
          *
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+            // Release the shared pointers
+            control_subscriber_.reset();
+
             // Clear the config strings
             pub_sensor_config_strs_.clear();
 
@@ -56,6 +71,11 @@ namespace obelisk {
         }
 
       protected:
+        virtual void ApplyControl(const ControlMessageT& msg) = 0;
+
+        // Publishes the estimated state
+        typename rclcpp::Subscription<ControlMessageT>::SharedPtr control_subscriber_;
+
         std::vector<std::string> pub_sensor_config_strs_;
 
       private:

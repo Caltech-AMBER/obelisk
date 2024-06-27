@@ -75,6 +75,9 @@ namespace obelisk {
             estimator_publisher_.reset();
             estimator_timer_.reset();
 
+            // Clear the config strings
+            sub_sensor_config_strs_.clear();
+
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -88,6 +91,9 @@ namespace obelisk {
             // Release the shared pointers
             estimator_publisher_.reset();
             estimator_timer_.reset();
+
+            // Clear the config strings
+            sub_sensor_config_strs_.clear();
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
