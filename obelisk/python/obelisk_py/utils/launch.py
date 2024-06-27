@@ -1,23 +1,32 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import LifecycleNode
 from ruamel.yaml import YAML
 
 
-def load_config_file(file_path: str, package_name: Optional[str] = None) -> Dict:
+def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
     """Loads an Obelisk configuration file."""
-    # if it's a relative path, check in obelisk_ros/config
+    file_path = str(file_path)
     if not file_path.startswith("/"):
-        obk_ros_dir = get_package_share_directory("obelisk_ros" if package_name is None else package_name)
-        abs_file_path = Path(obk_ros_dir) / "config" / file_path
+        try:
+            obk_ros_dir = get_package_share_directory("obelisk_ros" if package_name is None else package_name)
+            abs_file_path = Path(obk_ros_dir) / "config" / file_path
+        except Exception as e:
+            raise FileNotFoundError(
+                f"Could not find package {package_name}. If you supply a relative path to the config file, it must lie "
+                "in a subdirectory named 'config' of either the obelisk_ros package or some other ROS2 package of your "
+                "choice. Otherwise, you can supply an absolute path to the config file."
+            ) from e
     else:
         abs_file_path = Path(file_path)
 
-    # load into a dictionary
     yaml = YAML(typ="safe")
-    return yaml.load(abs_file_path)
+    try:
+        return yaml.load(abs_file_path)
+    except Exception as e:
+        raise FileNotFoundError(f"Could not load a configuration file at {abs_file_path}!") from e
 
 
 def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Dict:

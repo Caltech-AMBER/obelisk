@@ -40,6 +40,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     config_file_path = launch_args["config_file_path"]
     device_name = context.launch_configurations.get("device_name")
     obelisk_config = load_config_file(config_file_path)[device_name]  # grab the settings associated with the device
+    logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
     assert "controller" in obelisk_config
