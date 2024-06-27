@@ -12,7 +12,7 @@ namespace obelisk {
     class ObeliskNodeTester : public ObeliskNode {
       public:
         ObeliskNodeTester() : ObeliskNode("obelisk_tester") {
-            this->set_parameter(rclcpp::Parameter("callback_group_config_strs", "my_cbg:None"));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", "my_cbg:None"));
 
             on_configure(this->get_current_state());
         }

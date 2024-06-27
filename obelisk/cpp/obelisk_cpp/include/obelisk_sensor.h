@@ -4,7 +4,7 @@ namespace obelisk {
     class ObeliskSensor : public ObeliskNode {
       public:
         explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) {
-            this->declare_parameter<std::vector<std::string>>("pub_sensor_config_strs", {""});
+            this->declare_parameter<std::vector<std::string>>("pub_sensor_settings", {""});
         }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -12,7 +12,7 @@ namespace obelisk {
             ObeliskNode::on_configure(prev_state);
 
             std::vector<std::string> pub_sensor_config_strs_ =
-                this->get_parameter("pub_sensor_config_strs").as_string_array();
+                this->get_parameter("pub_sensor_settings").as_string_array();
 
             // If there are no string, or just the default one, then warn the user
             if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||

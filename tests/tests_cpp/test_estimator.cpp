@@ -6,11 +6,11 @@ namespace obelisk {
     class ObeliskEstimatorTester : public ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
       public:
         ObeliskEstimatorTester() : ObeliskEstimator("obelisk_estimator_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_est_config_str", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_est_config_str", "topic:topic1"));
+            this->set_parameter(rclcpp::Parameter("timer_est_settings", "timer_period_sec:1"));
+            this->set_parameter(rclcpp::Parameter("pub_est_settings", "topic:topic1"));
             this->set_parameter(
-                rclcpp::Parameter("sub_sensor_config_strs", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
-            this->set_parameter(rclcpp::Parameter("callback_group_config_strs", ""));
+                rclcpp::Parameter("sub_sensor_settings", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
         }
 
         void Configure() {
