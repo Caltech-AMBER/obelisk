@@ -64,6 +64,7 @@ namespace obelisk {
 
             // Release the shared pointers
             true_sim_state_publisher_.reset();
+            true_sim_state_timer_.reset();
 
             // TODO: Cleanup the sim thread
             bool current_thread_status = stop_thread_;
