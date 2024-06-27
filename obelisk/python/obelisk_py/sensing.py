@@ -31,10 +31,12 @@ class ObeliskSensor(ObeliskNode):
         ), "pub_sensor_settings must be a non-empty list of strings."
 
         # create publishers
+        # TODO(ahl): under this current version of the code, we cannot auto-create the publishers because we don't know
+        # the message types in both the python and c++ versions of the code.
         self.publisher_sensors = []
-        for sensor_setting in self.pub_sensor_settings:
-            pub_sensor = self._create_publisher_from_config_str(sensor_setting)
-            self.publisher_sensors.append(pub_sensor)
+        # for sensor_setting in self.pub_sensor_settings:
+        #     pub_sensor = self._create_publisher_from_config_str(sensor_setting)
+        #     self.publisher_sensors.append(pub_sensor)
 
         return TransitionCallbackReturn.SUCCESS
 
