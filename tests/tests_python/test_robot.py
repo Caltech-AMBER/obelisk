@@ -47,15 +47,15 @@ def configured_robot(
 ) -> TestObeliskRobot:
     """Fixture for the TestObeliskRobot class with parameters set."""
     parameter_dict = {
-        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "sub_ctrl_config_str": (
+        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "sub_ctrl_setting": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_robot/ctrl,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "pub_sensor_config_strs": [
+        "pub_sensor_settings": [
             (
                 "msg_type:JointEncoders,"
                 "topic:/obelisk/test_robot/sensor1,"
@@ -80,7 +80,7 @@ def configured_robot(
 @pytest.fixture
 def robot_parameter_names() -> List[str]:
     """Return the parameter names for the robot."""
-    return ["sub_ctrl_config_str", "pub_sensor_config_strs"]
+    return ["sub_ctrl_setting", "pub_sensor_settings"]
 
 
 # ##### #
@@ -158,8 +158,8 @@ def test_on_cleanup(configured_robot: TestObeliskRobot) -> None:
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(configured_robot, "subscriber_ctrl")
     assert not hasattr(configured_robot, "publisher_sensors")
-    assert not hasattr(configured_robot, "sub_ctrl_config_str")
-    assert not hasattr(configured_robot, "pub_sensor_config_strs")
+    assert not hasattr(configured_robot, "sub_ctrl_setting")
+    assert not hasattr(configured_robot, "pub_sensor_settings")
 
 
 def test_apply_control_callback(configured_robot: TestObeliskRobot) -> None:
@@ -176,8 +176,8 @@ def test_publisher_creation(configured_robot: TestObeliskRobot) -> None:
 @pytest.mark.parametrize(
     "invalid_config",
     [
-        {"sub_ctrl_config_str": "invalid_config_string"},
-        {"pub_sensor_config_strs": ["invalid_config_string"]},
+        {"sub_ctrl_setting": "invalid_setting"},
+        {"pub_sensor_settings": ["invalid_setting"]},
     ],
 )
 def test_invalid_configuration(test_robot: TestObeliskRobot, invalid_config: Dict[str, Any]) -> None:

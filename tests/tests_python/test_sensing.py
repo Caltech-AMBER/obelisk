@@ -41,8 +41,8 @@ def configured_sensor(
 ) -> TestObeliskSensor:
     """Fixture for the TestObeliskSensor class with parameters set."""
     parameter_dict = {
-        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "pub_sensor_config_strs": [
+        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "pub_sensor_settings": [
             (
                 "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sensor/sensor1,"
@@ -67,7 +67,7 @@ def configured_sensor(
 @pytest.fixture
 def sensing_parameter_names() -> List[str]:
     """Return the parameter names for the sensor."""
-    return ["pub_sensor_config_strs"]
+    return ["pub_sensor_settings"]
 
 
 # ##### #
@@ -129,15 +129,15 @@ def test_on_configure_success(configured_sensor: TestObeliskSensor) -> None:
     assert all(isinstance(pub, Publisher) for pub in configured_sensor.publisher_sensors)
 
 
-def test_on_configure_empty_config_strings(test_sensor: TestObeliskSensor) -> None:
-    """Test configuration with empty pub_sensor_config_strs."""
-    test_sensor.set_parameters([rclpy.Parameter("pub_sensor_config_strs", value=[""])])
-    with pytest.raises(AssertionError, match="pub_sensor_config_strs must be a non-empty list of strings."):
+def test_on_configure_empty_settings(test_sensor: TestObeliskSensor) -> None:
+    """Test configuration with empty pub_sensor_settings."""
+    test_sensor.set_parameters([rclpy.Parameter("pub_sensor_settings", value=[""])])
+    with pytest.raises(AssertionError, match="pub_sensor_settings must be a non-empty list of strings."):
         test_sensor.on_configure(None)
 
 
 def test_on_configure_missing_parameter(test_sensor: TestObeliskSensor) -> None:
-    """Test configuration with missing pub_sensor_config_strs parameter."""
+    """Test configuration with missing pub_sensor_settings parameter."""
     with pytest.raises(ParameterUninitializedException):
         test_sensor.on_configure(None)
 
@@ -147,7 +147,7 @@ def test_on_cleanup(configured_sensor: TestObeliskSensor) -> None:
     result = configured_sensor.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(configured_sensor, "publisher_sensors")
-    assert not hasattr(configured_sensor, "pub_sensor_config_strs")
+    assert not hasattr(configured_sensor, "pub_sensor_settings")
 
 
 def test_publisher_creation(configured_sensor: TestObeliskSensor) -> None:
@@ -159,14 +159,14 @@ def test_publisher_creation(configured_sensor: TestObeliskSensor) -> None:
 @pytest.mark.parametrize(
     "invalid_config",
     [
-        ["invalid_config_string"],
+        ["invalid_setting"],
         ["msg_type:InvalidType,topic:/test/topic"],
         ["msg_type:JointEncoders,topic:/test/topic,invalid_key:value"],
     ],
 )
 def test_invalid_publisher_config(test_sensor: TestObeliskSensor, invalid_config: List[str]) -> None:
     """Test handling of invalid publisher configuration strings."""
-    test_sensor.set_parameters([rclpy.Parameter("pub_sensor_config_strs", value=invalid_config)])
+    test_sensor.set_parameters([rclpy.Parameter("pub_sensor_settings", value=invalid_config)])
     with pytest.raises(Exception) as exc_info:  # The exact exception type may vary based on implementation
         test_sensor.on_configure(None)
     assert isinstance(exc_info.value, Exception)
@@ -192,7 +192,7 @@ def test_publish_measurement_bounds(configured_sensor: TestObeliskSensor, method
 def test_multiple_sensors(test_sensor: TestObeliskSensor, set_node_parameters: Callable[[Any, Dict], None]) -> None:
     """Test configuration with multiple sensors."""
     parameter_dict = {
-        "pub_sensor_config_strs": [
+        "pub_sensor_settings": [
             "msg_type:JointEncoders,topic:/sensor1,history_depth:10,callback_group:None,non_obelisk:False",
             "msg_type:JointEncoders,topic:/sensor2,history_depth:5,callback_group:None,non_obelisk:False",
             "msg_type:JointEncoders,topic:/sensor3,history_depth:1,callback_group:None,non_obelisk:False",
@@ -200,7 +200,7 @@ def test_multiple_sensors(test_sensor: TestObeliskSensor, set_node_parameters: C
     }
     set_node_parameters(test_sensor, parameter_dict)
     test_sensor.on_configure(None)
-    assert len(test_sensor.publisher_sensors) == len(parameter_dict["pub_sensor_config_strs"])
+    assert len(test_sensor.publisher_sensors) == len(parameter_dict["pub_sensor_settings"])
 
 
 def test_lifecycle_transitions(configured_sensor: TestObeliskSensor) -> None:
@@ -243,6 +243,6 @@ def test_callback_group_creation(configured_sensor: TestObeliskSensor) -> None:
 
 def test_parameter_types(configured_sensor: TestObeliskSensor) -> None:
     """Test that parameters are of the correct types."""
-    pub_sensor_config_strs = configured_sensor.get_parameter("pub_sensor_config_strs").value
-    assert isinstance(pub_sensor_config_strs, list)
-    assert all(isinstance(config_str, str) for config_str in pub_sensor_config_strs)
+    pub_sensor_settings = configured_sensor.get_parameter("pub_sensor_settings").value
+    assert isinstance(pub_sensor_settings, list)
+    assert all(isinstance(config_str, str) for config_str in pub_sensor_settings)

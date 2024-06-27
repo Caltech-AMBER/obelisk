@@ -63,16 +63,16 @@ def configured_controller(
 ) -> TestObeliskController:
     """Fixture for the TestObeliskController class with parameters set."""
     parameter_dict = {
-        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "timer_ctrl_config_str": "timer_period_sec:0.001,callback_group:None",
-        "pub_ctrl_config_str": (
+        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "timer_ctrl_setting": "timer_period_sec:0.001,callback_group:None",
+        "pub_ctrl_setting": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_controller/control,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "sub_est_config_str": (
+        "sub_est_setting": (
             "msg_type:EstimatedState,"
             "topic:/obelisk/test_controller/state_estimate,"
             "history_depth:10,"
@@ -89,10 +89,10 @@ def configured_controller(
 def parameter_names() -> List[str]:
     """Return the parameter names for the controller."""
     return [
-        "callback_group_config_strs",
-        "timer_ctrl_config_str",
-        "pub_ctrl_config_str",
-        "sub_est_config_str",
+        "callback_group_settings",
+        "timer_ctrl_setting",
+        "pub_ctrl_setting",
+        "sub_est_setting",
     ]
 
 
@@ -173,9 +173,9 @@ def test_on_cleanup(configured_controller: TestObeliskController) -> None:
     assert not hasattr(configured_controller, "timer_ctrl")
     assert not hasattr(configured_controller, "publisher_ctrl")
     assert not hasattr(configured_controller, "subscriber_est")
-    assert not hasattr(configured_controller, "timer_ctrl_config_str")
-    assert not hasattr(configured_controller, "pub_ctrl_config_str")
-    assert not hasattr(configured_controller, "sub_est_config_str")
+    assert not hasattr(configured_controller, "timer_ctrl_setting")
+    assert not hasattr(configured_controller, "pub_ctrl_setting")
+    assert not hasattr(configured_controller, "sub_est_setting")
 
 
 def test_on_activate(configured_controller: TestObeliskController) -> None:
@@ -221,9 +221,9 @@ def test_subscriber_callback_assignment(configured_controller: TestObeliskContro
 @pytest.mark.parametrize(
     "invalid_config",
     [
-        {"timer_ctrl_config_str": "invalid_config_string"},
-        {"pub_ctrl_config_str": "invalid_config_string"},
-        {"sub_est_config_str": "invalid_config_string"},
+        {"timer_ctrl_setting": "invalid_setting"},
+        {"pub_ctrl_setting": "invalid_setting"},
+        {"sub_est_setting": "invalid_setting"},
     ],
 )
 def test_invalid_configuration(test_controller: TestObeliskController, invalid_config: Dict[str, Any]) -> None:

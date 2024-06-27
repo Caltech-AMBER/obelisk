@@ -22,24 +22,22 @@ class ObeliskRobot(ABC, ObeliskNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk robot."""
         super().__init__(node_name)
-        self.declare_parameter("sub_ctrl_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_sensor_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("sub_ctrl_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_sensor_settings", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the robot."""
         super().on_configure(state)
 
         # parsing config strings
-        self.sub_ctrl_config_str = self.get_parameter("sub_ctrl_config_str").get_parameter_value().string_value
-        self.pub_sensor_config_strs = (
-            self.get_parameter("pub_sensor_config_strs").get_parameter_value().string_array_value
-        )
+        self.sub_ctrl_setting = self.get_parameter("sub_ctrl_setting").get_parameter_value().string_value
+        self.pub_sensor_settings = self.get_parameter("pub_sensor_settings").get_parameter_value().string_array_value
 
         # create publishers and subscriber
-        self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_config_str, self.apply_control)
+        self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_setting, self.apply_control)
         self.publisher_sensors = []
-        for sensor_config_str in self.pub_sensor_config_strs:
-            pub_sensor = self._create_publisher_from_config_str(sensor_config_str)
+        for sensor_setting in self.pub_sensor_settings:
+            pub_sensor = self._create_publisher_from_config_str(sensor_setting)
             self.publisher_sensors.append(pub_sensor)
 
         return TransitionCallbackReturn.SUCCESS
@@ -55,8 +53,8 @@ class ObeliskRobot(ABC, ObeliskNode):
 
         del self.subscriber_ctrl
         del self.publisher_sensors
-        del self.sub_ctrl_config_str
-        del self.pub_sensor_config_strs
+        del self.sub_ctrl_setting
+        del self.pub_sensor_settings
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
@@ -85,8 +83,8 @@ class ObeliskSimRobot(ObeliskRobot):
         """Initialize the Obelisk sim robot."""
         super().__init__(node_name)
         self.declare_parameter("n_u", rclpy.Parameter.Type.INTEGER)  # control input dimension
-        self.declare_parameter("timer_true_sim_state_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_true_sim_state_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("timer_true_sim_state_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_true_sim_state_setting", rclpy.Parameter.Type.STRING)
 
     def _set_shared_ctrl(self, ctrl: List[float]) -> None:
         """Set the shared control array.
@@ -115,19 +113,19 @@ class ObeliskSimRobot(ObeliskRobot):
         assert self.n_u > 0, "Control input dimension must be positive!"
 
         # parsing config strings
-        self.timer_true_sim_state_config_str = (
-            self.get_parameter("timer_true_sim_state_config_str").get_parameter_value().string_value
+        self.timer_true_sim_state_setting = (
+            self.get_parameter("timer_true_sim_state_setting").get_parameter_value().string_value
         )
-        self.pub_true_sim_state_config_str = (
-            self.get_parameter("pub_true_sim_state_config_str").get_parameter_value().string_value
+        self.pub_true_sim_state_setting = (
+            self.get_parameter("pub_true_sim_state_setting").get_parameter_value().string_value
         )
 
-        if self.pub_true_sim_state_config_str != [""]:
+        if self.pub_true_sim_state_setting != [""]:
             self.timer_true_sim_state = self._create_timer_from_config_str(
-                self.timer_true_sim_state_config_str,
+                self.timer_true_sim_state_setting,
                 self.publish_true_sim_state,
             )
-            self.publisher_true_sim_state = self._create_publisher_from_config_str(self.pub_true_sim_state_config_str)
+            self.publisher_true_sim_state = self._create_publisher_from_config_str(self.pub_true_sim_state_setting)
 
             # checks
             assert (
@@ -172,8 +170,8 @@ class ObeliskSimRobot(ObeliskRobot):
             del self.publisher_true_sim_state
 
         # delete config strings
-        del self.timer_true_sim_state_config_str
-        del self.pub_true_sim_state_config_str
+        del self.timer_true_sim_state_setting
+        del self.pub_true_sim_state_setting
 
         # delete other properties
         del self.shared_ctrl
