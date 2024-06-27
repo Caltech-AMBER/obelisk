@@ -162,7 +162,7 @@ def test_get_parameters_dict(test_config: Dict[str, Any]) -> None:
     parameters_dict = get_parameters_dict(node_settings)
 
     expected_dict = {
-        "callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup,cbg2:ReentrantCallbackGroup",
+        "callback_group_settings": ["cbg1:MutuallyExclusiveCallbackGroup", "cbg2:ReentrantCallbackGroup"],
         "pub_ctrl_settings1": (
             "key:pub1,topic:/test/controller/pub1,msg_type:TestMsg,history_depth:10,callback_group:cbg1,"
             "non_obelisk:False"
@@ -268,7 +268,7 @@ def test_get_parameters_dict_sensors(test_config: Dict[str, Any]) -> None:
     # Test parameters for the first sensor
     parameters_dict1 = get_parameters_dict(sensors_settings[0])
     expected_dict1 = {
-        "callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup",
+        "callback_group_settings": ["cbg1:MutuallyExclusiveCallbackGroup"],
         "pub_sensor_settings1": (
             "key:pub1,topic:/test/sensor1/pub1,msg_type:SensorMsg,history_depth:10,callback_group:cbg1,"
             "non_obelisk:False"
@@ -279,7 +279,7 @@ def test_get_parameters_dict_sensors(test_config: Dict[str, Any]) -> None:
     # Test parameters for the second sensor
     parameters_dict2 = get_parameters_dict(sensors_settings[1])
     expected_dict2 = {
-        "callback_group_settings": "cbg1:ReentrantCallbackGroup",
+        "callback_group_settings": ["cbg1:ReentrantCallbackGroup"],
         "timer_sensor_settings1": "key:timer1,timer_period_sec:0.01,callback_group:cbg1,callback_key:timer_callback1",
     }
     assert parameters_dict2 == expected_dict2
@@ -297,7 +297,7 @@ def test_get_parameters_dict_empty_node(test_config: Dict[str, Any]) -> None:
         "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
     }
     parameters_dict = get_parameters_dict(minimal_node_settings)
-    expected_dict = {"callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup"}
+    expected_dict = {"callback_group_settings": ["cbg1:MutuallyExclusiveCallbackGroup"]}
     assert parameters_dict == expected_dict
 
 

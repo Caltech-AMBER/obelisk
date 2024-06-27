@@ -17,15 +17,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def __init__(self) -> None:
         """Initialize the mujoco simulator."""
         super().__init__("obelisk_mujoco_robot")
-        self.declare_parameter("mujoco_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulator."""
         super().on_configure(state)
-        self.mujoco_config_str = self.get_parameter("mujoco_config_str").get_parameter_value().string_value
+        self.mujoco_setting = self.get_parameter("mujoco_setting").get_parameter_value().string_value
 
         # parse and check the configuration string
-        field_names, value_names = ObeliskMujocoRobot._parse_config_str(self.mujoco_config_str)
+        field_names, value_names = ObeliskMujocoRobot._parse_config_str(self.mujoco_setting)
         required_field_names = ["model_xml_path"]
         optional_field_names = ["dt_phys", "num_phys_steps_per_viz"]
         ObeliskMujocoRobot._check_fields(field_names, required_field_names, optional_field_names)
