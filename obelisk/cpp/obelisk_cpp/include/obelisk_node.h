@@ -101,6 +101,54 @@ namespace obelisk {
                 topic_name, qos, std::move(callback), options, msg_mem_strat);
         };
 
+        /**
+         * @brief Configures the node.
+         *  Specifically, here we parse the the configuration string that determines
+         * the callback groups and names.
+         *
+         * @return success if everything is executed.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_configure(const rclcpp_lifecycle::State& prev_state) {
+            rclcpp_lifecycle::LifecycleNode::on_configure(prev_state);
+
+            // Parse the configuration groups for this node
+            ParseCallbackGroupConfig(this->get_parameter("callback_group_settings").as_string());
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief cleans up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+            rclcpp_lifecycle::LifecycleNode::on_cleanup(prev_state);
+
+            // Clear current data
+            callback_groups_.clear();
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        // TODO: Make all the child classes call these methods in theirs
+
+        /**
+         * @brief shutsdown the node the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+            rclcpp_lifecycle::LifecycleNode::on_shutdown(prev_state);
+            // Clear current data
+            callback_groups_.clear();
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
       protected:
         /**
          * @brief Create a subscriber from a configuration string.
@@ -342,21 +390,6 @@ namespace obelisk {
             }
 
             callback_groups_.emplace(CB_GROUP_NONE, nullptr);
-        }
-
-        /**
-         * @brief Configures the node.
-         *  Specifically, here we parse the the configuration string that determines
-         * the callback groups and names.
-         *
-         * @return success if everything is executed.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) {
-            // Parse the configuration groups for this node
-            ParseCallbackGroupConfig(this->get_parameter("callback_group_settings").as_string());
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         // --------- Member Variables --------- //

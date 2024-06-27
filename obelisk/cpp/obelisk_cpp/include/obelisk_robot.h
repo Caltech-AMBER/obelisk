@@ -45,6 +45,8 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+            ObeliskNode::on_cleanup(prev_state);
+
             // Release the shared pointers
             control_subscriber_.reset();
 
@@ -61,6 +63,8 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+            ObeliskNode::on_shutdown(prev_state);
+
             // Release the shared pointers
             control_subscriber_.reset();
 
