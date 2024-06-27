@@ -1,12 +1,12 @@
-BasedOnStyle: Google
+BasedOnStyle: LLVM
 TabWidth: 4
 IndentWidth: 4
 
 Language: Cpp
 # Force pointers to the type for C++.
-DerivePointerAlignment: false
+# DerivePointerAlignment: false
 PointerAlignment: Left
-AlignAfterOpenBracket: DontAlign
+# AlignAfterOpenBracket: DontAlign
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: true
@@ -18,7 +18,8 @@ AlignConsecutiveMacros:
 AlignTrailingComments:
   Kind: Always
   OverEmptyLines: 1
-BreakConstructorInitializers: BeforeColon
-EmptyLineBeforeAccessModifier: LogicalBlock
+# BreakConstructorInitializers: BeforeColon
+# EmptyLineBeforeAccessModifier: LogicalBlock
 NamespaceIndentation: All
-PackConstructorInitializers: NextLineOnly
+ColumnLimit: 120
+# PackConstructorInitializers: NextLineOnly
