@@ -30,8 +30,12 @@ RUN apt-get update -y && \
     python-is-python3 \
     python3-pip \
     python3-argcomplete \
+    mesa-utils \
+    x11-apps \
+    locales \
     sudo && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    locale-gen en_US.UTF-8
 
 # create non-root user with sudo privileges for certain commands
 RUN groupadd --gid $GID $USER && \
