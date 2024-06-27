@@ -18,24 +18,22 @@ class ObeliskSensor(ObeliskNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk sensor."""
         super().__init__(node_name)
-        self.declare_parameter("pub_sensor_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("pub_sensor_settings", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the sensor."""
         super().on_configure(state)
 
         # parsing config strings
-        self.pub_sensor_config_strs = (
-            self.get_parameter("pub_sensor_config_strs").get_parameter_value().string_array_value
-        )
+        self.pub_sensor_settings = self.get_parameter("pub_sensor_settings").get_parameter_value().string_array_value
         assert (
-            self.pub_sensor_config_strs != [""] and len(self.pub_sensor_config_strs) > 0
-        ), "pub_sensor_config_strs must be a non-empty list of strings."
+            self.pub_sensor_settings != [""] and len(self.pub_sensor_settings) > 0
+        ), "pub_sensor_settings must be a non-empty list of strings."
 
         # create publishers
         self.publisher_sensors = []
-        for sensor_config_str in self.pub_sensor_config_strs:
-            pub_sensor = self._create_publisher_from_config_str(sensor_config_str)
+        for sensor_setting in self.pub_sensor_settings:
+            pub_sensor = self._create_publisher_from_config_str(sensor_setting)
             self.publisher_sensors.append(pub_sensor)
 
         return TransitionCallbackReturn.SUCCESS
@@ -49,5 +47,5 @@ class ObeliskSensor(ObeliskNode):
             self.destroy_publisher(sensor_publisher)
 
         del self.publisher_sensors
-        del self.pub_sensor_config_strs
+        del self.pub_sensor_settings
         return TransitionCallbackReturn.SUCCESS

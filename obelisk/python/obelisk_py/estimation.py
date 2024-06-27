@@ -33,30 +33,28 @@ class ObeliskEstimator(ABC, ObeliskNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk estimator."""
         super().__init__(node_name)
-        self.declare_parameter("timer_est_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_est_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("sub_sensor_config_strs", rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter("timer_est_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_est_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("sub_sensor_settings", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
         super().on_configure(state)
 
         # parsing config strings
-        self.timer_est_config_str = self.get_parameter("timer_est_config_str").get_parameter_value().string_value
-        self.pub_est_config_str = self.get_parameter("pub_est_config_str").get_parameter_value().string_value
-        self.sub_sensor_config_strs = (
-            self.get_parameter("sub_sensor_config_strs").get_parameter_value().string_array_value
-        )
+        self.timer_est_setting = self.get_parameter("timer_est_setting").get_parameter_value().string_value
+        self.pub_est_setting = self.get_parameter("pub_est_setting").get_parameter_value().string_value
+        self.sub_sensor_settings = self.get_parameter("sub_sensor_settings").get_parameter_value().string_array_value
 
         # create publisher+timer
-        self.timer_est = self._create_timer_from_config_str(self.timer_est_config_str, self.compute_state_estimate)
-        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_config_str)
+        self.timer_est = self._create_timer_from_config_str(self.timer_est_setting, self.compute_state_estimate)
+        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_setting)
         self.subscriber_sensors = []
 
         # in the derived class, you must create your own sensor subscribers
         """
-        for sensor_config_str in self.sub_sensor_config_strs:
-            sub_sensor = self._create_subscription_from_config_str(sensor_config_str, self.<sensor_callback>)
+        for sensor_setting in self.sub_sensor_settings:
+            sub_sensor = self._create_subscription_from_config_str(sensor_setting, self.<sensor_callback>)
             self.subscriber_sensors.append(sub_sensor)
         """
 
@@ -89,9 +87,9 @@ class ObeliskEstimator(ABC, ObeliskNode):
         del self.subscriber_sensors
 
         # delete config strings
-        del self.timer_est_config_str
-        del self.pub_est_config_str
-        del self.sub_sensor_config_strs
+        del self.timer_est_setting
+        del self.pub_est_setting
+        del self.sub_sensor_settings
 
         return TransitionCallbackReturn.SUCCESS
 

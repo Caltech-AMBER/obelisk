@@ -52,15 +52,15 @@ def configured_sim_robot(
 ) -> TestObeliskSimRobot:
     """Fixture for the TestObeliskSimRobot class with parameters set."""
     parameter_dict = {
-        "callback_group_config_strs": ["test_cbg:ReentrantCallbackGroup"],
-        "sub_ctrl_config_str": (
+        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "sub_ctrl_setting": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_sim_robot/ctrl,"
             "history_depth:10,"
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "pub_sensor_config_strs": [
+        "pub_sensor_settings": [
             (
                 "msg_type:JointEncoders,"
                 "topic:/obelisk/test_sim_robot/sensor1,"
@@ -77,8 +77,8 @@ def configured_sim_robot(
             ),
         ],
         "n_u": 2,
-        "timer_true_sim_state_config_str": ("timer_period_sec:0.1,callback_group:None"),
-        "pub_true_sim_state_config_str": (
+        "timer_true_sim_state_setting": ("timer_period_sec:0.1,callback_group:None"),
+        "pub_true_sim_state_setting": (
             "msg_type:TrueSimState,"
             "topic:/obelisk/test_sim_robot/true_sim_state,"
             "history_depth:10,"
@@ -96,8 +96,8 @@ def sim_robot_parameter_names() -> List[str]:
     """Parameter names for the ObeliskSimRobot class."""
     return [
         "n_u",
-        "timer_true_sim_state_config_str",
-        "pub_true_sim_state_config_str",
+        "timer_true_sim_state_setting",
+        "pub_true_sim_state_setting",
     ]
 
 
@@ -230,8 +230,8 @@ def test_sim_robot_run_simulator(configured_sim_robot: TestObeliskSimRobot) -> N
     "invalid_config",
     [
         {"n_u": 0},
-        {"timer_true_sim_state_config_str": "invalid_config_string"},
-        {"pub_true_sim_state_config_str": "invalid_config_string"},
+        {"timer_true_sim_state_setting": "invalid_setting"},
+        {"pub_true_sim_state_setting": "invalid_setting"},
     ],
 )
 def test_sim_robot_invalid_configuration(test_sim_robot: TestObeliskSimRobot, invalid_config: Dict[str, Any]) -> None:

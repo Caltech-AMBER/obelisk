@@ -37,23 +37,23 @@ class ObeliskController(ABC, ObeliskNode):
             cb_group_est: The callback group for the state estimate message subscriber.
         """
         super().__init__(node_name)
-        self.declare_parameter("timer_ctrl_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_ctrl_config_str", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("sub_est_config_str", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("timer_ctrl_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_ctrl_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("sub_est_setting", rclpy.Parameter.Type.STRING)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
 
         # parsing config strings
-        self.timer_ctrl_config_str = self.get_parameter("timer_ctrl_config_str").get_parameter_value().string_value
-        self.pub_ctrl_config_str = self.get_parameter("pub_ctrl_config_str").get_parameter_value().string_value
-        self.sub_est_config_str = self.get_parameter("sub_est_config_str").get_parameter_value().string_value
+        self.timer_ctrl_setting = self.get_parameter("timer_ctrl_setting").get_parameter_value().string_value
+        self.pub_ctrl_setting = self.get_parameter("pub_ctrl_setting").get_parameter_value().string_value
+        self.sub_est_setting = self.get_parameter("sub_est_setting").get_parameter_value().string_value
 
         # create publishers+timers/subscribers
-        self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_config_str, self.compute_control)
-        self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_config_str)
-        self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_config_str, self.update_x_hat)
+        self.timer_ctrl = self._create_timer_from_config_str(self.timer_ctrl_setting, self.compute_control)
+        self.publisher_ctrl = self._create_publisher_from_config_str(self.pub_ctrl_setting)
+        self.subscriber_est = self._create_subscription_from_config_str(self.sub_est_setting, self.update_x_hat)
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -82,9 +82,9 @@ class ObeliskController(ABC, ObeliskNode):
         del self.subscriber_est
 
         # delete config strings
-        del self.timer_ctrl_config_str
-        del self.pub_ctrl_config_str
-        del self.sub_est_config_str
+        del self.timer_ctrl_setting
+        del self.pub_ctrl_setting
+        del self.sub_est_setting
 
         return TransitionCallbackReturn.SUCCESS
 

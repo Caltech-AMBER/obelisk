@@ -150,7 +150,7 @@ def test_create_timer_from_config_str(test_node: ObeliskNode) -> None:
 
 def test_on_configure(test_node: ObeliskNode) -> None:
     """Test the on_configure method."""
-    test_node.callback_group_config_strs = ["group1:MutuallyExclusiveCallbackGroup"]
+    test_node.callback_group_settings = ["group1:MutuallyExclusiveCallbackGroup"]
     test_node.group1 = MutuallyExclusiveCallbackGroup()
     result = test_node.on_configure(None)
     assert result == TransitionCallbackReturn.SUCCESS
@@ -160,22 +160,22 @@ def test_on_configure(test_node: ObeliskNode) -> None:
 
 def test_on_cleanup(test_node: ObeliskNode) -> None:
     """Test the on_cleanup method."""
-    test_node.callback_group_config_strs = ["group1:MutuallyExclusiveCallbackGroup"]
+    test_node.callback_group_settings = ["group1:MutuallyExclusiveCallbackGroup"]
     test_node.group1 = MutuallyExclusiveCallbackGroup()
     result = test_node.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(test_node, "group1")
-    assert not hasattr(test_node, "callback_group_config_strs")
+    assert not hasattr(test_node, "callback_group_settings")
 
 
 def test_on_shutdown(test_node: ObeliskNode) -> None:
     """Test the on_shutdown method."""
-    test_node.callback_group_config_strs = ["group1:MutuallyExclusiveCallbackGroup"]
+    test_node.callback_group_settings = ["group1:MutuallyExclusiveCallbackGroup"]
     test_node.group1 = MutuallyExclusiveCallbackGroup()
     result = test_node.on_shutdown(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(test_node, "group1")
-    assert not hasattr(test_node, "callback_group_config_strs")
+    assert not hasattr(test_node, "callback_group_settings")
 
 
 def test_non_obelisk_msg_publishing_with_flag_publisher(test_node: ObeliskNode) -> None:

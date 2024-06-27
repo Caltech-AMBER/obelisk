@@ -59,7 +59,7 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
-        self.declare_parameter("callback_group_config_strs", [""])
+        self.declare_parameter("callback_group_settings", [""])
 
     @property
     def node_name(self) -> str:
@@ -478,19 +478,19 @@ class ObeliskNode(LifecycleNode):
         super().on_configure(state)
 
         # parsing config strings
-        self.callback_group_config_strs = (
-            self.get_parameter("callback_group_config_strs").get_parameter_value().string_array_value
+        self.callback_group_settings = (
+            self.get_parameter("callback_group_settings").get_parameter_value().string_array_value
         )
 
         # create callback groups
-        assert isinstance(self.callback_group_config_strs, list), (
-            "Expected callback_group_config_strs to be a list, but got: " f"{type(self.callback_group_config_strs)}"
+        assert isinstance(self.callback_group_settings, list), (
+            "Expected callback_group_settings to be a list, but got: " f"{type(self.callback_group_settings)}"
         )
-        assert all(isinstance(item, str) for item in self.callback_group_config_strs), (
-            "Expected all items in callback_group_config_strs to be strings, but got: "
-            f"{[type(item) for item in self.callback_group_config_strs]}"
+        assert all(isinstance(item, str) for item in self.callback_group_settings), (
+            "Expected all items in callback_group_settings to be strings, but got: "
+            f"{[type(item) for item in self.callback_group_settings]}"
         )
-        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_config_strs)
+        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_settings)
         for callback_group_name, callback_group in callback_group_dict.items():
             setattr(self, callback_group_name, callback_group)
 
@@ -501,10 +501,10 @@ class ObeliskNode(LifecycleNode):
         super().on_cleanup(state)
 
         # destroy callback groups
-        for callback_group_config_str in self.callback_group_config_strs:
-            delattr(self, callback_group_config_str.split(":")[0])
+        for callback_group_setting in self.callback_group_settings:
+            delattr(self, callback_group_setting.split(":")[0])
 
-        del self.callback_group_config_strs
+        del self.callback_group_settings
 
         return TransitionCallbackReturn.SUCCESS
 
