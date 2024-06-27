@@ -24,7 +24,7 @@ services:
     volumes:
       - $OBELISK_ROOT:$OBELISK_ROOT
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - $HOME/.Xauthority:/root/.Xauthority:rw
+      - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
     ports:
       - 7007:7007
