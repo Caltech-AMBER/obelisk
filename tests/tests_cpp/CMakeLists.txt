@@ -25,7 +25,8 @@ add_executable(NodeTest
     test_controller.cpp
     test_estimator.cpp
     test_sensor.cpp
-    test_robot.cpp)
+    test_robot.cpp
+    test_sim_robot.cpp)
 
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC ObeliskCpp)

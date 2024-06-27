@@ -10,7 +10,7 @@ namespace obelisk {
 
         /**
          * @brief Configures all the required ROS components. Specifcially this
-         * registers the estimator_publisher_, and the estimator_timer_. Also makes a call to ObeliskNode on configure
+         * registers the control_subscriver_. Also makes a call to ObeliskNode on configure
          * to parse and create the callback group map.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
