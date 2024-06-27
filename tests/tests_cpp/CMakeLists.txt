@@ -23,7 +23,8 @@ file(COPY test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(NodeTest
     test_node.cpp
     test_controller.cpp
-    test_estimator.cpp)
+    test_estimator.cpp
+    test_sensor.cpp)
 
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC ObeliskCpp)

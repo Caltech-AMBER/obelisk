@@ -24,7 +24,7 @@ scripts = ["obelisk_ws/install/setup.sh"]
 [dependencies]
 python = ">=3.10"
 pip = ">=24.0"
-yaml = ">=0.2.5,<0.3"
+yaml = ">=0.2.5,<0.3" # TODO: Remove
 
 [pypi-dependencies]
 matplotlib = ">=3.9.0"

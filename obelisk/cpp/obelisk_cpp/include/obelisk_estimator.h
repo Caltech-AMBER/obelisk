@@ -24,7 +24,16 @@ namespace obelisk {
             estimator_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_est_config_str").as_string(),
                                                             std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
 
-            // The downstream user must create all their sensor subscribers
+            // The downstream user must create all their sensor subscribers using these config strings
+            sub_sensor_config_strs_ = this->get_parameter("sub_sensor_config_strs").as_string_array();
+
+            // If there are no string, or just the default one, then warn the user
+            if ((!sub_sensor_config_strs_.empty() && sub_sensor_config_strs_.at(0) == "") ||
+                sub_sensor_config_strs_.empty()) {
+                RCLCPP_WARN_STREAM(
+                    this->get_logger(),
+                    "No configuration strings found for the estimator subscribers (i.e. listening to sensors).");
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -89,6 +98,8 @@ namespace obelisk {
          * automatically registered as the timer callback.
          */
         virtual EstimatorMessageT ComputeStateEstimate() = 0;
+
+        std::vector<std::string> sub_sensor_config_strs_;
 
         // Publishes the estimated state
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<EstimatorMessageT>> estimator_publisher_;

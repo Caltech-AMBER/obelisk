@@ -20,7 +20,8 @@ set(OBELISK_CPP_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 set(OBELISK_CPP_HEADER_LIST
         "${OBELISK_CPP_INC}/obelisk_node.h"
         "${OBELISK_CPP_INC}/obelisk_controller.h"
-        "${OBELISK_CPP_INC}/obelisk_estimator.h")
+        "${OBELISK_CPP_INC}/obelisk_estimator.h"
+        "${OBELISK_CPP_INC}/obelisk_sensor.h")
 
 add_library(ObeliskCpp ${OBELISK_CPP_HEADER_LIST})
 set_target_properties(ObeliskCpp PROPERTIES LINKER_LANGUAGE CXX)

@@ -1,27 +1,19 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "obelisk_estimator.h"
+#include "obelisk_sensor.h"
 
 namespace obelisk {
-    class ObeliskEstimatorTester : public ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
+    class ObeliskSensorTester : public ObeliskSensor {
       public:
-        ObeliskEstimatorTester() : ObeliskEstimator("obelisk_estimator_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_est_config_str", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_est_config_str", "topic:topic1"));
+        ObeliskSensorTester() : ObeliskSensor("obelisk_sensor_tester") {
             this->set_parameter(
-                rclcpp::Parameter("sub_sensor_config_strs", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
+                rclcpp::Parameter("pub_sensor_config_strs", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
             this->set_parameter(rclcpp::Parameter("callback_group_config_strs", ""));
         }
 
         void Configure() {
-            REQUIRE(this->estimator_publisher_ == nullptr);
-            REQUIRE(this->estimator_timer_ == nullptr);
-
             REQUIRE(this->on_configure(this->get_current_state()) ==
                     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-
-            REQUIRE(this->estimator_publisher_ != nullptr);
-            REQUIRE(this->estimator_timer_ != nullptr);
         }
 
         void Activate() {
@@ -45,17 +37,13 @@ namespace obelisk {
         }
 
       protected:
-        obelisk_estimator_msgs::msg::EstimatedState ComputeStateEstimate() override {
-            const obelisk_estimator_msgs::msg::EstimatedState msg;
-            return msg;
-        }
     };
 } // namespace obelisk
 
-TEST_CASE("Obelisk Estimator Basic Tests", "[obelisk_estimator]") {
+TEST_CASE("Obelisk Sensor Basic Tests", "[obelisk_sensor]") {
     rclcpp::init(0, nullptr);
 
-    obelisk::ObeliskEstimatorTester node;
+    obelisk::ObeliskSensorTester node;
     node.Configure();
     node.Activate();
     node.Deactivate();
