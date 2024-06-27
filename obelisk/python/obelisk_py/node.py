@@ -13,7 +13,7 @@ from rclpy.timer import Timer
 
 from obelisk_py.exceptions import ObeliskMsgError
 from obelisk_py.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
-from obelisk_py.utils import check_and_get_obelisk_msg_type
+from obelisk_py.utils.internal import check_and_get_obelisk_msg_type
 
 MsgType = TypeVar("MsgType")  # hack to denote any message type
 

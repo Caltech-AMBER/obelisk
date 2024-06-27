@@ -6,6 +6,8 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from rclpy.impl import rcutils_logger
 
+from obelisk_py.utils.launch import get_launch_actions_from_node_settings, load_config_file
+
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 
 
@@ -16,24 +18,41 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
     # expose path to config file
     config_file_path = LaunchConfiguration("config_file_path")
-    config_file_path_arg = DeclareLaunchArgument("config_file_path")
+    device_name = LaunchConfiguration("device_name")
 
-    launch_actions += [config_file_path_arg]
-    launch_args.update({"config_file_path": config_file_path})
+    config_file_path_arg = DeclareLaunchArgument("config_file_path", "")
+    device_name_arg = DeclareLaunchArgument("device_name", "")
+
+    launch_actions += [config_file_path_arg, device_name_arg]
+    launch_args.update(
+        {
+            "config_file_path": config_file_path,
+            "device_name": device_name,
+        }
+    )
 
     return launch_actions, launch_args
 
 
 def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     """Returns the launch actions associated with all the nodes in the Obelisk architecture."""
-    obelisk_launch_actions = []
-
     # parsing the config file
-    config_file_path = launch_args["config_file_path"]  # noqa
-    # TODO(ahl): parse the config file, get all config strings for every part of the stack
-    # TODO(ahl): create all the launch actions for LifecycleNodes, pass config strings
-    # TODO(ahl): add all the launch actions to obelisk_launch_actions in loops
-    return obelisk_launch_actions  # TODO(ahl): return the launch actions
+    config_file_path = launch_args["config_file_path"]
+    device_name = context.launch_configurations.get("device_name")
+    obelisk_config = load_config_file(config_file_path)[device_name]  # grab the settings associated with the device
+
+    # checks - we must at least have these 3 components
+    assert "controller" in obelisk_config
+    assert "estimator" in obelisk_config
+    assert "robot" in obelisk_config
+
+    # generate all launch actions
+    obelisk_launch_actions = []
+    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["controller"], "controller")
+    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["estimator"], "estimator")
+    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["robot"], "robot")
+    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["sensors"], "sensors")
+    return obelisk_launch_actions
 
 
 def launch_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict) -> List:
