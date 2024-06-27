@@ -2,6 +2,7 @@ from typing import List, Optional
 
 import mujoco
 import mujoco.viewer
+import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
@@ -86,6 +87,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     continue
 
                 for _ in range(self.num_phys_steps_per_viz):
+                    self.d.ctrl[:] = np.array(self.shared_ctrl)
                     mujoco.mj_step(self.m, self.d)
                 viewer.sync()
                 self.t_last = t
