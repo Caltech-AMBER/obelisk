@@ -1,3 +1,4 @@
+import multiprocessing
 from typing import Callable, List, Optional
 
 import mujoco
@@ -64,7 +65,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             y = []
             for sensor_name in sensor_names:
                 y.append(self.mj_data.sensor(sensor_name).data)
-            msg.y = np.concatenate(y)  # like we assume all ObeliskControlMsg objs have a u field, sensors have y
+            msg.y = list(np.concatenate(y))  # like we assume all ObeliskControlMsg objs have a u field, sensors have y
             pub_sensor.publish(msg)
 
         return timer_callback
@@ -72,12 +73,17 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulator."""
         super().on_configure(state)
-        self.mujoco_setting = self.get_parameter("mujoco_setting").get_parameter_value().string_value
+        try:
+            self.mujoco_setting = self.get_parameter("mujoco_setting").get_parameter_value().string_value
+        except Exception as e:
+            self.get_logger().error(f"Could not get the mujoco setting parameter!\n{e}")
+            return TransitionCallbackReturn.ERROR
 
         # parse and check the configuration string
         field_names, value_names = ObeliskMujocoRobot._parse_config_str(self.mujoco_setting)
+
         required_field_names = ["model_xml_path"]
-        optional_field_names = ["time_step", "num_steps_per_viz"]
+        optional_field_names = ["time_step", "num_steps_per_viz", "sensor_settings"]
         ObeliskMujocoRobot._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
@@ -108,16 +114,17 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             stripped_sensor_settings = stripped_sensor_settings.replace("{", "").replace("}", "")
 
             # the internal delimiter between different sensor group settings is a plus sign
-            self.timers = []
+            self.sensor_timers = []
             for sensor_setting in stripped_sensor_settings.split("+"):
                 # individual settings are separated by pipes
                 sensor_setting_dict = dict([setting.split("=") for setting in sensor_setting.split("|")])
+
                 assert "group_name" in sensor_setting_dict and isinstance(sensor_setting_dict["group_name"], str)
-                assert "dt" in sensor_setting_dict and isinstance(sensor_setting_dict["dt"], float)
+                assert "dt" in sensor_setting_dict and isinstance(sensor_setting_dict["dt"], str)
                 assert "sensor_type" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_type"], str)
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
                 group_name = sensor_setting_dict["group_name"]
-                dt = sensor_setting_dict["dt"]
+                dt = float(sensor_setting_dict["dt"])
                 sensor_type = sensor_setting_dict["sensor_type"]
                 sensor_names = sensor_setting_dict["sensor_names"].split("/")
 
@@ -138,18 +145,21 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     callback_group=cbg,
                 )
                 timer_sensor.cancel()
-                self.timers.append(timer_sensor)
+                self.sensor_timers.append(timer_sensor)
         else:
-            self.timers = None
+            self.sensor_timers = None
+
+        # create shared memory for t_last
+        self.t_last = multiprocessing.Value("d", 0.0)
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Activate the simulator."""
         super().on_activate(state)
-        self.t_last = self.t
+        self.t_last.value = self.t
         self.pause = False
-        if self.timers is not None:
-            for timer in self.timers:
+        if self.sensor_timers is not None:
+            for timer in self.sensor_timers:
                 timer.reset()
         return TransitionCallbackReturn.SUCCESS
 
@@ -190,15 +200,16 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 # simulate at realtime rate
                 # TODO(ahl): allow non-realtime rates
                 t = self.t
-                dt = t - self.t_last
+                t_last = self.t_last.value
+                dt = t - t_last
                 if dt < self.num_steps_per_viz * self.time_step:
                     continue
 
                 for _ in range(self.num_steps_per_viz):
-                    self.d.ctrl[:] = np.array(self.shared_ctrl)
+                    self.mj_data.ctrl[:] = np.array(self.shared_ctrl)
                     mujoco.mj_step(self.mj_model, self.mj_data)
                 viewer.sync()
-                self.t_last = t
+                self.t_last.value = t
 
 
 def main(args: Optional[List] = None) -> None:
