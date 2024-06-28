@@ -4,7 +4,7 @@ from typing import Any, Dict
 import pytest
 from launch_ros.actions import LifecycleNode
 
-from obelisk_py.utils.launch import (
+from obelisk_py.utils.launch_utils import (
     get_component_settings_subdict,
     get_launch_actions_from_node_settings,
     get_parameters_dict,

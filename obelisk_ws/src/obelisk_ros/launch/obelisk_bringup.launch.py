@@ -6,7 +6,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from rclpy.impl import rcutils_logger
 
-from obelisk_py.utils.launch import get_launch_actions_from_node_settings, load_config_file
+from obelisk_py.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 

@@ -56,7 +56,7 @@ def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Di
     """
     component_settings_subdict = {}
 
-    # iterate over the settings for each component
+    # iterate over the settings for each component - if doesn't exist, make a new dict entry, else append it
     for component_settings in node_settings[subdict_name]:
         if component_settings["ros_parameter"] not in component_settings_subdict:
             component_settings_subdict[component_settings["ros_parameter"]] = [
@@ -88,7 +88,11 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
         return {}
 
     # parse settings for each component
-    callback_group_settings = ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
+    callback_group_settings = (
+        ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
+        if "callback_groups" in node_settings
+        else None
+    )
     pub_settings_dict = (
         get_component_settings_subdict(node_settings, "publishers") if "publishers" in node_settings else {}
     )
@@ -99,7 +103,9 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
     sim_settings_dict = get_component_settings_subdict(node_settings, "sim") if "sim" in node_settings else {}
 
     # create parameters dictionary for a node by combining all the settings
-    parameters_dict = {"callback_group_settings": callback_group_settings}
+    parameters_dict = (
+        {"callback_group_settings": callback_group_settings} if callback_group_settings is not None else {}
+    )
     parameters_dict.update(pub_settings_dict)
     parameters_dict.update(sub_settings_dict)
     parameters_dict.update(timer_settings_dict)
@@ -127,13 +133,16 @@ def get_launch_actions_from_node_settings(
     def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
         impl = node_settings["impl"]
         executable = node_settings["executable"]
+
+        # parsing package name and parameters_dict based on node_type
         if node_type == "robot" and str(node_settings["is_simulated"]).lower() == "true":
             package = f"obelisk_sim_{'py' if impl == 'python' else 'cpp'}"
+            parameters_dict = get_parameters_dict(node_settings)
         else:
             package = f"obelisk_{node_type}_{'py' if impl == 'python' else 'cpp'}"
+            parameters_dict = get_parameters_dict(node_settings)
 
         launch_actions = []
-        parameters_dict = get_parameters_dict(node_settings)
         component_node = LifecycleNode(
             namespace="",
             name=f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}",
