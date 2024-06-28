@@ -25,7 +25,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Activate the estimator."""
         super().on_activate(state)
-        self.joint_encoder_callback = None
+        self.joint_encoder_values = None
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
