@@ -14,7 +14,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
 
     def __init__(self) -> None:
         """Initialize the joint encoders passthrough estimator."""
-        super().__init__("joint_encoders_passthrough_estimator")
+        super().__init__("jointencoders_passthrough_estimator")
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
@@ -40,10 +40,11 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
 
     def compute_state_estimate(self) -> EstimatedState:
         """Compute the state estimate."""
-        estimate_state_msg = EstimatedState()
-        estimate_state_msg.x_hat = self.joint_encoder_values
-        self.publisher_est.publish(estimate_state_msg)
-        return estimate_state_msg
+        estimated_state_msg = EstimatedState()
+        if self.joint_encoder_values is not None:
+            estimated_state_msg.x_hat = self.joint_encoder_values
+            self.publisher_est.publish(estimated_state_msg)
+            return estimated_state_msg
 
 
 def main(args: Optional[List] = None) -> None:
