@@ -23,6 +23,8 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "obelisk_mujoco_robot = obelisk_sim_py.obelisk_mujoco_robot:main",
+        ],
     },
 )
