@@ -1,5 +1,5 @@
 onboard:
-  controller:
+  control:
     impl: python
     executable: test_controller
     callback_groups:
@@ -28,7 +28,7 @@ onboard:
         timer_period_sec: 0.1
         callback_group: cbg1
         callback_key: timer_callback1
-  estimator:
+  estimation:
     impl: cpp
     executable: test_estimator
     callback_groups:
@@ -38,7 +38,7 @@ onboard:
     executable: test_robot
     callback_groups:
       cbg1: MutuallyExclusiveCallbackGroup
-  sensors:
+  sensing:
     - impl: python
       executable: test_sensor1
       callback_groups:
