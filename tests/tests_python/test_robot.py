@@ -47,7 +47,7 @@ def configured_robot(
 ) -> TestObeliskRobot:
     """Fixture for the TestObeliskRobot class with parameters set."""
     parameter_dict = {
-        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "callback_group_settings": "test_cbg:ReentrantCallbackGroup",
         "sub_ctrl_setting": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_robot/ctrl,"

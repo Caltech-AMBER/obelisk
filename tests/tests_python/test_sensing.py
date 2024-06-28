@@ -41,7 +41,7 @@ def configured_sensor(
 ) -> TestObeliskSensor:
     """Fixture for the TestObeliskSensor class with parameters set."""
     parameter_dict = {
-        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "callback_group_settings": "test_cbg:ReentrantCallbackGroup",
         "pub_sensor_settings": [
             (
                 "msg_type:JointEncoders,"
@@ -130,8 +130,11 @@ def test_on_configure_success(configured_sensor: TestObeliskSensor) -> None:
     assert all(isinstance(pub, Publisher) for pub in configured_sensor.publisher_sensors)
 
 
-def test_on_configure_empty_settings(test_sensor: TestObeliskSensor) -> None:
+def test_on_configure_empty_settings(
+    test_sensor: TestObeliskSensor, set_node_parameters: Callable[[Any, Dict], None]
+) -> None:
     """Test configuration with empty pub_sensor_settings."""
+    set_node_parameters(test_sensor, {"callback_group_settings": "group1:MutuallyExclusiveCallbackGroup"})
     test_sensor.set_parameters([rclpy.Parameter("pub_sensor_settings", value=[""])])
     with pytest.raises(AssertionError, match="pub_sensor_settings must be a non-empty list of strings."):
         test_sensor.on_configure(None)

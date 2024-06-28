@@ -58,7 +58,7 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
         return {}
 
     # parse settings for each component
-    callback_group_settings = [f"{k}:{v}" for k, v in node_settings["callback_groups"].items()]
+    callback_group_settings = ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
     pub_settings_dict = (
         get_component_settings_subdict(node_settings, "publishers") if "publishers" in node_settings else {}
     )

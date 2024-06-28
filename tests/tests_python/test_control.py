@@ -63,7 +63,7 @@ def configured_controller(
 ) -> TestObeliskController:
     """Fixture for the TestObeliskController class with parameters set."""
     parameter_dict = {
-        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "callback_group_settings": "test_cbg:ReentrantCallbackGroup",
         "timer_ctrl_setting": "timer_period_sec:0.001,callback_group:None",
         "pub_ctrl_setting": (
             "msg_type:PositionSetpoint,"

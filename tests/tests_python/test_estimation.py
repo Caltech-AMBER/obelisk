@@ -59,7 +59,7 @@ def configured_estimator(
 ) -> TestObeliskEstimator:
     """Fixture for the TestObeliskEstimator class with parameters set."""
     parameter_dict = {
-        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "callback_group_settings": "test_cbg:ReentrantCallbackGroup",
         "timer_est_setting": "timer_period_sec:0.001,callback_group:None",
         "pub_est_setting": (
             "msg_type:EstimatedState,"
