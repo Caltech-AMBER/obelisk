@@ -17,7 +17,7 @@ def test_config() -> Dict[str, Any]:
     """Fixture to provide test configuration data."""
     return {
         "onboard": {
-            "controller": {
+            "control": {
                 "impl": "python",
                 "executable": "test_controller",
                 "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
@@ -54,7 +54,7 @@ def test_config() -> Dict[str, Any]:
                     }
                 ],
             },
-            "estimator": {
+            "estimation": {
                 "impl": "cpp",
                 "executable": "test_estimator",
                 "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
@@ -64,7 +64,7 @@ def test_config() -> Dict[str, Any]:
                 "executable": "test_robot",
                 "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
             },
-            "sensors": [
+            "sensing": [
                 {
                     "impl": "python",
                     "executable": "test_sensor1",
@@ -122,7 +122,7 @@ def test_get_component_settings_subdict(test_config: Dict[str, Any]) -> None:
     Args:
         test_config: Test configuration fixture.
     """
-    node_settings = test_config["onboard"]["controller"]
+    node_settings = test_config["onboard"]["control"]
 
     # Test publishers
     pub_settings = get_component_settings_subdict(node_settings, "publishers")
@@ -158,7 +158,7 @@ def test_get_parameters_dict(test_config: Dict[str, Any]) -> None:
     Args:
         test_config: Test configuration fixture.
     """
-    node_settings = test_config["onboard"]["controller"]
+    node_settings = test_config["onboard"]["control"]
     parameters_dict = get_parameters_dict(node_settings)
 
     expected_dict = {
@@ -183,11 +183,10 @@ def test_get_launch_actions_from_node_settings(test_config: Dict[str, Any]) -> N
     Args:
         test_config: Test configuration fixture.
     """
-    node_settings = test_config["onboard"]["controller"]
+    node_settings = test_config["onboard"]["control"]
+    launch_actions = get_launch_actions_from_node_settings(node_settings, "control")
 
-    launch_actions = get_launch_actions_from_node_settings(node_settings, "controller")
-
-    assert len(launch_actions) == 1
+    assert len(launch_actions) == 3  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)
 
     # Test for sensors (multiple nodes)
@@ -224,11 +223,11 @@ def test_get_launch_actions_from_node_settings(test_config: Dict[str, Any]) -> N
         },
     ]
 
-    launch_actions = get_launch_actions_from_node_settings(sensors_settings, "sensors")
+    launch_actions = get_launch_actions_from_node_settings(sensors_settings, "sensing")
 
-    assert len(launch_actions) == 2  # noqa: PLR2004
+    assert len(launch_actions) == 6  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)
-    assert isinstance(launch_actions[1], LifecycleNode)
+    assert isinstance(launch_actions[3], LifecycleNode)
 
 
 def test_get_component_settings_subdict_sensors(test_config: Dict[str, Any]) -> None:
@@ -237,7 +236,7 @@ def test_get_component_settings_subdict_sensors(test_config: Dict[str, Any]) -> 
     Args:
         test_config: Test configuration fixture.
     """
-    sensors_settings = test_config["onboard"]["sensors"]
+    sensors_settings = test_config["onboard"]["sensing"]
 
     # Test publishers for the first sensor
     pub_settings = get_component_settings_subdict(sensors_settings[0], "publishers")
@@ -263,7 +262,7 @@ def test_get_parameters_dict_sensors(test_config: Dict[str, Any]) -> None:
     Args:
         test_config: Test configuration fixture.
     """
-    sensors_settings = test_config["onboard"]["sensors"]
+    sensors_settings = test_config["onboard"]["sensing"]
 
     # Test parameters for the first sensor
     parameters_dict1 = get_parameters_dict(sensors_settings[0])

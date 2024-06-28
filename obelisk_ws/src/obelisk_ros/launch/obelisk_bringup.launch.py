@@ -19,15 +19,18 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
     # expose path to config file
     config_file_path = LaunchConfiguration("config_file_path")
     device_name = LaunchConfiguration("device_name")
+    auto_start = LaunchConfiguration("auto_start")
 
-    config_file_path_arg = DeclareLaunchArgument("config_file_path", "")
-    device_name_arg = DeclareLaunchArgument("device_name", "")
+    config_file_path_arg = DeclareLaunchArgument("config_file_path")
+    device_name_arg = DeclareLaunchArgument("device_name")
+    auto_start_arg = DeclareLaunchArgument("auto_start", default_value="True")
 
-    launch_actions += [config_file_path_arg, device_name_arg]
+    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg]
     launch_args.update(
         {
             "config_file_path": config_file_path,
             "device_name": device_name,
+            "auto_start": auto_start,
         }
     )
 
@@ -36,23 +39,40 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
 def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     """Returns the launch actions associated with all the nodes in the Obelisk architecture."""
-    # parsing the config file
-    config_file_path = launch_args["config_file_path"]
+    # parsing the launch arguments
+    config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
+    auto_start = context.launch_configurations.get("auto_start")
     obelisk_config = load_config_file(config_file_path)[device_name]  # grab the settings associated with the device
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
-    assert "controller" in obelisk_config
-    assert "estimator" in obelisk_config
+    assert "control" in obelisk_config
+    assert "estimation" in obelisk_config
     assert "robot" in obelisk_config
 
     # generate all launch actions
-    obelisk_launch_actions = []
-    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["controller"], "controller")
-    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["estimator"], "estimator")
-    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["robot"], "robot")
-    obelisk_launch_actions += get_launch_actions_from_node_settings(obelisk_config["sensors"], "sensors")
+    obelisk_launch_actions = get_launch_actions_from_node_settings(
+        obelisk_config["control"],
+        "control",
+        auto_start=auto_start,
+    )
+    obelisk_launch_actions += get_launch_actions_from_node_settings(
+        obelisk_config["estimation"],
+        "estimation",
+        auto_start=auto_start,
+    )
+    obelisk_launch_actions += get_launch_actions_from_node_settings(
+        obelisk_config["robot"],
+        "robot",
+        auto_start=auto_start,
+    )
+    if "sensors" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["sensing"],
+            "sensing",
+            auto_start=auto_start,
+        )
     return obelisk_launch_actions
 
 
