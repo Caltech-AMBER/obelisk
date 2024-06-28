@@ -22,14 +22,30 @@ from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskMsg, is_in_bou
 class TestObeliskEstimator(ObeliskEstimator):
     """Test ObeliskEstimator class."""
 
+    def __init__(self, node_name: str) -> None:
+        """Initialize the TestObeliskEstimator."""
+        super().__init__(node_name)
+        self.declare_parameter("sub_sensor1_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("sub_sensor2_setting", rclpy.Parameter.Type.STRING)
+
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
         super().on_configure(state)
-        sensor_callbacks = [self.sensor_callback1, self.sensor_callback2]
-        for sensor_setting, sensor_callback in zip(self.sub_sensor_settings, sensor_callbacks):
-            sub_sensor = self._create_subscription_from_config_str(sensor_setting, sensor_callback)
-            self.subscriber_sensors.append(sub_sensor)
+        self.sub_sensor1_setting = self.get_parameter("sub_sensor1_setting").get_parameter_value().string_value
+        self.sub_sensor2_setting = self.get_parameter("sub_sensor2_setting").get_parameter_value().string_value
+        self.sub_sensor1 = self._create_subscription_from_config_str(self.sub_sensor1_setting, self.sensor_callback1)
+        self.sub_sensor2 = self._create_subscription_from_config_str(self.sub_sensor2_setting, self.sensor_callback2)
+        return TransitionCallbackReturn.SUCCESS
 
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Clean up the estimator."""
+        super().on_cleanup(state)
+        self.destroy_subscription(self.sub_sensor1)
+        self.destroy_subscription(self.sub_sensor2)
+        del self.sub_sensor1
+        del self.sub_sensor2
+        del self.sub_sensor1_setting
+        del self.sub_sensor2_setting
         return TransitionCallbackReturn.SUCCESS
 
     def sensor_callback1(self, msg: ObeliskMsg) -> None:
@@ -68,22 +84,20 @@ def configured_estimator(
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "sub_sensor_settings": [
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_estimator/sensor1,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_estimator/sensor2,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-        ],
+        "sub_sensor1_setting": (
+            "msg_type:JointEncoders,"
+            "topic:/obelisk/test_estimator/sensor1,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
+        "sub_sensor2_setting": (
+            "msg_type:JointEncoders,"
+            "topic:/obelisk/test_estimator/sensor2,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
     }
     set_node_parameters(test_estimator, parameter_dict)
     test_estimator.on_configure(test_estimator._state_machine.current_state)
@@ -97,7 +111,8 @@ def parameter_names() -> List[str]:
         "callback_group_settings",
         "timer_est_setting",
         "pub_est_setting",
-        "sub_sensor_settings",
+        "sub_sensor1_setting",
+        "sub_sensor2_setting",
     ]
 
 
@@ -126,7 +141,7 @@ def test_configuration(
     parameter_names: List[str],
 ) -> None:
     """Test the configuration of the estimator."""
-    component_names = ["test_cbg", "publisher_est", "timer_est", "subscriber_sensors"]
+    component_names = ["test_cbg", "publisher_est", "timer_est", "sub_sensor1", "sub_sensor2"]
     check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=True)
 
 
@@ -136,7 +151,7 @@ def test_cleanup(
     parameter_names: List[str],
 ) -> None:
     """Test the cleanup of the estimator."""
-    component_names = ["test_cbg", "publisher_est", "timer_est", "subscriber_sensors"]
+    component_names = ["test_cbg", "publisher_est", "timer_est", "sub_sensor1", "sub_sensor2"]
     configured_estimator.on_cleanup(configured_estimator._state_machine.current_state)
     check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=False)
 
@@ -166,9 +181,10 @@ def test_on_configure_success(configured_estimator: TestObeliskEstimator) -> Non
     assert isinstance(configured_estimator.timer_est, Timer)
     assert hasattr(configured_estimator, "publisher_est")
     assert isinstance(configured_estimator.publisher_est, Publisher)
-    assert hasattr(configured_estimator, "subscriber_sensors")
-    assert isinstance(configured_estimator.subscriber_sensors, list)
-    assert all(isinstance(sub, Subscription) for sub in configured_estimator.subscriber_sensors)
+    assert hasattr(configured_estimator, "sub_sensor1")
+    assert hasattr(configured_estimator, "sub_sensor2")
+    assert isinstance(configured_estimator.sub_sensor1, Subscription)
+    assert isinstance(configured_estimator.sub_sensor2, Subscription)
 
 
 def test_on_configure_missing_parameters(test_estimator: TestObeliskEstimator) -> None:
@@ -183,10 +199,12 @@ def test_on_cleanup(configured_estimator: TestObeliskEstimator) -> None:
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(configured_estimator, "timer_est")
     assert not hasattr(configured_estimator, "publisher_est")
-    assert not hasattr(configured_estimator, "subscriber_sensors")
+    assert not hasattr(configured_estimator, "sub_sensor1")
+    assert not hasattr(configured_estimator, "sub_sensor2")
     assert not hasattr(configured_estimator, "timer_est_setting")
     assert not hasattr(configured_estimator, "pub_est_setting")
-    assert not hasattr(configured_estimator, "sub_sensor_settings")
+    assert not hasattr(configured_estimator, "sub_sensor1_setting")
+    assert not hasattr(configured_estimator, "sub_sensor2_setting")
 
 
 def test_on_activate(configured_estimator: TestObeliskEstimator) -> None:
@@ -231,8 +249,8 @@ def test_timer_callback_assignment(configured_estimator: TestObeliskEstimator) -
 
 def test_subscriber_callback_assignments(configured_estimator: TestObeliskEstimator) -> None:
     """Test that the sensor callback methods are set as the subscriber callbacks."""
-    assert configured_estimator.subscriber_sensors[0].callback == configured_estimator.sensor_callback1
-    assert configured_estimator.subscriber_sensors[1].callback == configured_estimator.sensor_callback2
+    assert configured_estimator.sub_sensor1.callback == configured_estimator.sensor_callback1
+    assert configured_estimator.sub_sensor2.callback == configured_estimator.sensor_callback2
 
 
 @pytest.mark.parametrize(
@@ -240,7 +258,8 @@ def test_subscriber_callback_assignments(configured_estimator: TestObeliskEstima
     [
         {"timer_est_setting": "invalid_setting"},
         {"pub_est_setting": "invalid_setting"},
-        {"sub_sensor_settings": ["invalid_setting"]},
+        {"sub_sensor1_setting": "invalid_setting"},
+        {"sub_sensor2_setting": "invalid_setting"},
     ],
 )
 def test_invalid_configuration(test_estimator: TestObeliskEstimator, invalid_config: Dict[str, Any]) -> None:
