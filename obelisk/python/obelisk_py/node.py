@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, get_args, get_origin
 
-import rclpy
 from rclpy._rclpy_pybind11 import RCLError
 from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode
@@ -60,7 +59,7 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
-        self.declare_parameter("callback_group_settings", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("callback_group_settings", "")
 
     @property
     def node_name(self) -> str:
@@ -162,13 +161,9 @@ class ObeliskNode(LifecycleNode):
         if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             assert config_dict["non_obelisk"].lower() != "true", "non_obelisk=True but no message type supplied!"
-            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskMsg)
+            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskMsg)
         else:
-            self.get_logger().warn(
-                "Creating a publisher that can publish non-Obelisk messages. "
-                "This may cause certain API incompatibilities."
-            )
-            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskAllowedMsg)
+            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskAllowedMsg)
 
         return msg_type
 
