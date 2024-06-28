@@ -119,18 +119,17 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 # individual settings are separated by pipes
                 sensor_setting_dict = dict([setting.split("=") for setting in sensor_setting.split("|")])
 
-                assert "group_name" in sensor_setting_dict and isinstance(sensor_setting_dict["group_name"], str)
+                assert "topic" in sensor_setting_dict and isinstance(sensor_setting_dict["topic"], str)
                 assert "dt" in sensor_setting_dict and isinstance(sensor_setting_dict["dt"], str)
                 assert "sensor_type" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_type"], str)
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
-                group_name = sensor_setting_dict["group_name"]
+                topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
                 sensor_type = sensor_setting_dict["sensor_type"]
                 sensor_names = sensor_setting_dict["sensor_names"].split("/")
 
                 # make sensor pub/timer pair
                 msg_type = self._get_msg_type_from_mj_sensor_type(sensor_type)
-                topic = f"/obelisk/mujoco/sensors/{group_name}"
                 cbg = MutuallyExclusiveCallbackGroup()
                 pub_sensor = self.create_publisher(
                     msg_type=msg_type,
