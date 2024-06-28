@@ -73,8 +73,8 @@ class ObeliskSimRobot(ObeliskRobot):
         """Initialize the Obelisk sim robot."""
         super().__init__(node_name)
         self.declare_parameter("n_u", rclpy.Parameter.Type.INTEGER)  # control input dimension
-        self.declare_parameter("timer_true_sim_state_setting", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_true_sim_state_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("timer_true_sim_state_setting", "")
+        self.declare_parameter("pub_true_sim_state_setting", "")
 
     def _set_shared_ctrl(self, ctrl: List[float]) -> None:
         """Set the shared control array.
@@ -110,11 +110,12 @@ class ObeliskSimRobot(ObeliskRobot):
             self.get_parameter("pub_true_sim_state_setting").get_parameter_value().string_value
         )
 
-        if self.pub_true_sim_state_setting != [""]:
-            self.timer_true_sim_state = self._create_timer_from_config_str(
-                self.timer_true_sim_state_setting,
-                self.publish_true_sim_state,
-            )
+        if self.pub_true_sim_state_setting != "":
+            if self.timer_true_sim_state_setting != "":
+                self.timer_true_sim_state = self._create_timer_from_config_str(
+                    self.timer_true_sim_state_setting,
+                    self.publish_true_sim_state,
+                )
             self.publisher_true_sim_state = self._create_publisher_from_config_str(self.pub_true_sim_state_setting)
 
             # checks
