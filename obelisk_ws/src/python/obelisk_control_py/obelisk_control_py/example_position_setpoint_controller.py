@@ -54,7 +54,7 @@ class ExamplePositionSetpointController(ObeliskController):
 
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = u
+        position_setpoint_msg.u = [u]
         self.publisher_ctrl.publish(position_setpoint_msg)
         return position_setpoint_msg
 
