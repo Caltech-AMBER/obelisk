@@ -17,13 +17,14 @@ class ObeliskRobot(ABC, ObeliskNode):
     Obelisk robots are representations of the physical robot. They take in Obelisk control messages and can optionally
     output Obelisk sensor messages. We expect code in this function to communicate with the low-level control interface
     of a real system.
+
+    [NOTE] In derived classes, you should declare settings for sensor publishers.
     """
 
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk robot."""
         super().__init__(node_name)
         self.declare_parameter("sub_ctrl_setting", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_sensor_settings", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the robot."""
@@ -31,17 +32,9 @@ class ObeliskRobot(ABC, ObeliskNode):
 
         # parsing config strings
         self.sub_ctrl_setting = self.get_parameter("sub_ctrl_setting").get_parameter_value().string_value
-        self.pub_sensor_settings = self.get_parameter("pub_sensor_settings").get_parameter_value().string_array_value
 
         # create publishers and subscriber
         self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_setting, self.apply_control)
-        self.publisher_sensors = []
-        # TODO(ahl): under this current version of the code, we cannot auto-create the publishers because we don't know
-        # the message types in both the python and c++ versions of the code.
-        # for sensor_setting in self.pub_sensor_settings:
-        #     pub_sensor = self._create_publisher_from_config_str(sensor_setting)
-        #     self.publisher_sensors.append(pub_sensor)
-
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -50,13 +43,8 @@ class ObeliskRobot(ABC, ObeliskNode):
 
         # destroy publishers + config strings
         self.subscriber_ctrl.destroy()
-        for sensor_publisher in self.publisher_sensors:
-            self.destroy_publisher(sensor_publisher)
-
         del self.subscriber_ctrl
-        del self.publisher_sensors
         del self.sub_ctrl_setting
-        del self.pub_sensor_settings
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod

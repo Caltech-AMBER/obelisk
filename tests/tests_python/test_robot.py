@@ -20,6 +20,32 @@ from obelisk_py.robot import ObeliskRobot
 class TestObeliskRobot(ObeliskRobot):
     """Test ObeliskRobot class."""
 
+    def __init__(self, node_name: str) -> None:
+        """Initialize the TestObeliskRobot."""
+        super().__init__(node_name)
+        self.declare_parameter("pub_sensor1_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("pub_sensor2_setting", rclpy.Parameter.Type.STRING)
+
+    def on_configure(self, state: rclpy.lifecycle.node.LifecycleState) -> TransitionCallbackReturn:
+        """Configure the robot."""
+        super().on_configure(state)
+        self.pub_sensor1_setting = self.get_parameter("pub_sensor1_setting").get_parameter_value().string_value
+        self.pub_sensor2_setting = self.get_parameter("pub_sensor2_setting").get_parameter_value().string_value
+        self.publisher_sensor1 = self._create_publisher_from_config_str(self.pub_sensor1_setting)
+        self.publisher_sensor2 = self._create_publisher_from_config_str(self.pub_sensor2_setting)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state: rclpy.lifecycle.node.LifecycleState) -> TransitionCallbackReturn:
+        """Clean up the robot."""
+        super().on_cleanup(state)
+        self.publisher_sensor1.destroy()
+        self.publisher_sensor2.destroy()
+        del self.publisher_sensor1
+        del self.publisher_sensor2
+        del self.pub_sensor1_setting
+        del self.pub_sensor2_setting
+        return TransitionCallbackReturn.SUCCESS
+
     def apply_control(self, _: ObeliskControlMsg) -> None:
         """Apply control."""
         pass
@@ -55,22 +81,20 @@ def configured_robot(
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "pub_sensor_settings": [
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_robot/sensor1,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_robot/sensor2,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-        ],
+        "pub_sensor1_setting": (
+            "msg_type:JointEncoders,"
+            "topic:/obelisk/test_robot/sensor1,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
+        "pub_sensor2_setting": (
+            "msg_type:JointEncoders,"
+            "topic:/obelisk/test_robot/sensor2,"
+            "history_depth:10,"
+            "callback_group:None,"
+            "non_obelisk:False"
+        ),
     }
     set_node_parameters(test_robot, parameter_dict)
     test_robot.on_configure(test_robot._state_machine.current_state)
@@ -80,7 +104,7 @@ def configured_robot(
 @pytest.fixture
 def robot_parameter_names() -> List[str]:
     """Return the parameter names for the robot."""
-    return ["sub_ctrl_setting", "pub_sensor_settings"]
+    return ["sub_ctrl_setting", "pub_sensor1_setting", "pub_sensor2_setting"]
 
 
 # ##### #
@@ -108,7 +132,7 @@ def test_robot_configuration(
     robot_parameter_names: List[str],
 ) -> None:
     """Test node configuration."""
-    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensors"]
+    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensor1", "publisher_sensor2"]
     check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=True)
 
 
@@ -118,7 +142,7 @@ def test_robot_cleanup(
     robot_parameter_names: List[str],
 ) -> None:
     """Test node cleanup."""
-    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensors"]
+    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensor1", "publisher_sensor2"]
     configured_robot.on_cleanup(configured_robot._state_machine.current_state)
     check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=False)
 
@@ -142,9 +166,8 @@ def test_on_configure_success(configured_robot: TestObeliskRobot) -> None:
     assert result == TransitionCallbackReturn.SUCCESS
     assert hasattr(configured_robot, "subscriber_ctrl")
     assert isinstance(configured_robot.subscriber_ctrl, Subscription)
-    # assert len(configured_robot.publisher_sensors) == 2  # noqa: PLR2004
-    assert len(configured_robot.publisher_sensors) == 0  # TODO(ahl): fix this after shielding PR
-    assert all(isinstance(pub, Publisher) for pub in configured_robot.publisher_sensors)
+    assert isinstance(configured_robot.publisher_sensor1, Publisher)
+    assert isinstance(configured_robot.publisher_sensor2, Publisher)
 
 
 def test_on_configure_missing_parameters(test_robot: TestObeliskRobot) -> None:
@@ -158,9 +181,11 @@ def test_on_cleanup(configured_robot: TestObeliskRobot) -> None:
     result = configured_robot.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(configured_robot, "subscriber_ctrl")
-    assert not hasattr(configured_robot, "publisher_sensors")
+    assert not hasattr(configured_robot, "publisher_sensor1")
+    assert not hasattr(configured_robot, "publisher_sensor2")
     assert not hasattr(configured_robot, "sub_ctrl_setting")
-    assert not hasattr(configured_robot, "pub_sensor_settings")
+    assert not hasattr(configured_robot, "pub_sensor1_setting")
+    assert not hasattr(configured_robot, "pub_sensor2_setting")
 
 
 def test_apply_control_callback(configured_robot: TestObeliskRobot) -> None:
@@ -170,16 +195,16 @@ def test_apply_control_callback(configured_robot: TestObeliskRobot) -> None:
 
 def test_publisher_creation(configured_robot: TestObeliskRobot) -> None:
     """Test creation of publishers based on configuration strings."""
-    # assert len(configured_robot.publisher_sensors) == 2  # noqa: PLR2004
-    assert len(configured_robot.publisher_sensors) == 0  # TODO(ahl): fix this after shielding PR
-    assert all(isinstance(pub, Publisher) for pub in configured_robot.publisher_sensors)
+    assert isinstance(configured_robot.publisher_sensor1, Publisher)
+    assert isinstance(configured_robot.publisher_sensor2, Publisher)
 
 
 @pytest.mark.parametrize(
     "invalid_config",
     [
         {"sub_ctrl_setting": "invalid_setting"},
-        {"pub_sensor_settings": ["invalid_setting"]},
+        {"pub_sensor1_setting": ["invalid_setting"]},
+        {"pub_sensor2_setting": ["invalid_setting"]},
     ],
 )
 def test_invalid_configuration(test_robot: TestObeliskRobot, invalid_config: Dict[str, Any]) -> None:

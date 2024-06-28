@@ -60,22 +60,6 @@ def configured_sim_robot(
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "pub_sensor_settings": [
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_sim_robot/sensor1,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_sim_robot/sensor2,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-        ],
         "n_u": 2,
         "timer_true_sim_state_setting": ("timer_period_sec:0.1,callback_group:None"),
         "pub_true_sim_state_setting": (
@@ -133,7 +117,6 @@ def test_sim_robot_configuration(
     component_names = [
         "test_cbg",
         "subscriber_ctrl",
-        "publisher_sensors",
         "timer_true_sim_state",
         "publisher_true_sim_state",
     ]
@@ -149,7 +132,6 @@ def test_sim_robot_cleanup(
     component_names = [
         "test_cbg",
         "subscriber_ctrl",
-        "publisher_sensors",
         "timer_true_sim_state",
         "publisher_true_sim_state",
     ]
@@ -173,7 +155,6 @@ def test_sim_robot_on_configure_success(configured_sim_robot: TestObeliskSimRobo
     result = configured_sim_robot.on_configure(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert hasattr(configured_sim_robot, "subscriber_ctrl")
-    assert hasattr(configured_sim_robot, "publisher_sensors")
     assert hasattr(configured_sim_robot, "timer_true_sim_state")
     assert hasattr(configured_sim_robot, "publisher_true_sim_state")
     assert hasattr(configured_sim_robot, "shared_ctrl")
@@ -192,7 +173,6 @@ def test_sim_robot_on_cleanup(configured_sim_robot: TestObeliskSimRobot) -> None
     result = configured_sim_robot.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert not hasattr(configured_sim_robot, "subscriber_ctrl")
-    assert not hasattr(configured_sim_robot, "publisher_sensors")
     assert not hasattr(configured_sim_robot, "timer_true_sim_state")
     assert not hasattr(configured_sim_robot, "publisher_true_sim_state")
     assert not hasattr(configured_sim_robot, "shared_ctrl")
