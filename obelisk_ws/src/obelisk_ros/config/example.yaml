@@ -69,7 +69,6 @@ onboard:
         # callback_key: sub_callback1
         callback_group: None
         non_obelisk: False
-    # timers:
     sim:
       - ros_parameter: mujoco_setting
         model_xml_path: dummy/dummy.xml
