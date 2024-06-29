@@ -114,6 +114,7 @@ if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
 	echo "USER=$USER" > $OBELISK_ROOT/docker/.env
 	echo "UID=$(id -u)" >> $OBELISK_ROOT/docker/.env
 	echo "GID=$(id -g)" >> $OBELISK_ROOT/docker/.env
+	echo "OBELISK_ROOT=$OBELISK_ROOT" >> $OBELISK_ROOT/docker/.env
 	echo -e "\033[1;32m.env file created under $OBELISK_ROOT/docker!\033[0m"
 else
 	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
