@@ -73,8 +73,8 @@ onboard:
       - ros_parameter: mujoco_setting
         model_xml_path: dummy/dummy.xml
         n_u: 1
-        time_step: 0.002
-        num_steps_per_viz: 10
+        time_step: 0.005
+        num_steps_per_viz: 2
         sensor_settings:
         - topic: /obelisk/dummy/sensor
           dt: 0.01

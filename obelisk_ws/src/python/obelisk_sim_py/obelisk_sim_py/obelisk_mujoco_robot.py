@@ -124,6 +124,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         # load mujoco model
         if not os.path.exists(self.model_xml_path):
+            if "OBELISK_ROOT" not in os.environ:
+                raise ValueError("OBELISK_ROOT environment variable not set. Run the dev_setup.sh script!")
             model_xml_path = os.path.join(os.environ["OBELISK_ROOT"], "models", self.model_xml_path)
         else:
             model_xml_path = self.model_xml_path
