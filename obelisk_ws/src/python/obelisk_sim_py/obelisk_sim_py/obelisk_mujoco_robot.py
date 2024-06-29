@@ -118,7 +118,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
         self.mj_model = mujoco.MjModel.from_xml_path(model_xml_path)
         self.mj_data = mujoco.MjData(self.mj_model)
-        self.pause = False
 
         # set the configuration parameters for non-sensor fields
         self.n_u = int(config_dict["n_u"])
@@ -183,6 +182,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u, lock=True)
         self.lock = self.shared_ctrl.get_lock()
         self.sim_process = multiprocessing.Process(target=self.run_simulator)
+        self.is_viewer_running = multiprocessing.Value("b", True)
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -190,7 +190,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Activate the simulator."""
         super().on_activate(state)
         self.t_last.value = self.t
-        self.pause = False
         if self.sensor_timers is not None:
             for timer in self.sensor_timers:
                 timer.reset()
@@ -200,7 +199,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Deactivate the simulator."""
         super().on_deactivate(state)
-        self.pause = True
         if self.timers is not None:
             for timer in self.timers:
                 timer.cancel()
@@ -211,22 +209,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         super().on_cleanup(state)
         # terminate the simulation process
         if self.sim_process.is_alive():
+            self.is_viewer_running.value = False
             self.sim_process.terminate()
             self.sim_process.join()
-
-        # destroy timers
-        # TODO(ahl): also destroy publishers
-        if self.timers is not None:
-            for timer in self.timers:
-                timer.cancel()
-            del self.timers
-
-        # delete other properties
-        del self.shared_ctrl
-        del self.lock
-        del self.sim_process
-        del self.n_u
-
         return TransitionCallbackReturn.SUCCESS
 
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
@@ -244,7 +229,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def run_simulator(self) -> None:
         """Run the mujoco simulator."""
         with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
-            while viewer.is_running():
+            while viewer.is_running() and self.is_viewer_running.value:
                 # simulate at realtime rate
                 # TODO(ahl): allow non-realtime rates
                 t = self.t

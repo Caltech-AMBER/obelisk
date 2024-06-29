@@ -1,9 +1,13 @@
 from typing import Dict, List, Tuple
 
 import launch
+import launch_ros
+import lifecycle_msgs.msg
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, EmitEvent, OpaqueFunction, RegisterEventHandler
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import LifecycleNode
+from launch_ros.events.lifecycle import ChangeState
 from rclpy.impl import rcutils_logger
 
 from obelisk_py.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
@@ -50,28 +54,61 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     assert "control" in obelisk_config
     assert "estimation" in obelisk_config
     assert "robot" in obelisk_config
+    obelisk_launch_actions = []
+
+    # create global state node
+    global_state_node = LifecycleNode(
+        namespace="",
+        package="obelisk_ros",
+        executable="global_state",
+        name="global_state",
+        output="screen",
+    )
+    obelisk_launch_actions.append(global_state_node)
+    if auto_start:
+        configure_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(global_state_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+            )
+        )
+        activate_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(global_state_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+            )
+        )
+        activate_upon_configure_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="configuring",
+                goal_state="inactive",
+                entities=[activate_event],
+            )
+        )  # once the node is configured, it will be activated automatically
+        obelisk_launch_actions += [configure_event, activate_upon_configure_handler]
 
     # generate all launch actions
-    obelisk_launch_actions = get_launch_actions_from_node_settings(
+    obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["control"],
         "control",
-        auto_start=auto_start,
+        global_state_node,
     )
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["estimation"],
         "estimation",
-        auto_start=auto_start,
+        global_state_node,
     )
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["robot"],
         "robot",
-        auto_start=auto_start,
+        global_state_node,
     )
     if "sensors" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["sensing"],
             "sensing",
-            auto_start=auto_start,
+            global_state_node,
         )
     return obelisk_launch_actions
 

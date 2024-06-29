@@ -100,6 +100,18 @@ def test_config() -> Dict[str, Any]:
     }
 
 
+@pytest.fixture
+def test_global_state_node() -> LifecycleNode:
+    """Fixture to provide a dummy global state node."""
+    return LifecycleNode(
+        namespace="",
+        package="obelisk_ros",
+        executable="global_state",
+        name="global_state",
+        output="screen",
+    )
+
+
 def test_load_config_file(test_config: Dict[str, Any]) -> None:
     """Test the load_config_file function.
 
@@ -177,16 +189,19 @@ def test_get_parameters_dict(test_config: Dict[str, Any]) -> None:
     assert parameters_dict == expected_dict
 
 
-def test_get_launch_actions_from_node_settings(test_config: Dict[str, Any]) -> None:
+def test_get_launch_actions_from_node_settings(
+    test_config: Dict[str, Any], test_global_state_node: LifecycleNode
+) -> None:
     """Test the get_launch_actions_from_node_settings function.
 
     Args:
         test_config: Test configuration fixture.
+        test_global_state_node: Dummy global state node fixture.
     """
     node_settings = test_config["onboard"]["control"]
-    launch_actions = get_launch_actions_from_node_settings(node_settings, "control")
+    launch_actions = get_launch_actions_from_node_settings(node_settings, "control", test_global_state_node)
 
-    assert len(launch_actions) == 3  # noqa: PLR2004
+    assert len(launch_actions) == 8  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)
 
     # Test for sensors (multiple nodes)
@@ -223,11 +238,11 @@ def test_get_launch_actions_from_node_settings(test_config: Dict[str, Any]) -> N
         },
     ]
 
-    launch_actions = get_launch_actions_from_node_settings(sensors_settings, "sensing")
+    launch_actions = get_launch_actions_from_node_settings(sensors_settings, "sensing", test_global_state_node)
 
-    assert len(launch_actions) == 6  # noqa: PLR2004
+    assert len(launch_actions) == 16  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)
-    assert isinstance(launch_actions[3], LifecycleNode)
+    assert isinstance(launch_actions[8], LifecycleNode)
 
 
 def test_get_component_settings_subdict_sensors(test_config: Dict[str, Any]) -> None:
@@ -300,7 +315,7 @@ def test_get_parameters_dict_empty_node(test_config: Dict[str, Any]) -> None:
     assert parameters_dict == expected_dict
 
 
-def test_get_launch_actions_from_node_settings_invalid_type() -> None:
+def test_get_launch_actions_from_node_settings_invalid_type(test_global_state_node: LifecycleNode) -> None:
     """Test the get_launch_actions_from_node_settings function with an invalid node type."""
     invalid_node_settings = {
         "impl": "python",
@@ -309,4 +324,4 @@ def test_get_launch_actions_from_node_settings_invalid_type() -> None:
     }
 
     with pytest.raises(AssertionError):
-        get_launch_actions_from_node_settings(invalid_node_settings, "invalid_type")
+        get_launch_actions_from_node_settings(invalid_node_settings, "invalid_type", test_global_state_node)
