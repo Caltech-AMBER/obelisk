@@ -15,7 +15,6 @@ find_package(obelisk_control_msgs REQUIRED)
 find_package(obelisk_sensor_msgs REQUIRED)
 find_package(obelisk_estimator_msgs REQUIRED)
 
-
 set(OBELISK_CPP_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 set(OBELISK_CPP_HEADER_LIST
         "${OBELISK_CPP_INC}/obelisk_node.h"

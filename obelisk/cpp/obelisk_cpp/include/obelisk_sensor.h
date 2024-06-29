@@ -4,20 +4,20 @@ namespace obelisk {
     class ObeliskSensor : public ObeliskNode {
       public:
         explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) {
-            this->declare_parameter<std::vector<std::string>>("pub_sensor_settings", {""});
+            // this->declare_parameter<std::vector<std::string>>("pub_sensor_setting", {""});
         }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
-            pub_sensor_config_strs_ = this->get_parameter("pub_sensor_settings").as_string_array();
+            // pub_sensor_config_strs_ = this->get_parameter("pub_sensor_setting").as_string_array();
 
-            // If there are no string, or just the default one, then warn the user
-            if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
-                pub_sensor_config_strs_.empty()) {
-                throw std::runtime_error("No configuration strings were provided for the sensor publishers.");
-            }
+            // // If there are no string, or just the default one, then warn the user
+            // if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
+            //     pub_sensor_config_strs_.empty()) {
+            //     throw std::runtime_error("No configuration strings were provided for the sensor publishers.");
+            // }
             // The downstream user must create all their sensor subscribers
 
             // TODO (@zolkin): Will want to add automatic registration of publishers here.

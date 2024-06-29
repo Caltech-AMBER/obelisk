@@ -6,9 +6,9 @@ namespace obelisk {
       public:
         explicit ObeliskController(const std::string& name) : ObeliskNode(name) {
             // Declare all paramters
-            this->declare_parameter<std::string>("timer_ctrl_settings", "");
-            this->declare_parameter<std::string>("pub_ctrl_settings", "");
-            this->declare_parameter<std::string>("sub_est_settings", "");
+            this->declare_parameter<std::string>("timer_ctrl_setting", "");
+            this->declare_parameter<std::string>("pub_ctrl_setting", "");
+            this->declare_parameter<std::string>("sub_est_setting", "");
         }
 
         /**
@@ -26,13 +26,13 @@ namespace obelisk {
 
             // Create the publishers, subscribers, and timers
             control_publisher_ =
-                CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_settings").as_string());
+                CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_setting").as_string());
 
             state_estimator_subscriber_ = CreateSubscriptionFromConfigStr<EstimatorMessageT>(
-                this->get_parameter("sub_est_settings").as_string(),
+                this->get_parameter("sub_est_setting").as_string(),
                 std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
 
-            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_settings").as_string(),
+            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
                                                           std::bind(&ObeliskController::ComputeControl, this));
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;

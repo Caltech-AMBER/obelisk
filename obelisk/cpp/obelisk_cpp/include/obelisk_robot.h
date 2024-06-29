@@ -4,8 +4,8 @@ namespace obelisk {
     template <typename ControlMessageT> class ObeliskRobot : public ObeliskNode {
       public:
         explicit ObeliskRobot(const std::string& name) : ObeliskNode(name) {
-            this->declare_parameter<std::string>("sub_ctrl_settings", "");
-            this->declare_parameter<std::vector<std::string>>("pub_sensor_settings", {""});
+            this->declare_parameter<std::string>("sub_ctrl_setting", "");
+            // this->declare_parameter<std::vector<std::string>>("pub_sensor_settings", {""});
         }
 
         /**
@@ -19,18 +19,18 @@ namespace obelisk {
 
             // Create the subscriber to the control input
             control_subscriber_ = CreateSubscriptionFromConfigStr<ControlMessageT>(
-                this->get_parameter("sub_ctrl_settings").as_string(),
+                this->get_parameter("sub_ctrl_setting").as_string(),
                 std::bind(&ObeliskRobot::ApplyControl, this, std::placeholders::_1));
 
             // The downstream user must create all their sensor subscribers using these config strings
-            pub_sensor_config_strs_ = this->get_parameter("pub_sensor_settings").as_string_array();
+            // pub_sensor_config_strs_ = this->get_parameter("pub_sensor_setting").as_string_array();
 
             // If there are no string, or just the default one, then warn the user
-            if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
-                pub_sensor_config_strs_.empty()) {
-                RCLCPP_WARN_STREAM(this->get_logger(),
-                                   "No configuration strings found for the robot sensor publishers.");
-            }
+            // if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
+            //     pub_sensor_config_strs_.empty()) {
+            //     RCLCPP_WARN_STREAM(this->get_logger(),
+            //                        "No configuration strings found for the robot sensor publishers.");
+            // }
 
             // For now the downstream user needs to register the sensor publishers
             // TODO (@zolkin): Implement registration of all these publishers

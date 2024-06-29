@@ -8,7 +8,7 @@ namespace obelisk {
         ObeliskSimRobotTester() : ObeliskSimRobot("obelisk_sensor_tester") {
             this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
+            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
             this->set_parameter(rclcpp::Parameter("n_u", 2));
         }
 

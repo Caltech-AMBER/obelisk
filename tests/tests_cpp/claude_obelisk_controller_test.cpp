@@ -28,9 +28,9 @@ TEST_CASE("ObeliskController Configuration", "[ObeliskController]") {
     TestObeliskController controller;
 
     // Set up parameters
-    controller.set_parameter(rclcpp::Parameter("timer_ctrl_settings", "timer_period_sec:0.1"));
-    controller.set_parameter(rclcpp::Parameter("pub_ctrl_settings", "topic:/control,history_depth:10"));
-    controller.set_parameter(rclcpp::Parameter("sub_est_settings", "topic:/estimate,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:0.1"));
+    controller.set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:/control,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("sub_est_setting", "topic:/estimate,history_depth:10"));
 
     // Configure the controller
     auto result = controller.on_configure(rclcpp_lifecycle::State());
@@ -48,9 +48,9 @@ TEST_CASE("ObeliskController Activation", "[ObeliskController]") {
     TestObeliskController controller;
 
     // Configure the controller first
-    controller.set_parameter(rclcpp::Parameter("timer_ctrl_settings", "timer_period_sec:0.1"));
-    controller.set_parameter(rclcpp::Parameter("pub_ctrl_settings", "topic:/control,history_depth:10"));
-    controller.set_parameter(rclcpp::Parameter("sub_est_settings", "topic:/estimate,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:0.1"));
+    controller.set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:/control,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("sub_est_setting", "topic:/estimate,history_depth:10"));
     controller.on_configure(rclcpp_lifecycle::State());
 
     // Activate the controller
@@ -65,9 +65,9 @@ TEST_CASE("ObeliskController Deactivation", "[ObeliskController]") {
     TestObeliskController controller;
 
     // Configure and activate the controller first
-    controller.set_parameter(rclcpp::Parameter("timer_ctrl_settings", "timer_period_sec:0.1"));
-    controller.set_parameter(rclcpp::Parameter("pub_ctrl_settings", "topic:/control,history_depth:10"));
-    controller.set_parameter(rclcpp::Parameter("sub_est_settings", "topic:/estimate,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:0.1"));
+    controller.set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:/control,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("sub_est_setting", "topic:/estimate,history_depth:10"));
     controller.on_configure(rclcpp_lifecycle::State());
     controller.on_activate(rclcpp_lifecycle::State());
 
@@ -83,9 +83,9 @@ TEST_CASE("ObeliskController Cleanup", "[ObeliskController]") {
     TestObeliskController controller;
 
     // Configure the controller first
-    controller.set_parameter(rclcpp::Parameter("timer_ctrl_settings", "timer_period_sec:0.1"));
-    controller.set_parameter(rclcpp::Parameter("pub_ctrl_settings", "topic:/control,history_depth:10"));
-    controller.set_parameter(rclcpp::Parameter("sub_est_settings", "topic:/estimate,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:0.1"));
+    controller.set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:/control,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("sub_est_setting", "topic:/estimate,history_depth:10"));
     controller.on_configure(rclcpp_lifecycle::State());
 
     // Clean up the controller
@@ -103,9 +103,9 @@ TEST_CASE("ObeliskController Shutdown", "[ObeliskController]") {
     TestObeliskController controller;
 
     // Configure the controller first
-    controller.set_parameter(rclcpp::Parameter("timer_ctrl_settings", "timer_period_sec:0.1"));
-    controller.set_parameter(rclcpp::Parameter("pub_ctrl_settings", "topic:/control,history_depth:10"));
-    controller.set_parameter(rclcpp::Parameter("sub_est_settings", "topic:/estimate,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:0.1"));
+    controller.set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:/control,history_depth:10"));
+    controller.set_parameter(rclcpp::Parameter("sub_est_setting", "topic:/estimate,history_depth:10"));
     controller.on_configure(rclcpp_lifecycle::State());
 
     // Shut down the controller

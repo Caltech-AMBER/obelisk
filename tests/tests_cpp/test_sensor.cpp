@@ -6,9 +6,9 @@ namespace obelisk {
     class ObeliskSensorTester : public ObeliskSensor {
       public:
         ObeliskSensorTester() : ObeliskSensor("obelisk_sensor_tester") {
-            this->set_parameter(
-                rclcpp::Parameter("pub_sensor_settings", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
+            // this->set_parameter(
+            //     rclcpp::Parameter("pub_sensor_setting", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
+            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
         }
 
         void Configure() {

@@ -17,7 +17,7 @@
  * A lifecycle node whose publishers and subscribers can only publish and
  * subscribe to Obelisk messages.
  */
-
+// TODO: Make all settings -> setting if it not an array
 namespace obelisk {
     class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
       public:
@@ -25,7 +25,7 @@ namespace obelisk {
                              bool enable_communication_interface = true)
             : LifecycleNode(node_name, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-            this->declare_parameter<std::string>("callback_group_settings", "");
+            this->declare_parameter<std::string>("callback_group_setting", "");
         };
 
         ObeliskNode(const std::string& node_name, const std::string& namespace_,
@@ -33,7 +33,7 @@ namespace obelisk {
                     bool enable_communication_interface = true)
             : LifecycleNode(node_name, namespace_, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-            this->declare_parameter<std::string>("callback_group_settings", "");
+            this->declare_parameter<std::string>("callback_group_setting", "");
         };
 
         // TODO (@zolkin): Should this be public or protected?
@@ -113,7 +113,7 @@ namespace obelisk {
             rclcpp_lifecycle::LifecycleNode::on_configure(prev_state);
 
             // Parse the configuration groups for this node
-            ParseCallbackGroupConfig(this->get_parameter("callback_group_settings").as_string());
+            ParseCallbackGroupConfig(this->get_parameter("callback_group_setting").as_string());
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }

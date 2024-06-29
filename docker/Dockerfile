@@ -33,6 +33,12 @@ RUN apt-get update -y && \
     sudo && \
     rm -rf /var/lib/apt/lists/*
 
+
+# ../scripts/
+COPY install-mj-source.sh /install-mj-source.sh
+RUN chmod +x /install-mj-source.sh && /install-mj-source.sh --mujoco-dir /home/mujoco
+
+
 # create non-root user with sudo privileges for certain commands
 RUN groupadd --gid $GID $USER && \
     useradd --uid $UID --gid $GID -m $USER -d /home/${USER} --shell /usr/bin/bash && \

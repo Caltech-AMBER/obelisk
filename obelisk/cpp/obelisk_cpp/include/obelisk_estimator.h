@@ -4,9 +4,9 @@ namespace obelisk {
     template <typename EstimatorMessageT> class ObeliskEstimator : public ObeliskNode {
       public:
         explicit ObeliskEstimator(const std::string& name) : ObeliskNode(name) {
-            this->declare_parameter<std::string>("timer_est_settings", "");
-            this->declare_parameter<std::string>("pub_est_settings", "");
-            this->declare_parameter<std::vector<std::string>>("sub_sensor_settings", {""});
+            this->declare_parameter<std::string>("timer_est_setting", "");
+            this->declare_parameter<std::string>("pub_est_setting", "");
+            // this->declare_parameter<std::vector<std::string>>("sub_sensor_settings", {""});
         }
 
         /**
@@ -19,21 +19,21 @@ namespace obelisk {
             ObeliskNode::on_configure(prev_state);
 
             estimator_publisher_ =
-                CreatePublisherFromConfigStr<EstimatorMessageT>(this->get_parameter("pub_est_settings").as_string());
+                CreatePublisherFromConfigStr<EstimatorMessageT>(this->get_parameter("pub_est_setting").as_string());
 
-            estimator_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_est_settings").as_string(),
+            estimator_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_est_setting").as_string(),
                                                             std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
 
             // The downstream user must create all their sensor subscribers using these config strings
-            sub_sensor_config_strs_ = this->get_parameter("sub_sensor_settings").as_string_array();
+            // sub_sensor_config_strs_ = this->get_parameter("sub_sensor_settings").as_string_array();
 
-            // If there are no string, or just the default one, then warn the user
-            if ((!sub_sensor_config_strs_.empty() && sub_sensor_config_strs_.at(0) == "") ||
-                sub_sensor_config_strs_.empty()) {
-                RCLCPP_WARN_STREAM(
-                    this->get_logger(),
-                    "No configuration strings found for the estimator subscribers (i.e. listening to sensors).");
-            }
+            // // If there are no string, or just the default one, then warn the user
+            // if ((!sub_sensor_config_strs_.empty() && sub_sensor_config_strs_.at(0) == "") ||
+            //     sub_sensor_config_strs_.empty()) {
+            //     RCLCPP_WARN_STREAM(
+            //         this->get_logger(),
+            //         "No configuration strings found for the estimator subscribers (i.e. listening to sensors).");
+            // }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
