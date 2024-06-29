@@ -48,18 +48,6 @@ system-requirements = {cuda="12.1.0"}
 cuda = { version="*", channel="nvidia/label/cuda-12.1.0" }
 
 
-# torch
-[feature.torch118]
-channels = ["nvidia", "pytorch"]
-dependencies = { pytorch-cuda="11.8.0" }
-pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
-
-[feature.torch121]
-channels = ["nvidia", "pytorch"]
-dependencies = {pytorch-cuda="12.1.0"}
-pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
-
-
 # ros2
 [feature.ros2base]
 channels = ["robostack-staging"]
@@ -149,26 +137,23 @@ make = ">=4.3,<5"
 [environments]
 default = { solve-group="default" }
 
-# torch
-torch118 = { features=["cuda118", "torch118"] }
-torch121 = { features=["cuda121", "torch121"] }
-
 # obelisk
 obelisk = { features=["obelisk"] }
 
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
 test-workflow = { features=["obelisk", "test", "dev", "build"] }
-test = { features=["cuda121", "torch121", "obelisk", "ros2base", "test"], solve-group="dev" }
+test = { features=["cuda121", "obelisk", "ros2base", "test"], solve-group="dev" }
 
 # ros2
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
+dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build"] }
+dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
 docs = { features=["docs"] }
 
-build = { features = ["cuda121", "torch121", "build"] }
+build = { features = ["cuda121", "build"] }
 
 # ##### #
 # TASKS #
