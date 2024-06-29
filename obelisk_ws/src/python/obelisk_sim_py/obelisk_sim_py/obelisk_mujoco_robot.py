@@ -108,20 +108,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         ObeliskMujocoRobot._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
-        # set the configuration parameters for non-sensor fields
-        self.model_xml_path = config_dict["model_xml_path"]
-        self.n_u = int(config_dict["n_u"])
-        assert self.n_u > 0, "Control input dimension must be positive!"
-        if "time_step" in config_dict:
-            self.time_step = float(config_dict["time_step"])
-        else:
-            self.time_step = 0.002
-
-        if "num_steps_per_viz" in config_dict:
-            self.num_steps_per_viz = int(config_dict["num_steps_per_viz"])
-        else:
-            self.num_steps_per_viz = 5
-
         # load mujoco model
         if not os.path.exists(self.model_xml_path):
             if "OBELISK_ROOT" not in os.environ:
@@ -132,6 +118,21 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         self.mj_model = mujoco.MjModel.from_xml_path(model_xml_path)
         self.mj_data = mujoco.MjData(self.mj_model)
         self.pause = False
+
+        # set the configuration parameters for non-sensor fields
+        self.model_xml_path = config_dict["model_xml_path"]
+        self.n_u = int(config_dict["n_u"])
+        assert self.n_u > 0, "Control input dimension must be positive!"
+        if "time_step" in config_dict:
+            self.time_step = float(config_dict["time_step"])
+        else:
+            self.time_step = 0.002
+        self.mj_model.opt.timestep = self.time_step  # set the timestep of the model to match
+
+        if "num_steps_per_viz" in config_dict:
+            self.num_steps_per_viz = int(config_dict["num_steps_per_viz"])
+        else:
+            self.num_steps_per_viz = 5
 
         # set the configuration parameters for sensor fields
         if "sensor_settings" in config_dict:
