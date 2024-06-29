@@ -1,4 +1,6 @@
+import ctypes
 import multiprocessing
+import os
 from typing import Callable, List, Optional
 
 import mujoco
@@ -6,7 +8,7 @@ import mujoco.viewer
 import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
@@ -21,6 +23,25 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__("obelisk_mujoco_robot")
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
+
+    def _set_shared_ctrl(self, ctrl: List[float]) -> None:
+        """Set the shared control array.
+
+        This is a convenience function to set the shared control array in a thread-safe manner. This should be called in
+        the apply_control function. The shared control array is used to communicate the control input to the simulator.
+
+        The values can be accessed in the simulator by running
+        ```
+        with self.lock:
+            ctrl = list(self.shared_ctrl)
+        ```
+
+        Parameters:
+            ctrl: The control array of length n_u.
+        """
+        if hasattr(self, "lock"):
+            with self.lock:
+                self.shared_ctrl[:] = [ctypes.c_double(value) for value in ctrl]
 
     def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> ObeliskSensorMsg:
         """Get the message type from the Mujoco sensor type.
@@ -70,7 +91,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         return timer_callback
 
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:  # noqa: PLR0915
         """Configure the simulator."""
         super().on_configure(state)
         try:
@@ -82,13 +103,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         # parse and check the configuration string
         field_names, value_names = ObeliskMujocoRobot._parse_config_str(self.mujoco_setting)
 
-        required_field_names = ["model_xml_path"]
+        required_field_names = ["model_xml_path", "n_u"]
         optional_field_names = ["time_step", "num_steps_per_viz", "sensor_settings"]
         ObeliskMujocoRobot._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
         # set the configuration parameters for non-sensor fields
         self.model_xml_path = config_dict["model_xml_path"]
+        self.n_u = int(config_dict["n_u"])
+        assert self.n_u > 0, "Control input dimension must be positive!"
         if "time_step" in config_dict:
             self.time_step = float(config_dict["time_step"])
         else:
@@ -100,7 +123,11 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             self.num_steps_per_viz = 5
 
         # load mujoco model
-        self.mj_model = mujoco.MjModel.from_xml_path(self.model_xml_path)
+        if not os.path.exists(self.model_xml_path):
+            model_xml_path = os.path.join(os.environ["OBELISK_ROOT"], "models", self.model_xml_path)
+        else:
+            model_xml_path = self.model_xml_path
+        self.mj_model = mujoco.MjModel.from_xml_path(model_xml_path)
         self.mj_data = mujoco.MjData(self.mj_model)
         self.pause = False
 
@@ -126,11 +153,11 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
                 sensor_type = sensor_setting_dict["sensor_type"]
-                sensor_names = sensor_setting_dict["sensor_names"].split("/")
+                sensor_names = sensor_setting_dict["sensor_names"].split("&")
 
                 # make sensor pub/timer pair
                 msg_type = self._get_msg_type_from_mj_sensor_type(sensor_type)
-                cbg = MutuallyExclusiveCallbackGroup()
+                cbg = ReentrantCallbackGroup()
                 pub_sensor = self.create_publisher(
                     msg_type=msg_type,
                     topic=topic,
@@ -148,8 +175,12 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         else:
             self.sensor_timers = None
 
-        # create shared memory for t_last
-        self.t_last = multiprocessing.Value("d", 0.0)
+        # setting up the simulator
+        self.t_last = multiprocessing.Value("d", 0.0)  # shared mem for t_last
+        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u, lock=True)
+        self.lock = self.shared_ctrl.get_lock()
+        self.sim_process = multiprocessing.Process(target=self.run_simulator)
+
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -160,6 +191,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         if self.sensor_timers is not None:
             for timer in self.sensor_timers:
                 timer.reset()
+        self.sim_process.start()
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -174,10 +206,24 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Clean up the simulator."""
         super().on_cleanup(state)
+        # terminate the simulation process
+        if self.sim_process.is_alive():
+            self.sim_process.terminate()
+            self.sim_process.join()
+
+        # destroy timers
+        # TODO(ahl): also destroy publishers
         if self.timers is not None:
             for timer in self.timers:
                 timer.cancel()
             del self.timers
+
+        # delete other properties
+        del self.shared_ctrl
+        del self.lock
+        del self.sim_process
+        del self.n_u
+
         return TransitionCallbackReturn.SUCCESS
 
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:

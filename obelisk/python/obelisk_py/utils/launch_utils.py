@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -75,6 +76,58 @@ def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Di
     return component_settings_subdict
 
 
+def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
+    """Returns a subdictionary of the simulation settings associated with an Obelisk node.
+
+    Parameters:
+        node_settings: the settings dictionary of an Obelisk node.
+
+    Returns:
+        A dictionary with the ROS parameter names as keys and the corresponding settings as values.
+    """
+    sim_settings_dict = {}
+    for sim_settings in node_settings["sim"]:
+        # convert the dictionary of simulation settings to a string, excluding 'ros_parameter'
+        sim_settings_strs = []
+        for k, v in sim_settings.items():
+            if k != "ros_parameter":
+                sim_settings_strs.append(f"{k}:{v}")
+        sim_settings_str = ",".join(sim_settings_strs).replace(" ", "")
+
+        # replace commas in 'sensor_names':[...] with '&', remove brackets
+        def _replace_commas_delete_brackets(match: re.Match) -> str:
+            return match.group(0).replace(",", "&").replace("[", "").replace("]", "")
+
+        sim_settings_str = re.sub(r"'sensor_names':\[[^\]]*\]", _replace_commas_delete_brackets, sim_settings_str)
+
+        # remove single quotes
+        sim_settings_str = sim_settings_str.replace("'", "")
+
+        # replace commas between matching curly braces with "|"
+        def _replace_commas_between_curly_braces(match: re.Match) -> str:
+            return match.group(0).replace(",", "|")
+
+        sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
+
+        # replace commas in 'sensor_settings':[...,...] with "+"
+        def _replace_commas_in_sensor_settings(match: re.Match) -> str:
+            return match.group(0).replace(",", "+")
+
+        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_commas_in_sensor_settings, sim_settings_str)
+
+        # replace colons inside 'sensor_settings':[...:...] with "="
+        def _replace_colons_in_sensor_settings(match: re.Match) -> str:
+            content = match.group(0)
+            return re.sub(r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content)
+
+        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_colons_in_sensor_settings, sim_settings_str)
+
+        # add the formatted string to the dictionary with the ROS parameter as the key
+        sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
+
+    return sim_settings_dict
+
+
 def get_parameters_dict(node_settings: Dict) -> Dict:
     """Returns the parameters dictionary corresponding to the settings of a node in the Obelisk architecture.
 
@@ -100,7 +153,7 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
         get_component_settings_subdict(node_settings, "subscribers") if "subscribers" in node_settings else {}
     )
     timer_settings_dict = get_component_settings_subdict(node_settings, "timers") if "timers" in node_settings else {}
-    sim_settings_dict = get_component_settings_subdict(node_settings, "sim") if "sim" in node_settings else {}
+    sim_settings_dict = get_component_sim_settings_subdict(node_settings) if "sim" in node_settings else {}
 
     # create parameters dictionary for a node by combining all the settings
     parameters_dict = (
@@ -169,7 +222,7 @@ def get_launch_actions_from_node_settings(
                 launch_ros.event_handlers.on_state_transition.OnStateTransition(
                     target_lifecycle_node=component_node,
                     goal_state="inactive",  # once the node is configured, it will be activated automatically
-                    entities=[configure_event, activate_event],
+                    entities=[activate_event],
                 )
             )
             launch_actions += [configure_event, activate_upon_configure_handler]

@@ -1,0 +1,40 @@
+<mujoco model="dummy">
+    <include file="../common.xml" />
+
+    <compiler angle="radian" coordinate="local"/>
+    <option timestep="0.001" gravity="0 0 -9.81"/>
+
+    <visual>
+        <map znear="0.01" zfar="50"/>
+    </visual>
+
+    <contact>
+        <exclude name="exclude_link0_link1" body1="link0" body2="link1"/>
+    </contact>
+
+    <worldbody>
+        <!-- Floor -->
+        <geom name="floor" type="plane" size="5 5 0.1" material="blue_grid"/>
+
+        <!-- Light source -->
+        <light name="light" pos="0 0 3" dir="0 0 -1" diffuse="1 1 1" specular="0.3 0.3 0.3"/>
+
+        <!-- First link -->
+        <body name="link0" pos="0 0 0">
+            <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>
+            <!-- Second link -->
+            <body name="link1" pos="0 0 1">
+                <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>
+                <joint name="joint1" type="hinge" pos="0 0 0" axis="0 1 0" range="-1.5708 1.5708"/>
+            </body>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <position joint="joint1" ctrlrange="-1.5708 1.5708" kp="1000.0" kv="100.0"/>
+    </actuator>
+
+    <sensor>
+        <jointpos name="sensor_joint1" joint="joint1"/>
+    </sensor>
+</mujoco>
