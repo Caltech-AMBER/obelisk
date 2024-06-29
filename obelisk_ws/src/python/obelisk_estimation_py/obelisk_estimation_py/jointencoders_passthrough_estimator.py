@@ -15,11 +15,16 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
     def __init__(self) -> None:
         """Initialize the joint encoders passthrough estimator."""
         super().__init__("jointencoders_passthrough_estimator")
+        self.declare_parameter("sub_sensor_setting", rclpy.Parameter.Type.STRING)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
         super().on_configure(state)
         self.joint_encoder_values = None
+        self.subscriber_sensor = self._create_subscription_from_config_str(
+            self.get_parameter("sub_sensor_setting").get_parameter_value().string_value,
+            self.joint_encoder_callback,
+        )
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -36,7 +41,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
 
     def joint_encoder_callback(self, msg: JointEncoders) -> None:
         """Callback for joint encoder messages."""
-        self.joint_encoder_values = msg.values
+        self.joint_encoder_values = msg.y
 
     def compute_state_estimate(self) -> EstimatedState:
         """Compute the state estimate."""
