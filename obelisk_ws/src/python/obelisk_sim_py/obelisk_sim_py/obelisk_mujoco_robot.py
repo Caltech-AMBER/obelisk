@@ -109,6 +109,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         config_dict = dict(zip(field_names, value_names))
 
         # load mujoco model
+        self.model_xml_path = config_dict["model_xml_path"]
         if not os.path.exists(self.model_xml_path):
             if "OBELISK_ROOT" not in os.environ:
                 raise ValueError("OBELISK_ROOT environment variable not set. Run the dev_setup.sh script!")
@@ -120,7 +121,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         self.pause = False
 
         # set the configuration parameters for non-sensor fields
-        self.model_xml_path = config_dict["model_xml_path"]
         self.n_u = int(config_dict["n_u"])
         assert self.n_u > 0, "Control input dimension must be positive!"
         if "time_step" in config_dict:
