@@ -32,6 +32,7 @@ RUN apt-get update -y && \
     python3-argcomplete \
     mesa-utils \
     x11-apps \
+    libyaml-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
