@@ -66,23 +66,6 @@ class ObeliskEstimator(ABC, ObeliskNode):
         self.timer_est.cancel()  # deactivate the estimator timer
         return TransitionCallbackReturn.SUCCESS
 
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the estimator."""
-        super().on_cleanup(state)
-
-        # destroy publishers+timers and subscribers
-        self.destroy_timer(self.timer_est)
-        self.destroy_publisher(self.publisher_est)
-
-        del self.timer_est
-        del self.publisher_est
-
-        # delete config strings
-        del self.timer_est_setting
-        del self.pub_est_setting
-
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
     def compute_state_estimate(self) -> Union[ObeliskEstimatorMsg, ObeliskSensorMsg]:
         """Compute the state estimate.

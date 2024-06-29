@@ -168,14 +168,14 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
 def get_launch_actions_from_node_settings(
     node_settings: Dict,
     node_type: str,
-    auto_start: Optional[bool] = True,
+    global_state_node: LifecycleNode,
 ) -> List[LifecycleNode]:
     """Returns the launch actions associated with a node.
 
     Parameters:
         node_settings: the settings dictionary of an Obelisk node.
         node_type: the type of the node.
-        auto_start: whether the node should be started automatically.
+        global_state_node: the global state node. All Obelisk nodes' lifecycle states match this node's state.
 
     Returns:
         A list of launch actions.
@@ -204,27 +204,118 @@ def get_launch_actions_from_node_settings(
             parameters=[parameters_dict],
         )
         launch_actions += [component_node]
-        if auto_start:
-            configure_event = EmitEvent(
-                event=ChangeState(
-                    lifecycle_node_matcher=launch.events.matches_action(component_node),
-                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
-                )
+
+        # transition events to match the global state node
+        configure_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
             )
-            activate_event = EmitEvent(
-                event=ChangeState(
-                    lifecycle_node_matcher=launch.events.matches_action(component_node),
-                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
-                )
+        )
+        activate_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
             )
-            activate_upon_configure_handler = RegisterEventHandler(
-                launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                    target_lifecycle_node=component_node,
-                    goal_state="inactive",  # once the node is configured, it will be activated automatically
-                    entities=[activate_event],
-                )
+        )
+        deactivate_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_DEACTIVATE,
             )
-            launch_actions += [configure_event, activate_upon_configure_handler]
+        )
+        cleanup_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CLEANUP,
+            )
+        )
+        unconfigured_shutdown_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_UNCONFIGURED_SHUTDOWN,
+            )
+        )
+        inactive_shutdown_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_INACTIVE_SHUTDOWN,
+            )
+        )
+        active_shutdown_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(component_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVE_SHUTDOWN,
+            )
+        )
+
+
+        # making event handlers
+        configure_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="configuring",
+                goal_state="inactive",
+                entities=[configure_event],
+            )
+        )
+        activate_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="activating",
+                goal_state="active",
+                entities=[activate_event],
+            )
+        )
+        deactivate_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="deactivating",
+                goal_state="inactive",
+                entities=[deactivate_event],
+            )
+        )
+        cleanup_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="cleaningup",
+                goal_state="unconfigured",
+                entities=[cleanup_event],
+            )
+        )
+        unconfigured_shutdown_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="unconfigured",
+                goal_state="shuttingdown",
+                entities=[unconfigured_shutdown_event],
+            )
+        )
+        inactive_shutdown_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="inactive",
+                goal_state="shuttingdown",
+                entities=[inactive_shutdown_event],
+            )
+        )
+        active_shutdown_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="active",
+                goal_state="shuttingdown",
+                entities=[active_shutdown_event],
+            )
+        )
+        launch_actions += [
+            configure_handler,
+            activate_handler,
+            deactivate_handler,
+            cleanup_handler,
+            unconfigured_shutdown_handler,
+            inactive_shutdown_handler,
+            active_shutdown_handler,
+        ]
         return launch_actions
 
     if node_type == "sensing":

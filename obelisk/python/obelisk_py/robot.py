@@ -34,16 +34,6 @@ class ObeliskRobot(ABC, ObeliskNode):
         self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_setting, self.apply_control)
         return TransitionCallbackReturn.SUCCESS
 
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the robot."""
-        super().on_cleanup(state)
-
-        # destroy publishers + config strings
-        self.subscriber_ctrl.destroy()
-        del self.subscriber_ctrl
-        del self.sub_ctrl_setting
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
         """Apply the control message to the robot.
@@ -100,23 +90,6 @@ class ObeliskSimRobot(ObeliskRobot):
             self.get_logger().warn("No true sim state publisher configured!")
             self.timer_true_sim_state = None
             self.publisher_true_sim_state = None
-
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the simulation."""
-        super().on_cleanup(state)
-
-        # destroy publishers + timers
-        if self.timer_true_sim_state is not None and self.publisher_true_sim_state is not None:
-            self.destroy_timer(self.timer_true_sim_state)
-            self.destroy_publisher(self.publisher_true_sim_state)
-            del self.timer_true_sim_state
-            del self.publisher_true_sim_state
-
-        # delete config strings
-        del self.timer_true_sim_state_setting
-        del self.pub_true_sim_state_setting
 
         return TransitionCallbackReturn.SUCCESS
 

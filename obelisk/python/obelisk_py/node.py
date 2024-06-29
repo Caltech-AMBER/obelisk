@@ -482,17 +482,23 @@ class ObeliskNode(LifecycleNode):
             setattr(self, callback_group_name, callback_group)
 
         return TransitionCallbackReturn.SUCCESS
-
+    
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the controller."""
+        """Clean up the node."""
         super().on_cleanup(state)
 
-        # destroy callback groups
-        for callback_group_setting in self.callback_group_settings.split(","):
-            delattr(self, callback_group_setting.split(":")[0])
+        if self.timers is not None:
+            for timer in self.timers:
+                self.destroy_timer(timer)
 
-        del self.callback_group_settings
+        if self.publishers is not None:
+            for publisher in self.publishers:
+                self.destroy_publisher(publisher)
 
+        if self.subscriptions is not None:
+            for subscription in self.subscriptions:
+                self.destroy_subscription(subscription)
+                
         return TransitionCallbackReturn.SUCCESS
 
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:

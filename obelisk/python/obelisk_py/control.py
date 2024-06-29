@@ -69,25 +69,6 @@ class ObeliskController(ABC, ObeliskNode):
         self.timer_ctrl.cancel()  # deactivate the control timer
         return TransitionCallbackReturn.SUCCESS
 
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the controller."""
-        super().on_cleanup(state)
-
-        # destroy publishers+timers and subscribers
-        self.destroy_timer(self.timer_ctrl)
-        self.destroy_publisher(self.publisher_ctrl)
-        self.destroy_subscription(self.subscriber_est)
-        del self.timer_ctrl
-        del self.publisher_ctrl
-        del self.subscriber_est
-
-        # delete config strings
-        del self.timer_ctrl_setting
-        del self.pub_ctrl_setting
-        del self.sub_est_setting
-
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
         """Update the state estimate.
