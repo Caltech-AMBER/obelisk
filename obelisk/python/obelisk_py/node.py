@@ -482,7 +482,7 @@ class ObeliskNode(LifecycleNode):
             setattr(self, callback_group_name, callback_group)
 
         return TransitionCallbackReturn.SUCCESS
-    
+
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Clean up the node."""
         super().on_cleanup(state)
@@ -498,7 +498,7 @@ class ObeliskNode(LifecycleNode):
         if self.subscriptions is not None:
             for subscription in self.subscriptions:
                 self.destroy_subscription(subscription)
-                
+
         return TransitionCallbackReturn.SUCCESS
 
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:

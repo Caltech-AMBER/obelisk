@@ -249,7 +249,6 @@ def get_launch_actions_from_node_settings(
             )
         )
 
-
         # making event handlers
         configure_handler = RegisterEventHandler(
             launch_ros.event_handlers.on_state_transition.OnStateTransition(
