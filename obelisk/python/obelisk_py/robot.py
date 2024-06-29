@@ -1,7 +1,4 @@
-import ctypes
-import multiprocessing
 from abc import ABC, abstractmethod
-from typing import List
 
 import obelisk_sensor_msgs.msg as osm
 import rclpy
@@ -72,35 +69,12 @@ class ObeliskSimRobot(ObeliskRobot):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk sim robot."""
         super().__init__(node_name)
-        self.declare_parameter("n_u", rclpy.Parameter.Type.INTEGER)  # control input dimension
         self.declare_parameter("timer_true_sim_state_setting", "")
         self.declare_parameter("pub_true_sim_state_setting", "")
-
-    def _set_shared_ctrl(self, ctrl: List[float]) -> None:
-        """Set the shared control array.
-
-        This is a convenience function to set the shared control array in a thread-safe manner. This should be called in
-        the apply_control function. The shared control array is used to communicate the control input to the simulator.
-
-        The values can be accessed in the simulator by running
-        ```
-        with self.lock:
-            ctrl = list(self.shared_ctrl)
-        ```
-
-        Parameters:
-            ctrl: The control array of length n_u.
-        """
-        with self.lock:
-            self.shared_ctrl[:] = [ctypes.c_double(value) for value in ctrl]
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulation."""
         super().on_configure(state)
-
-        # non-config string parameters
-        self.n_u = self.get_parameter("n_u").get_parameter_value().integer_value
-        assert self.n_u > 0, "Control input dimension must be positive!"
 
         # parsing config strings
         self.timer_true_sim_state_setting = (
@@ -127,31 +101,11 @@ class ObeliskSimRobot(ObeliskRobot):
             self.timer_true_sim_state = None
             self.publisher_true_sim_state = None
 
-        # setting up the simulator
-        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u, lock=True)
-        self.lock = self.shared_ctrl.get_lock()
-        self.sim_process = multiprocessing.Process(target=self.run_simulator)
-
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the simulation.
-
-        The abstract simulation loop is started here. If the user wants to implement features like pausing the sim,
-        they must implement this themselves in the on_deactivate function.
-        """
-        super().on_activate(state)
-        self.sim_process.start()  # starts the simulator
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Clean up the simulation."""
         super().on_cleanup(state)
-
-        # terminate the simulation process
-        if self.sim_process.is_alive():
-            self.sim_process.terminate()
-            self.sim_process.join()
 
         # destroy publishers + timers
         if self.timer_true_sim_state is not None and self.publisher_true_sim_state is not None:
@@ -163,12 +117,6 @@ class ObeliskSimRobot(ObeliskRobot):
         # delete config strings
         del self.timer_true_sim_state_setting
         del self.pub_true_sim_state_setting
-
-        # delete other properties
-        del self.shared_ctrl
-        del self.lock
-        del self.sim_process
-        del self.n_u
 
         return TransitionCallbackReturn.SUCCESS
 
