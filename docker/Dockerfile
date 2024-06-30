@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 ARG USER=user
 ARG UID=1000
 ARG GID=1000
-ARG OBELISK_ROOT
+ARG OBELISK_ROOT=/
 ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
@@ -51,7 +51,8 @@ USER ${UID}
 
 # run docker setup script in Dockerfile
 COPY docker_setup.sh /tmp/docker_setup.sh
-RUN source /tmp/docker_setup.sh --skip-docker && sudo rm /tmp/docker_setup.sh
+RUN source /tmp/docker_setup.sh --skip-docker && \
+    sudo rm /tmp/docker_setup.sh
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"
