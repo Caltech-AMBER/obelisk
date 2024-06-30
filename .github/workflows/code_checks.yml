@@ -28,6 +28,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
+      - name: setup Development Environment
+        run: |
+          source dev_setup.sh --skip-docker
       - name: Build and Source ROS2
         run: |
           pixi run --environment dev-no-gpu source-obelisk
@@ -40,9 +43,6 @@ jobs:
       - name: Run Pyright
         run: |
           pixi run --environment dev-no-gpu pyright
-      - name: Test with pytest
+      - name: Test with pytest and ctest
         run: |
-          pixi run --environment dev-no-gpu pytest
-      - name: Test with CTest
-        run: |
-          pixi run --environment dev-no-gpu cpp-ctest
+          pixi run --environment dev-no-gpu all-tests
