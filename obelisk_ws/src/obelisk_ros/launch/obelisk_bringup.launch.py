@@ -71,7 +71,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             goal_state="finalized",
             entities=[shutdown_event],
         )
-    )
+    )  # when the global state node enters its shutdown state, the launch file also shuts down
     obelisk_launch_actions += [global_state_node, shutdown_event_handler]
     if auto_start:
         configure_event = EmitEvent(

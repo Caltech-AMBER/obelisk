@@ -119,3 +119,67 @@ if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
 else
 	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
 fi
+
+# add some obelisk aliases to the .bashrc
+if ! grep -q "alias obk" ~/.bashrc; then
+	echo "" >> ~/.bashrc
+	echo "# Obelisk bash aliases" >> ~/.bashrc
+
+	# lifecycle node aliases
+	echo "alias obk-configure='ros2 lifecycle set /global_state configure'" >> ~/.bashrc
+	echo "alias obk-activate='ros2 lifecycle set /global_state activate'" >> ~/.bashrc
+	echo "alias obk-deactivate='ros2 lifecycle set /global_state deactivate'" >> ~/.bashrc
+	echo "alias obk-cleanup='ros2 lifecycle set /global_state cleanup'" >> ~/.bashrc
+	echo "alias obk-shutdown='ros2 lifecycle set /global_state shutdown'" >> ~/.bashrc
+
+	# convenience aliases for the above commands
+	echo "alias obk-start='ros2 lifecycle set /global_state configure'" >> ~/.bashrc
+	echo "alias obk-stop='ros2 lifecycle set /global_state deactivate; ros2 lifecycle set /global_state cleanup'" >> ~/.bashrc
+	echo "alias obk-kill='ros2 lifecycle set /global_state shutdown'" >> ~/.bashrc
+
+	# convenience function for ros2 launch command
+	function_content=$(cat << 'EOF'
+function obk-launch {
+    local config_file_path=""
+    local device_name=""
+    local auto_start="True"
+
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+            config_file_path=*)
+            config_file_path="${key#*=}"
+            shift
+            ;;
+            device_name=*)
+            device_name="${key#*=}"
+            shift
+            ;;
+            auto_start=*)
+            auto_start="${key#*=}"
+            shift
+            ;;
+            *)
+            echo "Unknown option $key"
+            return 1
+            ;;
+        esac
+    done
+
+    # Check if any of the required arguments are empty
+    if [[ -z "$config_file_path" || -z "$device_name" ]]; then
+        echo "Error: Missing required arguments."
+        echo "Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>"
+        return 1
+    fi
+
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=${config_file_path} device_name:=${device_name} auto_start:=${auto_start}
+}
+EOF
+)
+	echo "$function_content" >> ~/.bashrc
+
+	echo -e "\033[1;32mObelisk aliases added to ~/.bashrc!\033[0m"
+else
+	echo -e "\033[1;33mObelisk aliases already exist in ~/.bashrc, skipping...\033[0m"
+fi
