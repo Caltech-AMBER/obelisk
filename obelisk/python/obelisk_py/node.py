@@ -13,7 +13,7 @@ from rclpy.timer import Timer
 
 from obelisk_py.exceptions import ObeliskMsgError
 from obelisk_py.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
-from obelisk_py.utils import check_and_get_obelisk_msg_type
+from obelisk_py.utils.internal import check_and_get_obelisk_msg_type
 
 MsgType = TypeVar("MsgType")  # hack to denote any message type
 
@@ -59,7 +59,7 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
-        self.declare_parameter("callback_group_settings", [""])
+        self.declare_parameter("callback_group_settings", "")
 
     @property
     def node_name(self) -> str:
@@ -161,13 +161,9 @@ class ObeliskNode(LifecycleNode):
         if "non_obelisk" in config_dict:
             assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
             assert config_dict["non_obelisk"].lower() != "true", "non_obelisk=True but no message type supplied!"
-            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskMsg)
+            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskMsg)
         else:
-            self.get_logger().warn(
-                "Creating a publisher that can publish non-Obelisk messages. "
-                "This may cause certain API incompatibilities."
-            )
-            msg_type = check_and_get_obelisk_msg_type(self, config_dict["msg_type"], ObeliskAllowedMsg)
+            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskAllowedMsg)
 
         return msg_type
 
@@ -186,11 +182,11 @@ class ObeliskNode(LifecycleNode):
                 return None
         return None
 
-    def _create_callback_groups_from_config_str(self, config_strs: List[str]) -> Dict[str, CallbackGroup]:
+    def _create_callback_groups_from_config_str(self, config_str: str) -> Dict[str, CallbackGroup]:
         """Create callback groups from a configuration string.
 
         Parameters:
-            config_strs: The list of configuration strings.
+            config_str: The list of configuration strings.
 
         Returns:
             callback_group_dict: A dict whose keys are the callback group names and values are the callback groups.
@@ -200,12 +196,12 @@ class ObeliskNode(LifecycleNode):
         """
         # parse and check the configuration string
         field_names, value_names = [], []
-        for config_str in config_strs:
-            field_name, value_name = ObeliskNode._parse_config_str(config_str)
+        for config in config_str.split(","):
+            field_name, value_name = ObeliskNode._parse_config_str(config)
             field_names.extend(field_name)
             value_names.extend(value_name)
 
-        if (not field_names and not value_names) or config_strs == [""]:
+        if not field_names and not value_names:
             return {}  # case: no callback groups to create
 
         allowable_value_names = ["MutuallyExclusiveCallbackGroup", "ReentrantCallbackGroup"]
@@ -478,18 +474,9 @@ class ObeliskNode(LifecycleNode):
         super().on_configure(state)
 
         # parsing config strings
-        self.callback_group_settings = (
-            self.get_parameter("callback_group_settings").get_parameter_value().string_array_value
-        )
+        self.callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
 
         # create callback groups
-        assert isinstance(self.callback_group_settings, list), (
-            "Expected callback_group_settings to be a list, but got: " f"{type(self.callback_group_settings)}"
-        )
-        assert all(isinstance(item, str) for item in self.callback_group_settings), (
-            "Expected all items in callback_group_settings to be strings, but got: "
-            f"{[type(item) for item in self.callback_group_settings]}"
-        )
         callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_settings)
         for callback_group_name, callback_group in callback_group_dict.items():
             setattr(self, callback_group_name, callback_group)
@@ -497,14 +484,20 @@ class ObeliskNode(LifecycleNode):
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the controller."""
+        """Clean up the node."""
         super().on_cleanup(state)
 
-        # destroy callback groups
-        for callback_group_setting in self.callback_group_settings:
-            delattr(self, callback_group_setting.split(":")[0])
+        if self.timers is not None:
+            for timer in self.timers:
+                self.destroy_timer(timer)
 
-        del self.callback_group_settings
+        if self.publishers is not None:
+            for publisher in self.publishers:
+                self.destroy_publisher(publisher)
+
+        if self.subscriptions is not None:
+            for subscription in self.subscriptions:
+                self.destroy_subscription(subscription)
 
         return TransitionCallbackReturn.SUCCESS
 

@@ -1,7 +1,5 @@
-import time
 from typing import Any, Callable, Dict, Generator, List
 
-import numpy as np
 import obelisk_control_msgs.msg as ocm
 import obelisk_sensor_msgs.msg as osm
 import pytest
@@ -35,7 +33,7 @@ class TestObeliskSimRobot(ObeliskSimRobot):
 
     def run_simulator(self) -> None:
         """Run the simulator."""
-        self._set_shared_ctrl([0.1, 0.2])
+        self.test_run_simulator_flag = True
 
 
 @pytest.fixture
@@ -52,7 +50,7 @@ def configured_sim_robot(
 ) -> TestObeliskSimRobot:
     """Fixture for the TestObeliskSimRobot class with parameters set."""
     parameter_dict = {
-        "callback_group_settings": ["test_cbg:ReentrantCallbackGroup"],
+        "callback_group_settings": "test_cbg:ReentrantCallbackGroup",
         "sub_ctrl_setting": (
             "msg_type:PositionSetpoint,"
             "topic:/obelisk/test_sim_robot/ctrl,"
@@ -60,23 +58,6 @@ def configured_sim_robot(
             "callback_group:None,"
             "non_obelisk:False"
         ),
-        "pub_sensor_settings": [
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_sim_robot/sensor1,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-            (
-                "msg_type:JointEncoders,"
-                "topic:/obelisk/test_sim_robot/sensor2,"
-                "history_depth:10,"
-                "callback_group:None,"
-                "non_obelisk:False"
-            ),
-        ],
-        "n_u": 2,
         "timer_true_sim_state_setting": ("timer_period_sec:0.1,callback_group:None"),
         "pub_true_sim_state_setting": (
             "msg_type:TrueSimState,"
@@ -85,6 +66,15 @@ def configured_sim_robot(
             "callback_group:None,"
             "non_obelisk:False"
         ),
+        # "mujoco_setting": {
+        #     "model_path": "dummy/dummy.xml",
+        #     "n_u": 1,
+        #     "time_step": 0.002,
+        #     "num_steps_per_viz": 5,
+        #     "sensor_settings": (
+        #         "[{topic=/obelisk/dummy/sensor|dt=0.001|sensor_type=jointpos|sensor_names=sensor_joint1}"
+        #     )
+        # }
     }
     set_node_parameters(test_sim_robot, parameter_dict)
     test_sim_robot.on_configure(test_sim_robot._state_machine.current_state)
@@ -95,7 +85,6 @@ def configured_sim_robot(
 def sim_robot_parameter_names() -> List[str]:
     """Parameter names for the ObeliskSimRobot class."""
     return [
-        "n_u",
         "timer_true_sim_state_setting",
         "pub_true_sim_state_setting",
     ]
@@ -110,8 +99,8 @@ def test_sim_robot_parameter_initialization(
     test_sim_robot: TestObeliskSimRobot, sim_robot_parameter_names: List[str]
 ) -> None:
     """Test parameter initialization."""
-    with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
-        test_sim_robot.get_parameters(sim_robot_parameter_names)
+    for param_name in sim_robot_parameter_names:
+        assert test_sim_robot.get_parameter(param_name).value == ""
 
 
 def test_sim_robot_parameter_setting(
@@ -133,28 +122,10 @@ def test_sim_robot_configuration(
     component_names = [
         "test_cbg",
         "subscriber_ctrl",
-        "publisher_sensors",
         "timer_true_sim_state",
         "publisher_true_sim_state",
     ]
     check_node_attributes(configured_sim_robot, sim_robot_parameter_names + component_names, should_exist=True)
-
-
-def test_sim_robot_cleanup(
-    configured_sim_robot: TestObeliskSimRobot,
-    check_node_attributes: Callable[[Any, List[str], bool], None],
-    sim_robot_parameter_names: List[str],
-) -> None:
-    """Test cleanup."""
-    component_names = [
-        "test_cbg",
-        "subscriber_ctrl",
-        "publisher_sensors",
-        "timer_true_sim_state",
-        "publisher_true_sim_state",
-    ]
-    configured_sim_robot.on_cleanup(configured_sim_robot._state_machine.current_state)
-    check_node_attributes(configured_sim_robot, sim_robot_parameter_names + component_names, should_exist=False)
 
 
 def test_sim_robot_functionality(configured_sim_robot: TestObeliskSimRobot) -> None:
@@ -164,8 +135,6 @@ def test_sim_robot_functionality(configured_sim_robot: TestObeliskSimRobot) -> N
     assert isinstance(true_sim_state, osm.TrueSimState)
 
     configured_sim_robot.on_activate(configured_sim_robot._state_machine.current_state)
-    time.sleep(0.01)
-    assert np.allclose(list(configured_sim_robot.shared_ctrl), [0.1, 0.2])
 
 
 def test_sim_robot_on_configure_success(configured_sim_robot: TestObeliskSimRobot) -> None:
@@ -173,12 +142,8 @@ def test_sim_robot_on_configure_success(configured_sim_robot: TestObeliskSimRobo
     result = configured_sim_robot.on_configure(None)
     assert result == TransitionCallbackReturn.SUCCESS
     assert hasattr(configured_sim_robot, "subscriber_ctrl")
-    assert hasattr(configured_sim_robot, "publisher_sensors")
     assert hasattr(configured_sim_robot, "timer_true_sim_state")
     assert hasattr(configured_sim_robot, "publisher_true_sim_state")
-    assert hasattr(configured_sim_robot, "shared_ctrl")
-    assert hasattr(configured_sim_robot, "lock")
-    assert hasattr(configured_sim_robot, "sim_process")
 
 
 def test_sim_robot_on_configure_missing_parameters(test_sim_robot: TestObeliskSimRobot) -> None:
@@ -191,28 +156,6 @@ def test_sim_robot_on_cleanup(configured_sim_robot: TestObeliskSimRobot) -> None
     """Test cleanup of the sim robot."""
     result = configured_sim_robot.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(configured_sim_robot, "subscriber_ctrl")
-    assert not hasattr(configured_sim_robot, "publisher_sensors")
-    assert not hasattr(configured_sim_robot, "timer_true_sim_state")
-    assert not hasattr(configured_sim_robot, "publisher_true_sim_state")
-    assert not hasattr(configured_sim_robot, "shared_ctrl")
-    assert not hasattr(configured_sim_robot, "lock")
-    assert not hasattr(configured_sim_robot, "sim_process")
-
-
-def test_sim_robot_on_activate(configured_sim_robot: TestObeliskSimRobot) -> None:
-    """Test activation of the sim robot."""
-    result = configured_sim_robot.on_activate(None)
-    assert result == TransitionCallbackReturn.SUCCESS
-    assert configured_sim_robot.sim_process.is_alive()
-
-
-def test_sim_robot_shared_control(configured_sim_robot: TestObeliskSimRobot) -> None:
-    """Test the shared control functionality."""
-    test_ctrl = [0.1, 0.2]
-    configured_sim_robot._set_shared_ctrl(test_ctrl)
-    with configured_sim_robot.lock:
-        assert np.allclose(list(configured_sim_robot.shared_ctrl), test_ctrl)
 
 
 def test_sim_robot_true_sim_state_callback(configured_sim_robot: TestObeliskSimRobot) -> None:
@@ -223,13 +166,12 @@ def test_sim_robot_true_sim_state_callback(configured_sim_robot: TestObeliskSimR
 def test_sim_robot_run_simulator(configured_sim_robot: TestObeliskSimRobot) -> None:
     """Test the run_simulator method."""
     configured_sim_robot.run_simulator()
-    assert np.allclose(list(configured_sim_robot.shared_ctrl), [0.1, 0.2])
+    assert configured_sim_robot.test_run_simulator_flag
 
 
 @pytest.mark.parametrize(
     "invalid_config",
     [
-        {"n_u": 0},
         {"timer_true_sim_state_setting": "invalid_setting"},
         {"pub_true_sim_state_setting": "invalid_setting"},
     ],

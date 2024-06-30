@@ -10,7 +10,7 @@ from obelisk_py.obelisk_typing import (
     ObeliskSensorMsg,
     is_in_bound,
 )
-from obelisk_py.utils import get_classes_in_module
+from obelisk_py.utils.internal import get_classes_in_module
 
 
 def test_obelisk_types() -> None:

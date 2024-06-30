@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import Union
 
 import rclpy
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
-from obelisk_py.obelisk_typing import ObeliskEstimatorMsg
+from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
 
 
 class ObeliskEstimator(ABC, ObeliskNode):
@@ -31,11 +32,13 @@ class ObeliskEstimator(ABC, ObeliskNode):
     """
 
     def __init__(self, node_name: str) -> None:
-        """Initialize the Obelisk estimator."""
+        """Initialize the Obelisk estimator.
+
+        [NOTE] In derived classes, you should declare settings for sensor subscribers.
+        """
         super().__init__(node_name)
         self.declare_parameter("timer_est_setting", rclpy.Parameter.Type.STRING)
         self.declare_parameter("pub_est_setting", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("sub_sensor_settings", rclpy.Parameter.Type.STRING_ARRAY)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
@@ -44,19 +47,10 @@ class ObeliskEstimator(ABC, ObeliskNode):
         # parsing config strings
         self.timer_est_setting = self.get_parameter("timer_est_setting").get_parameter_value().string_value
         self.pub_est_setting = self.get_parameter("pub_est_setting").get_parameter_value().string_value
-        self.sub_sensor_settings = self.get_parameter("sub_sensor_settings").get_parameter_value().string_array_value
 
         # create publisher+timer
         self.timer_est = self._create_timer_from_config_str(self.timer_est_setting, self.compute_state_estimate)
         self.publisher_est = self._create_publisher_from_config_str(self.pub_est_setting)
-        self.subscriber_sensors = []
-
-        # in the derived class, you must create your own sensor subscribers
-        """
-        for sensor_setting in self.sub_sensor_settings:
-            sub_sensor = self._create_subscription_from_config_str(sensor_setting, self.<sensor_callback>)
-            self.subscriber_sensors.append(sub_sensor)
-        """
 
         return TransitionCallbackReturn.SUCCESS
 
@@ -72,29 +66,8 @@ class ObeliskEstimator(ABC, ObeliskNode):
         self.timer_est.cancel()  # deactivate the estimator timer
         return TransitionCallbackReturn.SUCCESS
 
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the estimator."""
-        super().on_cleanup(state)
-
-        # destroy publishers+timers and subscribers
-        self.destroy_timer(self.timer_est)
-        self.destroy_publisher(self.publisher_est)
-        for sensor_subscriber in self.subscriber_sensors:
-            self.destroy_subscription(sensor_subscriber)
-
-        del self.timer_est
-        del self.publisher_est
-        del self.subscriber_sensors
-
-        # delete config strings
-        del self.timer_est_setting
-        del self.pub_est_setting
-        del self.sub_sensor_settings
-
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
-    def compute_state_estimate(self) -> ObeliskEstimatorMsg:
+    def compute_state_estimate(self) -> Union[ObeliskEstimatorMsg, ObeliskSensorMsg]:
         """Compute the state estimate.
 
         This is the state estimate timer callback and is expected to call self.publisher_est internally. Note that the
@@ -102,5 +75,6 @@ class ObeliskEstimator(ABC, ObeliskNode):
         the important part, NOT the returned value, since the topic is what the ObeliskController subscribes to.
 
         Returns:
-            ObeliskEstimatorMsg: the state estimate message.
+            state_estimate: the state estimate message. Can be either an estimator message or, in the case of output
+                feedback, a sensor message.
         """

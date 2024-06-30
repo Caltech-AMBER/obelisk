@@ -1,6 +1,6 @@
 {
-    "name": "Obelisk Dev Container",
-    "dockerComposeFile": "../docker/docker-compose.yml",
+    "name": "Obelisk GPU Dev Container",
+    "dockerComposeFile": "../../docker/docker-compose.yml",
     "service": "obelisk",
     "workspaceFolder": "${localWorkspaceFolder}",
     "shutdownAction": "stopCompose",
@@ -20,5 +20,5 @@
     "initializeCommand": "export OBELISK_ROOT=${localWorkspaceFolder}",
     "remoteEnv": {
         "OBELISK_ROOT": "${localEnv: OBELISK_ROOT}"
-    },
+    }
 }
