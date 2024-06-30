@@ -64,7 +64,15 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         name="global_state",
         output="screen",
     )
-    obelisk_launch_actions.append(global_state_node)
+    shutdown_event = EmitEvent(event=launch.events.Shutdown())
+    shutdown_event_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            goal_state="finalized",
+            entities=[shutdown_event],
+        )
+    )
+    obelisk_launch_actions += [global_state_node, shutdown_event_handler]
     if auto_start:
         configure_event = EmitEvent(
             event=ChangeState(
