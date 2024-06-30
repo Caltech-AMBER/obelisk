@@ -47,7 +47,9 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
     auto_start = context.launch_configurations.get("auto_start")
-    obelisk_config = load_config_file(config_file_path)[device_name]  # grab the settings associated with the device
+    full_config_dict = load_config_file(config_file_path)
+    config_name = full_config_dict["config"]
+    obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
@@ -61,7 +63,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         namespace="",
         package="obelisk_ros",
         executable="global_state",
-        name="global_state",
+        name=config_name,
         output="screen",
     )
     shutdown_event = EmitEvent(event=launch.events.Shutdown())
