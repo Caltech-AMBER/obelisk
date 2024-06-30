@@ -178,6 +178,26 @@ function obk-launch {
 EOF
 )
 	echo "$function_content" >> ~/.bashrc
+	alias_content=$(cat << 'EOF'
+alias obk-help='echo -e "\
+obk-launch:\n\
+  Launches the obelisk_bringup.launch.py with specified arguments.\n\
+  Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>\n\
+  Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True\n\n\
+State Transitions:\n\
+  obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure\n\
+  obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate\n\
+  obk-deactivate:\n    Deactivate all Obelisk nodes.\n    Usage: obk-deactivate\n\
+  obk-cleanup:\n    Cleanup all Obelisk nodes.\n    Usage: obk-cleanup\n\
+  obk-shutdown:\n    Shutdown all Obelisk nodes.\n    Usage: obk-shutdown\n\n\
+Convenience Commands:\n\
+  obk-start:\n    Alias for obk-configure.\n\
+  obk-stop:\n    Alias for obk-deactivate and obk-cleanup.\n\
+  obk-kill:\n    Alias for obk-shutdown.\n\
+  obk-help:\n    Display this help message.\n"'
+EOF
+)
+	echo "$alias_content" >> ~/.bashrc
 
 	echo -e "\033[1;32mObelisk aliases added to ~/.bashrc!\033[0m"
 else
