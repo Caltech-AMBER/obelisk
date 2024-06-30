@@ -60,6 +60,9 @@ class ObeliskNode(LifecycleNode):
         """Initialize the Obelisk node."""
         super().__init__(node_name)
         self.declare_parameter("callback_group_settings", "")
+        self.obk_publishers = {}
+        self.obk_subscriptions = {}
+        self.obk_timers = {}
 
     @property
     def node_name(self) -> str:
@@ -70,6 +73,10 @@ class ObeliskNode(LifecycleNode):
     def t(self) -> float:
         """Get the current time in seconds."""
         return self.get_clock().now().nanoseconds / 1e9
+
+    # ############## #
+    # STATIC METHODS #
+    # ############## #
 
     @staticmethod
     def _parse_config_str(config_str: str) -> Tuple[List[str], List[Union[str, float, int]]]:
@@ -153,7 +160,8 @@ class ObeliskNode(LifecycleNode):
             f"Currently-supported values in Obelisk are: {allowable_value_names}",
         )
 
-    def _get_msg_type_from_config_dict(self, config_dict: Dict) -> Type:
+    @staticmethod
+    def _get_msg_type_from_config_dict(config_dict: Dict) -> Type:
         """Get the message type from a configuration dictionary."""
         assert config_dict.get("msg_type") is not None, "No message type supplied!"
         assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
@@ -167,22 +175,8 @@ class ObeliskNode(LifecycleNode):
 
         return msg_type
 
-    def _get_callback_group_from_config_dict(self, config_dict: Dict) -> Optional[CallbackGroup]:
-        """Get the callback group from a configuration dictionary."""
-        if "callback_group" in config_dict:
-            assert isinstance(config_dict["callback_group"], str), "The 'callback_group' field must be a string!"
-            if config_dict["callback_group"].lower() == "none":
-                return None
-            elif hasattr(self, config_dict["callback_group"]):
-                return getattr(self, config_dict["callback_group"])
-            else:
-                self.get_logger().warn(
-                    f"Callback group {config_dict['callback_group']} not found in node. Using None instead."
-                )
-                return None
-        return None
-
-    def _create_callback_groups_from_config_str(self, config_str: str) -> Dict[str, CallbackGroup]:
+    @staticmethod
+    def _create_callback_groups_from_config_str(config_str: str) -> Dict[str, CallbackGroup]:
         """Create callback groups from a configuration string.
 
         Parameters:
@@ -221,6 +215,25 @@ class ObeliskNode(LifecycleNode):
 
         return callback_group_dict
 
+    # ####################### #
+    # INSTANCE-SPECIFIC UTILS #
+    # ####################### #
+
+    def _get_callback_group_from_config_dict(self, config_dict: Dict) -> Optional[CallbackGroup]:
+        """Get the callback group from a configuration dictionary."""
+        if "callback_group" in config_dict:
+            assert isinstance(config_dict["callback_group"], str), "The 'callback_group' field must be a string!"
+            if config_dict["callback_group"].lower() == "none":
+                return None
+            elif hasattr(self, config_dict["callback_group"]):
+                return getattr(self, config_dict["callback_group"])
+            else:
+                self.get_logger().warn(
+                    f"Callback group {config_dict['callback_group']} not found in node. Using None instead."
+                )
+                return None
+        return None
+
     def _create_publisher_from_config_str(self, config_str: str, msg_type: Optional[Type] = None) -> Publisher:
         """Create a publisher from a configuration string.
 
@@ -249,7 +262,7 @@ class ObeliskNode(LifecycleNode):
 
         # parse the message type
         if msg_type is None:
-            msg_type = self._get_msg_type_from_config_dict(config_dict)
+            msg_type = ObeliskNode._get_msg_type_from_config_dict(config_dict)
 
         # set the callback group
         callback_group = self._get_callback_group_from_config_dict(config_dict)
@@ -303,7 +316,7 @@ class ObeliskNode(LifecycleNode):
 
         # parse the message type
         if msg_type is None:
-            msg_type = self._get_msg_type_from_config_dict(config_dict)
+            msg_type = ObeliskNode._get_msg_type_from_config_dict(config_dict)
 
         # set the callback group
         callback_group = self._get_callback_group_from_config_dict(config_dict)
@@ -364,6 +377,10 @@ class ObeliskNode(LifecycleNode):
         )
         timer.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
         return timer
+
+    # ################ #
+    # PUB/SUB CREATION #
+    # ################ #
 
     def create_publisher(
         self,
@@ -465,6 +482,10 @@ class ObeliskNode(LifecycleNode):
             )
             raise e
 
+    # ################### #
+    # LIFECYCLE CALLBACKS #
+    # ################### #
+
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the node.
 
@@ -477,7 +498,7 @@ class ObeliskNode(LifecycleNode):
         self.callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
 
         # create callback groups
-        callback_group_dict = self._create_callback_groups_from_config_str(self.callback_group_settings)
+        callback_group_dict = ObeliskNode._create_callback_groups_from_config_str(self.callback_group_settings)
         for callback_group_name, callback_group in callback_group_dict.items():
             setattr(self, callback_group_name, callback_group)
 
@@ -487,6 +508,12 @@ class ObeliskNode(LifecycleNode):
         """Clean up the node."""
         super().on_cleanup(state)
 
+        # reset internal dicts
+        self.obk_publishers = {}
+        self.obk_subscriptions = {}
+        self.obk_timers = {}
+
+        # destroy publishers, timers, and subscriptions
         if self.timers is not None:
             for timer in self.timers:
                 self.destroy_timer(timer)
