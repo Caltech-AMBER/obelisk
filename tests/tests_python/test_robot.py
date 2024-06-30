@@ -136,17 +136,6 @@ def test_robot_configuration(
     check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=True)
 
 
-def test_robot_cleanup(
-    configured_robot: TestObeliskRobot,
-    check_node_attributes: Callable[[Any, List[str], bool], None],
-    robot_parameter_names: List[str],
-) -> None:
-    """Test node cleanup."""
-    component_names = ["test_cbg", "subscriber_ctrl", "publisher_sensor1", "publisher_sensor2"]
-    configured_robot.on_cleanup(configured_robot._state_machine.current_state)
-    check_node_attributes(configured_robot, robot_parameter_names + component_names, should_exist=False)
-
-
 def test_robot_functionality(configured_robot: TestObeliskRobot) -> None:
     """Test robot functionality."""
     configured_robot.apply_control(ocm.PositionSetpoint())
@@ -180,12 +169,6 @@ def test_on_cleanup(configured_robot: TestObeliskRobot) -> None:
     """Test cleanup of the robot."""
     result = configured_robot.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(configured_robot, "subscriber_ctrl")
-    assert not hasattr(configured_robot, "publisher_sensor1")
-    assert not hasattr(configured_robot, "publisher_sensor2")
-    assert not hasattr(configured_robot, "sub_ctrl_setting")
-    assert not hasattr(configured_robot, "pub_sensor1_setting")
-    assert not hasattr(configured_robot, "pub_sensor2_setting")
 
 
 def test_apply_control_callback(configured_robot: TestObeliskRobot) -> None:

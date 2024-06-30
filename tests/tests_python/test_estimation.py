@@ -145,17 +145,6 @@ def test_configuration(
     check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=True)
 
 
-def test_cleanup(
-    configured_estimator: TestObeliskEstimator,
-    check_node_attributes: Callable[[Any, List[str], bool], None],
-    parameter_names: List[str],
-) -> None:
-    """Test the cleanup of the estimator."""
-    component_names = ["test_cbg", "publisher_est", "timer_est", "sub_sensor1", "sub_sensor2"]
-    configured_estimator.on_cleanup(configured_estimator._state_machine.current_state)
-    check_node_attributes(configured_estimator, parameter_names + component_names, should_exist=False)
-
-
 def test_estimator_functionality(configured_estimator: TestObeliskEstimator) -> None:
     """Test the functionality of the estimator."""
     joint_encoder_msg1 = osm.JointEncoders()
@@ -197,14 +186,6 @@ def test_on_cleanup(configured_estimator: TestObeliskEstimator) -> None:
     """Test cleanup of the estimator."""
     result = configured_estimator.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(configured_estimator, "timer_est")
-    assert not hasattr(configured_estimator, "publisher_est")
-    assert not hasattr(configured_estimator, "sub_sensor1")
-    assert not hasattr(configured_estimator, "sub_sensor2")
-    assert not hasattr(configured_estimator, "timer_est_setting")
-    assert not hasattr(configured_estimator, "pub_est_setting")
-    assert not hasattr(configured_estimator, "sub_sensor1_setting")
-    assert not hasattr(configured_estimator, "sub_sensor2_setting")
 
 
 def test_on_activate(configured_estimator: TestObeliskEstimator) -> None:

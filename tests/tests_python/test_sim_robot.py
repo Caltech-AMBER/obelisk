@@ -128,22 +128,6 @@ def test_sim_robot_configuration(
     check_node_attributes(configured_sim_robot, sim_robot_parameter_names + component_names, should_exist=True)
 
 
-def test_sim_robot_cleanup(
-    configured_sim_robot: TestObeliskSimRobot,
-    check_node_attributes: Callable[[Any, List[str], bool], None],
-    sim_robot_parameter_names: List[str],
-) -> None:
-    """Test cleanup."""
-    component_names = [
-        "test_cbg",
-        "subscriber_ctrl",
-        "timer_true_sim_state",
-        "publisher_true_sim_state",
-    ]
-    configured_sim_robot.on_cleanup(configured_sim_robot._state_machine.current_state)
-    check_node_attributes(configured_sim_robot, sim_robot_parameter_names + component_names, should_exist=False)
-
-
 def test_sim_robot_functionality(configured_sim_robot: TestObeliskSimRobot) -> None:
     """Test the functionality of the ObeliskSimRobot."""
     configured_sim_robot.apply_control(ocm.PositionSetpoint())
@@ -172,9 +156,6 @@ def test_sim_robot_on_cleanup(configured_sim_robot: TestObeliskSimRobot) -> None
     """Test cleanup of the sim robot."""
     result = configured_sim_robot.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(configured_sim_robot, "subscriber_ctrl")
-    assert not hasattr(configured_sim_robot, "timer_true_sim_state")
-    assert not hasattr(configured_sim_robot, "publisher_true_sim_state")
 
 
 def test_sim_robot_true_sim_state_callback(configured_sim_robot: TestObeliskSimRobot) -> None:

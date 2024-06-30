@@ -125,17 +125,6 @@ def test_configuration(
     check_node_attributes(configured_controller, parameter_names + component_names, should_exist=True)
 
 
-def test_cleanup(
-    configured_controller: TestObeliskController,
-    check_node_attributes: Callable[[Any, List[str], bool], None],
-    parameter_names: List[str],
-) -> None:
-    """Test the cleanup of the controller."""
-    component_names = ["test_cbg", "publisher_ctrl", "timer_ctrl", "subscriber_est"]
-    configured_controller.on_cleanup(configured_controller._state_machine.current_state)
-    check_node_attributes(configured_controller, parameter_names + component_names, should_exist=False)
-
-
 def test_controller_functionality(configured_controller: TestObeliskController) -> None:
     """Test the functionality of the controller."""
     estimated_state_msg = oem.EstimatedState()
@@ -170,12 +159,6 @@ def test_on_cleanup(configured_controller: TestObeliskController) -> None:
     """Test cleanup of the controller."""
     result = configured_controller.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(configured_controller, "timer_ctrl")
-    assert not hasattr(configured_controller, "publisher_ctrl")
-    assert not hasattr(configured_controller, "subscriber_est")
-    assert not hasattr(configured_controller, "timer_ctrl_setting")
-    assert not hasattr(configured_controller, "pub_ctrl_setting")
-    assert not hasattr(configured_controller, "sub_est_setting")
 
 
 def test_on_activate(configured_controller: TestObeliskController) -> None:

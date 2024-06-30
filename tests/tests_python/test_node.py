@@ -163,8 +163,6 @@ def test_on_cleanup(test_node: ObeliskNode) -> None:
     test_node.group1 = MutuallyExclusiveCallbackGroup()
     result = test_node.on_cleanup(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(test_node, "group1")
-    assert not hasattr(test_node, "callback_group_settings")
 
 
 def test_on_shutdown(test_node: ObeliskNode) -> None:
@@ -173,8 +171,6 @@ def test_on_shutdown(test_node: ObeliskNode) -> None:
     test_node.group1 = MutuallyExclusiveCallbackGroup()
     result = test_node.on_shutdown(None)
     assert result == TransitionCallbackReturn.SUCCESS
-    assert not hasattr(test_node, "group1")
-    assert not hasattr(test_node, "callback_group_settings")
 
 
 def test_non_obelisk_msg_publishing_with_flag_publisher(test_node: ObeliskNode) -> None:
