@@ -28,18 +28,21 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
+      - name: Build and Source ROS2
+        run: |
+          pixi run --environment dev-no-gpu source-obelisk
       - name: Run Ruff Linter
         run: |
-          pixi run --environment test-workflow ruff check docs/ obelisk/ tests/ --output-format=github
+          pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github
       - name: Run Ruff Formatter
         run: |
-          pixi run --environment test-workflow ruff format docs/ obelisk/ tests/ --diff
+          pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff
       - name: Run Pyright
         run: |
-          pixi run --environment test-workflow pyright
+          pixi run --environment dev-no-gpu pyright
       - name: Test with pytest
         run: |
-          pixi run --environment test-workflow pytest
+          pixi run --environment dev-no-gpu pytest
       - name: Test with CTest
         run: |
-          pixi run --environment test-workflow cpp-ctest
+          pixi run --environment dev-no-gpu cpp-ctest
