@@ -178,8 +178,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 timer_sensor.cancel()
                 self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
                 self.obk_timers[f"sensor_group_{i}"] = timer_sensor
-        else:
-            self.sensor_timers = None
 
         # setting up the simulator
         self.t_last = multiprocessing.Value("d", 0.0)  # shared mem for t_last
