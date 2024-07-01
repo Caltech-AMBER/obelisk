@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 import obelisk_sensor_msgs.msg as osm
-import rclpy
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
@@ -21,7 +20,12 @@ class ObeliskRobot(ABC, ObeliskNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk robot."""
         super().__init__(node_name)
-        self.declare_parameter("sub_ctrl_setting", rclpy.Parameter.Type.STRING)
+        self.register_obk_subscription(
+            "sub_ctrl_setting",
+            self.apply_control,
+            key="subscriber_ctrl",
+            msg_type=None,  # generic, specified in config file
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the robot."""
@@ -29,9 +33,6 @@ class ObeliskRobot(ABC, ObeliskNode):
 
         # parsing config strings
         self.sub_ctrl_setting = self.get_parameter("sub_ctrl_setting").get_parameter_value().string_value
-
-        # create publishers and subscriber
-        self.subscriber_ctrl = self._create_subscription_from_config_str(self.sub_ctrl_setting, self.apply_control)
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
@@ -59,8 +60,18 @@ class ObeliskSimRobot(ObeliskRobot):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk sim robot."""
         super().__init__(node_name)
-        self.declare_parameter("timer_true_sim_state_setting", "")
-        self.declare_parameter("pub_true_sim_state_setting", "")
+        self.register_obk_timer(
+            "timer_true_sim_state_setting",
+            self.publish_true_sim_state,
+            key="timer_true_sim_state",
+            default_config_str="",
+        )
+        self.register_obk_publisher(
+            "pub_true_sim_state_setting",
+            key="publisher_true_sim_state",
+            msg_type=osm.TrueSimState,
+            default_config_str="",
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulation."""
@@ -74,19 +85,11 @@ class ObeliskSimRobot(ObeliskRobot):
             self.get_parameter("pub_true_sim_state_setting").get_parameter_value().string_value
         )
 
-        if self.pub_true_sim_state_setting != "":
-            if self.timer_true_sim_state_setting != "":
-                self.timer_true_sim_state = self._create_timer_from_config_str(
-                    self.timer_true_sim_state_setting,
-                    self.publish_true_sim_state,
-                )
-            self.publisher_true_sim_state = self._create_publisher_from_config_str(self.pub_true_sim_state_setting)
-
-            # checks
-            if self.timer_true_sim_state is not None:
-                assert (
-                    self.timer_true_sim_state.callback == self.publish_true_sim_state
-                ), f"Timer callback must be publish_true_sim_state! Is {self.timer_true_sim_state.callback}."
+        # checking the settings of the true sim state pub/timer
+        if self.pub_true_sim_state_setting != "" and self.timer_true_sim_state_setting != "":
+            assert (
+                self.obk_timers["timer_true_sim_state"].callback == self.publish_true_sim_state
+            ), f"Timer callback must be publish_true_sim_state! Is {self.obk_timers["timer_true_sim_state"].callback}."
         else:
             self.get_logger().warn("No true sim state publisher configured!")
             self.timer_true_sim_state = None
@@ -94,7 +97,6 @@ class ObeliskSimRobot(ObeliskRobot):
 
         return TransitionCallbackReturn.SUCCESS
 
-    @abstractmethod
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the TrueSimState of the simulator.
 
@@ -106,6 +108,7 @@ class ObeliskSimRobot(ObeliskRobot):
         Returns:
             obelisk_true_sim_state_msg: An Obelisk message type containing the true sim state.
         """
+        raise NotImplementedError
 
     @abstractmethod
     def run_simulator(self) -> None:

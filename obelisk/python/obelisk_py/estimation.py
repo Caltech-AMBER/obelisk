@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, get_args
 
-import rclpy
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
@@ -37,8 +36,17 @@ class ObeliskEstimator(ABC, ObeliskNode):
         [NOTE] In derived classes, you should declare settings for sensor subscribers.
         """
         super().__init__(node_name)
-        self.declare_parameter("timer_est_setting", rclpy.Parameter.Type.STRING)
-        self.declare_parameter("pub_est_setting", rclpy.Parameter.Type.STRING)
+        self._has_sensor_subscriber = False
+        self.register_obk_timer(
+            "timer_est_setting",
+            self.compute_state_estimate,
+            key="timer_est",
+        )
+        self.register_obk_publisher(
+            "pub_est_setting",
+            key="publisher_est",
+            msg_type=None,  # generic, specified in config file
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
@@ -48,29 +56,20 @@ class ObeliskEstimator(ABC, ObeliskNode):
         self.timer_est_setting = self.get_parameter("timer_est_setting").get_parameter_value().string_value
         self.pub_est_setting = self.get_parameter("pub_est_setting").get_parameter_value().string_value
 
-        # create publisher+timer
-        self.timer_est = self._create_timer_from_config_str(self.timer_est_setting, self.compute_state_estimate)
-        self.publisher_est = self._create_publisher_from_config_str(self.pub_est_setting)
+        # ensuring there is at least one sensor subscriber
+        for _, _, _, msg_type in self._obk_sub_settings:
+            if msg_type in [a.__name__ for a in get_args(ObeliskSensorMsg.__bound__)]:
+                self._has_sensor_subscriber = True
+                break
+        assert self._has_sensor_subscriber, "At least one sensor subscriber is required in an ObeliskEstimator!"
 
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the estimator."""
-        super().on_activate(state)
-        self.timer_est.reset()  # reset estimator timer
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Deactivate the estimator."""
-        super().on_deactivate(state)
-        self.timer_est.cancel()  # deactivate the estimator timer
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
     def compute_state_estimate(self) -> Union[ObeliskEstimatorMsg, ObeliskSensorMsg]:
         """Compute the state estimate.
 
-        This is the state estimate timer callback and is expected to call self.publisher_est internally. Note that the
+        This is the state estimate timer callback and is expected to call 'publisher_est' internally. Note that the
         state estimate message is still returned afterwards, mostly for logging/debugging purposes. The publish call is
         the important part, NOT the returned value, since the topic is what the ObeliskController subscribes to.
 
