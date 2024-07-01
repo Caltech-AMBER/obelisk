@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Type, TypeVar, Union, get_args
+from typing import Type, TypeVar, Union, get_args, get_origin
 
 
 def get_classes_in_module(module: ModuleType) -> list[Type]:
@@ -20,7 +20,7 @@ def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union
     """Check if a message type is in a module and add it as an attribute to a node in place.
 
     Parameters:
-        msg_type_name: The name of the message type to add.
+        msg_type_name: The name of the message type to check.
         msg_module_or_type: The module over which we verify the message type. If a TypeVar is passed, we verify that the
             message type is in the bound of the TypeVar.
 
@@ -33,13 +33,20 @@ def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union
     msg_type = None
 
     if isinstance(msg_module_or_type, TypeVar):
-        msg_module_type_names = [a.__name__ for a in get_args(msg_module_or_type.__bound__)]
-        assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
+        if get_origin(msg_module_or_type.__bound__) is Union:
+            msg_module_type_names = [a.__name__ for a in get_args(msg_module_or_type.__bound__)]
+            assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
+            for a in get_args(msg_module_or_type.__bound__):
+                if msg_type_name == a.__name__:
+                    msg_type = a
+                    break
+        else:
+            assert msg_module_or_type.__bound__ is not None, "The TypeVar does not have a bound."
+            assert (
+                msg_type_name == msg_module_or_type.__bound__.__name__
+            ), f"{msg_type_name} must be {msg_module_or_type.__bound__.__name__}"
+            msg_type = msg_module_or_type.__bound__
 
-        for a in get_args(msg_module_or_type.__bound__):
-            if msg_type_name == a.__name__:
-                msg_type = a
-                break
     else:
         msg_module_type_names = [t.__name__ for t in get_classes_in_module(msg_module_or_type)]
         assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
