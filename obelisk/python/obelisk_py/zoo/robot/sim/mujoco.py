@@ -147,8 +147,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             stripped_sensor_settings = stripped_sensor_settings.replace("{", "").replace("}", "")
 
             # the internal delimiter between different sensor group settings is a plus sign
-            self.sensor_timers = []
-            for sensor_setting in stripped_sensor_settings.split("+"):
+            for i, sensor_setting in enumerate(stripped_sensor_settings.split("+")):
                 # individual settings are separated by pipes
                 sensor_setting_dict = dict([setting.split("=") for setting in sensor_setting.split("|")])
 
@@ -177,7 +176,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     callback_group=cbg,
                 )
                 timer_sensor.cancel()
-                self.sensor_timers.append(timer_sensor)
+                self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
+                self.obk_timers[f"sensor_group_{i}"] = timer_sensor
         else:
             self.sensor_timers = None
 
