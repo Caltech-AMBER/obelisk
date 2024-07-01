@@ -18,7 +18,6 @@ onboard:
         topic: /obelisk/dummy/est
         msg_type: EstimatedState
         history_depth: 10
-        # callback_key: sub_callback1
         callback_group: None
         non_obelisk: False
     timers:
@@ -26,7 +25,6 @@ onboard:
         # key: timer1
         timer_period_sec: 0.001
         callback_group: None
-        # callback_key: timer_callback1
   estimation:
     impl: python
     executable: jointencoders_passthrough_estimator
@@ -45,7 +43,6 @@ onboard:
         topic: /obelisk/dummy/sensor
         msg_type: JointEncoders
         history_depth: 10
-        # callback_key: sub_callback1
         callback_group: None
         non_obelisk: False
     timers:
@@ -53,7 +50,6 @@ onboard:
         # key: timer1
         timer_period_sec: 0.001
         callback_group: None
-        # callback_key: timer_callback1
   # sensing:
   robot:
     is_simulated: True
@@ -67,7 +63,6 @@ onboard:
         topic: /obelisk/dummy/ctrl
         msg_type: PositionSetpoint
         history_depth: 10
-        # callback_key: sub_callback1
         callback_group: None
         non_obelisk: False
     sim:

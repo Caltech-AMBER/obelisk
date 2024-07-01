@@ -10,7 +10,6 @@ from rclpy.qos import QoSProfile
 from rclpy.qos_event import PublisherEventCallbacks, SubscriptionEventCallbacks
 from rclpy.qos_overriding_options import QoSOverridingOptions
 from rclpy.subscription import Subscription
-from rclpy.timer import Timer
 
 from obelisk_py.exceptions import ObeliskMsgError
 from obelisk_py.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
@@ -109,7 +108,7 @@ class ObeliskNode(LifecycleNode):
             self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
-        self._obk_pub_settings.append((key, ros_parameter, msg_type))
+        self._obk_pub_settings.append({"key": key, "ros_parameter": ros_parameter, "msg_type": msg_type})
 
     def register_obk_subscription(
         self,
@@ -136,7 +135,9 @@ class ObeliskNode(LifecycleNode):
             self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
-        self._obk_sub_settings.append((key, ros_parameter, callback, msg_type))
+        self._obk_sub_settings.append(
+            {"key": key, "ros_parameter": ros_parameter, "callback": callback, "msg_type": msg_type}
+        )
 
     def register_obk_timer(
         self,
@@ -160,7 +161,7 @@ class ObeliskNode(LifecycleNode):
             self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
-        self._obk_timer_settings.append((key, ros_parameter, callback))
+        self._obk_timer_settings.append({"key": key, "ros_parameter": ros_parameter, "callback": callback})
 
     # ############## #
     # STATIC METHODS #
@@ -334,7 +335,7 @@ class ObeliskNode(LifecycleNode):
         config_str: str,
         key: Optional[str] = None,
         msg_type: Optional[Type] = None,
-    ) -> None:
+    ) -> str:
         """Create a publisher from a configuration string and adds it to the publisher dictionary.
 
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
@@ -346,6 +347,9 @@ class ObeliskNode(LifecycleNode):
             key: The key for the publisher. If None, we look for the key as a field in the config string.
             msg_type: The message type. If passed, we just use this directly. Otherwise, you can configure this at
                 runtime by passing a msg_type field in the config string that corresponds to an Obelisk message type.
+
+        Returns:
+            key: The key for the publisher.
 
         Raises:
             AssertionError: If the configuration string is invalid.
@@ -359,7 +363,7 @@ class ObeliskNode(LifecycleNode):
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
-        if key is None:
+        if key is None or "key" in field_names:
             key = ObeliskNode._get_key_from_config_dict(config_dict)
 
         # parse the message type
@@ -382,6 +386,7 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        return key
 
     def _create_subscription_from_config_str(
         self,
@@ -389,7 +394,7 @@ class ObeliskNode(LifecycleNode):
         callback: Callable[[Union[ObeliskAllowedMsg, MsgType]], None],
         key: Optional[str] = None,
         msg_type: Optional[Type] = None,
-    ) -> Subscription:
+    ) -> str:
         """Create a subscription from a configuration string and adds it to the subscription dictionary.
 
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
@@ -403,6 +408,9 @@ class ObeliskNode(LifecycleNode):
             msg_type: The message type. If passed, we just use this directly. Otherwise, you can configure this at
                 runtime by passing a msg_type field in the config string that corresponds to an Obelisk message type.
 
+        Returns:
+            key: The key for the subscription.
+
         Raises:
             AssertionError: If the configuration string is invalid.
             ObeliskMsgError: If the message type is not an Obelisk message.
@@ -415,7 +423,7 @@ class ObeliskNode(LifecycleNode):
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
-        if key is None:
+        if key is None or "key" in field_names:
             key = ObeliskNode._get_key_from_config_dict(config_dict)
 
         # parse the message type
@@ -440,13 +448,14 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        return key
 
     def _create_timer_from_config_str(
         self,
         config_str: str,
         callback: Callable[[], Union[Any, Tuple[Any, ...]]],
         key: Optional[str] = None,
-    ) -> Timer:
+    ) -> str:
         """Create a timer from a configuration string and adds it to the timer dictionary.
 
         Parameters:
@@ -455,7 +464,7 @@ class ObeliskNode(LifecycleNode):
             key: The key for the timer. If None, we look for the key as a field in the config string.
 
         Returns:
-            timer: The created timer.
+            key: The key for the timer.
 
         Raises:
             AssertionError: If the configuration string is invalid.
@@ -468,7 +477,7 @@ class ObeliskNode(LifecycleNode):
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
-        if key is None:
+        if key is None or "key" in field_names:
             key = ObeliskNode._get_key_from_config_dict(config_dict)
 
         # set the callback group
@@ -487,6 +496,7 @@ class ObeliskNode(LifecycleNode):
         )
         timer.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
         self.obk_timers[key] = timer
+        return key
 
     # ################ #
     # PUB/SUB CREATION #
@@ -613,17 +623,35 @@ class ObeliskNode(LifecycleNode):
             setattr(self, callback_group_name, callback_group)
 
         # create components
-        for key, ros_parameter, msg_type in self._obk_pub_settings:
+        for pub_dict in self._obk_pub_settings:
+            key = pub_dict["key"]
+            ros_parameter = pub_dict["ros_parameter"]
+            msg_type = pub_dict["msg_type"]
+
             pub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
-            self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
+            final_key = self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
+            pub_dict["key"] = final_key  # if a key field is supplied in the config, overwrite any defaults
 
-        for key, config_str, callback, msg_type in self._obk_sub_settings:
-            sub_config_str = self.get_parameter(config_str).get_parameter_value().string_value
-            self._create_subscription_from_config_str(sub_config_str, callback=callback, key=key, msg_type=msg_type)
+        for sub_dict in self._obk_sub_settings:
+            key = sub_dict["key"]
+            ros_parameter = sub_dict["ros_parameter"]
+            msg_type = sub_dict["msg_type"]
+            callback = sub_dict["callback"]
 
-        for key, config_str, callback in self._obk_timer_settings:
-            timer_config_str = self.get_parameter(config_str).get_parameter_value().string_value
-            self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
+            sub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            final_key = self._create_subscription_from_config_str(
+                sub_config_str, callback=callback, key=key, msg_type=msg_type
+            )
+            pub_dict["key"] = final_key  # if a key field is supplied in the config, overwrite any defaults
+
+        for timer_dict in self._obk_timer_settings:
+            key = timer_dict["key"]
+            ros_parameter = timer_dict["ros_parameter"]
+            callback = timer_dict["callback"]
+
+            timer_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            final_key = self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
+            pub_dict["key"] = final_key  # if a key field is supplied in the config, overwrite any defaults
 
         return TransitionCallbackReturn.SUCCESS
 
