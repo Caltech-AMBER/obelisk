@@ -1,17 +1,19 @@
 import ctypes
 import multiprocessing
 import os
-from typing import Callable, List
+from typing import Callable, List, Type
 
 import mujoco
 import mujoco.viewer
 import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
+from mujoco import MjData, MjModel, mj_step  # type: ignore
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
+from rclpy.publisher import Publisher
 
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskSensorMsg
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
 
@@ -42,7 +44,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             with self.lock:
                 self.shared_ctrl[:] = [ctypes.c_double(value) for value in ctrl]
 
-    def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> ObeliskSensorMsg:
+    def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
 
         The supported sensor types are taken as a subset of the ones listed in the mujoco docs:
@@ -58,7 +60,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             The Obelisk sensor message type associated with the Mujoco sensor type.
         """
         if sensor_type == "jointpos":
-            return osm.JointEncoders
+            assert is_in_bound(osm.JointEncoders, ObeliskSensorMsg)
+            return osm.JointEncoders  # type: ignore
         else:
             raise NotImplementedError(f"Sensor type {sensor_type} not supported! Check your spelling or open a PR.")
 
@@ -66,7 +69,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         self,
         msg_type: ObeliskSensorMsg,
         sensor_names: List[str],
-        pub_sensor: rclpy.publisher.Publisher,
+        pub_sensor: Publisher,
     ) -> Callable:
         """Create a timer callback from the ObeliskSensorMsg type.
 
@@ -109,14 +112,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         # load mujoco model
         self.model_xml_path = config_dict["model_xml_path"]
+        assert isinstance(self.model_xml_path, str), "Model XML path must be a string!"
         if not os.path.exists(self.model_xml_path):
             if "OBELISK_ROOT" not in os.environ:
                 raise ValueError("OBELISK_ROOT environment variable not set. Run the dev_setup.sh script!")
             model_xml_path = os.path.join(os.environ["OBELISK_ROOT"], "models", self.model_xml_path)
         else:
             model_xml_path = self.model_xml_path
-        self.mj_model = mujoco.MjModel.from_xml_path(model_xml_path)
-        self.mj_data = mujoco.MjData(self.mj_model)
+        self.mj_model = MjModel.from_xml_path(model_xml_path)
+        self.mj_data = MjData(self.mj_model)
 
         # set the configuration parameters for non-sensor fields
         self.n_u = int(config_dict["n_u"])
@@ -138,6 +142,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
             # we must strip the brackets and braces out of the string for parsing reasons
             stripped_sensor_settings = config_dict["sensor_settings"]
+            assert isinstance(stripped_sensor_settings, str)
             stripped_sensor_settings = stripped_sensor_settings.replace("[", "").replace("]", "")
             stripped_sensor_settings = stripped_sensor_settings.replace("{", "").replace("}", "")
 
@@ -227,6 +232,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                 for _ in range(self.num_steps_per_viz):
                     self.mj_data.ctrl[:] = np.array(self.shared_ctrl)
-                    mujoco.mj_step(self.mj_model, self.mj_data)
+                    mj_step(self.mj_model, self.mj_data)
                 viewer.sync()
                 self.t_last.value = t

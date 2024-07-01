@@ -3,7 +3,7 @@ from obelisk_control_msgs.msg import PositionSetpoint
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.control import ObeliskController
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
 
 class ExamplePositionSetpointController(ObeliskController):
@@ -40,4 +40,5 @@ class ExamplePositionSetpointController(ObeliskController):
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u = [u]
         self.obk_publishers["publisher_ctrl"].publish(position_setpoint_msg)
-        return position_setpoint_msg
+        assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
+        return position_setpoint_msg  # type: ignore
