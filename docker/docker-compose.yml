@@ -26,6 +26,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:/root/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
+      - $HOME/mujoco:$HOME/mujoco # for now, volume mounting mujoco
     ports:
       - 7007:7007
     privileged: true

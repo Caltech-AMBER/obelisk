@@ -35,8 +35,8 @@ RUN apt-get update -y && \
 
 
 # ../scripts/
-COPY install-mj-source.sh /install-mj-source.sh
-RUN chmod +x /install-mj-source.sh && /install-mj-source.sh --mujoco-dir /home/mujoco
+# COPY install-mj-source.sh /install-mj-source.sh
+# RUN chmod +x /install-mj-source.sh && /install-mj-source.sh --mujoco-dir /home
 
 
 # create non-root user with sudo privileges for certain commands
