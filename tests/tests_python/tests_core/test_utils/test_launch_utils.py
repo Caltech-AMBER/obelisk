@@ -4,7 +4,7 @@ from typing import Any, Dict
 import pytest
 from launch_ros.actions import LifecycleNode
 
-from obelisk_py.utils.launch_utils import (
+from obelisk_py.core.utils.launch_utils import (
     get_component_settings_subdict,
     get_launch_actions_from_node_settings,
     get_parameters_dict,
@@ -119,7 +119,7 @@ def test_load_config_file(test_config: Dict[str, Any]) -> None:
         test_config: Test configuration fixture.
     """
     # Test with absolute path
-    abs_path = Path(__file__).parent / "test_assets" / "test_config.yaml"
+    abs_path = Path(__file__).parent.parent.parent / "test_assets" / "test_config.yaml"
     result = load_config_file(abs_path)
     assert result == test_config
 

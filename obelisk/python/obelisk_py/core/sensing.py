@@ -25,7 +25,8 @@ class ObeliskSensor(ObeliskNode):
         super().on_configure(state)
 
         # ensure there is at least one sensor publisher
-        for _, _, msg_type in self._obk_pub_settings:
+        for pub_dict in self._obk_pub_settings:
+            msg_type = pub_dict["msg_type"]
             if msg_type in get_classes_in_module(osm):
                 self._has_sensor_publisher = True
                 break
