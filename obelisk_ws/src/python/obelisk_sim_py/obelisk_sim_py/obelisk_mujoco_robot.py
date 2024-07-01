@@ -190,24 +190,12 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Activate the simulator."""
         super().on_activate(state)
         self.t_last.value = self.t
-        if self.sensor_timers is not None:
-            for timer in self.sensor_timers:
-                timer.reset()
         self.sim_process.start()
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Deactivate the simulator."""
-        super().on_deactivate(state)
-        if self.timers is not None:
-            for timer in self.timers:
-                timer.cancel()
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Clean up the simulator."""
         super().on_cleanup(state)
-        # terminate the simulation process
         if self.sim_process.is_alive():
             self.is_viewer_running.value = False
             self.sim_process.terminate()

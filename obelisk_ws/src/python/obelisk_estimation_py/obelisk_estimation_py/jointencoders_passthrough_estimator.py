@@ -12,31 +12,20 @@ from obelisk_py.estimation import ObeliskEstimator
 class JointEncodersPassthroughEstimator(ObeliskEstimator):
     """Passthrough estimator for joint encoder sensors."""
 
-    def __init__(self) -> None:
+    def __init__(self, node_name: str) -> None:
         """Initialize the joint encoders passthrough estimator."""
-        super().__init__("jointencoders_passthrough_estimator")
-        self.declare_parameter("sub_sensor_setting", rclpy.Parameter.Type.STRING)
+        super().__init__(node_name)
+        self.register_obk_subscription(
+            "sub_sensor_setting",
+            self.joint_encoder_callback,
+            key="subscriber_sensor",
+            msg_type=JointEncoders,
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the estimator."""
         super().on_configure(state)
         self.joint_encoder_values = None
-        self.subscriber_sensor = self._create_subscription_from_config_str(
-            self.get_parameter("sub_sensor_setting").get_parameter_value().string_value,
-            self.joint_encoder_callback,
-        )
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the estimator."""
-        super().on_activate(state)
-        self.joint_encoder_values = None
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the estimator."""
-        super().on_cleanup(state)
-        del self.joint_encoder_values
         return TransitionCallbackReturn.SUCCESS
 
     def joint_encoder_callback(self, msg: JointEncoders) -> None:

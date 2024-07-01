@@ -13,26 +13,14 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 class ExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self) -> None:
+    def __init__(self, node_name: str) -> None:
         """Initialize the example position setpoint controller."""
-        super().__init__("example_position_setpoint_controller")
+        super().__init__(node_name)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
         self.x_hat = None
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the controller."""
-        super().on_activate(state)
-        self.x_hat = None
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the controller."""
-        super().on_cleanup(state)
-        del self.x_hat
         return TransitionCallbackReturn.SUCCESS
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:

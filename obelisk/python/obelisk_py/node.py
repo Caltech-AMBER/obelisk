@@ -105,15 +105,11 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
-        try:
-            config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
-            self._obk_pub_settings.append((key, config_str, msg_type))
-        except rclpy.parameter.ParameterUninitializedException as err:
-            if default_config_str is not None:
-                self._obk_pub_settings.append((key, default_config_str, msg_type))
-            else:
-                self.get_logger().error(f"Parameter {ros_parameter} not initialized. Exiting.")
-                raise rclpy.parameter.ParameterUninitializedException from err
+        if default_config_str is None:
+            self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
+        else:
+            self.declare_parameter(ros_parameter, value=default_config_str)
+        self._obk_pub_settings.append((key, ros_parameter, msg_type))
 
     def register_obk_subscription(
         self,
@@ -136,15 +132,11 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
-        try:
-            config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
-            self._obk_sub_settings.append((key, config_str, callback, msg_type))
-        except rclpy.parameter.ParameterUninitializedException as err:
-            if default_config_str is not None:
-                self._obk_sub_settings.append((key, default_config_str, callback, msg_type))
-            else:
-                self.get_logger().error(f"Parameter {ros_parameter} not initialized. Exiting.")
-                raise rclpy.parameter.ParameterUninitializedException from err
+        if default_config_str is None:
+            self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
+        else:
+            self.declare_parameter(ros_parameter, value=default_config_str)
+        self._obk_sub_settings.append((key, ros_parameter, callback, msg_type))
 
     def register_obk_timer(
         self,
@@ -164,15 +156,11 @@ class ObeliskNode(LifecycleNode):
         Raises:
             ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
-        try:
-            config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
-            self._obk_timer_settings.append((key, config_str, callback))
-        except rclpy.parameter.ParameterUninitializedException as err:
-            if default_config_str is not None:
-                self._obk_timer_settings.append((key, default_config_str, callback))
-            else:
-                self.get_logger().error(f"Parameter {ros_parameter} not initialized. Exiting.")
-                raise rclpy.parameter.ParameterUninitializedException from err
+        if default_config_str is None:
+            self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
+        else:
+            self.declare_parameter(ros_parameter, value=default_config_str)
+        self._obk_timer_settings.append((key, ros_parameter, callback))
 
     # ############## #
     # STATIC METHODS #
@@ -625,14 +613,17 @@ class ObeliskNode(LifecycleNode):
             setattr(self, callback_group_name, callback_group)
 
         # create components
-        for key, config_str, msg_type in self._obk_pub_settings:
-            self._create_publisher_from_config_str(config_str, key=key, msg_type=msg_type)
+        for key, ros_parameter, msg_type in self._obk_pub_settings:
+            pub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
 
         for key, config_str, callback, msg_type in self._obk_sub_settings:
-            self._create_subscription_from_config_str(config_str, callback=callback, key=key, msg_type=msg_type)
+            sub_config_str = self.get_parameter(config_str).get_parameter_value().string_value
+            self._create_subscription_from_config_str(sub_config_str, callback=callback, key=key, msg_type=msg_type)
 
         for key, config_str, callback in self._obk_timer_settings:
-            self._create_timer_from_config_str(config_str, callback=callback, key=key)
+            timer_config_str = self.get_parameter(config_str).get_parameter_value().string_value
+            self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
 
         return TransitionCallbackReturn.SUCCESS
 
