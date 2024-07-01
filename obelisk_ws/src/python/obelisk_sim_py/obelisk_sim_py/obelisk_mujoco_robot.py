@@ -19,9 +19,9 @@ from obelisk_py.robot import ObeliskSimRobot
 class ObeliskMujocoRobot(ObeliskSimRobot):
     """Simulator that runs Mujoco."""
 
-    def __init__(self) -> None:
+    def __init__(self, node_name: str = "obelisk_mujoco_robot") -> None:
         """Initialize the mujoco simulator."""
-        super().__init__("obelisk_mujoco_robot")
+        super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
     def _set_shared_ctrl(self, ctrl: List[float]) -> None:

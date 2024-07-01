@@ -70,12 +70,11 @@ class ObeliskSimRobot(ObeliskRobot):
         super().on_configure(state)
 
         # checking the settings of the true sim state pub/timer
-        if self.pub_true_sim_state_setting != "" and self.timer_true_sim_state_setting != "":
+        if "publisher_true_sim_state" in self.obk_publishers and "timer_true_sim_state" in self.obk_timers:
             assert (
                 self.obk_timers["timer_true_sim_state"].callback == self.publish_true_sim_state
-            ), f"Timer callback must be publish_true_sim_state! Is {self.obk_timers["timer_true_sim_state"].callback}."
+            ), f"Timer callback must be publish_true_sim_state! Is {self.obk_timers['timer_true_sim_state'].callback}."
         else:
-            self.get_logger().warn("No true sim state publisher configured!")
             self.timer_true_sim_state = None
             self.publisher_true_sim_state = None
 

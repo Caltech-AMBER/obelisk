@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Union, get_args
+from typing import Union
 
+import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
 from obelisk_py.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
+from obelisk_py.utils.internal import get_classes_in_module
 
 
 class ObeliskEstimator(ABC, ObeliskNode):
@@ -53,8 +55,9 @@ class ObeliskEstimator(ABC, ObeliskNode):
         super().on_configure(state)
 
         # ensure there is at least one sensor subscriber
-        for _, _, _, msg_type in self._obk_sub_settings:
-            if msg_type in [a.__name__ for a in get_args(ObeliskSensorMsg.__bound__)]:
+        for sub_dict in self._obk_sub_settings:
+            msg_type = sub_dict["msg_type"]
+            if msg_type in get_classes_in_module(osm):
                 self._has_sensor_subscriber = True
                 break
         assert self._has_sensor_subscriber, "At least one sensor subscriber is required in an ObeliskEstimator!"

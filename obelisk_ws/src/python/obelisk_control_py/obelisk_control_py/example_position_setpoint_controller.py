@@ -13,7 +13,7 @@ from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 class ExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
         """Initialize the example position setpoint controller."""
         super().__init__(node_name)
 
@@ -43,7 +43,7 @@ class ExamplePositionSetpointController(ObeliskController):
         # setting the message
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u = [u]
-        self.publisher_ctrl.publish(position_setpoint_msg)
+        self.obk_publishers["publisher_ctrl"].publish(position_setpoint_msg)
         return position_setpoint_msg
 
 

@@ -1,9 +1,8 @@
-from typing import get_args
-
+import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.node import ObeliskNode
-from obelisk_py.obelisk_typing import ObeliskSensorMsg
+from obelisk_py.utils.internal import get_classes_in_module
 
 
 class ObeliskSensor(ObeliskNode):
@@ -27,7 +26,7 @@ class ObeliskSensor(ObeliskNode):
 
         # ensure there is at least one sensor publisher
         for _, _, msg_type in self._obk_pub_settings:
-            if msg_type in [a.__name__ for a in get_args(ObeliskSensorMsg.__bound__)]:
+            if msg_type in get_classes_in_module(osm):
                 self._has_sensor_publisher = True
                 break
         assert self._has_sensor_publisher, "At least one sensor publisher is required in an ObeliskSensor!"
