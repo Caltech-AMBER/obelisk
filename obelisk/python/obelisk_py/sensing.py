@@ -25,7 +25,7 @@ class ObeliskSensor(ObeliskNode):
         """Configure the sensor."""
         super().on_configure(state)
 
-        # ensuring there is at least one sensor publisher
+        # ensure there is at least one sensor publisher
         for _, _, msg_type in self._obk_pub_settings:
             if msg_type in [a.__name__ for a in get_args(ObeliskSensorMsg.__bound__)]:
                 self._has_sensor_publisher = True

@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
-
 from obelisk_py.node import ObeliskNode
 from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 
@@ -20,21 +18,7 @@ class ObeliskController(ABC, ObeliskNode):
     """
 
     def __init__(self, node_name: str) -> None:
-        """Initialize the Obelisk controller.
-
-        Parameters:
-            node_name: The name of the node.
-
-        Required ROS Parameters:
-            msg_type_ctrl: The type of the control message. Passed as a string, then converted to the appropriate type.
-            msg_type_est: The type of the state estimate message. Passed as string as above.
-
-        Optional ROS Parameters:
-            history_depth_ctrl: The depth of the control message history.
-            history_depth_est: The depth of the state estimate message history.
-            cb_group_ctrl: The callback group for the control message publisher and timer. Passed as string.
-            cb_group_est: The callback group for the state estimate message subscriber.
-        """
+        """Initialize the Obelisk controller."""
         super().__init__(node_name)
         self.register_obk_timer(
             "timer_ctrl_setting",
@@ -52,17 +36,6 @@ class ObeliskController(ABC, ObeliskNode):
             key="subscriber_est",
             msg_type=None,  # generic, specified in config file
         )
-
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the controller."""
-        super().on_configure(state)
-
-        # parsing config strings
-        self.timer_ctrl_setting = self.get_parameter("timer_ctrl_setting").get_parameter_value().string_value
-        self.pub_ctrl_setting = self.get_parameter("pub_ctrl_setting").get_parameter_value().string_value
-        self.sub_est_setting = self.get_parameter("sub_est_setting").get_parameter_value().string_value
-
-        return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:

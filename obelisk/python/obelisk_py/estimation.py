@@ -52,11 +52,7 @@ class ObeliskEstimator(ABC, ObeliskNode):
         """Configure the estimator."""
         super().on_configure(state)
 
-        # parsing config strings
-        self.timer_est_setting = self.get_parameter("timer_est_setting").get_parameter_value().string_value
-        self.pub_est_setting = self.get_parameter("pub_est_setting").get_parameter_value().string_value
-
-        # ensuring there is at least one sensor subscriber
+        # ensure there is at least one sensor subscriber
         for _, _, _, msg_type in self._obk_sub_settings:
             if msg_type in [a.__name__ for a in get_args(ObeliskSensorMsg.__bound__)]:
                 self._has_sensor_subscriber = True

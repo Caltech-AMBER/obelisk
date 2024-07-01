@@ -101,6 +101,9 @@ class ObeliskNode(LifecycleNode):
             msg_type: The message type. If passed, we just use this directly. Otherwise, you can configure this at
                 runtime by passing a msg_type field in the config string that corresponds to an Obelisk message type.
             default_config_str: The default configuration string. If None, the parameter must be initialized.
+
+        Raises:
+            ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
         try:
             config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
@@ -129,6 +132,9 @@ class ObeliskNode(LifecycleNode):
             msg_type: The message type. If passed, we just use this directly. Otherwise, you can configure this at
                 runtime by passing a msg_type field in the config string that corresponds to an Obelisk message type.
             default_config_str: The default configuration string. If None, the parameter must be initialized.
+
+        Raises:
+            ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
         try:
             config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
@@ -154,6 +160,9 @@ class ObeliskNode(LifecycleNode):
             callback: The callback function.
             key: The key for the timer. If None, we look for the key as a field in the config string later.
             default_config_str: The default configuration string. If None, the parameter must be initialized.
+
+        Raises:
+            ParameterUninitializedException: If the parameter is uninitialized and no default config string is provided.
         """
         try:
             config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
@@ -608,10 +617,10 @@ class ObeliskNode(LifecycleNode):
         super().on_configure(state)
 
         # parsing config strings
-        self.callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
+        callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
 
         # create callback groups
-        self.obk_callback_groups = ObeliskNode._create_callback_groups_from_config_str(self.callback_group_settings)
+        self.obk_callback_groups = ObeliskNode._create_callback_groups_from_config_str(callback_group_settings)
         for callback_group_name, callback_group in self.obk_callback_groups.items():
             setattr(self, callback_group_name, callback_group)
 

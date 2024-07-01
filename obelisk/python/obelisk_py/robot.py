@@ -27,14 +27,6 @@ class ObeliskRobot(ABC, ObeliskNode):
             msg_type=None,  # generic, specified in config file
         )
 
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the robot."""
-        super().on_configure(state)
-
-        # parsing config strings
-        self.sub_ctrl_setting = self.get_parameter("sub_ctrl_setting").get_parameter_value().string_value
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
         """Apply the control message to the robot.
@@ -76,14 +68,6 @@ class ObeliskSimRobot(ObeliskRobot):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulation."""
         super().on_configure(state)
-
-        # parsing config strings
-        self.timer_true_sim_state_setting = (
-            self.get_parameter("timer_true_sim_state_setting").get_parameter_value().string_value
-        )
-        self.pub_true_sim_state_setting = (
-            self.get_parameter("pub_true_sim_state_setting").get_parameter_value().string_value
-        )
 
         # checking the settings of the true sim state pub/timer
         if self.pub_true_sim_state_setting != "" and self.timer_true_sim_state_setting != "":
