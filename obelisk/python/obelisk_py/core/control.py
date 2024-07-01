@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from obelisk_py.node import ObeliskNode
-from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
+from obelisk_py.core.node import ObeliskNode
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 
 
 class ObeliskController(ABC, ObeliskNode):

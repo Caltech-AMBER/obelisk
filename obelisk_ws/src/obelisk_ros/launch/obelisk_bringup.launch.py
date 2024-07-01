@@ -10,7 +10,7 @@ from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from rclpy.impl import rcutils_logger
 
-from obelisk_py.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
+from obelisk_py.core.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 

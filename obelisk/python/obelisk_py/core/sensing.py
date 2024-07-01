@@ -1,8 +1,8 @@
 import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
-from obelisk_py.node import ObeliskNode
-from obelisk_py.utils.internal import get_classes_in_module
+from obelisk_py.core.node import ObeliskNode
+from obelisk_py.core.utils.internal import get_classes_in_module
 
 
 class ObeliskSensor(ObeliskNode):

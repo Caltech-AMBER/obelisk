@@ -11,9 +11,9 @@ from rclpy.qos_event import PublisherEventCallbacks, SubscriptionEventCallbacks
 from rclpy.qos_overriding_options import QoSOverridingOptions
 from rclpy.subscription import Subscription
 
-from obelisk_py.exceptions import ObeliskMsgError
-from obelisk_py.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
-from obelisk_py.utils.internal import check_and_get_obelisk_msg_type
+from obelisk_py.core.exceptions import ObeliskMsgError
+from obelisk_py.core.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
+from obelisk_py.core.utils.internal import check_and_get_obelisk_msg_type
 
 MsgType = TypeVar("MsgType")  # hack to denote any message type
 
