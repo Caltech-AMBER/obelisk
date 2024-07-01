@@ -6,7 +6,6 @@ onboard:
     # callback_groups:
     publishers:
       - ros_parameter: pub_ctrl_setting
-        # key: pub1
         topic: /obelisk/dummy/ctrl
         msg_type: PositionSetpoint
         history_depth: 10
@@ -14,7 +13,6 @@ onboard:
         non_obelisk: False
     subscribers:
       - ros_parameter: sub_est_setting
-        # key: sub1
         topic: /obelisk/dummy/est
         msg_type: EstimatedState
         history_depth: 10
@@ -22,7 +20,6 @@ onboard:
         non_obelisk: False
     timers:
       - ros_parameter: timer_ctrl_setting
-        # key: timer1
         timer_period_sec: 0.001
         callback_group: None
   estimation:
@@ -31,7 +28,6 @@ onboard:
     # callback_groups:
     publishers:
       - ros_parameter: pub_est_setting
-        # key: pub1
         topic: /obelisk/dummy/est
         msg_type: EstimatedState
         history_depth: 10
@@ -47,7 +43,6 @@ onboard:
         non_obelisk: False
     timers:
       - ros_parameter: timer_est_setting
-        # key: timer1
         timer_period_sec: 0.001
         callback_group: None
   # sensing:

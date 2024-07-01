@@ -16,7 +16,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         self.register_obk_subscription(
             "sub_sensor_setting",
             self.joint_encoder_callback,  # type: ignore
-            key="subscriber_sensor",
+            key="subscriber_sensor",  # key can be specified here or in the config file
             msg_type=JointEncoders,
         )
 

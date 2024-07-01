@@ -474,7 +474,7 @@ class ObeliskNode(LifecycleNode):
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["timer_period_sec"]
-        optional_field_names = ["callback_group"]
+        optional_field_names = ["key", "callback_group"]
         ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
