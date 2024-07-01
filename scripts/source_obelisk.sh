@@ -6,14 +6,28 @@ if [ "$NOOB" != "true" ]; then
     exit 0
 fi
 
-# sources the obelisk installations if not already sourced
-cmd='
-if which python | grep -q ".pixi"; then
-    source $OBELISK_ROOT/obelisk_ws/install/setup.sh
+if [ "$GLOBAL" != "true" ]; then
+    echo -e "\033[1;33mGLOBAL=false, so Obelisk is only sourced in pixi envs! \
+Avoids issue where the pixi python path is prepended to PATH globally.\033[0m"
+else
+    echo -e "\033[1;33mGLOBAL=true, so Obelisk is sourced globally! \
+This means that the pixi python path is prepended to PATH unconditionally! \
+This will affect your conda environments, so be careful!\033[0m"
 fi
-'
+
+
+# sources the obelisk installations if not already sourced
+cmd_local='if which python | grep -q ".pixi"; then
+    source $OBELISK_ROOT/obelisk_ws/install/setup.sh
+fi'
+cmd_global='source $OBELISK_ROOT/obelisk_ws/install/setup.sh'
 start_marker="# >>> source obelisk ROS2 setup.sh >>>"
 end_marker="# <<< source obelisk ROS2 setup.sh <<<"
+if [ "$GLOBAL" == "true" ]; then
+    cmd="$cmd_global"
+else
+    cmd="$cmd_local"
+fi
 if grep -Fq "$start_marker" ~/.bashrc && grep -Fq "$end_marker" ~/.bashrc; then
     awk -v start="$start_marker" -v end="$end_marker" -v cmd="$cmd" '
         $0 == start {print; print cmd; f=1; next}
