@@ -11,22 +11,9 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-# ------- Mujoco ------- #
-# Setup Mujoco path
-set(MUJOCO_VERSION "mujoco-3.1.6" CACHE STRING "mujoco version")
-set(MUJOCO_DIR "/home/$ENV{USER}/mujoco/${MUJOCO_VERSION}" CACHE PATH "Path to Mujoco dir")
-message(STATUS "mujoco directory: ${MUJOCO_DIR}")
-
-# Setup the Mujoco library
-find_library(MUJOCO_LIB mujoco REQUIRED HINTS ${MUJOCO_DIR}/lib)
-message(STATUS mujoco)
-# set_property(TARGET mujoco PROPERTY IMPORTED_LOCATION ${MUJOCO_DIR}/hello_world)#/lib/libmujoco.so)
 
 # add_executable(hello_world src/hello_world.cpp)
-# target_include_directories(hello_world PUBLIC MUJOCO_DIR/include)
-# target_link_libraries(hello_world mujoco)
-
-# target_link_libraries(<MY_TARGET> PUBLIC mujoco)
+# target_link_libraries(hello_world PUBLIC mujoco)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

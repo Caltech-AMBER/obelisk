@@ -5,7 +5,6 @@
 
 #include "obelisk_control_msgs/msg/position_setpoint.hpp"
 #include "obelisk_estimator_msgs/msg/estimated_state.hpp"
-#include "obelisk_sensor_msgs/msg/joint_encoder.hpp"
 #include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
 #include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 #include "rcl_interfaces/msg/parameter_event.hpp"
@@ -408,8 +407,7 @@ namespace obelisk {
         // Allowed Obelisk message types
         using ObeliskMsgs =
             std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_estimator_msgs::msg::EstimatedState,
-                       obelisk_sensor_msgs::msg::JointEncoder, obelisk_sensor_msgs::msg::JointEncoders,
-                       obelisk_sensor_msgs::msg::TrueSimState>;
+                       obelisk_sensor_msgs::msg::JointEncoders, obelisk_sensor_msgs::msg::TrueSimState>;
         // Allowed non-obelisk message types
         using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 

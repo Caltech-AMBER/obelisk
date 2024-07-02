@@ -27,6 +27,7 @@ add_executable(NodeTest
     test_sensor.cpp
     test_robot.cpp
     test_sim_robot.cpp
+    test_mujoco_sim_robot.cpp
     claude_obelisk_node_test.cpp
     claude_obelisk_controller_test.cpp
     claude_obelisk_sim_robot_test.cpp

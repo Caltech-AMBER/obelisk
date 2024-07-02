@@ -54,7 +54,6 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
         // Verify that allowed messages are fine
         REQUIRE_NOTHROW(node.create_publisher<obelisk_control_msgs::msg::PositionSetpoint>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_estimator_msgs::msg::EstimatedState>("topic", 10));
-        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::JointEncoder>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::JointEncoders>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::TrueSimState>("topic", 10));
     }
@@ -76,10 +75,6 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
         REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::TrueSimState>(
             "topic", 10,
             std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::TrueSimState>, &node,
-                      _1)));
-        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::JointEncoder>(
-            "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::JointEncoder>, &node,
                       _1)));
         REQUIRE_NOTHROW(node.create_subscription<rcl_interfaces::msg::ParameterEvent>(
             "topic", 10,
