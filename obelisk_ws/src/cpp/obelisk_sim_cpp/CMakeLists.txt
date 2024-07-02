@@ -19,8 +19,12 @@ message(STATUS "mujoco directory: ${MUJOCO_DIR}")
 
 # Setup the Mujoco library
 find_library(MUJOCO_LIB mujoco REQUIRED HINTS ${MUJOCO_DIR}/lib)
-message(STATUS ${MUJOCO_LIB})
-set_property(TARGET ${MUJOCO_LIB} PROPERTY IMPORTED_LOCATION ${MUJOCO_DIR}/lib/libmujoco.so)
+message(STATUS mujoco)
+# set_property(TARGET mujoco PROPERTY IMPORTED_LOCATION ${MUJOCO_DIR}/hello_world)#/lib/libmujoco.so)
+
+add_executable(hello_world src/hello_world.cpp)
+target_include_directories(hello_world PUBLIC MUJOCO_DIR/include)
+target_link_libraries(hello_world mujoco)
 
 # target_link_libraries(<MY_TARGET> PUBLIC mujoco)
 
