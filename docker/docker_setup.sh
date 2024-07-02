@@ -1,23 +1,5 @@
 #!/bin/bash
 
-# basic dependencies
-sudo apt-get install -y \
-	curl \
-    build-essential \
-    cmake \
-    clang-tools-12 \
-    nano \
-    vim \
-    git \
-    python3-dev \
-    python-is-python3 \
-    python3-pip \
-    python3-argcomplete \
-    mesa-utils \
-    x11-apps \
-    libyaml-dev \
-    locales
-
 # installing pixi
 if ! command -v pixi &> /dev/null; then
 	echo -e "\033[1;32mPixi is not installed. Installing Pixi...\033[0m"
@@ -214,6 +196,6 @@ In all the above commands, <config_name> refers to the config field of the confi
 # <<< obelisk <<<
 EOF
 )
-sed -i '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bashrc
+sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
 echo "$obk_aliases" >> ~/.bashrc
 echo -e "\033[1;32mObelisk aliases added to ~/.bashrc!\033[0m"

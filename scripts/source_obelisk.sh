@@ -33,9 +33,10 @@ if grep -Fq "$start_marker" ~/.bashrc && grep -Fq "$end_marker" ~/.bashrc; then
         $0 == start {print; print cmd; f=1; next}
         $0 == end {f=0}
         !f
-    ' ~/.bashrc > ~/.bashrc.tmp && mv ~/.bashrc.tmp ~/.bashrc
+    ' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
 else
     printf '\n%s\n%s\n%s\n' "$start_marker" "$cmd" "$end_marker" >> ~/.bashrc
 fi
+
 source ~/.bashrc
 echo -e "\033[1;32mObelisk sourced!\033[0m"
