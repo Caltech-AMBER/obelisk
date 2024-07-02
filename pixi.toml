@@ -49,18 +49,6 @@ system-requirements = {cuda="12.1.0"}
 cuda = { version="*", channel="nvidia/label/cuda-12.1.0" }
 
 
-# torch
-[feature.torch118]
-channels = ["nvidia", "pytorch"]
-dependencies = { pytorch-cuda="11.8.0" }
-pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
-
-[feature.torch121]
-channels = ["nvidia", "pytorch"]
-dependencies = {pytorch-cuda="12.1.0"}
-pypi-dependencies = { torchvision=">=0.18.1", tqdm=">=4.66.4" }
-
-
 # ros2
 [feature.ros2base]
 channels = ["robostack-staging"]
@@ -108,7 +96,8 @@ colcon-common-extensions = "*"
 
 # obelisk
 [feature.obelisk.pypi-dependencies]
-
+mujoco = ">=3.1.0"
+"ruamel.yaml" = ">=0.18.0"
 
 
 # docs
@@ -119,8 +108,12 @@ sphinx-rtd-theme = ">=2.0.0"
 
 
 # test
+# TODO(ahl): pytest bounded until issue resolved
+# https://github.com/prefix-dev/pixi/issues/1529
+[feature.test.dependencies]
+pytest = "<=8.0.0"
+
 [feature.test.pypi-dependencies]
-pytest = ">=7.1.2"
 pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
@@ -145,26 +138,22 @@ make = ">=4.3,<5"
 [environments]
 default = { solve-group="default" }
 
-# torch
-torch118 = { features=["cuda118", "torch118"] }
-torch121 = { features=["cuda121", "torch121"] }
-
 # obelisk
 obelisk = { features=["obelisk"] }
 
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
-test-workflow = { features=["obelisk", "test", "dev", "build"] }
-test = { features=["cuda121", "torch121", "obelisk", "ros2base", "test"], solve-group="dev" }
+test = { features=["cuda121", "obelisk", "ros2base", "test"], solve-group="dev" }
 
 # ros2
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev = { features=["cuda121", "torch121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
+dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build"] }
+dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
 docs = { features=["docs"] }
 
-build = { features = ["cuda121", "torch121", "build"] }
+build = { features = ["cuda121", "build"] }
 
 # ##### #
 # TASKS #
@@ -172,8 +161,7 @@ build = { features = ["cuda121", "torch121", "build"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-workarounds = { cmd="bash workarounds.sh", cwd="scripts" }
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", inputs=["src/"], depends-on=["workarounds"] }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws" }
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
 # run the dummy tests
@@ -196,4 +184,4 @@ cpp-build = { cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cm
 cpp-build-debug = { cmd = ["cmake", "--build", "obelisk/cpp/build", "-DCMAKE_BUILD_TYPE=Debug"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
 
 # run python and c++ tests
-all-tests = { cmd = ["pytest", "&&", " ctest"] }
+all-tests = { cmd = ["pytest"], depends-on = ["source-obelisk", "cpp-ctest"] }

@@ -1,0 +1,63 @@
+onboard:
+  control:
+    impl: python
+    executable: test_controller
+    callback_groups:
+      cbg1: MutuallyExclusiveCallbackGroup
+      cbg2: ReentrantCallbackGroup
+    publishers:
+      - ros_parameter: pub_ctrl_settings1
+        key: pub1
+        topic: /test/controller/pub1
+        msg_type: TestMsg
+        history_depth: 10
+        callback_group: cbg1
+        non_obelisk: False
+    subscribers:
+      - ros_parameter: sub_ctrl_settings1
+        key: sub1
+        topic: /test/controller/sub1
+        msg_type: TestMsg
+        history_depth: 5
+        callback_key: sub_callback1
+        callback_group: cbg2
+        non_obelisk: False
+    timers:
+      - ros_parameter: timer_ctrl_settings1
+        key: timer1
+        timer_period_sec: 0.1
+        callback_group: cbg1
+        callback_key: timer_callback1
+  estimation:
+    impl: cpp
+    executable: test_estimator
+    callback_groups:
+      cbg1: ReentrantCallbackGroup
+  robot:
+    impl: python
+    executable: test_robot
+    callback_groups:
+      cbg1: MutuallyExclusiveCallbackGroup
+  sensing:
+    - impl: python
+      executable: test_sensor1
+      callback_groups:
+        cbg1: MutuallyExclusiveCallbackGroup
+      publishers:
+        - ros_parameter: pub_sensor_settings1
+          key: pub1
+          topic: /test/sensor1/pub1
+          msg_type: SensorMsg
+          history_depth: 10
+          callback_group: cbg1
+          non_obelisk: False
+    - impl: cpp
+      executable: test_sensor2
+      callback_groups:
+        cbg1: ReentrantCallbackGroup
+      timers:
+        - ros_parameter: timer_sensor_settings1
+          key: timer1
+          timer_period_sec: 0.01
+          callback_group: cbg1
+          callback_key: timer_callback1

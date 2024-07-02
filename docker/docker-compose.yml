@@ -7,6 +7,7 @@ services:
         USER: $USER
         UID: $UID
         GID: $UID
+        OBELISK_ROOT: $OBELISK_ROOT
       dockerfile: Dockerfile
     network_mode: host
     ipc: host
@@ -16,6 +17,7 @@ services:
       USER: $USER
       UID: $UID
       GID: $UID
+      OBELISK_ROOT: $OBELISK_ROOT
       QT_X11_NO_MITSHM: 1
     security_opt:
       - seccomp=unconfined
@@ -24,7 +26,7 @@ services:
     volumes:
       - $OBELISK_ROOT:$OBELISK_ROOT
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - $HOME/.Xauthority:/root/.Xauthority:rw
+      - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
       - $HOME/mujoco:$HOME/mujoco # for now, volume mounting mujoco
     ports:
