@@ -7,5 +7,26 @@ if [ "$NOOB" != "true" ]; then
 fi
 
 # sources the obelisk installations if not already sourced
-cmd="source $OBELISK_ROOT/obelisk_ws/install/setup.sh"
-grep -qxF "$cmd" ~/.bashrc || (echo "$cmd" >> ~/.bashrc && $cmd && echo -e "\033[1;32mObelisk sourced!\033[0m")
+cmd_local='if which python | grep -q ".pixi"; then
+    source $OBELISK_ROOT/obelisk_ws/install/setup.sh
+fi'
+cmd_global='source $OBELISK_ROOT/obelisk_ws/install/setup.sh'
+start_marker="# >>> source obelisk ROS2 setup.sh >>>"
+end_marker="# <<< source obelisk ROS2 setup.sh <<<"
+if [ "$GLOBAL" == "true" ]; then
+    cmd="$cmd_global"
+else
+    cmd="$cmd_local"
+fi
+if grep -Fq "$start_marker" ~/.bashrc && grep -Fq "$end_marker" ~/.bashrc; then
+    awk -v start="$start_marker" -v end="$end_marker" -v cmd="$cmd" '
+        $0 == start {print; print cmd; f=1; next}
+        $0 == end {f=0}
+        !f
+    ' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
+else
+    printf '\n%s\n%s\n%s\n' "$start_marker" "$cmd" "$end_marker" >> ~/.bashrc
+fi
+
+source ~/.bashrc
+echo -e "\033[1;32mObelisk sourced!\033[0m"
