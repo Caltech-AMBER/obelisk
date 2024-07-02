@@ -226,3 +226,8 @@ log
 cmake-build-*
 
 .build
+
+# ###### #
+# MUJOCO #
+# ###### #
+MUJOCO_LOG.TXT

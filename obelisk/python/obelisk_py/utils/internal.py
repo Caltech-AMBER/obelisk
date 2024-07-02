@@ -2,8 +2,6 @@ import inspect
 from types import ModuleType
 from typing import Type, TypeVar, Union, get_args
 
-from rclpy.node import Node
-
 
 def get_classes_in_module(module: ModuleType) -> list[Type]:
     """Get all classes in a module.
@@ -18,13 +16,10 @@ def get_classes_in_module(module: ModuleType) -> list[Type]:
     return classes
 
 
-def check_and_get_obelisk_msg_type(
-    node: Node, msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar]
-) -> Type:
+def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar]) -> Type:
     """Check if a message type is in a module and add it as an attribute to a node in place.
 
     Parameters:
-        node: The node to add the attribute to.
         msg_type_name: The name of the message type to add.
         msg_module_or_type: The module over which we verify the message type. If a TypeVar is passed, we verify that the
             message type is in the bound of the TypeVar.
