@@ -2,12 +2,17 @@
 
 # script flags
 skip_docker=false
+dev_sys_deps=false
 
 for arg in "$@"; do
   case $arg in
     --skip-docker)
       skip_docker=true
       shift # Remove --skip-docker from processing
+      ;;
+    --dev-sys-deps)
+      dev_sys_deps=true
+      shift # Installs development system dependencies
       ;;
     *)
       # Unknown option
@@ -19,22 +24,27 @@ for arg in "$@"; do
 done
 
 # basic dependencies
-sudo apt-get install -y \
-	curl \
-    build-essential \
-    cmake \
-    clang-tools-12 \
-    nano \
-    vim \
-    git \
-    python3-dev \
-    python-is-python3 \
-    python3-pip \
-    python3-argcomplete \
-    mesa-utils \
-    x11-apps \
-    libyaml-dev \
-    locales
+if [ "$dev_sys_deps" = true ]; then
+    echo -e "\033[1;32mInstalling development system dependencies...\033[0m"
+    sudo apt-get install -y \
+        curl \
+        build-essential \
+        cmake \
+        clang-tools-12 \
+        nano \
+        vim \
+        git \
+        python3-dev \
+        python-is-python3 \
+        python3-pip \
+        python3-argcomplete \
+        mesa-utils \
+        x11-apps \
+        libyaml-dev \
+        locales
+else
+    echo -e "\033[1;32mNot installing development system dependencies. To do so, pass the --dev-sys-deps flag.\033[0m"
+fi
 
 # check if skip-docker
 if [ "$skip_docker" = true ]; then
