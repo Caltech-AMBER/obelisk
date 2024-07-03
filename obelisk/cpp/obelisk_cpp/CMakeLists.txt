@@ -17,7 +17,7 @@ find_package(obelisk_estimator_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 # Setup Mujoco path
-set(MUJOCO_VERSION "mujoco-3.1.6" CACHE STRING "mujoco version")
+set(MUJOCO_VERSION "mujoco-3.1.4" CACHE STRING "mujoco version")
 set(MUJOCO_DIR "/home/$ENV{USER}/mujoco/${MUJOCO_VERSION}" CACHE PATH "Path to Mujoco dir")
 message(STATUS "mujoco directory: ${MUJOCO_DIR}")
 

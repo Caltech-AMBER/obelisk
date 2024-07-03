@@ -5,7 +5,7 @@
 namespace obelisk {
     class ObeliskMujocoTester : public ObeliskMujocoRobot<obelisk_control_msgs::msg::PositionSetpoint> {
       public:
-        ObeliskMujocoTester() : ObeliskMujocoRobot("obelisk_sensor_tester") {
+        ObeliskMujocoTester() : ObeliskMujocoRobot("obelisk_mujoco_tester") {
             this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "topic:topic1,timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
             this->set_parameter(rclcpp::Parameter("callback_group_setting", "topic:topic2"));

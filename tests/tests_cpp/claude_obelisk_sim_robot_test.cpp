@@ -19,8 +19,6 @@ class TestObeliskSimRobot : public obelisk::ObeliskSimRobot<obelisk_control_msgs
 
     void ApplyControl(const obelisk_control_msgs::msg::PositionSetpoint& msg) {}
 
-    using ObeliskSimRobot::GetSharedData;
-    using ObeliskSimRobot::SetSharedData;
     using ObeliskSimRobot::stop_thread_;
     using ObeliskSimRobot::true_sim_state_publisher_;
     using ObeliskSimRobot::true_sim_state_timer_;
@@ -40,27 +38,6 @@ TEST_CASE("ObeliskSimRobot Construction and Configuration", "[ObeliskSimRobot]")
 
     REQUIRE(robot.true_sim_state_publisher_ != nullptr);
     REQUIRE(robot.true_sim_state_timer_ != nullptr);
-
-    robot.on_cleanup(rclcpp_lifecycle::State());
-
-    rclcpp::shutdown();
-}
-
-TEST_CASE("ObeliskSimRobot Shared Data", "[ObeliskSimRobot]") {
-    rclcpp::init(0, nullptr);
-
-    TestObeliskSimRobot robot;
-    robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
-
-    robot.on_configure(rclcpp_lifecycle::State());
-
-    std::vector<double> test_data = {1.0, 2.0, 3.0};
-    robot.SetSharedData(test_data);
-
-    std::vector<double> retrieved_data;
-    robot.GetSharedData(retrieved_data);
-
-    REQUIRE(retrieved_data == test_data);
 
     robot.on_cleanup(rclcpp_lifecycle::State());
 

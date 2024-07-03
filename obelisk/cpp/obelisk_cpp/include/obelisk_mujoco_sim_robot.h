@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cstdarg>
 #include <filesystem>
-#include <iostream>
 
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
@@ -11,14 +11,13 @@
 // TODO: Fix issue related to ENV XDG_RUNTIME_DIR=/run/user/1000  # Replace 1000 with your user ID
 
 namespace obelisk {
-
     template <typename ControlMessageT> class ObeliskMujocoRobot : public ObeliskSimRobot<ControlMessageT> {
       public:
         explicit ObeliskMujocoRobot(const std::string& name) : ObeliskSimRobot<ControlMessageT>(name) {
             this->template declare_parameter<std::string>("mujoco_setting", "");
 
-            mujoco_sim_instance_ = this;
-            window_ready_        = false;
+            mujoco_sim_instance_    = this;
+            configuration_complete_ = false;
         }
 
         ~ObeliskMujocoRobot() { mujoco_sim_instance_ = nullptr; }
@@ -45,6 +44,67 @@ namespace obelisk {
             nu_                = GetNumInputs(mujoco_config_map); // Required
             time_step_         = GetTimeSteps(mujoco_config_map);
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
+
+            shared_data_.resize(nu_);
+
+            // set configuration paramters
+
+            configuration_complete_ = true;
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief cleans up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
+            configuration_complete_ = false;
+
+            // Reset data
+            nu_ = -1;
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief shutsdown the node the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
+            configuration_complete_ = false;
+
+            // Reset data
+            nu_ = -1;
+
+            return on_cleanup(prev_state);
+        }
+
+        /**
+         * @brief Apply the control message.
+         * We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
+         * field of a mujoco model. YOU MUST CHECK THIS YOURSELF!
+         */
+        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u); }
+
+        // -----------------------------------------//
+        // ----------- Simulation Entry ----------- //
+        // ---------------------------------------- //
+        /**
+         * @brief Configures the visulaizer and enters the Mujoco simulation loop.
+         */
+        void RunSimulator() override {
+            while (!configuration_complete_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+
+            RCLCPP_INFO_STREAM(this->get_logger(), "Setting up Mujoco visualization.");
 
             // load the mujoco model
             char error[1000] = "Could not load binary model";
@@ -83,62 +143,102 @@ namespace obelisk {
 
             // install GLFW mouse and keyboard callbacks
             glfwSetKeyCallback(window_, ObeliskMujocoRobot::KeyboardCallback);
-
             glfwSetCursorPosCallback(window_, ObeliskMujocoRobot::MouseMoveCallback);
             glfwSetMouseButtonCallback(window_, ObeliskMujocoRobot::MouseButtonCallback);
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
-            // set configuration paramters
-
-            // setup simulator
-
-            window_ready_ = true;
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief cleans up the node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
-            this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief shutsdown the node the node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
-            this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
-
-            return on_cleanup(prev_state);
-        }
-
-        void ApplyControl(const ControlMessageT& msg) override {}
-
-        // -----------------------------------------//
-        // ----------- Simulation Entry ----------- //
-        // ---------------------------------------- //
-        void RunSimulator() override {
-            while (!window_ready_) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            }
+            RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
 
             while (!this->stop_thread_) {
                 if (!glfwWindowShouldClose(window_)) {
+                    //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
+                    //  this loop will finish on time for the next frame to be rendered at 60 fps.
+                    //  Otherwise add a cpu timer and exit this loop when it is time to render.
+                    mjtNum simstart = data_->time;
+                    while (data_->time - simstart < num_steps_per_viz_ * time_step_) {
+                        {
+                            // Get the data from the shared vector safely
+                            std::lock_guard<std::mutex> lock(shared_data_mut_);
+                            for (int i = 0; i < nu_; i++) {
+                                data_->ctrl[i] = shared_data_.at(i);
+                            }
+                        }
+
+                        mj_step(model_, data_);
+                    }
+
+                    // get framebuffer viewport
+                    mjrRect viewport = {0, 0, 0, 0};
+                    glfwGetFramebufferSize(window_, &viewport.width, &viewport.height);
+
+                    // update scene and render
+                    mjv_updateScene(model_, data_, &opt, NULL, &cam, mjCAT_ALL, &scn);
+                    mjr_render(viewport, &scn, &con);
+
+                    // add time stamp in upper-left corner
+                    char stamp[50];
+                    sprintf_arr(stamp, "Time = %.3f", data_->time);
+                    mjr_overlay(mjFONT_NORMAL, mjGRID_TOPLEFT, viewport, stamp, NULL, &con);
+
+                    // TODO (@zolkin): Add option to save the simulation render
+
+                    // swap OpenGL buffers (blocking call due to v-sync)
+                    glfwSwapBuffers(window_);
+
+                    // process pending GUI events, call GLFW callbacks
+                    glfwPollEvents();
                 }
             }
+
+            // TODO: Put this here or in cleanup/shutdown?
+            // free visualization storage
+            mjv_freeScene(&scn);
+            mjr_freeContext(&con);
+
+            // free MuJoCo model and data
+            mj_deleteData(data_);
+            mj_deleteModel(model_);
         }
 
       protected:
       private:
+        // ---------------------------------------------- //
+        // ----------- Multithreading Support ----------- //
+        // ---------------------------------------------- //
+        /**
+         * @brief Safely retrieves the contents of shared data.
+         *
+         * @param data [output] where the shared data will be copied
+         */
+        void GetSharedData(std::vector<double>& data) {
+            std::lock_guard<std::mutex> lock(shared_data_mut_);
+
+            // Copy data out
+            data = shared_data_;
+        }
+
+        /**
+         * @brief Safely set the shared data.
+         *
+         * @param data the data to put into shared_data_
+         */
+        void SetSharedData(const std::vector<double>& data) {
+            std::lock_guard<std::mutex> lock(shared_data_mut_);
+
+            // Copy data in
+            shared_data_ = data;
+        }
+
+        // Helper (see
+        // https://github.com/google-deepmind/mujoco/blob/9107d3b507b2acf593d46c6cd268b5e3994bff6a/src/cc/array_safety.h#L64)
+        template <std::size_t N> static inline int sprintf_arr(char (&dest)[N], const char* format, ...) {
+            std::va_list vargs;
+            va_start(vargs, format);
+            int retval = std::vsnprintf(dest, N, format, vargs);
+            va_end(vargs);
+            return retval;
+        }
+
         // --------------------------------------------- //
         // ----------- Config String Helpers ----------- //
         // --------------------------------------------- //
@@ -303,7 +403,13 @@ namespace obelisk {
         float time_step_;
         int num_steps_per_viz_;
 
-        std::atomic<bool> window_ready_;
+        // Shared data between the main thread and the sim thread
+        std::vector<double> shared_data_;
+
+        // Mutex to manage access to the shared data
+        std::mutex shared_data_mut_;
+
+        std::atomic<bool> configuration_complete_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;

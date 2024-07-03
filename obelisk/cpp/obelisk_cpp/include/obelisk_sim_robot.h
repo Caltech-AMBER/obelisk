@@ -36,8 +36,6 @@ namespace obelisk {
                 true_sim_state_publisher_ = nullptr;
             }
 
-            // // TODO: Move
-            // // shared_data_.resize(n_u_);
             stop_thread_ = false;
 
             // Start the simulator
@@ -55,9 +53,6 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_cleanup(prev_state);
-
-            // Reset data
-            // n_u_ = -1;
 
             // Release the shared pointers
             true_sim_state_publisher_.reset();
@@ -90,30 +85,6 @@ namespace obelisk {
         }
 
       protected:
-        /**
-         * @brief Safely set the shared data.
-         *
-         * @param data the data to put into shared_data_
-         */
-        void SetSharedData(const std::vector<double>& data) {
-            std::lock_guard<std::mutex> lock(shared_data_mut_);
-
-            // Copy data in
-            shared_data_ = data;
-        }
-
-        /**
-         * @brief Safely retrieves the contents of shared data.
-         *
-         * @param data [output] where the shared data will be copied
-         */
-        void GetSharedData(std::vector<double>& data) {
-            std::lock_guard<std::mutex> lock(shared_data_mut_);
-
-            // Copy data out
-            data = shared_data_;
-        }
-
         /**
          * @brief Publish the TrueSimState of the simulator.
          *
@@ -150,14 +121,8 @@ namespace obelisk {
         // Timer to publish the true sim state
         rclcpp::TimerBase::SharedPtr true_sim_state_timer_;
 
-        // Shared data between the main thread and the sim thread
-        std::vector<double> shared_data_;
-
         // Hold the thread where the simulation takes place
         std::thread sim_thread_;
-
-        // Mutex to manage access to the shared data
-        std::mutex shared_data_mut_;
 
         // Flag to signal stopping the thread
         std::atomic<bool> stop_thread_;
