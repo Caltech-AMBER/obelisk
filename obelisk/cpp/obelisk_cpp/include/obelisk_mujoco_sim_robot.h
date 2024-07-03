@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
+#include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
 #include "obelisk_sim_robot.h"
 
 // TODO: Fix issue related to ENV XDG_RUNTIME_DIR=/run/user/1000  # Replace 1000 with your user ID
@@ -22,6 +23,12 @@ namespace obelisk {
 
         ~ObeliskMujocoRobot() { mujoco_sim_instance_ = nullptr; }
 
+        // TODO: Should be we bring up the simulation in configure or activate?
+
+        /**
+         * @brief Configures the node
+         *
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
@@ -47,9 +54,38 @@ namespace obelisk {
 
             shared_data_.resize(nu_);
 
-            // set configuration paramters
+            // Setup the sensors
+            try {
+                ParseSensorString(mujoco_config_map.at("sensor_settings"));
+            } catch (const std::exception& e) {
+                RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
+            }
 
             configuration_complete_ = true;
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief activates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief deactivates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -281,6 +317,140 @@ namespace obelisk {
             }
         }
 
+        void ParseSensorString(std::string sensor_settings) {
+            // Remove {} and []
+            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '{'),
+                                  sensor_settings.end());
+            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '}'),
+                                  sensor_settings.end());
+            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '['),
+                                  sensor_settings.end());
+            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), ']'),
+                                  sensor_settings.end());
+
+            // Break the string by the "+"s.
+            const std::string group_delim = "+";
+            std::vector<std::string> sensor_groups;
+            while (!sensor_settings.empty()) {
+                size_t plus_idx = sensor_settings.find(group_delim);
+                if (plus_idx == std::string::npos) {
+                    plus_idx = sensor_settings.length();
+                }
+                sensor_groups.emplace_back(sensor_settings.substr(0, plus_idx));
+                sensor_settings.erase(0, plus_idx + group_delim.length());
+            }
+
+            for (auto group : sensor_groups) {
+                // Create a new map between the names and their string values
+                const std::string setting_delim = "|";
+                const std::string val_delim     = "=";
+                std::map<std::string, std::string> setting_map;
+
+                size_t val_idx;
+                while (!group.empty()) {
+                    val_idx = group.find(setting_delim);
+                    if (val_idx == std::string::npos) {
+                        val_idx = group.length();
+                    }
+
+                    size_t setting_idx = group.find(val_delim);
+                    if (setting_idx == std::string::npos) {
+                        throw std::runtime_error("Invalid sensor setting string!");
+                    }
+
+                    std::string setting = group.substr(0, setting_idx);
+                    std::string val     = group.substr(setting_idx + 1, val_idx - (setting_idx + 1));
+                    setting_map.emplace(setting, val);
+                    group.erase(0, val_idx + val_delim.length());
+                }
+
+                // The dt for the timer
+                double dt = -1;
+                try {
+                    dt = std::stod(setting_map.at("dt"));
+                    if (dt <= 0) {
+                        throw std::runtime_error("Invalid dt. Must be > 0.");
+                    }
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("No dt provided for a sensor!");
+                }
+
+                // The topic for the publisher
+                std::string topic;
+                try {
+                    topic = setting_map.at("topic");
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("No topic provided for a sensor!");
+                }
+
+                const int depth = this->ObeliskNode::GetHistoryDepth(setting_map);
+
+                std::string sensor_type;
+                try {
+                    sensor_type = setting_map.at("sensor_type");
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("No sensor type provided for a sensor!");
+                }
+
+                std::vector<std::string> sensor_names;
+                const std::string name_delim = "&";
+                try {
+                    std::string names = setting_map.at("sensor_names");
+                    while (!names.empty()) {
+                        size_t plus_idx = names.find(name_delim);
+                        if (plus_idx == std::string::npos) {
+                            plus_idx = names.length();
+                        }
+                        sensor_names.emplace_back(names.substr(0, plus_idx));
+                        names.erase(0, plus_idx + name_delim.length());
+                    }
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("No sensor name was provided for a sensor group!");
+                }
+
+                // Create the timer and publishers with the settings
+                if (sensor_type == "jointpos") {
+                    encoder_pubs_.emplace_back(
+                        ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth));
+
+                    rclcpp::CallbackGroup::SharedPtr cbg =
+                        this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+                    timers_.emplace_back(
+                        this->create_wall_timer(std::chrono::duration<double, std::milli>(dt),
+                                                CreateTimerCallback(sensor_names, encoder_pubs_.back()), cbg));
+                } else {
+                    throw std::runtime_error("Sensor type not supported!");
+                }
+            }
+        }
+
+        template <typename MessageT>
+        std::function<void()>
+        CreateTimerCallback(const std::vector<std::string>& sensor_names,
+                            std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>>& publisher) {
+
+            // TODO: Consider specilializing the lambda function for the specific message (i.e. packing the semantic
+            // message struct)
+            auto cb = [&publisher, sensor_names, this]() {
+                MessageT msg;
+                for (int i = 0; i < sensor_names.size(); i++) {
+                    int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                    if (sensor_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                    }
+
+                    int sensor_addr = this->model_->sensor_adr[sensor_id];
+                    int sensor_dim  = this->model_->sensor_dim[sensor_id];
+
+                    msg.y[i]        = this->data_->sensordata[sensor_addr];
+                }
+
+                publisher->publish(msg);
+            };
+
+            return cb;
+        }
+
         // -------------------------------------- //
         // ----------- GLFW Callbacks ----------- //
         // -------------------------------------- //
@@ -411,9 +581,14 @@ namespace obelisk {
 
         std::atomic<bool> configuration_complete_;
 
+        // Possible publishers
+        std::vector<std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<obelisk_sensor_msgs::msg::JointEncoders>>>
+            encoder_pubs_;
+        std::vector<rclcpp::TimerBase::SharedPtr> timers_;
+
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;
-        static constexpr int STEPS_PER_VIZ_DEFAULT = 5;
+        static constexpr int STEPS_PER_VIZ_DEFAULT = 8;
 
         static constexpr int WINDOW_WIDTH_DEFAULT  = 1200;
         static constexpr int WINDOW_LENGTH_DEFAULT = 900;

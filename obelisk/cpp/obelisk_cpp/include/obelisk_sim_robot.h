@@ -46,6 +46,36 @@ namespace obelisk {
         }
 
         /**
+         * @brief activates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskRobot<ControlMessageT>::on_activate(prev_state);
+            if (true_sim_state_timer_) {
+                true_sim_state_timer_.reset();
+            }
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief deactivates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskRobot<ControlMessageT>::on_deactivate(prev_state);
+            if (true_sim_state_timer_) {
+                true_sim_state_timer_.reset();
+            }
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
          * @brief cleans up the node.
          *
          * @param prev_state the state of the ros node.
@@ -55,10 +85,15 @@ namespace obelisk {
             this->ObeliskRobot<ControlMessageT>::on_cleanup(prev_state);
 
             // Release the shared pointers
-            true_sim_state_publisher_.reset();
-            true_sim_state_timer_.reset();
+            if (true_sim_state_timer_) {
+                true_sim_state_timer_.reset();
+            }
 
-            // TODO: Cleanup the sim thread
+            if (true_sim_state_publisher_) {
+                true_sim_state_publisher_.reset();
+            }
+
+            // Cleanup the sim thread
             bool current_thread_status = stop_thread_;
             stop_thread_               = true;
             if (sim_thread_.joinable()) {
