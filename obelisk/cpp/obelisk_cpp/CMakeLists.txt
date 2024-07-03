@@ -17,7 +17,7 @@ find_package(obelisk_estimator_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 # Setup Mujoco path
-set(MUJOCO_VERSION "mujoco-3.1.4" CACHE STRING "mujoco version")
+set(MUJOCO_VERSION "mujoco-3.1.6" CACHE STRING "mujoco version")
 set(MUJOCO_DIR "/home/$ENV{USER}/mujoco/${MUJOCO_VERSION}" CACHE PATH "Path to Mujoco dir")
 message(STATUS "mujoco directory: ${MUJOCO_DIR}")
 
@@ -44,12 +44,12 @@ set(OBELISK_CPP_HEADER_LIST
         "${OBELISK_CPP_INC}/obelisk_sim_robot.h"
         "${OBELISK_CPP_INC}/obelisk_mujoco_sim_robot")
 
-add_library(ObeliskCpp ${OBELISK_CPP_HEADER_LIST})
-set_target_properties(ObeliskCpp PROPERTIES LINKER_LANGUAGE CXX)
+add_library(ObeliskCpp INTERFACE)
+target_include_directories(ObeliskCpp INTERFACE include)
 
-target_link_libraries(ObeliskCpp PUBLIC mujoco glfw)
+target_link_libraries(ObeliskCpp INTERFACE mujoco glfw)
 
-ament_target_dependencies(ObeliskCpp PUBLIC
+ament_target_dependencies(ObeliskCpp INTERFACE
   rclcpp
   rclcpp_lifecycle
   obelisk_control_msgs
@@ -57,6 +57,6 @@ ament_target_dependencies(ObeliskCpp PUBLIC
   obelisk_sensor_msgs
   std_msgs)
 
-target_include_directories(ObeliskCpp PUBLIC
+target_include_directories(ObeliskCpp INTERFACE
     $<BUILD_INTERFACE:${OBELISK_CPP_INC}>
     $<INSTALL_INTERFACE:$obelisk_cpp/include>)

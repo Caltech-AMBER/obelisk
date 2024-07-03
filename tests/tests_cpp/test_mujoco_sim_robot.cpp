@@ -43,10 +43,6 @@ namespace obelisk {
         }
 
       protected:
-        obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() {
-            obelisk_sensor_msgs::msg::TrueSimState msg;
-            return msg;
-        }
     };
 } // namespace obelisk
 

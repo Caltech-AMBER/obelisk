@@ -25,6 +25,8 @@ namespace obelisk {
             : LifecycleNode(node_name, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
+
+            RCLCPP_INFO_STREAM(this->get_logger(), node_name << " created.");
         };
 
         ObeliskNode(const std::string& node_name, const std::string& namespace_,
@@ -114,6 +116,33 @@ namespace obelisk {
             // Parse the configuration groups for this node
             ParseCallbackGroupConfig(this->get_parameter("callback_group_setting").as_string());
 
+            RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " configured.");
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief cleans up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
+            rclcpp_lifecycle::LifecycleNode::on_activate(prev_state);
+
+            RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " activated.");
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief cleans up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+            rclcpp_lifecycle::LifecycleNode::on_deactivate(prev_state);
+
+            RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " deactivated.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -129,6 +158,7 @@ namespace obelisk {
             // Clear current data
             callback_groups_.clear();
 
+            RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " cleaned up.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -145,6 +175,7 @@ namespace obelisk {
             // Clear current data
             callback_groups_.clear();
 
+            RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " shutdown.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 

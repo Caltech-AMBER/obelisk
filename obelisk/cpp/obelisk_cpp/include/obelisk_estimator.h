@@ -47,6 +47,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskNode::on_activate(prev_state);
             estimator_publisher_->on_activate();
             // TODO: Do anything with the timer?
 
@@ -60,6 +61,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskNode::on_deactivate(prev_state);
             estimator_publisher_->on_deactivate();
             // TODO: Do anything with the timer?
 

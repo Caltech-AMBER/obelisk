@@ -17,7 +17,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_configure(prev_state);
+            this->ObeliskNode::on_configure(prev_state);
 
             // Create the subscriber to the control input
             control_subscriber_ = CreateSubscriptionFromConfigStr<ControlMessageT>(
@@ -41,13 +41,37 @@ namespace obelisk {
         }
 
         /**
+         * @brief activates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskNode::on_deactivate(prev_state);
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief deactivates up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskNode::on_deactivate(prev_state);
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
          * @brief cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_cleanup(prev_state);
+            this->ObeliskNode::on_cleanup(prev_state);
 
             // Release the shared pointers
             control_subscriber_.reset();
@@ -65,7 +89,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_shutdown(prev_state);
+            this->ObeliskNode::on_shutdown(prev_state);
 
             // Release the shared pointers
             control_subscriber_.reset();

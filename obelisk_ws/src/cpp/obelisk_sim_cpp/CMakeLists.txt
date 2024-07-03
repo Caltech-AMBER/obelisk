@@ -7,13 +7,21 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
 
+# Get the other Obelisk library
+include(FetchContent)
+FetchContent_Declare(
+  ObeliskCpp
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/obelisk_cpp
+)
 
-# add_executable(hello_world src/hello_world.cpp)
-# target_link_libraries(hello_world PUBLIC mujoco)
+FetchContent_MakeAvailable(ObeliskCpp)
+
+add_executable(mujoco_sim src/obelisk_mujoco_robot.cpp)
+target_link_libraries(mujoco_sim PUBLIC ObeliskCpp)
+
+ament_target_dependencies(mujoco_sim PUBLIC rclcpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -26,5 +34,9 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+install(TARGETS
+  mujoco_sim
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

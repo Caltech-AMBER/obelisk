@@ -237,6 +237,11 @@ namespace obelisk {
         }
 
       protected:
+        obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() override {
+            obelisk_sensor_msgs::msg::TrueSimState msg;
+            return msg;
+        }
+
       private:
         // ---------------------------------------------- //
         // ----------- Multithreading Support ----------- //
@@ -433,14 +438,13 @@ namespace obelisk {
             // message struct)
             auto cb = [&publisher, sensor_names, this]() {
                 MessageT msg;
-                for (int i = 0; i < sensor_names.size(); i++) {
+                for (size_t i = 0; i < sensor_names.size(); i++) {
                     int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                     if (sensor_id == -1) {
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
                     }
 
                     int sensor_addr = this->model_->sensor_adr[sensor_id];
-                    int sensor_dim  = this->model_->sensor_dim[sensor_id];
 
                     msg.y[i]        = this->data_->sensordata[sensor_addr];
                 }
@@ -598,3 +602,16 @@ namespace obelisk {
     template <typename T> ObeliskMujocoRobot<T>* ObeliskMujocoRobot<T>::mujoco_sim_instance_ = nullptr;
 
 } // namespace obelisk
+
+// TODO: Put back
+// int main(int argc, char* argv[]) {
+//     rclcpp::init(argc, argv);
+//     auto robot =
+//     std::make_shared<obelisk::ObeliskMujocoRobot<obelisk_control_msgs::msg::PositionSetpoint>>("mujoco_sim");
+
+//     rclcpp::executors::MultiThreadedExecutor executor;
+//     executor.add_node(robot->get_node_base_interface());
+//     executor.spin();
+
+//     rclcpp::shutdown();
+// }
