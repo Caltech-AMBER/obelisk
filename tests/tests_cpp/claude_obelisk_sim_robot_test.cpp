@@ -20,7 +20,6 @@ class TestObeliskSimRobot : public obelisk::ObeliskSimRobot<obelisk_control_msgs
     void ApplyControl(const obelisk_control_msgs::msg::PositionSetpoint& msg) {}
 
     using ObeliskSimRobot::GetSharedData;
-    using ObeliskSimRobot::n_u_;
     using ObeliskSimRobot::SetSharedData;
     using ObeliskSimRobot::stop_thread_;
     using ObeliskSimRobot::true_sim_state_publisher_;
@@ -32,14 +31,13 @@ TEST_CASE("ObeliskSimRobot Construction and Configuration", "[ObeliskSimRobot]")
 
     TestObeliskSimRobot robot;
 
-    robot.set_parameter(rclcpp::Parameter("n_u", 3));
     robot.set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "timer_period_sec:0.1"));
     robot.set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:/true_state,history_depth:10"));
+    robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
 
     auto result = robot.on_configure(rclcpp_lifecycle::State());
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-    REQUIRE(robot.n_u_ == 3);
     REQUIRE(robot.true_sim_state_publisher_ != nullptr);
     REQUIRE(robot.true_sim_state_timer_ != nullptr);
 
@@ -52,7 +50,8 @@ TEST_CASE("ObeliskSimRobot Shared Data", "[ObeliskSimRobot]") {
     rclcpp::init(0, nullptr);
 
     TestObeliskSimRobot robot;
-    robot.set_parameter(rclcpp::Parameter("n_u", 3));
+    robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
+
     robot.on_configure(rclcpp_lifecycle::State());
 
     std::vector<double> test_data = {1.0, 2.0, 3.0};
@@ -72,15 +71,14 @@ TEST_CASE("ObeliskSimRobot Cleanup and Shutdown", "[ObeliskSimRobot]") {
     rclcpp::init(0, nullptr);
 
     TestObeliskSimRobot robot;
-    robot.set_parameter(rclcpp::Parameter("n_u", 3));
     robot.set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "timer_period_sec:0.1"));
     robot.set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:/true_state,history_depth:10"));
+    robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
     robot.on_configure(rclcpp_lifecycle::State());
 
     auto cleanup_result = robot.on_cleanup(rclcpp_lifecycle::State());
     REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-    REQUIRE(robot.n_u_ == -1);
     REQUIRE(robot.true_sim_state_publisher_ == nullptr);
     REQUIRE(robot.true_sim_state_timer_ == nullptr);
     REQUIRE(robot.stop_thread_ == true);

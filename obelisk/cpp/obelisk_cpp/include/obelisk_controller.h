@@ -1,3 +1,5 @@
+#pragma once
+
 #include "obelisk_node.h"
 
 namespace obelisk {

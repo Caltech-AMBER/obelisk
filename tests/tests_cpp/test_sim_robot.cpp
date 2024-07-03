@@ -6,10 +6,10 @@ namespace obelisk {
     class ObeliskSimRobotTester : public ObeliskSimRobot<obelisk_control_msgs::msg::PositionSetpoint> {
       public:
         ObeliskSimRobotTester() : ObeliskSimRobot("obelisk_sensor_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "timer_period_sec:1"));
+            this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "topic:topic3,timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
-            this->set_parameter(rclcpp::Parameter("n_u", 2));
+            this->set_parameter(rclcpp::Parameter("callback_group_setting", "topic:topic2"));
+            this->set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
         }
 
         void Configure() {
@@ -39,15 +39,16 @@ namespace obelisk {
 
       protected:
         void ApplyControl(const obelisk_control_msgs::msg::PositionSetpoint& msg) {}
-        void RunSimulator() {
-            REQUIRE(stop_thread_ == false);
-            while (!stop_thread_) {
-                std::cout << "In the thread." << std::endl;
+
+        void RunSimulator() override {
+            REQUIRE(this->stop_thread_ == false);
+            while (!this->stop_thread_) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             REQUIRE(stop_thread_ == true);
         }
+
         obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() {
             obelisk_sensor_msgs::msg::TrueSimState msg;
             return msg;

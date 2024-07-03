@@ -29,6 +29,9 @@ target_include_directories(mujoco INTERFACE ${MUJOCO_DIR}/include/mujoco)
 
 set_property(TARGET mujoco PROPERTY IMPORTED_LOCATION ${MUJOCO_DIR}/lib/libmujoco.so)
 
+# GLFW
+find_package(glfw3 REQUIRED)
+
 
 # Source files
 set(OBELISK_CPP_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
@@ -44,7 +47,7 @@ set(OBELISK_CPP_HEADER_LIST
 add_library(ObeliskCpp ${OBELISK_CPP_HEADER_LIST})
 set_target_properties(ObeliskCpp PROPERTIES LINKER_LANGUAGE CXX)
 
-target_link_libraries(ObeliskCpp PUBLIC mujoco)
+target_link_libraries(ObeliskCpp PUBLIC mujoco glfw)
 
 ament_target_dependencies(ObeliskCpp PUBLIC
   rclcpp

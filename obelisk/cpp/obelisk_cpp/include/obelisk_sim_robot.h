@@ -1,3 +1,5 @@
+#pragma once
+
 #include "obelisk_robot.h"
 #include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 
@@ -7,7 +9,6 @@ namespace obelisk {
 
       public:
         explicit ObeliskSimRobot(const std::string& name) : ObeliskRobot<ControlMessageT>(name) {
-            this->template declare_parameter<int>("n_u", -1);
             this->template declare_parameter<std::string>("timer_true_sim_state_setting", "");
             this->template declare_parameter<std::string>("pub_true_sim_state_setting", "");
             stop_thread_ = false;
@@ -20,12 +21,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_configure(prev_state);
-
-            n_u_ = this->get_parameter("n_u").as_int();
-            if (n_u_ <= 0) {
-                throw std::runtime_error("Invalid control input dimension - must be greater 0!");
-            }
+            this->ObeliskRobot<ControlMessageT>::on_configure(prev_state);
 
             const std::string timer_settings = this->get_parameter("timer_true_sim_state_setting").as_string();
             const std::string pub_settings   = this->get_parameter("pub_true_sim_state_setting").as_string();
@@ -40,11 +36,12 @@ namespace obelisk {
                 true_sim_state_publisher_ = nullptr;
             }
 
-            shared_data_.resize(n_u_);
+            // // TODO: Move
+            // // shared_data_.resize(n_u_);
             stop_thread_ = false;
 
             // Start the simulator
-            sim_thread_ = std::thread(&ObeliskSimRobot::RunSimulator, this);
+            sim_thread_ = std::thread(&ObeliskSimRobot::StartSim, this);
             RCLCPP_INFO_STREAM(this->get_logger(), "Simulation thread started.");
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -57,10 +54,10 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_cleanup(prev_state);
+            this->ObeliskRobot<ControlMessageT>::on_cleanup(prev_state);
 
             // Reset data
-            n_u_ = -1;
+            // n_u_ = -1;
 
             // Release the shared pointers
             true_sim_state_publisher_.reset();
@@ -87,7 +84,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) {
-            ObeliskNode::on_shutdown(prev_state);
+            this->ObeliskRobot<ControlMessageT>::on_shutdown(prev_state);
 
             return on_cleanup(prev_state);
         }
@@ -141,9 +138,11 @@ namespace obelisk {
          */
         virtual void RunSimulator() = 0;
 
+        void StartSim() { this->RunSimulator(); }
+
         // ---------- Member Variables --------- //
         // Number of control inputs
-        int n_u_;
+        // int n_u_;
 
         // Publisher for the true sim state
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<TrueSimState>> true_sim_state_publisher_;
