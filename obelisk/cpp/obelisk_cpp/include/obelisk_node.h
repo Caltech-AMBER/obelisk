@@ -121,7 +121,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief activates up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -134,7 +134,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief deactivates up the node.
          *
          * @param prev_state the state of the ros node.
          */
