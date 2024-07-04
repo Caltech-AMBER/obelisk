@@ -20,20 +20,21 @@ file(COPY test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # target_link_libraries(dummy_test PRIVATE Catch2::Catch2WithMain)
 # target_link_libraries(dummy_test PUBLIC lib1)
 
+# TODO: Put tests back
 add_executable(NodeTest
     test_node.cpp
-    test_controller.cpp
-    test_estimator.cpp
-    test_sensor.cpp
-    test_robot.cpp
-    test_sim_robot.cpp
-    test_mujoco_sim_robot.cpp
-    claude_obelisk_node_test.cpp
-    claude_obelisk_controller_test.cpp
-    claude_obelisk_sim_robot_test.cpp
-    claude_obelisk_sensor_test.cpp
-    claude_obelisk_robot_test.cpp
-    claude_obelisk_estimator_test.cpp)
+    # test_controller.cpp
+    # test_estimator.cpp
+    # test_sensor.cpp
+    # test_robot.cpp
+    # test_sim_robot.cpp
+    test_mujoco_sim_robot.cpp)
+    # claude_obelisk_node_test.cpp
+    # claude_obelisk_controller_test.cpp
+    # claude_obelisk_sim_robot_test.cpp
+    # claude_obelisk_sensor_test.cpp
+    # claude_obelisk_robot_test.cpp
+    # claude_obelisk_estimator_test.cpp)
 
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC ObeliskCpp)

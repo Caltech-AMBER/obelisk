@@ -34,9 +34,6 @@ namespace obelisk {
                 this->get_parameter("sub_est_setting").as_string(),
                 std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
 
-            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
-                                                          std::bind(&ObeliskController::ComputeControl, this));
-
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -49,7 +46,10 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_activate(prev_state);
             control_publisher_->on_activate();
-            // TODO: Do anything with the timer?
+
+            // Moved the timer creation here so we don't call publish before it is activated
+            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
+                                                          std::bind(&ObeliskController::ComputeControl, this));
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -63,7 +63,11 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_deactivate(prev_state);
             control_publisher_->on_deactivate();
-            // TODO: Do anything with the timer?
+
+            if (control_timer_) {
+                control_timer_->cancel();
+                control_timer_.reset();
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -80,7 +84,11 @@ namespace obelisk {
             // Release the shared pointers
             control_publisher_.reset();
             state_estimator_subscriber_.reset();
-            control_timer_.reset();
+
+            if (control_timer_) {
+                control_timer_->cancel();
+                control_timer_.reset();
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -97,7 +105,11 @@ namespace obelisk {
             // Release the shared pointers
             control_publisher_.reset();
             state_estimator_subscriber_.reset();
-            control_timer_.reset();
+
+            if (control_timer_) {
+                control_timer_->cancel();
+                control_timer_.reset();
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }

@@ -19,6 +19,7 @@ namespace obelisk {
 
             mujoco_sim_instance_    = this;
             configuration_complete_ = false;
+            mujoco_setup_           = false;
         }
 
         ~ObeliskMujocoRobot() { mujoco_sim_instance_ = nullptr; }
@@ -29,8 +30,8 @@ namespace obelisk {
          * @brief Configures the node
          *
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
@@ -57,14 +58,14 @@ namespace obelisk {
 
             shared_data_.resize(nu_);
 
+            configuration_complete_ = true;
+
             // Setup the sensors
             try {
                 ParseSensorString(mujoco_config_map.at("sensor_settings"));
             } catch (const std::exception& e) {
                 RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
             }
-
-            configuration_complete_ = true;
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -74,9 +75,17 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
+
+            for (auto pub : encoder_pubs_) {
+                if (pub) {
+                    pub->on_activate();
+                }
+            }
+
+            // TODO: Do we want to create the timers here?
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -86,9 +95,21 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
+            for (auto pub : encoder_pubs_) {
+                if (pub) {
+                    pub->on_deactivate();
+                }
+            }
+
+            for (auto timer : timers_) {
+                if (timer) {
+                    timer->cancel();
+                    timer.reset();
+                }
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -98,13 +119,20 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
             configuration_complete_ = false;
 
             // Reset data
             nu_ = -1;
+
+            for (auto timer : timers_) {
+                if (timer) {
+                    timer->cancel();
+                    timer.reset();
+                }
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -114,13 +142,20 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
             configuration_complete_ = false;
 
             // Reset data
             nu_ = -1;
+
+            for (auto timer : timers_) {
+                if (timer) {
+                    timer->cancel();
+                    timer.reset();
+                }
+            }
 
             return on_cleanup(prev_state);
         }
@@ -186,6 +221,7 @@ namespace obelisk {
             glfwSetMouseButtonCallback(window_, ObeliskMujocoRobot::MouseButtonCallback);
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
+            mujoco_setup_ = true;
             RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
 
             while (!this->stop_thread_) {
@@ -203,6 +239,7 @@ namespace obelisk {
                             }
                         }
 
+                        std::lock_guard<std::mutex> lock(sensor_data_mut_);
                         mj_step(model_, data_);
                     }
 
@@ -348,6 +385,11 @@ namespace obelisk {
                 sensor_settings.erase(0, plus_idx + group_delim.length());
             }
 
+            // Wait for mujoco setup to complete
+            while (!mujoco_setup_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+
             for (auto group : sensor_groups) {
                 // Create a new map between the names and their string values
                 const std::string setting_delim = "|";
@@ -391,6 +433,8 @@ namespace obelisk {
                     throw std::runtime_error("No topic provided for a sensor!");
                 }
 
+                RCLCPP_INFO_STREAM(this->get_logger(), "Sensor topic: " << topic);
+
                 const int depth = this->ObeliskNode::GetHistoryDepth(setting_map);
 
                 std::string sensor_type;
@@ -418,14 +462,14 @@ namespace obelisk {
 
                 // Create the timer and publishers with the settings
                 if (sensor_type == "jointpos") {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Creating pub and timer.");
                     encoder_pubs_.emplace_back(
                         ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth));
 
-                    rclcpp::CallbackGroup::SharedPtr cbg =
-                        this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-                    timers_.emplace_back(
-                        this->create_wall_timer(std::chrono::duration<double, std::milli>(dt),
-                                                CreateTimerCallback(sensor_names, encoder_pubs_.back()), cbg));
+                    callback_groups_.emplace_back(this->create_callback_group(rclcpp::CallbackGroupType::Reentrant));
+                    timers_.emplace_back(this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback(sensor_names, encoder_pubs_.back()), callback_groups_.back()));
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
@@ -440,7 +484,10 @@ namespace obelisk {
             // TODO: Consider specilializing the lambda function for the specific message (i.e. packing the semantic
             // message struct)
             auto cb = [&publisher, sensor_names, this]() {
-                MessageT msg;
+                obelisk_sensor_msgs::msg::JointEncoders msg;
+                msg.y.resize(sensor_names.size());
+
+                std::lock_guard<std::mutex> lock(sensor_data_mut_);
                 for (size_t i = 0; i < sensor_names.size(); i++) {
                     int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                     if (sensor_id == -1) {
@@ -448,13 +495,12 @@ namespace obelisk {
                     }
 
                     int sensor_addr = this->model_->sensor_adr[sensor_id];
-
-                    msg.y[i]        = this->data_->sensordata[sensor_addr];
+                    msg.y.at(i)     = this->data_->sensordata[sensor_addr];
                 }
-
                 publisher->publish(msg);
             };
 
+            RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created");
             return cb;
         }
 
@@ -585,13 +631,17 @@ namespace obelisk {
 
         // Mutex to manage access to the shared data
         std::mutex shared_data_mut_;
+        std::mutex sensor_data_mut_;
 
         std::atomic<bool> configuration_complete_;
+        std::atomic<bool> mujoco_setup_;
 
         // Possible publishers
         std::vector<std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<obelisk_sensor_msgs::msg::JointEncoders>>>
             encoder_pubs_;
         std::vector<rclcpp::TimerBase::SharedPtr> timers_;
+
+        std::vector<rclcpp::CallbackGroup::SharedPtr> callback_groups_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;
@@ -605,16 +655,3 @@ namespace obelisk {
     template <typename T> ObeliskMujocoRobot<T>* ObeliskMujocoRobot<T>::mujoco_sim_instance_ = nullptr;
 
 } // namespace obelisk
-
-// TODO: Put back
-// int main(int argc, char* argv[]) {
-//     rclcpp::init(argc, argv);
-//     auto robot =
-//     std::make_shared<obelisk::ObeliskMujocoRobot<obelisk_control_msgs::msg::PositionSetpoint>>("mujoco_sim");
-
-//     rclcpp::executors::MultiThreadedExecutor executor;
-//     executor.add_node(robot->get_node_base_interface());
-//     executor.spin();
-
-//     rclcpp::shutdown();
-// }

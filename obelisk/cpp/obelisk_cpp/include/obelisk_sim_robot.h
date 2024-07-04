@@ -27,8 +27,6 @@ namespace obelisk {
             const std::string pub_settings   = this->get_parameter("pub_true_sim_state_setting").as_string();
 
             if (timer_settings != "" && pub_settings != "") {
-                true_sim_state_timer_ = this->CreateWallTimerFromConfigStr(
-                    timer_settings, std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
                 true_sim_state_publisher_ = this->template CreatePublisherFromConfigStr<TrueSimState>(pub_settings);
             } else {
                 RCLCPP_WARN_STREAM(this->get_logger(), "No true simulation state timer/publisher configured.");
@@ -53,8 +51,14 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_activate(prev_state);
-            if (true_sim_state_timer_) {
-                true_sim_state_timer_.reset();
+
+            if (true_sim_state_publisher_) {
+                true_sim_state_publisher_->on_activate();
+
+                // Moved the creation of the timer here so that we only started it when the publisher is activated
+                true_sim_state_timer_ =
+                    this->CreateWallTimerFromConfigStr(this->get_parameter("timer_true_sim_state_setting").as_string(),
+                                                       std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -69,6 +73,7 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_deactivate(prev_state);
             if (true_sim_state_timer_) {
+                true_sim_state_timer_->cancel();
                 true_sim_state_timer_.reset();
             }
 
@@ -86,6 +91,7 @@ namespace obelisk {
 
             // Release the shared pointers
             if (true_sim_state_timer_) {
+                true_sim_state_timer_->cancel();
                 true_sim_state_timer_.reset();
             }
 

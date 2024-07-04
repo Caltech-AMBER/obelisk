@@ -47,7 +47,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
             const rclcpp_lifecycle::State& prev_state) {
-            this->ObeliskNode::on_deactivate(prev_state);
+            this->ObeliskNode::on_activate(prev_state);
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
