@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(obelisk_sim_cpp)
+project(obelisk_sensing_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,7 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
 # Get the Obelisk library
 include(FetchContent)
@@ -17,11 +19,6 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(ObeliskCpp)
-
-add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
-target_link_libraries(obelisk_mujoco_robot PUBLIC ObeliskCpp)
-
-ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -34,9 +31,5 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-install(TARGETS
-  obelisk_mujoco_robot
-  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

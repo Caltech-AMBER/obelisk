@@ -10,7 +10,7 @@ namespace obelisk {
             this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
             this->set_parameter(rclcpp::Parameter("callback_group_setting", "topic:topic2"));
             this->set_parameter(rclcpp::Parameter(
-                "mujoco_setting", "model_xml_path:models/dummy/"
+                "mujoco_setting", "model_xml_path:dummy/"
                                   "dummy.xml,n_u:1,sensor_settings:[{group_name=group1|dt=0.01|topic=topic1|sensor_"
                                   "type=jointpos|sensor_names=sensor_joint1&sensor_joint2+group_name=group2|topic="
                                   "topic2|dt=0.5|sensor_type=jointpos|sensor_names=sensor_joint3}]"));

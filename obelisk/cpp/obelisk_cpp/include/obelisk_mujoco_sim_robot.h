@@ -42,11 +42,14 @@ namespace obelisk {
             // Search for the model
             if (!std::filesystem::exists(xml_path_)) {
                 if (const char* obelisk_root = std::getenv("OBELISK_ROOT")) {
+                    xml_path_ = "models" / xml_path_;
                     xml_path_ = static_cast<std::string>(obelisk_root) / xml_path_;
                 } else {
                     throw std::runtime_error("OBELISK_ROOT environment variable not set. Run the dev_setup.sh script!");
                 }
             }
+
+            RCLCPP_INFO_STREAM(this->get_logger(), "XML path: " << xml_path_);
 
             nu_                = GetNumInputs(mujoco_config_map); // Required
             time_step_         = GetTimeSteps(mujoco_config_map);
