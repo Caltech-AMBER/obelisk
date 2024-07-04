@@ -238,18 +238,16 @@ namespace obelisk {
          *
          * @return the timer.
          */
-        template <typename DurationT = std::milli, typename CallbackT>
+        template <typename CallbackT>
         typename rclcpp::GenericTimer<CallbackT>::SharedPtr CreateWallTimerFromConfigStr(const std::string& config,
                                                                                          CallbackT&& callback) {
             // Finest frequency is determined by DurationT
             using namespace std::chrono_literals;
 
-            const auto config_map   = ParseConfigStr(config);
-            const double period_sec = GetPeriod(config_map);          // Period in seconds
-            const auto period_dur =
-                std::chrono::duration<double, DurationT>(period_sec); // Convert period str to DurationT
+            const auto config_map                = ParseConfigStr(config);
+            const double period_sec              = GetPeriod(config_map); // Period in seconds
 
-            rclcpp::CallbackGroup::SharedPtr cbg = nullptr;           // default group
+            rclcpp::CallbackGroup::SharedPtr cbg = nullptr;               // default group
             try {
                 // Get the callback group based on the string name
                 cbg = callback_groups_.at(GetCallbackGroupName(config_map));
@@ -257,7 +255,8 @@ namespace obelisk {
             }
 
             // Create the timer
-            return this->create_wall_timer(period_dur, std::move(callback), cbg);
+            return this->create_wall_timer(std::chrono::microseconds(static_cast<uint>(1e6 * period_sec)),
+                                           std::move(callback), cbg);
         }
 
         /**
@@ -355,7 +354,12 @@ namespace obelisk {
          */
         double GetPeriod(const std::map<std::string, std::string>& config_map) {
             try {
-                return std::stod(config_map.at("timer_period_sec"));
+                double period = std::stod(config_map.at("timer_period_sec"));
+                if (period <= 0) {
+                    throw std::runtime_error("Period must be >= 0!");
+                }
+
+                return period;
             } catch (const std::exception& e) {
                 throw std::runtime_error("Invalid timer period time provided");
             }
