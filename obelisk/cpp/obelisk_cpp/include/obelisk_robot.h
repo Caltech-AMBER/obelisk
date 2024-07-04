@@ -15,8 +15,8 @@ namespace obelisk {
          * registers the control_subscriver_. Also makes a call to ObeliskNode on configure
          * to parse and create the callback group map.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_configure(prev_state);
 
             // Create the subscriber to the control input
@@ -45,8 +45,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_deactivate(prev_state);
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -57,8 +57,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_deactivate(prev_state);
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -69,8 +69,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_cleanup(prev_state);
 
             // Release the shared pointers
@@ -87,8 +87,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
+            const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_shutdown(prev_state);
 
             // Release the shared pointers

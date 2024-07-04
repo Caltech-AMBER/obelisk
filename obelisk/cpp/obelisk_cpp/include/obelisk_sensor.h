@@ -9,8 +9,8 @@ namespace obelisk {
             // this->declare_parameter<std::vector<std::string>>("pub_sensor_setting", {""});
         }
 
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
+            const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
             // pub_sensor_config_strs_ = this->get_parameter("pub_sensor_setting").as_string_array();
@@ -36,8 +36,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
+            const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_cleanup(prev_state);
 
             // Clear the config strings
@@ -51,8 +51,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
+            const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_shutdown(prev_state);
 
             // Clear the config strings

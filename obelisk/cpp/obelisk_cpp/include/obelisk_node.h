@@ -109,8 +109,8 @@ namespace obelisk {
          *
          * @return success if everything is executed.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
+            const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_configure(prev_state);
 
             // Parse the configuration groups for this node
@@ -125,8 +125,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
+            const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_activate(prev_state);
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " activated.");
@@ -138,8 +138,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
+            const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_deactivate(prev_state);
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " deactivated.");
@@ -151,8 +151,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
+            const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_cleanup(prev_state);
 
             // Clear current data
@@ -169,8 +169,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
+            const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_shutdown(prev_state);
             // Clear current data
             callback_groups_.clear();
