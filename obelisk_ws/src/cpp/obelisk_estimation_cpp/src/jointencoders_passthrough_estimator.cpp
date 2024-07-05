@@ -7,11 +7,21 @@ class JointEncodersPassthrough : public obelisk::ObeliskEstimator<obelisk_estima
   public:
     JointEncodersPassthrough(const std::string& name)
         : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
-        this->create_subscription<obelisk_sensor_msgs::msg::JointEncoders>(
-            "joint_sub", 10, std::bind(&JointEncodersPassthrough::JointEncoderCallback, this, std::placeholders::_1));
+        this->declare_parameter<std::string>("sub_sensor_setting", "");
     }
 
   protected:
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+    on_configure(const rclcpp_lifecycle::State& prev_state) {
+        this->ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>::on_configure(prev_state);
+
+        sensor_sub_ = this->ObeliskNode::CreateSubscriptionFromConfigStr<obelisk_sensor_msgs::msg::JointEncoders>(
+            this->get_parameter("sub_sensor_setting").as_string(),
+            std::bind(&JointEncodersPassthrough::JointEncoderCallback, this, std::placeholders::_1));
+
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+    }
+
     void JointEncoderCallback(const obelisk_sensor_msgs::msg::JointEncoders& msg) { joint_encoders_ = msg.y; }
 
     obelisk_estimator_msgs::msg::EstimatedState ComputeStateEstimate() override {
@@ -26,6 +36,7 @@ class JointEncodersPassthrough : public obelisk::ObeliskEstimator<obelisk_estima
 
   private:
     std::vector<double> joint_encoders_;
+    typename rclcpp::Subscription<obelisk_sensor_msgs::msg::JointEncoders>::SharedPtr sensor_sub_;
 };
 
 int main(int argc, char* argv[]) {

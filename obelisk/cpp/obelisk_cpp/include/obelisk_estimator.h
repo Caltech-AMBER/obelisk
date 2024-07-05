@@ -8,7 +8,6 @@ namespace obelisk {
         explicit ObeliskEstimator(const std::string& name) : ObeliskNode(name) {
             this->declare_parameter<std::string>("timer_est_setting", "");
             this->declare_parameter<std::string>("pub_est_setting", "");
-            // this->declare_parameter<std::vector<std::string>>("sub_sensor_settings", {""});
         }
 
         /**
@@ -93,9 +92,6 @@ namespace obelisk {
                 estimator_timer_.reset(); // Release the timer
             }
 
-            // Clear the config strings
-            sub_sensor_config_strs_.clear();
-
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -116,9 +112,6 @@ namespace obelisk {
                 estimator_timer_.reset(); // Release the timer
             }
 
-            // Clear the config strings
-            sub_sensor_config_strs_.clear();
-
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -128,8 +121,6 @@ namespace obelisk {
          * automatically registered as the timer callback.
          */
         virtual EstimatorMessageT ComputeStateEstimate() = 0;
-
-        std::vector<std::string> sub_sensor_config_strs_;
 
         // Publishes the estimated state
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<EstimatorMessageT>> estimator_publisher_;
