@@ -16,8 +16,55 @@
  * A lifecycle node whose publishers and subscribers can only publish and
  * subscribe to Obelisk messages.
  */
-// TODO: Make all settings -> setting if it not an array
 namespace obelisk {
+    namespace internal {
+        // ------------------------------------ //
+        // ------------ Publishers ------------ //
+        // ------------------------------------ //
+        class ObeliskPublisherBase {
+          public:
+            virtual void OnActivate()   = 0;
+            virtual void OnDeactivate() = 0;
+            virtual void Release()      = 0;
+
+          protected:
+          private:
+        };
+
+        template <typename MessageT> class ObeliskPublisher : public ObeliskPublisherBase {
+          public:
+            ObeliskPublisher(typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr publisher)
+                : publisher_(publisher) {}
+
+            void OnActivate() override { publisher_->on_activate(); }
+
+            void OnDeactivate() override { publisher_->on_deactivate(); }
+
+            void Release() override { publisher_.reset(); }
+
+            typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr GetPublisher() { return publisher_; }
+
+          protected:
+          private:
+            typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr publisher_;
+        };
+
+        struct ObeliskPublisherInfo {
+            std::string ros_param;
+            std::string msg_type;
+            std::function<std::shared_ptr<ObeliskPublisherBase>(const std::string& config_str)> creator;
+        };
+
+        // ------------------------------------- //
+        // ------------ Subscribers ------------ //
+        // ------------------------------------- //
+        // No need for a base because we don't call a function in all the on_* functions
+
+        // ------------------------------------- //
+        // --------------- Timers -------------- //
+        // ------------------------------------- //
+    } // namespace internal
+
     class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
       public:
         explicit ObeliskNode(const std::string& node_name, const rclcpp::NodeOptions& options = rclcpp::NodeOptions(),
@@ -36,6 +83,52 @@ namespace obelisk {
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
         };
+
+        /**
+         * @brief Registers a publisher with the node so that the node can handle all configuration, activation, and
+         * cleanup.
+         *
+         * Adds the publisher to the registered_publishers_ map, so the publisher can be created at configure time.
+         *
+         * @param ros_param the string name of the ros parameter
+         * @param key the string key used to refer to (and get) this publisher
+         * @param default_config_str (optional) string giving the default configuration
+         */
+        template <typename MessageT>
+        void RegisterPublisher(const std::string& ros_param, const std::string& key,
+                               const std::string& default_config_str = "") {
+            this->declare_parameter(ros_param, default_config_str);
+
+            internal::ObeliskPublisherInfo info;
+            info.ros_param = ros_param;
+            info.msg_type  = MessageT::MESSAGE_NAME;
+            info.creator   = [this](const std::string& config_str) {
+                auto publisher = this->CreatePublisherFromConfigStr<MessageT>(config_str);
+                return std::make_shared<internal::ObeliskPublisher<MessageT>>(publisher);
+            };
+
+            registered_publishers_[key] = info;
+        }
+
+        /**
+         * @brief Get the publisher associated with the key.
+         *
+         * @param key the string key
+         */
+        template <typename MessageT>
+        typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr GetPublisher(const std::string& key) {
+            auto it = publishers_.find(key);
+            if (it != publishers_.end()) {
+                auto pub = std::dynamic_pointer_cast<internal::ObeliskPublisher<MessageT>>(it->second);
+                if (pub) {
+                    return pub->GetPublisher();
+                } else {
+                    throw std::runtime_error("Publisher is empty!");
+                }
+            }
+
+            throw std::runtime_error("Publisher not found for the key!");
+        }
 
         // TODO (@zolkin): Should this be public or protected?
         /**
@@ -116,6 +209,8 @@ namespace obelisk {
             // Parse the configuration groups for this node
             ParseCallbackGroupConfig(this->get_parameter("callback_group_setting").as_string());
 
+            CreatePublishers();
+
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " configured.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -129,6 +224,10 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_activate(prev_state);
 
+            for (auto& [key, pub] : publishers_) {
+                pub->OnActivate();
+            }
+
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " activated.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -141,6 +240,10 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
             const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_deactivate(prev_state);
+
+            for (auto& [key, pub] : publishers_) {
+                pub->OnDeactivate();
+            }
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " deactivated.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -158,6 +261,14 @@ namespace obelisk {
             // Clear current data
             callback_groups_.clear();
 
+            // Clean up publishers
+            for (auto& [key, pub] : publishers_) {
+                pub->Release();
+            }
+            publishers_.clear();
+            registered_publishers_
+                .clear(); // TODO: Consider if this should be called, or if I should leave this in place
+
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " cleaned up.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -172,14 +283,32 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
             const rclcpp_lifecycle::State& prev_state) {
             rclcpp_lifecycle::LifecycleNode::on_shutdown(prev_state);
+
             // Clear current data
             callback_groups_.clear();
+
+            // Clean up publishers
+            for (auto& [key, pub] : publishers_) {
+                pub->Release();
+            }
+            publishers_.clear();
+            registered_publishers_
+                .clear(); // TODO: Consider if this should be called, or if I should leave this in place
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " shutdown.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
       protected:
+        /**
+         * @brief Creates all the registered publishers.
+         */
+        void CreatePublishers() {
+            for (const auto& [key, info] : registered_publishers_) {
+                publishers_[key] = info.creator(this->get_parameter(info.ros_param).as_string());
+            }
+        }
+
         /**
          * @brief Create a subscriber from a configuration string.
          *
@@ -433,6 +562,10 @@ namespace obelisk {
 
         // Map callback group names to their callbacks
         std::map<std::string, rclcpp::CallbackGroup::SharedPtr> callback_groups_;
+
+        // Hold all the publishers
+        std::unordered_map<std::string, internal::ObeliskPublisherInfo> registered_publishers_;
+        std::unordered_map<std::string, std::shared_ptr<internal::ObeliskPublisherBase>> publishers_;
 
       private:
         // --------- Member Variables --------- //

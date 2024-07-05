@@ -5,32 +5,25 @@
 namespace obelisk {
     class ObeliskSensor : public ObeliskNode {
       public:
-        explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) {
-            // this->declare_parameter<std::vector<std::string>>("pub_sensor_setting", {""});
-        }
+        explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) { has_sensor_pub_ = false; }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
             const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
-            // pub_sensor_config_strs_ = this->get_parameter("pub_sensor_setting").as_string_array();
+            // TODO (@zolkin): Use the MESSAGE_NAME field (stored in info.msg_type in registered_publishers_) to
+            // determine if the publisher is publishing a sensor
+            //  for now, just going to check if its empty
+            has_sensor_pub_ = !registered_publishers_.empty();
 
-            // // If there are no string, or just the default one, then warn the user
-            // if ((!pub_sensor_config_strs_.empty() && pub_sensor_config_strs_.at(0) == "") ||
-            //     pub_sensor_config_strs_.empty()) {
-            //     throw std::runtime_error("No configuration strings were provided for the sensor publishers.");
-            // }
-            // The downstream user must create all their sensor subscribers
-
-            // TODO (@zolkin): Will want to add automatic registration of publishers here.
-            //  The key is that the publishers publish different types and thus everything is of a different type
-            //  I think the way to go about this is to use tuplecat to create a tuple with all the resulting publishers.
-            //  This can be done inside of a function that is called from a std::apply (the message types are already in
-            //  a tuple). Then the hardpart is creating compile indicies and mapping them to the names.
+            if (!has_sensor_pub_) {
+                throw std::runtime_error("Need a sensor publisher in an Obelisk Sensor Node!");
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
+        // TODO: Remove when we remove all need for the super call (see issue #35).
         /**
          * @brief cleans up the node.
          *
@@ -39,9 +32,6 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
             const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_cleanup(prev_state);
-
-            // Clear the config strings
-            pub_sensor_config_strs_.clear();
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -55,14 +45,11 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_shutdown(prev_state);
 
-            // Clear the config strings
-            pub_sensor_config_strs_.clear();
-
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
       protected:
-        std::vector<std::string> pub_sensor_config_strs_;
+        bool has_sensor_pub_;
 
       private:
     };

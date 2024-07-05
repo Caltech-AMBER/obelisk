@@ -22,7 +22,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
 
         msg.u.emplace_back(sin(time_sec));
 
-        this->control_publisher_->publish(msg);
+        this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->pub_key_)->publish(msg);
 
         return msg;
     };

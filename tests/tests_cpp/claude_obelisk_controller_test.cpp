@@ -17,7 +17,6 @@ class TestObeliskController : public obelisk::ObeliskController<obelisk_control_
     void UpdateXHat(const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
 
     // Expose protected members for testing
-    using ObeliskController::control_publisher_;
     using ObeliskController::control_timer_;
     using ObeliskController::state_estimator_subscriber_;
 };
@@ -36,7 +35,6 @@ TEST_CASE("ObeliskController Configuration", "[ObeliskController]") {
     auto result = controller.on_configure(rclcpp_lifecycle::State());
 
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-    REQUIRE(controller.control_publisher_ != nullptr);
     REQUIRE(controller.state_estimator_subscriber_ != nullptr);
     REQUIRE(controller.control_timer_ != nullptr);
 
@@ -92,7 +90,6 @@ TEST_CASE("ObeliskController Cleanup", "[ObeliskController]") {
     auto result = controller.on_cleanup(rclcpp_lifecycle::State());
 
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-    REQUIRE(controller.control_publisher_ == nullptr);
     REQUIRE(controller.state_estimator_subscriber_ == nullptr);
     REQUIRE(controller.control_timer_ == nullptr);
     rclcpp::shutdown();
@@ -112,7 +109,6 @@ TEST_CASE("ObeliskController Shutdown", "[ObeliskController]") {
     auto result = controller.on_shutdown(rclcpp_lifecycle::State());
 
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-    REQUIRE(controller.control_publisher_ == nullptr);
     REQUIRE(controller.state_estimator_subscriber_ == nullptr);
     REQUIRE(controller.control_timer_ == nullptr);
     rclcpp::shutdown();

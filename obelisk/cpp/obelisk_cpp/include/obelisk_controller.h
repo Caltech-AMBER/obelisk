@@ -6,11 +6,14 @@ namespace obelisk {
 
     template <typename ControlMessageT, typename EstimatorMessageT> class ObeliskController : public ObeliskNode {
       public:
-        explicit ObeliskController(const std::string& name) : ObeliskNode(name) {
+        explicit ObeliskController(const std::string& name, const std::string& pub_key = "pub_ctrl",
+                                   const std::string& est_key = "sub_est", const std::string& timer_key = "timer_ctrl")
+            : ObeliskNode(name), pub_key_(pub_key), est_key_(est_key), timer_key_(timer_key) {
             // Declare all paramters
             this->declare_parameter<std::string>("timer_ctrl_setting", "");
-            this->declare_parameter<std::string>("pub_ctrl_setting", "");
             this->declare_parameter<std::string>("sub_est_setting", "");
+
+            this->RegisterPublisher<ControlMessageT>("pub_ctrl_setting", pub_key_);
         }
 
         /**
@@ -27,8 +30,8 @@ namespace obelisk {
             ObeliskNode::on_configure(prev_state);
 
             // Create the publishers, subscribers, and timers
-            control_publisher_ =
-                CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_setting").as_string());
+            // control_publisher_ =
+            //     CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_setting").as_string());
 
             control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
                                                           std::bind(&ObeliskController::ComputeControl, this));
@@ -49,7 +52,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_activate(prev_state);
-            control_publisher_->on_activate();
+            // control_publisher_->on_activate();
             if (control_timer_) {
                 control_timer_->reset(); // start the timer
             }
@@ -65,7 +68,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_deactivate(prev_state);
-            control_publisher_->on_deactivate();
+            // control_publisher_->on_deactivate();
 
             if (control_timer_) {
                 control_timer_->cancel(); // stop the timer
@@ -84,7 +87,7 @@ namespace obelisk {
             ObeliskNode::on_cleanup(prev_state);
 
             // Release the shared pointers
-            control_publisher_.reset();
+            // control_publisher_.reset();
             state_estimator_subscriber_.reset();
 
             if (control_timer_) {
@@ -105,7 +108,7 @@ namespace obelisk {
             ObeliskNode::on_shutdown(prev_state);
 
             // Release the shared pointers
-            control_publisher_.reset();
+            // control_publisher_.reset();
             state_estimator_subscriber_.reset();
 
             if (control_timer_) {
@@ -130,13 +133,17 @@ namespace obelisk {
         virtual void UpdateXHat(const EstimatorMessageT& msg) = 0;
 
         // publishes the control actions
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<ControlMessageT>> control_publisher_;
+        // std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<ControlMessageT>> control_publisher_;
 
         // subscribes to the state estimate messages
         typename rclcpp::Subscription<EstimatorMessageT>::SharedPtr state_estimator_subscriber_;
 
         // timer to activate ComputeControl
         rclcpp::TimerBase::SharedPtr control_timer_;
+
+        const std::string pub_key_;
+        const std::string est_key_;
+        const std::string timer_key_;
 
       private:
     };
