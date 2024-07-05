@@ -8,20 +8,15 @@ namespace obelisk {
         ObeliskEstimatorTester() : ObeliskEstimator("obelisk_estimator_tester") {
             this->set_parameter(rclcpp::Parameter("timer_est_setting", "timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_est_setting", "topic:topic1"));
-            // this->set_parameter(
-            //     rclcpp::Parameter("sub_sensor_settings", std::vector<std::string>{"topic:topic2", "topic:topic3"}));
             this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
         }
 
         void Configure() {
-            REQUIRE(this->estimator_publisher_ == nullptr);
-            REQUIRE(this->estimator_timer_ == nullptr);
-
             REQUIRE(this->on_configure(this->get_current_state()) ==
                     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-            REQUIRE(this->estimator_publisher_ != nullptr);
-            REQUIRE(this->estimator_timer_ != nullptr);
+            REQUIRE(this->GetPublisher<obelisk_estimator_msgs::msg::EstimatedState>(this->est_pub_key_) != nullptr);
+            REQUIRE(this->GetTimer(this->est_timer_key_) != nullptr);
         }
 
         void Activate() {

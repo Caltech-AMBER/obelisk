@@ -11,7 +11,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
                                      obelisk_estimator_msgs::msg::EstimatedState>(name) {}
 
   protected:
-    void UpdateXHat(const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
+    void UpdateXHat(__attribute__((unused)) const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
 
     obelisk_control_msgs::msg::PositionSetpoint ComputeControl() override {
         obelisk_control_msgs::msg::PositionSetpoint msg;
@@ -22,7 +22,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
 
         msg.u.emplace_back(sin(time_sec));
 
-        this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->pub_key_)->publish(msg);
+        this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_)->publish(msg);
 
         return msg;
     };

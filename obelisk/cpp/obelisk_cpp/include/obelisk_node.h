@@ -84,6 +84,11 @@ namespace obelisk {
         // ------------------------------------- //
         // --------------- Timers -------------- //
         // ------------------------------------- //
+        struct ObeliskTimerInfo {
+            std::string ros_param;
+            std::function<rclcpp::TimerBase::SharedPtr(const std::string&)> creator;
+        };
+
     } // namespace internal
 
     /**
@@ -138,7 +143,7 @@ namespace obelisk {
             }
 
             return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT, AllocatorT>(topic_name, qos, options);
-        };
+        }
 
         /**
          * @brief Creates a subscriber, but first verifies if it is a Obelisk
@@ -173,7 +178,7 @@ namespace obelisk {
             return rclcpp_lifecycle::LifecycleNode::create_subscription<MessageT, CallbackT, AllocatorT, SubscriptionT,
                                                                         MessageMemoryStrategyT>(
                 topic_name, qos, std::move(callback), options, msg_mem_strat);
-        };
+        }
 
         /**
          * @brief Registers a publisher with the node so that the node can handle all configuration, activation, and
@@ -229,7 +234,7 @@ namespace obelisk {
          * time.
          *
          * @param ros_param the string name of the ros parameter
-         * @param key the string key used to refer to (and get) this publisher
+         * @param key the string key used to refer to (and get) this subscription
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename MessageT, typename CallbackT>
@@ -269,6 +274,44 @@ namespace obelisk {
         }
 
         /**
+         * @brief Registers a timer with the node so that the node can handle all configuration and
+         * cleanup.
+         *
+         * Adds the timer to the registered_timer_ map, so the timer can be created at configure time.
+         *
+         * @param ros_param the string name of the ros parameter
+         * @param key the string key used to refer to (and get) this timer
+         * @param default_config_str (optional, default is "") string giving the default configuration
+         */
+        template <typename CallbackT>
+        void RegisterTimer(const std::string& ros_param, const std::string& key, CallbackT&& callback,
+                           const std::string& default_config_str = "") {
+            this->declare_parameter(ros_param, default_config_str);
+
+            internal::ObeliskTimerInfo info;
+            info.ros_param = ros_param;
+            info.creator   = [this, callback](const std::string& config_str) {
+                return this->CreateWallTimerFromConfigStr(config_str, std::move(callback));
+            };
+
+            registered_timers_[key] = info;
+        }
+
+        /**
+         * @brief Get the timer associated with the key.
+         *
+         * @param key the string key
+         */
+        typename rclcpp::TimerBase::SharedPtr GetTimer(const std::string& key) {
+            auto it = timers_.find(key);
+            if (it != timers_.end()) {
+                return it->second;
+            }
+
+            throw std::runtime_error("Timer not found for the key!");
+        }
+
+        /**
          * @brief Configures the node.
          *  Specifically, here we parse the the configuration string that determines
          * the callback groups and names.
@@ -284,6 +327,7 @@ namespace obelisk {
 
             CreatePublishers();
             CreateSubscriptions();
+            CreateTimers();
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " configured.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -299,7 +343,15 @@ namespace obelisk {
             rclcpp_lifecycle::LifecycleNode::on_activate(prev_state);
 
             for (auto& [key, pub] : publishers_) {
-                pub->OnActivate();
+                if (pub) {
+                    pub->OnActivate();
+                }
+            }
+
+            for (auto& [key, timer] : timers_) {
+                if (timer) {
+                    timer->reset(); // Start the timer
+                }
             }
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " activated.");
@@ -316,7 +368,15 @@ namespace obelisk {
             rclcpp_lifecycle::LifecycleNode::on_deactivate(prev_state);
 
             for (auto& [key, pub] : publishers_) {
-                pub->OnDeactivate();
+                if (pub) {
+                    pub->OnDeactivate();
+                }
+            }
+
+            for (auto& [key, timer] : timers_) {
+                if (timer) {
+                    timer->cancel(); // Stop the timer
+                }
             }
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " deactivated.");
@@ -337,7 +397,9 @@ namespace obelisk {
 
             // Clean up publishers
             for (auto& [key, pub] : publishers_) {
-                pub->Release();
+                if (pub) {
+                    pub->Release();
+                }
             }
             publishers_.clear();
             registered_publishers_
@@ -345,17 +407,27 @@ namespace obelisk {
 
             // Clean up subscriptions
             for (auto& [key, sub] : subscriptions_) {
-                sub->Release();
+                if (sub) {
+                    sub->Release();
+                }
             }
             subscriptions_.clear();
             registered_subscriptions_
                 .clear(); // TODO: Consider if this should be called, or if I should leave this in place
 
+            // Clean up timers
+            for (auto& [key, timer] : timers_) {
+                if (timer) {
+                    timer->cancel(); // Stop the timer
+                    timer.reset();   // Release the timer
+                }
+            }
+            timers_.clear();
+            registered_timers_.clear();
+
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " cleaned up.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
-
-        // TODO: Make all the child classes call these methods in theirs
 
         /**
          * @brief shutsdown the node the node.
@@ -371,7 +443,9 @@ namespace obelisk {
 
             // Clean up publishers
             for (auto& [key, pub] : publishers_) {
-                pub->Release();
+                if (pub) {
+                    pub->Release();
+                }
             }
             publishers_.clear();
             registered_publishers_
@@ -379,11 +453,23 @@ namespace obelisk {
 
             // Clean up subscriptions
             for (auto& [key, sub] : subscriptions_) {
-                sub->Release();
+                if (sub) {
+                    sub->Release();
+                }
             }
             subscriptions_.clear();
             registered_subscriptions_
                 .clear(); // TODO: Consider if this should be called, or if I should leave this in place
+
+            // Clean up timers
+            for (auto& [key, timer] : timers_) {
+                if (timer) {
+                    timer->cancel(); // Stop the timer
+                    timer.reset();   // Release the timer
+                }
+            }
+            timers_.clear();
+            registered_timers_.clear();
 
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " shutdown.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -395,16 +481,44 @@ namespace obelisk {
          */
         void CreatePublishers() {
             for (const auto& [key, info] : registered_publishers_) {
-                publishers_[key] = info.creator(this->get_parameter(info.ros_param).as_string());
+                const std::string param = this->get_parameter(info.ros_param).as_string();
+                if (param == "") {
+                    RCLCPP_WARN_STREAM(this->get_logger(),
+                                       "Registered publisher was not provided a config string! Skipping creation.");
+                } else {
+                    publishers_[key] = info.creator(param);
+                }
             }
         }
 
         /**
-         * @brief Creates all the registered publishers.
+         * @brief Creates all the registered subscriptions.
          */
         void CreateSubscriptions() {
             for (const auto& [key, info] : registered_subscriptions_) {
-                subscriptions_[key] = info.creator(this->get_parameter(info.ros_param).as_string());
+                const std::string param = this->get_parameter(info.ros_param).as_string();
+                if (param == "") {
+                    RCLCPP_WARN_STREAM(this->get_logger(),
+                                       "Registered subscription was not provided a config string! Skipping creation.");
+                } else {
+                    subscriptions_[key] = info.creator(param);
+                }
+            }
+        }
+
+        /**
+         * @brief Creates all the registered timers.
+         */
+        void CreateTimers() {
+            for (const auto& [key, info] : registered_timers_) {
+                const std::string param = this->get_parameter(info.ros_param).as_string();
+                if (param == "") {
+                    RCLCPP_WARN_STREAM(this->get_logger(),
+                                       "Registered timer was not provided a config string! Skipping creation.");
+                } else {
+                    timers_[key] = info.creator(param);
+                    timers_[key]->cancel(); // Pause the timer
+                }
             }
         }
 
@@ -467,8 +581,8 @@ namespace obelisk {
          * @return the timer.
          */
         template <typename CallbackT>
-        typename rclcpp::GenericTimer<CallbackT>::SharedPtr CreateWallTimerFromConfigStr(const std::string& config,
-                                                                                         CallbackT&& callback) {
+        typename rclcpp::TimerBase::SharedPtr CreateWallTimerFromConfigStr(const std::string& config,
+                                                                           CallbackT&& callback) {
             // Finest frequency is determined by DurationT
             using namespace std::chrono_literals;
 
@@ -669,6 +783,10 @@ namespace obelisk {
         // Hold all the subscriptions
         std::unordered_map<std::string, internal::ObeliskSubscriptionInfo> registered_subscriptions_;
         std::unordered_map<std::string, std::shared_ptr<internal::ObeliskSubscriptionBase>> subscriptions_;
+
+        // Hold all the timers
+        std::unordered_map<std::string, internal::ObeliskTimerInfo> registered_timers_;
+        std::unordered_map<std::string, rclcpp::TimerBase::SharedPtr> timers_;
 
       private:
         // --------- Member Variables --------- //

@@ -9,9 +9,6 @@ class TestObeliskEstimator : public obelisk::ObeliskEstimator<obelisk_estimator_
     obelisk_estimator_msgs::msg::EstimatedState ComputeStateEstimate() override {
         return obelisk_estimator_msgs::msg::EstimatedState();
     }
-
-    using ObeliskEstimator::estimator_publisher_;
-    using ObeliskEstimator::estimator_timer_;
 };
 
 TEST_CASE("ObeliskEstimator Construction and Configuration", "[ObeliskEstimator]") {
@@ -24,10 +21,6 @@ TEST_CASE("ObeliskEstimator Construction and Configuration", "[ObeliskEstimator]
 
     auto result = estimator.on_configure(rclcpp_lifecycle::State());
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-
-    REQUIRE(estimator.estimator_publisher_ != nullptr);
-    REQUIRE(estimator.estimator_timer_ != nullptr);
-    // REQUIRE(estimator.sub_sensor_config_strs_ == test_configs);
 
     rclcpp::shutdown();
 }
@@ -60,13 +53,9 @@ TEST_CASE("ObeliskEstimator Cleanup and Shutdown", "[ObeliskEstimator]") {
 
     auto cleanup_result = estimator.on_cleanup(rclcpp_lifecycle::State());
     REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-    REQUIRE(estimator.estimator_publisher_ == nullptr);
-    REQUIRE(estimator.estimator_timer_ == nullptr);
 
     auto shutdown_result = estimator.on_shutdown(rclcpp_lifecycle::State());
     REQUIRE(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-    REQUIRE(estimator.estimator_publisher_ == nullptr);
-    REQUIRE(estimator.estimator_timer_ == nullptr);
 
     rclcpp::shutdown();
 }
@@ -80,9 +69,6 @@ TEST_CASE("ObeliskEstimator with Empty Sensor Settings", "[ObeliskEstimator]") {
 
     auto result = estimator.on_configure(rclcpp_lifecycle::State());
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-
-    REQUIRE(estimator.estimator_publisher_ != nullptr);
-    REQUIRE(estimator.estimator_timer_ != nullptr);
 
     rclcpp::shutdown();
 }

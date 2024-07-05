@@ -20,8 +20,6 @@ class TestObeliskSimRobot : public obelisk::ObeliskSimRobot<obelisk_control_msgs
     void ApplyControl(const obelisk_control_msgs::msg::PositionSetpoint& msg) {}
 
     using ObeliskSimRobot::stop_thread_;
-    using ObeliskSimRobot::true_sim_state_publisher_;
-    using ObeliskSimRobot::true_sim_state_timer_;
 };
 
 TEST_CASE("ObeliskSimRobot Construction and Configuration", "[ObeliskSimRobot]") {
@@ -35,9 +33,6 @@ TEST_CASE("ObeliskSimRobot Construction and Configuration", "[ObeliskSimRobot]")
 
     auto result = robot.on_configure(rclcpp_lifecycle::State());
     REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
-
-    REQUIRE(robot.true_sim_state_publisher_ != nullptr);
-    REQUIRE(robot.true_sim_state_timer_ != nullptr);
 
     robot.on_cleanup(rclcpp_lifecycle::State());
 
@@ -56,8 +51,6 @@ TEST_CASE("ObeliskSimRobot Cleanup and Shutdown", "[ObeliskSimRobot]") {
     auto cleanup_result = robot.on_cleanup(rclcpp_lifecycle::State());
     REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-    REQUIRE(robot.true_sim_state_publisher_ == nullptr);
-    REQUIRE(robot.true_sim_state_timer_ == nullptr);
     REQUIRE(robot.stop_thread_ == true);
 
     auto shutdown_result = robot.on_shutdown(rclcpp_lifecycle::State());

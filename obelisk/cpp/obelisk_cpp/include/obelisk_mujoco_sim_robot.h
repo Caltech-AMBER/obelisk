@@ -24,8 +24,6 @@ namespace obelisk {
 
         ~ObeliskMujocoRobot() { mujoco_sim_instance_ = nullptr; }
 
-        // TODO: Should be we bring up the simulation in configure or activate?
-
         /**
          * @brief Configures the node
          *
@@ -77,18 +75,6 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
-            for (auto pub : encoder_pubs_) {
-                if (pub) {
-                    pub->on_activate();
-                }
-            }
-
-            for (auto timer : timers_) {
-                if (timer) {
-                    timer->reset(); // Start the timer
-                }
-            }
-
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -100,17 +86,6 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
-            for (auto pub : encoder_pubs_) {
-                if (pub) {
-                    pub->on_deactivate();
-                }
-            }
-
-            for (auto timer : timers_) {
-                if (timer) {
-                    timer->cancel(); // Stop the timer
-                }
-            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -126,14 +101,8 @@ namespace obelisk {
             configuration_complete_ = false;
 
             // Reset data
-            nu_ = -1;
-
-            for (auto timer : timers_) {
-                if (timer) {
-                    timer->cancel();
-                    timer.reset(); // Release the timer
-                }
-            }
+            nu_          = -1;
+            num_sensors_ = 0;
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -149,14 +118,8 @@ namespace obelisk {
             configuration_complete_ = false;
 
             // Reset data
-            nu_ = -1;
-
-            for (auto timer : timers_) {
-                if (timer) {
-                    timer->cancel();
-                    timer.reset(); // Release the timer
-                }
-            }
+            nu_          = -1;
+            num_sensors_ = 0;
 
             return on_cleanup(prev_state);
         }
@@ -390,6 +353,7 @@ namespace obelisk {
             while (!mujoco_setup_) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
+            num_sensors_ = 0;
 
             for (auto group : sensor_groups) {
                 // Create a new map between the names and their string values
@@ -461,30 +425,43 @@ namespace obelisk {
 
                 // Create the timer and publishers with the settings
                 if (sensor_type == "jointpos") {
-                    encoder_pubs_.emplace_back(
-                        ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth));
+                    // Make a key
+                    const std::string sensor_key = "sensor_group_" + std::to_string(num_sensors_);
 
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::JointEncoders>>(pub);
+
+                    // TODO: Do we want them all in their own reentrant cbg?
                     callback_groups_.emplace_back(this->create_callback_group(rclcpp::CallbackGroupType::Reentrant));
 
-                    timers_.emplace_back(this->create_wall_timer(
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback(sensor_names, encoder_pubs_.back()), callback_groups_.back()));
+                        CreateTimerCallback<obelisk_sensor_msgs::msg::JointEncoders>(
+                            sensor_names,
+                            this->template GetPublisher<obelisk_sensor_msgs::msg::JointEncoders>(sensor_key)),
+                        callback_groups_.back());
 
-                    timers_.back()->cancel(); // Stop the timer
+                    this->timers_[sensor_key]->cancel(); // Stop the timer
+
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
+
+                num_sensors_++;
             }
         }
 
         template <typename MessageT>
         std::function<void()>
         CreateTimerCallback(const std::vector<std::string>& sensor_names,
-                            std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>>& publisher) {
+                            std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>> publisher) {
 
             // TODO: Consider specilializing the lambda function for the specific message (i.e. packing the semantic
             // message struct)
-            auto cb = [&publisher, sensor_names, this]() {
+            auto cb = [publisher, sensor_names, this]() {
                 obelisk_sensor_msgs::msg::JointEncoders msg;
                 msg.y.resize(sensor_names.size());
 
@@ -516,7 +493,8 @@ namespace obelisk {
             }
         }
 
-        void HandleKeyboard(GLFWwindow* window, int key, int scancode, int act, int mods) {
+        void HandleKeyboard(__attribute__((unused)) GLFWwindow* window, int key, __attribute__((unused)) int scancode,
+                            int act, __attribute__((unused)) int mods) {
             // backspace: reset simulation
             if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE) {
                 mj_resetData(model_, data_);
@@ -536,7 +514,8 @@ namespace obelisk {
             }
         }
 
-        void HandleMouseButton(GLFWwindow* window, int button, int act, int mods) {
+        void HandleMouseButton(GLFWwindow* window, __attribute__((unused)) int button, __attribute__((unused)) int act,
+                               __attribute__((unused)) int mods) {
             // update button state
             button_left   = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
             button_middle = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
@@ -595,7 +574,8 @@ namespace obelisk {
             }
         }
 
-        void HandleScroll(GLFWwindow* window, double xoffset, double yoffset) {
+        void HandleScroll(__attribute__((unused)) GLFWwindow* window, __attribute__((unused)) double xoffset,
+                          double yoffset) {
             // emulate vertical mouse motion = 5% of window height
             mjv_moveCamera(model_, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
         }
@@ -637,12 +617,9 @@ namespace obelisk {
         std::atomic<bool> configuration_complete_;
         std::atomic<bool> mujoco_setup_;
 
-        // Possible publishers
-        std::vector<std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<obelisk_sensor_msgs::msg::JointEncoders>>>
-            encoder_pubs_;
-        std::vector<rclcpp::TimerBase::SharedPtr> timers_;
-
         std::vector<rclcpp::CallbackGroup::SharedPtr> callback_groups_;
+
+        int num_sensors_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;
