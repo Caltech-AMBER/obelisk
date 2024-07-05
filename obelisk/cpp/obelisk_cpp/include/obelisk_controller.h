@@ -6,14 +6,17 @@ namespace obelisk {
 
     template <typename ControlMessageT, typename EstimatorMessageT> class ObeliskController : public ObeliskNode {
       public:
-        explicit ObeliskController(const std::string& name, const std::string& pub_key = "pub_ctrl",
+        explicit ObeliskController(const std::string& name, const std::string& ctrl_key = "pub_ctrl",
                                    const std::string& est_key = "sub_est", const std::string& timer_key = "timer_ctrl")
-            : ObeliskNode(name), pub_key_(pub_key), est_key_(est_key), timer_key_(timer_key) {
+            : ObeliskNode(name), ctrl_key_(ctrl_key), est_key_(est_key), timer_key_(timer_key) {
             // Declare all paramters
             this->declare_parameter<std::string>("timer_ctrl_setting", "");
-            this->declare_parameter<std::string>("sub_est_setting", "");
 
-            this->RegisterPublisher<ControlMessageT>("pub_ctrl_setting", pub_key_);
+            this->RegisterPublisher<ControlMessageT>("pub_ctrl_setting", ctrl_key_);
+            this->RegisterSubscription<EstimatorMessageT>(
+                "sub_est_setting", est_key_, std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
+            // TODO: Should I have a shell function that is not abstract that calls the abstract
+            //  function that the user implements?
         }
 
         /**
@@ -29,17 +32,13 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
-            // Create the publishers, subscribers, and timers
-            // control_publisher_ =
-            //     CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_setting").as_string());
-
             control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
                                                           std::bind(&ObeliskController::ComputeControl, this));
             control_timer_->cancel(); // Prevent the timer from going until it is reset
 
-            state_estimator_subscriber_ = CreateSubscriptionFromConfigStr<EstimatorMessageT>(
-                this->get_parameter("sub_est_setting").as_string(),
-                std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
+            // state_estimator_subscriber_ = CreateSubscriptionFromConfigStr<EstimatorMessageT>(
+            //     this->get_parameter("sub_est_setting").as_string(),
+            //     std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -87,8 +86,7 @@ namespace obelisk {
             ObeliskNode::on_cleanup(prev_state);
 
             // Release the shared pointers
-            // control_publisher_.reset();
-            state_estimator_subscriber_.reset();
+            // state_estimator_subscriber_.reset();
 
             if (control_timer_) {
                 control_timer_->cancel();
@@ -108,8 +106,7 @@ namespace obelisk {
             ObeliskNode::on_shutdown(prev_state);
 
             // Release the shared pointers
-            // control_publisher_.reset();
-            state_estimator_subscriber_.reset();
+            // state_estimator_subscriber_.reset();
 
             if (control_timer_) {
                 control_timer_->cancel();
@@ -141,7 +138,7 @@ namespace obelisk {
         // timer to activate ComputeControl
         rclcpp::TimerBase::SharedPtr control_timer_;
 
-        const std::string pub_key_;
+        const std::string ctrl_key_;
         const std::string est_key_;
         const std::string timer_key_;
 

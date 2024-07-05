@@ -14,14 +14,13 @@ namespace obelisk {
 
         void Configure() {
             REQUIRE(this->control_timer_ == nullptr);
-            REQUIRE(this->state_estimator_subscriber_ == nullptr);
 
             REQUIRE(this->on_configure(this->get_current_state()) ==
                     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-            REQUIRE(this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->pub_key_) != nullptr);
+            REQUIRE(this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_) != nullptr);
             REQUIRE(this->control_timer_ != nullptr);
-            REQUIRE(this->state_estimator_subscriber_ != nullptr);
+            REQUIRE(this->GetSubscription<obelisk_estimator_msgs::msg::EstimatedState>(this->est_key_) != nullptr);
         }
 
         void Activate() {
@@ -38,12 +37,14 @@ namespace obelisk {
             REQUIRE(this->on_shutdown(this->get_current_state()) ==
                     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
             CHECK(this->publishers_.empty());
+            CHECK(this->subscriptions_.empty());
         }
 
         void Cleanup() {
             REQUIRE(this->on_cleanup(this->get_current_state()) ==
                     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
             CHECK(this->publishers_.empty());
+            CHECK(this->subscriptions_.empty());
         }
 
       protected:
