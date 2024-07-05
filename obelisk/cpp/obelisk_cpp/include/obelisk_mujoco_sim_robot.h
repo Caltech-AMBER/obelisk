@@ -50,8 +50,6 @@ namespace obelisk {
                 }
             }
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "XML path: " << xml_path_);
-
             nu_                = GetNumInputs(mujoco_config_map); // Required
             time_step_         = GetTimeSteps(mujoco_config_map);
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
@@ -85,7 +83,11 @@ namespace obelisk {
                 }
             }
 
-            // TODO: Do we want to create the timers here?
+            for (auto timer : timers_) {
+                if (timer) {
+                    timer->reset(); // Start the timer
+                }
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -106,8 +108,7 @@ namespace obelisk {
 
             for (auto timer : timers_) {
                 if (timer) {
-                    timer->cancel();
-                    timer.reset();
+                    timer->cancel(); // Stop the timer
                 }
             }
 
@@ -130,7 +131,7 @@ namespace obelisk {
             for (auto timer : timers_) {
                 if (timer) {
                     timer->cancel();
-                    timer.reset();
+                    timer.reset(); // Release the timer
                 }
             }
 
@@ -153,7 +154,7 @@ namespace obelisk {
             for (auto timer : timers_) {
                 if (timer) {
                     timer->cancel();
-                    timer.reset();
+                    timer.reset(); // Release the timer
                 }
             }
 
@@ -433,8 +434,6 @@ namespace obelisk {
                     throw std::runtime_error("No topic provided for a sensor!");
                 }
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "Sensor topic: " << topic);
-
                 const int depth = this->ObeliskNode::GetHistoryDepth(setting_map);
 
                 std::string sensor_type;
@@ -462,14 +461,16 @@ namespace obelisk {
 
                 // Create the timer and publishers with the settings
                 if (sensor_type == "jointpos") {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "Creating pub and timer.");
                     encoder_pubs_.emplace_back(
                         ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth));
 
                     callback_groups_.emplace_back(this->create_callback_group(rclcpp::CallbackGroupType::Reentrant));
+
                     timers_.emplace_back(this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
                         CreateTimerCallback(sensor_names, encoder_pubs_.back()), callback_groups_.back()));
+
+                    timers_.back()->cancel(); // Stop the timer
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }

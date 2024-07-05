@@ -28,6 +28,10 @@ namespace obelisk {
 
             if (timer_settings != "" && pub_settings != "") {
                 true_sim_state_publisher_ = this->template CreatePublisherFromConfigStr<TrueSimState>(pub_settings);
+                true_sim_state_timer_ =
+                    this->CreateWallTimerFromConfigStr(this->get_parameter("timer_true_sim_state_setting").as_string(),
+                                                       std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
+                true_sim_state_timer_->cancel(); // Prevent the timer from starting instantly
             } else {
                 RCLCPP_WARN_STREAM(this->get_logger(), "No true simulation state timer/publisher configured.");
                 true_sim_state_timer_     = nullptr;
@@ -54,11 +58,10 @@ namespace obelisk {
 
             if (true_sim_state_publisher_) {
                 true_sim_state_publisher_->on_activate();
+            }
 
-                // Moved the creation of the timer here so that we only started it when the publisher is activated
-                true_sim_state_timer_ =
-                    this->CreateWallTimerFromConfigStr(this->get_parameter("timer_true_sim_state_setting").as_string(),
-                                                       std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
+            if (true_sim_state_timer_) {
+                true_sim_state_timer_->reset(); // Start the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -72,9 +75,12 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_deactivate(prev_state);
+            if (true_sim_state_publisher_) {
+                true_sim_state_publisher_->on_deactivate();
+            }
+
             if (true_sim_state_timer_) {
-                true_sim_state_timer_->cancel();
-                true_sim_state_timer_.reset();
+                true_sim_state_timer_->cancel(); // Stop the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -92,7 +98,7 @@ namespace obelisk {
             // Release the shared pointers
             if (true_sim_state_timer_) {
                 true_sim_state_timer_->cancel();
-                true_sim_state_timer_.reset();
+                true_sim_state_timer_.reset(); // release the timer
             }
 
             if (true_sim_state_publisher_) {

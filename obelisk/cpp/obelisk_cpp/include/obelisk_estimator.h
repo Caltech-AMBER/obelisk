@@ -23,6 +23,11 @@ namespace obelisk {
             estimator_publisher_ =
                 CreatePublisherFromConfigStr<EstimatorMessageT>(this->get_parameter("pub_est_setting").as_string());
 
+            estimator_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_est_setting").as_string(),
+                                                            std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
+
+            estimator_timer_->cancel(); // Stop the timer
+
             // The downstream user must create all their sensor subscribers using these config strings
             // sub_sensor_config_strs_ = this->get_parameter("sub_sensor_settings").as_string_array();
 
@@ -47,9 +52,9 @@ namespace obelisk {
             this->ObeliskNode::on_activate(prev_state);
             estimator_publisher_->on_activate();
 
-            // Moved the timer here so that we won't try to publish before being activated.
-            estimator_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_est_setting").as_string(),
-                                                            std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
+            if (estimator_timer_) {
+                estimator_timer_->reset(); // Start the timer
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -65,8 +70,7 @@ namespace obelisk {
             estimator_publisher_->on_deactivate();
 
             if (estimator_timer_) {
-                estimator_timer_->cancel();
-                estimator_timer_.reset();
+                estimator_timer_->cancel(); // Stop the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -86,7 +90,7 @@ namespace obelisk {
 
             if (estimator_timer_) {
                 estimator_timer_->cancel();
-                estimator_timer_.reset();
+                estimator_timer_.reset(); // Release the timer
             }
 
             // Clear the config strings
@@ -109,7 +113,7 @@ namespace obelisk {
 
             if (estimator_timer_) {
                 estimator_timer_->cancel();
-                estimator_timer_.reset();
+                estimator_timer_.reset(); // Release the timer
             }
 
             // Clear the config strings

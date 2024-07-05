@@ -30,6 +30,10 @@ namespace obelisk {
             control_publisher_ =
                 CreatePublisherFromConfigStr<ControlMessageT>(this->get_parameter("pub_ctrl_setting").as_string());
 
+            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
+                                                          std::bind(&ObeliskController::ComputeControl, this));
+            control_timer_->cancel(); // Prevent the timer from going until it is reset
+
             state_estimator_subscriber_ = CreateSubscriptionFromConfigStr<EstimatorMessageT>(
                 this->get_parameter("sub_est_setting").as_string(),
                 std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
@@ -46,10 +50,9 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_activate(prev_state);
             control_publisher_->on_activate();
-
-            // Moved the timer creation here so we don't call publish before it is activated
-            control_timer_ = CreateWallTimerFromConfigStr(this->get_parameter("timer_ctrl_setting").as_string(),
-                                                          std::bind(&ObeliskController::ComputeControl, this));
+            if (control_timer_) {
+                control_timer_->reset(); // start the timer
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -65,8 +68,7 @@ namespace obelisk {
             control_publisher_->on_deactivate();
 
             if (control_timer_) {
-                control_timer_->cancel();
-                control_timer_.reset();
+                control_timer_->cancel(); // stop the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -87,7 +89,7 @@ namespace obelisk {
 
             if (control_timer_) {
                 control_timer_->cancel();
-                control_timer_.reset();
+                control_timer_.reset(); // release the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -108,7 +110,7 @@ namespace obelisk {
 
             if (control_timer_) {
                 control_timer_->cancel();
-                control_timer_.reset();
+                control_timer_.reset(); // release the timer
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
