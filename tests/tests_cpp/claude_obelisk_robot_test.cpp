@@ -17,7 +17,7 @@ TEST_CASE("ObeliskRobot Construction and Configuration", "[ObeliskRobot]") {
     robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:/control,history_depth:10"));
 
     auto result = robot.on_configure(rclcpp_lifecycle::State());
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -30,7 +30,7 @@ TEST_CASE("ObeliskRobot Configuration with Empty Sensor Settings", "[ObeliskRobo
     robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:/control,history_depth:10"));
 
     auto result = robot.on_configure(rclcpp_lifecycle::State());
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -43,10 +43,10 @@ TEST_CASE("ObeliskRobot Cleanup and Shutdown", "[ObeliskRobot]") {
     robot.on_configure(rclcpp_lifecycle::State());
 
     auto cleanup_result = robot.on_cleanup(rclcpp_lifecycle::State());
-    REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     auto shutdown_result = robot.on_shutdown(rclcpp_lifecycle::State());
-    REQUIRE(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }

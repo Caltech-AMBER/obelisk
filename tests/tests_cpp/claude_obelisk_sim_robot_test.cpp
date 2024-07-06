@@ -32,7 +32,7 @@ TEST_CASE("ObeliskSimRobot Construction and Configuration", "[ObeliskSimRobot]")
     robot.set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
 
     auto result = robot.on_configure(rclcpp_lifecycle::State());
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     robot.on_cleanup(rclcpp_lifecycle::State());
 
@@ -49,12 +49,12 @@ TEST_CASE("ObeliskSimRobot Cleanup and Shutdown", "[ObeliskSimRobot]") {
     robot.on_configure(rclcpp_lifecycle::State());
 
     auto cleanup_result = robot.on_cleanup(rclcpp_lifecycle::State());
-    REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-    REQUIRE(robot.stop_thread_ == true);
+    CHECK(robot.stop_thread_ == true);
 
     auto shutdown_result = robot.on_shutdown(rclcpp_lifecycle::State());
-    REQUIRE(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }

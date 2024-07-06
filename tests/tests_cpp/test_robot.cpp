@@ -11,29 +11,29 @@ namespace obelisk {
         }
 
         void Configure() {
-            REQUIRE(this->on_configure(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_configure(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
             CHECK(this->GetSubscription<obelisk_control_msgs::msg::PositionSetpoint>(this->sub_ctrl_key_) != nullptr);
         }
 
         void Activate() {
-            REQUIRE(this->on_activate(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_activate(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
         void Deactivate() {
-            REQUIRE(this->on_deactivate(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_deactivate(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
         void Shutdown() {
-            REQUIRE(this->on_shutdown(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_shutdown(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
         void Cleanup() {
-            REQUIRE(this->on_cleanup(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_cleanup(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
       protected:

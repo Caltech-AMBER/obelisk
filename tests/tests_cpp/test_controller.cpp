@@ -13,34 +13,34 @@ namespace obelisk {
         }
 
         void Configure() {
-            REQUIRE(this->on_configure(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_configure(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-            REQUIRE(this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_) != nullptr);
-            REQUIRE(this->GetTimer(this->timer_key_) != nullptr);
-            REQUIRE(this->GetSubscription<obelisk_estimator_msgs::msg::EstimatedState>(this->est_key_) != nullptr);
+            CHECK(this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_) != nullptr);
+            CHECK(this->GetTimer(this->timer_key_) != nullptr);
+            CHECK(this->GetSubscription<obelisk_estimator_msgs::msg::EstimatedState>(this->est_key_) != nullptr);
         }
 
         void Activate() {
-            REQUIRE(this->on_activate(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_activate(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
         void Deactivate() {
-            REQUIRE(this->on_deactivate(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_deactivate(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
         }
 
         void Shutdown() {
-            REQUIRE(this->on_shutdown(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_shutdown(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
             CHECK(this->publishers_.empty());
             CHECK(this->subscriptions_.empty());
         }
 
         void Cleanup() {
-            REQUIRE(this->on_cleanup(this->get_current_state()) ==
-                    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+            CHECK(this->on_cleanup(this->get_current_state()) ==
+                  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
             CHECK(this->publishers_.empty());
             CHECK(this->subscriptions_.empty());
         }

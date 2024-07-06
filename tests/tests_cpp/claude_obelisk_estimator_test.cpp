@@ -20,7 +20,7 @@ TEST_CASE("ObeliskEstimator Construction and Configuration", "[ObeliskEstimator]
     estimator.set_parameter(rclcpp::Parameter("pub_est_setting", "topic:/estimated_state,history_depth:10"));
 
     auto result = estimator.on_configure(rclcpp_lifecycle::State());
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -34,10 +34,10 @@ TEST_CASE("ObeliskEstimator Activation and Deactivation", "[ObeliskEstimator]") 
     estimator.on_configure(rclcpp_lifecycle::State());
 
     auto activate_result = estimator.on_activate(rclcpp_lifecycle::State());
-    REQUIRE(activate_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(activate_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     auto deactivate_result = estimator.on_deactivate(rclcpp_lifecycle::State());
-    REQUIRE(deactivate_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(deactivate_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -52,10 +52,10 @@ TEST_CASE("ObeliskEstimator Cleanup and Shutdown", "[ObeliskEstimator]") {
     estimator.on_configure(rclcpp_lifecycle::State());
 
     auto cleanup_result = estimator.on_cleanup(rclcpp_lifecycle::State());
-    REQUIRE(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(cleanup_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     auto shutdown_result = estimator.on_shutdown(rclcpp_lifecycle::State());
-    REQUIRE(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(shutdown_result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -68,7 +68,7 @@ TEST_CASE("ObeliskEstimator with Empty Sensor Settings", "[ObeliskEstimator]") {
     estimator.set_parameter(rclcpp::Parameter("pub_est_setting", "topic:/estimated_state,history_depth:10"));
 
     auto result = estimator.on_configure(rclcpp_lifecycle::State());
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }

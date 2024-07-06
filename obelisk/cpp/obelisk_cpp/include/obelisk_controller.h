@@ -15,8 +15,6 @@ namespace obelisk {
             this->RegisterPublisher<ControlMessageT>("pub_ctrl_setting", ctrl_key_);
             this->RegisterSubscription<EstimatorMessageT>(
                 "sub_est_setting", est_key_, std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
-            // TODO: Should I have a shell function that is not abstract that calls the abstract
-            //  function that the user implements?
         }
 
         /**

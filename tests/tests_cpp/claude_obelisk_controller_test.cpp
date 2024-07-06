@@ -30,7 +30,7 @@ TEST_CASE("ObeliskController Configuration", "[ObeliskController]") {
     // Configure the controller
     auto result = controller.on_configure(rclcpp_lifecycle::State());
 
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
     rclcpp::shutdown();
 }
@@ -48,7 +48,7 @@ TEST_CASE("ObeliskController Activation", "[ObeliskController]") {
     // Activate the controller
     auto result = controller.on_activate(rclcpp_lifecycle::State());
 
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
     rclcpp::shutdown();
 }
 
@@ -66,7 +66,7 @@ TEST_CASE("ObeliskController Deactivation", "[ObeliskController]") {
     // Deactivate the controller
     auto result = controller.on_deactivate(rclcpp_lifecycle::State());
 
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
     rclcpp::shutdown();
 }
 
@@ -83,7 +83,7 @@ TEST_CASE("ObeliskController Cleanup", "[ObeliskController]") {
     // Clean up the controller
     auto result = controller.on_cleanup(rclcpp_lifecycle::State());
 
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
     rclcpp::shutdown();
 }
 
@@ -100,6 +100,6 @@ TEST_CASE("ObeliskController Shutdown", "[ObeliskController]") {
     // Shut down the controller
     auto result = controller.on_shutdown(rclcpp_lifecycle::State());
 
-    REQUIRE(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
+    CHECK(result == rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
     rclcpp::shutdown();
 }
