@@ -5,6 +5,15 @@
 #include "rclcpp/rclcpp.hpp"
 
 namespace obelisk::utils {
+    /**
+     * @brief spins up an ObeliskNode.
+     *  Handles initilizng rclcpp, creating the executor, adding the node, spinning, removing the node, and shuting
+     * down.
+     *
+     * @param argc the command line argc
+     * @param argv the commmand line argv
+     * @param name the name to give to the node
+     */
     template <typename NodeT, typename ExecutorT> void SpinObelisk(int argc, char* argv[], const std::string& name) {
         rclcpp::init(argc, argv);
 
