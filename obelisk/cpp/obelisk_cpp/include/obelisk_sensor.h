@@ -12,8 +12,7 @@ namespace obelisk {
             ObeliskNode::on_configure(prev_state);
 
             // TODO (@zolkin): Use the MESSAGE_NAME field (stored in info.msg_type in registered_publishers_) to
-            // determine if the publisher is publishing a sensor
-            //  for now, just going to check if its empty
+            // determine if the publisher is publishing a sensor for now, just going to check if its empty
             has_sensor_pub_ = !registered_publishers_.empty();
 
             if (!has_sensor_pub_) {

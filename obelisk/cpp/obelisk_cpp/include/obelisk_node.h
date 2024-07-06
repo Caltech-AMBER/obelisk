@@ -402,8 +402,7 @@ namespace obelisk {
                 }
             }
             publishers_.clear();
-            registered_publishers_
-                .clear(); // TODO: Consider if this should be called, or if I should leave this in place
+            registered_publishers_.clear();
 
             // Clean up subscriptions
             for (auto& [key, sub] : subscriptions_) {
@@ -412,8 +411,7 @@ namespace obelisk {
                 }
             }
             subscriptions_.clear();
-            registered_subscriptions_
-                .clear(); // TODO: Consider if this should be called, or if I should leave this in place
+            registered_subscriptions_.clear();
 
             // Clean up timers
             for (auto& [key, timer] : timers_) {

@@ -121,7 +121,7 @@ namespace obelisk {
             nu_          = -1;
             num_sensors_ = 0;
 
-            return on_cleanup(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -190,9 +190,6 @@ namespace obelisk {
 
             while (!this->stop_thread_) {
                 if (!glfwWindowShouldClose(window_)) {
-                    //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
-                    //  this loop will finish on time for the next frame to be rendered at 60 fps.
-                    //  Otherwise add a cpu timer and exit this loop when it is time to render.
                     mjtNum simstart = data_->time;
                     while (data_->time - simstart < num_steps_per_viz_ * time_step_) {
                         {
@@ -230,7 +227,6 @@ namespace obelisk {
                 }
             }
 
-            // TODO: Put this here or in cleanup/shutdown?
             // free visualization storage
             mjv_freeScene(&scn);
             mjr_freeContext(&con);
@@ -353,7 +349,9 @@ namespace obelisk {
             while (!mujoco_setup_) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
-            num_sensors_ = 0;
+            num_sensors_    = 0;
+
+            callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
             for (auto group : sensor_groups) {
                 // Create a new map between the names and their string values
@@ -433,16 +431,13 @@ namespace obelisk {
                     this->publishers_[sensor_key] =
                         std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::JointEncoders>>(pub);
 
-                    // TODO: Do we want them all in their own reentrant cbg?
-                    callback_groups_.emplace_back(this->create_callback_group(rclcpp::CallbackGroupType::Reentrant));
-
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
                         CreateTimerCallback<obelisk_sensor_msgs::msg::JointEncoders>(
                             sensor_names,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::JointEncoders>(sensor_key)),
-                        callback_groups_.back());
+                        callback_group_);
 
                     this->timers_[sensor_key]->cancel(); // Stop the timer
 
@@ -617,7 +612,7 @@ namespace obelisk {
         std::atomic<bool> configuration_complete_;
         std::atomic<bool> mujoco_setup_;
 
-        std::vector<rclcpp::CallbackGroup::SharedPtr> callback_groups_;
+        rclcpp::CallbackGroup::SharedPtr callback_group_;
 
         int num_sensors_;
 

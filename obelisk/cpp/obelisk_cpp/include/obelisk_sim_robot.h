@@ -21,7 +21,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief Configures all the required ROS components. Specifcially this
+         * @brief Configures all the required ROS components. specifically this
          * registers the true_sim_state_publisher_ if a configuration is passed. Also makes a call to ObeliskNode on
          * configure to parse and create the callback group map.
          */
@@ -71,16 +71,7 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_cleanup(prev_state);
 
-            // Cleanup the sim thread
-            bool current_thread_status = stop_thread_;
-            stop_thread_               = true;
-            if (sim_thread_.joinable()) {
-                sim_thread_.join();
-            }
-
-            if (!current_thread_status) {
-                RCLCPP_INFO_STREAM(this->get_logger(), "Simulation thread stopped.");
-            }
+            EndSimThread();
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -94,10 +85,25 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskRobot<ControlMessageT>::on_shutdown(prev_state);
 
-            return on_cleanup(prev_state);
+            EndSimThread();
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
       protected:
+        void EndSimThread() {
+            // Cleanup the sim thread
+            bool current_thread_status = stop_thread_;
+            stop_thread_               = true;
+            if (sim_thread_.joinable()) {
+                sim_thread_.join();
+            }
+
+            if (!current_thread_status) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Simulation thread stopped.");
+            }
+        }
+
         /**
          * @brief Publish the TrueSimState of the simulator.
          *

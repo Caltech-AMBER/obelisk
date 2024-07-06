@@ -7,7 +7,7 @@
 namespace obelisk::utils {
     /**
      * @brief spins up an ObeliskNode.
-     *  Handles initilizng rclcpp, creating the executor, adding the node, spinning, removing the node, and shuting
+     *  Handles initializing rclcpp, creating the executor, adding the node, spinning, removing the node, and shutting
      * down.
      *
      * @param argc the command line argc

@@ -24,7 +24,6 @@ scripts = ["obelisk_ws/install/setup.sh"]
 [dependencies]
 python = ">=3.10"
 pip = ">=24.0"
-yaml = ">=0.2.5,<0.3" # TODO: Remove
 
 [pypi-dependencies]
 matplotlib = ">=3.9.0"
@@ -130,12 +129,7 @@ pyright = ">=1.1.368"
 cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
-glfw = "3.4"    # TODO: move
-#mesa-libgl-cos6-x86_64 = "11.*"
-#libglu = "9.*"
-# TODO: sudo apt-get update
-#   sudo apt-get install mesa-common-dev
-
+glfw = "3.4"
 
 # ################ #
 # ENVIRONMENT SETS #
