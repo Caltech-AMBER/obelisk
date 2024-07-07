@@ -97,7 +97,9 @@ namespace obelisk {
         // Allowed non-obelisk message types
         using ROSAllowedMsgs                                         = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
-        inline const std::array<std::string, 2> sensor_message_names = {"JointEncoders", "TrueSimState"};
+        inline const std::array<std::string, 2> sensor_message_names = {
+            obelisk_sensor_msgs::msg::JointEncoders::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME};
 
     } // namespace internal
 
@@ -124,73 +126,6 @@ namespace obelisk {
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
         };
-
-        // TODO: Consider moving to protected
-        /**
-         * @brief Creates a publisher, but first verifies if it is a Obelisk
-         * allowed message type.
-         *
-         * @param topic_name the topic
-         * @param qos
-         * @param non_obelisk determines if we are allowed to publish non-obelisk
-         * messages
-         * @param options
-         * @return the publisher
-         */
-        template <typename MessageT, typename AllocatorT = std::allocator<void>>
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
-        create_publisher(const std::string& topic_name, const rclcpp::QoS& qos, bool non_obelisk = false,
-                         const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
-                             (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>())) {
-            // Check if the message type is valid
-            if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
-                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
-                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
-                }
-            } else {
-                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a publisher that can publish non-Obelisk messages. "
-                                                       "This may cause certain API incompatibilities.");
-            }
-
-            return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT, AllocatorT>(topic_name, qos, options);
-        }
-
-        /**
-         * @brief Creates a subscriber, but first verifies if it is a Obelisk
-         * allowed message type.
-         *
-         * @param topic_name the topic
-         * @param qos
-         * @param callback the callback function
-         * @param non_obelisk determines if we are allowed to subscribe to
-         * non-obelisk messages. Logs warning if true.
-         * @param options
-         * @return the subscription
-         */
-        template <typename MessageT, typename CallbackT, typename AllocatorT = std::allocator<void>,
-                  typename SubscriptionT          = rclcpp::Subscription<MessageT, AllocatorT>,
-                  typename MessageMemoryStrategyT = typename SubscriptionT::MessageMemoryStrategyType>
-        std::shared_ptr<SubscriptionT> create_subscription(
-            const std::string& topic_name, const rclcpp::QoS& qos, CallbackT&& callback, bool non_obelisk = false,
-            const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>& options =
-                rclcpp_lifecycle::create_default_subscription_options<AllocatorT>(),
-            typename MessageMemoryStrategyT::SharedPtr msg_mem_strat = (MessageMemoryStrategyT::create_default())) {
-            // Check if the message type is valid
-            if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
-                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
-                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
-                }
-            } else {
-                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a subscriber that can publish non-Obelisk messages. "
-                                                       "This may cause certain API incompatibilities.");
-            }
-
-            return rclcpp_lifecycle::LifecycleNode::create_subscription<MessageT, CallbackT, AllocatorT, SubscriptionT,
-                                                                        MessageMemoryStrategyT>(
-                topic_name, qos, std::move(callback), options, msg_mem_strat);
-        }
 
         /**
          * @brief Registers a publisher with the node so that the node can handle all configuration, activation, and
@@ -511,6 +446,72 @@ namespace obelisk {
         }
 
       protected:
+        /**
+         * @brief Creates a publisher, but first verifies if it is a Obelisk
+         * allowed message type.
+         *
+         * @param topic_name the topic
+         * @param qos
+         * @param non_obelisk determines if we are allowed to publish non-obelisk
+         * messages
+         * @param options
+         * @return the publisher
+         */
+        template <typename MessageT, typename AllocatorT = std::allocator<void>>
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
+        create_publisher(const std::string& topic_name, const rclcpp::QoS& qos, bool non_obelisk = false,
+                         const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
+                             (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>())) {
+            // Check if the message type is valid
+            if (!non_obelisk) {
+                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
+                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
+                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
+                }
+            } else {
+                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a publisher that can publish non-Obelisk messages. "
+                                                       "This may cause certain API incompatibilities.");
+            }
+
+            return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT, AllocatorT>(topic_name, qos, options);
+        }
+
+        /**
+         * @brief Creates a subscriber, but first verifies if it is a Obelisk
+         * allowed message type.
+         *
+         * @param topic_name the topic
+         * @param qos
+         * @param callback the callback function
+         * @param non_obelisk determines if we are allowed to subscribe to
+         * non-obelisk messages. Logs warning if true.
+         * @param options
+         * @return the subscription
+         */
+        template <typename MessageT, typename CallbackT, typename AllocatorT = std::allocator<void>,
+                  typename SubscriptionT          = rclcpp::Subscription<MessageT, AllocatorT>,
+                  typename MessageMemoryStrategyT = typename SubscriptionT::MessageMemoryStrategyType>
+        std::shared_ptr<SubscriptionT> create_subscription(
+            const std::string& topic_name, const rclcpp::QoS& qos, CallbackT&& callback, bool non_obelisk = false,
+            const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>& options =
+                rclcpp_lifecycle::create_default_subscription_options<AllocatorT>(),
+            typename MessageMemoryStrategyT::SharedPtr msg_mem_strat = (MessageMemoryStrategyT::create_default())) {
+            // Check if the message type is valid
+            if (!non_obelisk) {
+                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
+                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
+                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
+                }
+            } else {
+                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a subscriber that can publish non-Obelisk messages. "
+                                                       "This may cause certain API incompatibilities.");
+            }
+
+            return rclcpp_lifecycle::LifecycleNode::create_subscription<MessageT, CallbackT, AllocatorT, SubscriptionT,
+                                                                        MessageMemoryStrategyT>(
+                topic_name, qos, std::move(callback), options, msg_mem_strat);
+        }
+
         /**
          * @brief Creates all the registered publishers.
          */

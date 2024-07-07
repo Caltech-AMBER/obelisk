@@ -19,10 +19,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief Configures all the required ROS components. Specifcially this
-         * registers the control_publisher_, state_estimator_subscriber_, and the
-         * control_timer_. Also makes a call to ObeliskNode on configure to parse
-         * and create the callback group map.
+         * @brief configures the node.
          *
          * @param prev_state the state of the ros node.
          * @return success if everything completes.
@@ -71,7 +68,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the ros node.
+         * @brief shuts down the ros node.
          *
          * @param prev_state the state of the ros node.
          */

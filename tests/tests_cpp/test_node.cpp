@@ -33,6 +33,9 @@ namespace obelisk {
 
         // Templated generic callback to facilitate easy testing
         template <typename MessageT> void GenericCallback(const MessageT& msg) {}
+
+        using ObeliskNode::create_publisher;
+        using ObeliskNode::create_subscription;
     };
 } // namespace obelisk
 
