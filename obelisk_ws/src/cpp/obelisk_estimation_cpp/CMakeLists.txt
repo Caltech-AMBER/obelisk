@@ -17,8 +17,17 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(ObeliskCpp)
 
+# Get Obelisk zoo
+include(FetchContent)
+FetchContent_Declare(
+  Zoo
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/zoo
+)
+
+FetchContent_MakeAvailable(Zoo)
+
 add_executable(jointencoders_passthrough_estimator src/jointencoders_passthrough_estimator.cpp)
-target_link_libraries(jointencoders_passthrough_estimator PUBLIC ObeliskCpp)
+target_link_libraries(jointencoders_passthrough_estimator PUBLIC ObeliskCpp Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

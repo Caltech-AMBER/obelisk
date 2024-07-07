@@ -17,8 +17,17 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(ObeliskCpp)
 
+# Get Obelisk zoo
+include(FetchContent)
+FetchContent_Declare(
+  Zoo
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/zoo
+)
+
+FetchContent_MakeAvailable(Zoo)
+
 add_executable(example_position_setpoint_controller src/example_position_setpoint_controller.cpp)
-target_link_libraries(example_position_setpoint_controller PUBLIC ObeliskCpp)
+target_link_libraries(example_position_setpoint_controller PUBLIC ObeliskCpp Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
