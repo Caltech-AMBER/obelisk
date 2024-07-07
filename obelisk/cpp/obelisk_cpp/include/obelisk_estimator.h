@@ -5,8 +5,8 @@
 namespace obelisk {
     template <typename EstimatorMessageT> class ObeliskEstimator : public ObeliskNode {
       public:
-        explicit ObeliskEstimator(const std::string& name, const std::string& est_pub_key = "pub_est",
-                                  const std::string& est_timer_key = "timer_est")
+        explicit ObeliskEstimator(const std::string& name, const std::string& est_pub_key = "publisher_est",
+                                  const std::string& est_timer_key = "timer_est_setting")
             : ObeliskNode(name), est_pub_key_(est_pub_key), est_timer_key_(est_timer_key) {
 
             // Register all components

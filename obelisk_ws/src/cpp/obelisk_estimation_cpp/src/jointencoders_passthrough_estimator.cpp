@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "obelisk_estimator.h"
-#include "obelisk_ros_utls.h"
+#include "obelisk_ros_utils.h"
 
 class JointEncodersPassthrough : public obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
   public:

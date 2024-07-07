@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "obelisk_controller.h"
-#include "obelisk_ros_utls.h"
+#include "obelisk_ros_utils.h"
 
 class PositionSetpointController : public obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
                                                                      obelisk_estimator_msgs::msg::EstimatedState> {
