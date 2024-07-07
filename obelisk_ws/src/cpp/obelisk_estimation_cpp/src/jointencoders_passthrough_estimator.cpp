@@ -2,6 +2,6 @@
 #include "obelisk_ros_utils.h"
 
 int main(int argc, char* argv[]) {
-    obelisk::utils::SpinObelisk<JointEncodersPassthrough, rclcpp::executors::MultiThreadedExecutor>(
+    obelisk::utils::SpinObelisk<JointEncodersPassthroughEstimator, rclcpp::executors::MultiThreadedExecutor>(
         argc, argv, "passthrough_estimator");
 }

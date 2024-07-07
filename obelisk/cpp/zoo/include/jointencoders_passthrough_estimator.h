@@ -3,14 +3,15 @@
 #include "obelisk_estimator.h"
 #include "obelisk_ros_utils.h"
 
-class JointEncodersPassthrough : public obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
+class JointEncodersPassthroughEstimator
+    : public obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
   public:
-    JointEncodersPassthrough(const std::string& name)
+    JointEncodersPassthroughEstimator(const std::string& name)
         : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
         this->RegisterSubscription<obelisk_sensor_msgs::msg::JointEncoders>(
             "sub_sensor_setting", "sub_sensor",
-            std::bind(&JointEncodersPassthrough::JointEncoderCallback, this, std::placeholders::_1));
+            std::bind(&JointEncodersPassthroughEstimator::JointEncoderCallback, this, std::placeholders::_1));
     }
 
   protected:
