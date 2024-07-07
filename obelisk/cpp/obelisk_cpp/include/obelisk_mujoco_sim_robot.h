@@ -28,8 +28,8 @@ namespace obelisk {
          * @brief Configures the node
          *
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(
-            const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_configure(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
@@ -63,7 +63,7 @@ namespace obelisk {
                 RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
             }
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return this->PostConfigure(prev_state);
         }
 
         /**
@@ -71,11 +71,11 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
-            const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return this->PostActivate(prev_state);
         }
 
         /**
@@ -83,11 +83,11 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_deactivate(
-            const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return this->PostDeactivate(prev_state);
         }
 
         /**
@@ -95,8 +95,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_cleanup(
-            const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
             configuration_complete_ = false;
 
@@ -104,7 +104,7 @@ namespace obelisk {
             nu_          = -1;
             num_sensors_ = 0;
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return this->PostCleanup(prev_state);
         }
 
         /**
@@ -112,8 +112,8 @@ namespace obelisk {
          *
          * @param prev_state the state of the ros node.
          */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_shutdown(
-            const rclcpp_lifecycle::State& prev_state) {
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
             configuration_complete_ = false;
 
@@ -121,7 +121,7 @@ namespace obelisk {
             nu_          = -1;
             num_sensors_ = 0;
 
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+            return this->PostShutdown(prev_state);
         }
 
         /**
