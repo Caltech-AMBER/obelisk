@@ -11,9 +11,15 @@ namespace obelisk {
             const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
-            // TODO (@zolkin): Use the MESSAGE_NAME field (stored in info.msg_type in registered_publishers_) to
-            // determine if the publisher is publishing a sensor for now, just going to check if its empty
-            has_sensor_pub_ = !registered_publishers_.empty();
+            // TODO (@zolkin): find a better way to do this
+            using internal::sensor_message_names;
+            for (const auto [key, reg_pub] : registered_publishers_) {
+                const std::string* name_ptr =
+                    std::find(sensor_message_names.begin(), sensor_message_names.end(), reg_pub.msg_type);
+                if (name_ptr != sensor_message_names.end()) {
+                    has_sensor_pub_ = true;
+                }
+            }
 
             if (!has_sensor_pub_) {
                 throw std::runtime_error("Need a sensor publisher in an Obelisk Sensor Node!");

@@ -89,6 +89,16 @@ namespace obelisk {
             std::function<rclcpp::TimerBase::SharedPtr(const std::string&)> creator;
         };
 
+        // Other internal definitions
+        // Allowed Obelisk message types
+        using ObeliskMsgs =
+            std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_estimator_msgs::msg::EstimatedState,
+                       obelisk_sensor_msgs::msg::JointEncoders, obelisk_sensor_msgs::msg::TrueSimState>;
+        // Allowed non-obelisk message types
+        using ROSAllowedMsgs                                         = std::tuple<rcl_interfaces::msg::ParameterEvent>;
+
+        inline const std::array<std::string, 2> sensor_message_names = {"JointEncoders", "TrueSimState"};
+
     } // namespace internal
 
     /**
@@ -134,7 +144,8 @@ namespace obelisk {
                              (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>())) {
             // Check if the message type is valid
             if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, ObeliskMsgs>::value || ValidMessage<MessageT, ROSAllowedMsgs>::value)) {
+                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
+                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
                     throw std::runtime_error("Provided message type is not a valid Obelisk message!");
                 }
             } else {
@@ -167,7 +178,8 @@ namespace obelisk {
             typename MessageMemoryStrategyT::SharedPtr msg_mem_strat = (MessageMemoryStrategyT::create_default())) {
             // Check if the message type is valid
             if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, ObeliskMsgs>::value || ValidMessage<MessageT, ROSAllowedMsgs>::value)) {
+                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
+                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
                     throw std::runtime_error("Provided message type is not a valid Obelisk message!");
                 }
             } else {
@@ -815,13 +827,6 @@ namespace obelisk {
         // --------- Member Variables --------- //
         static constexpr int DEFAULT_DEPTH       = 10;
         static constexpr bool DEFAULT_IS_OBK_MSG = true;
-
-        // Allowed Obelisk message types
-        using ObeliskMsgs =
-            std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_estimator_msgs::msg::EstimatedState,
-                       obelisk_sensor_msgs::msg::JointEncoders, obelisk_sensor_msgs::msg::TrueSimState>;
-        // Allowed non-obelisk message types
-        using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
         /**
          * Helper functions for determining if we have a valid message.
