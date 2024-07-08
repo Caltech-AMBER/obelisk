@@ -231,3 +231,5 @@ cmake-build-*
 # MUJOCO #
 # ###### #
 MUJOCO_LOG.TXT
+
+.vscode

@@ -5,6 +5,7 @@
 
 Documentation for ``obelisk``
 =============================
+.. TODO: Fix the TOC so all the pages have the same one!
 
 .. toctree::
    :maxdepth: 2
@@ -14,6 +15,8 @@ Documentation for ``obelisk``
    getting_started.md
    development.md
    obelisk_api.md
+   starting_example.md
+   faq.md
 
 Overview
 --------

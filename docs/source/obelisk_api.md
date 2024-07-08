@@ -1,17 +1,67 @@
 # Obelisk API
-The Obelisk API defines a consistent set of interfaces to modularize the development of robotics stacks. At the core of Obelisk is ROS2, which provides a Publish-Subscribe (or Pub-Sub) interface for heterogenous nodes to interact with each other. Obelisk provides unified interfaces to simulators, hardware, state estimators, controllers, and other utilities like visualization and logging.
+The Obelisk API defines a consistent set of interfaces to modularize the development of robotics stacks. At the core of Obelisk is ROS2, which provides a Publish-Subscribe (or Pub-Sub) interface for heterogenous nodes to interact with each other. Obelisk provides unified interfaces to simulators, hardware, state estimators, controllers, and other utilities like visualization and logging. Obelisk provides libraries written natively in both C++ and Python that allow you to easily interface with the Obelisk ecosystem. It should be noted that Obelisk is designed to make robotics control system development easier, but if a desired feature is not natively supported, Obelisk is easily extendible! It is possible to interface with non-Obelisk ROS2 systems from the Obelisk ecosystem, but this will be significantly more effort than staying in the Obelisk ecosystem. Obelisk is open source, so if you want a feature added, feel free to submit a pull request on [Github](https://github.com/Caltech-AMBER/obelisk).
 
-This abstract interface is achieved by defining a set of common [messages](https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html) and [topics](https://docs.ros.org/en/humble/Concepts/Basic/About-Topics.html). Standardizing these messages and topics within the lab will allow anyone to interface with a robot that is in the Obelisk ecosystem without hassle. Similarily, this will make is easy to test code on any simulator in the ecosystem. Each simulator and robot will need to be brought into the ecosystem through a Obelisk wrapper that will allow it to interface with the Obelisk API. Once a robot is in the ecosystem anyone can use it easily without needing to re-create the entire stack.
+Below we will cover all the concepts needed to work with Obelisk, including all relevant parts of the ROS2 ecosystem.
+
+## Obelisk Overview
+In Obelisk we assume that there are three main blocks in every control system stack:
+- Controller
+- State estimator
+- System (robot)
+
+Beyond these main blocks, there are a number of optional blocks:
+- Sensors
+- Visualization (TBD)
+
+Further, we define basic *required* connections between these blocks as shown in Fig. TBD (TODO: insert figure). For example, the state estimator always receives information from the System, and outputs an estimate to the Controller. When writing a robotics stack in Obelisk these connections are *always* present. These connections are a minimal requirement, and more connections can always be added. For example, the Controller may output multiple control actions rather than a single one.
+
+There is a fundamental difference between the System block and every other block. The System block is what is being controlled, and thus is not normally implemented by the user. Obelisk provides implementations of the System block, while for every other block we provide a class interface that the user will need to implement.
+
+The System block may either be the hardware interface or the simulation interface. For each simulator there is a single simulation interface that supports all robots, and currently there is only one supported simulator: [Mujoco](https://mujoco.org/). On the other hand, for each robot there is a specific hardware interface. Each robot that is in Obelisk ecosystem will need a custom hardware interface written for it, but once the is written anyone using Obelisk can easily interface with the robot.
+
+### Obelisk Nodes
+Each block in Fig. TBD is comprised by one or more Obelisk nodes.
+
+Nodes are processes that can interact with each other via a publish-subscribe system. This means that each node has the ability to both publish an unlimited number and type of messages and subscribe to any number and type of messages. More information on ROS2 nodes can be found [here](https://docs.ros.org/en/humble/Concepts/Basic/About-Nodes.html).
+
+All nodes are made up the following:
+- Components:
+    - Publishers
+    - Subscriptions
+    - Timers
+- Problem specific data and stateful information
+
+An Obelisk node is a specific ROS2 node that has special features designed to make bringing up a robotics stack easy and hassle free.
+Some of the main features are listed here:
+- Automatic handling (activation, deactivation, cleanup) of all Components (Publishers, Subscriptions, Timers)
+- Easily configurable via a yaml file
+- Nominally only publish and subscribe to Obelisk messages
+- Automatically launched - no need to write a custom launch file!
+- [Lifecycle](https://github.com/ros2/demos/blob/humble/lifecycle/README.rst) states
+
+## Using Obelisk
+Obelisk supplies libraries in both C++ and Python which can be easily installed on your system and used as normal libraries. Obelisk also provides a default ROS2 workspace that can be an [underlay](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html#source-the-overlay) or included as a package dependency directly in your ROS2 workspace. The Obelisk workspace will provide access to all the messages and launch files whereas the libraries will allow you to write custom `ObeliskNodes`.
+
+The libraries provide five main class interfaces:
+- `ObeliskController`
+- `ObeliskEstimator`
+- `ObeliskRobot`
+- `ObeliskSensor`
+- `ObeliskNode`
+
+In your code, you can write classes that inherit from these classes and thus gain the benefit of being an `ObeliskNode`. Specific examples and code-level details are given at TBD.
+
+<!-- This abstract interface is achieved by defining a set of common [messages](https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html) and [topics](https://docs.ros.org/en/humble/Concepts/Basic/About-Topics.html). Standardizing these messages and topics within the lab will allow anyone to interface with a robot that is in the Obelisk ecosystem without hassle. Similarily, this will make is easy to test code on any simulator in the ecosystem. Each simulator and robot will need to be brought into the ecosystem through a Obelisk wrapper that will allow it to interface with the Obelisk API. Once a robot is in the ecosystem anyone can use it easily without needing to re-create the entire stack.
 
 As part of accomplishing this, Obelisk defines a standardized "world" interface. The Obelisk wrappers let the simulators or robots expose the world interface that the rest of the robot stack can then interface with. Beyond the convinece of interfacing with other robots, this design choice should make moving from simulation to hardware seamless and increase the chances that a working simulation implies a working robot in the real world.
 
 Beyond unifying the simulation and hardware interface, Obelisk users should be able to use other modules that are designed to fit into the Obelisk API easily. For example, if person A has written a state estimator for a robot, then person B should be able to write a controller that uses those state esimates easily and without modifying the source code for their controller or person A's state estimator. This will allow for more code sharing and collaboration.
 
-Obelisk has been designed to provide these conviences with minimal overhead.
+Obelisk has been designed to provide these conviences with minimal overhead. -->
 
 <!-- TODO (@zolkin): Add in a system diagram -->
 <!-- TODO (@zolkin): Break this up into multiple files -->
-## Configuring Obelisk
+<!-- ## Configuring Obelisk
 Obelisk attempts to be flexible and abstract to meet everyone's needs. This means that for each specific use case we need to configure Obelisk to maximize our efficiency. This can be done through a few configuration files. The configuration files are read in at the start of run time and are not meant to be updated throughout a run.
 
 Obelisk simulator interfaces accept a configuration file to make the simulation match the hardware as best as possible. The possible configuration paramters are given below.
@@ -25,10 +75,10 @@ Obelisk simulator interfaces accept a configuration file to make the simulation 
 Obelisk hardware interfaces accept a configuration file too. The hardware accepts the below paramteres.
 - Configuration of anything hardware bound (e.g. on board PD controller gains)
 
-Details on each of these paramters and how to specify them are given at TBD.
+Details on each of these paramters and how to specify them are given at TBD. -->
 <!-- TODO (@zolkin): Add in more information about this -->
 
-## Messages
+<!-- ## Messages
 Below is a list of messages used by Obelisk
 - `obelisk_msg/State`
 - `obelisk_msg/EstimatedState`
@@ -41,9 +91,9 @@ Below is a list of messages used by Obelisk
 - `sensor_msg/PointCloud`
 - `sensor_msg/JointState`
 - `obelisk_msg/PDFeedForward`
-- `obelisk_msg/Torques`
+- `obelisk_msg/Torques` -->
 
-## Topics
+<!-- ## Topics
 Below is the full list of topics used by Obelisk.
 
 Topics relating to states and sensors:
@@ -58,4 +108,4 @@ Topics relating to states and sensors:
 
 Topics relating to controllers:
 - `/obelisk/Torques` (msg: `obelisk_msg/Torques`)
-- `/obelisk/PDFeedForward` (msg: `obelisk_msg/PDFeedForward`)
+- `/obelisk/PDFeedForward` (msg: `obelisk_msg/PDFeedForward`) -->
