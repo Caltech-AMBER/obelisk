@@ -16,7 +16,6 @@ Documentation for ``obelisk``
    development.md
    obelisk_api.md
    using_obelisk.rst
-   starting_example.md
    faq.md
 
 Overview
