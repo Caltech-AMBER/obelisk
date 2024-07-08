@@ -53,6 +53,10 @@ Controller Code
               };
             };
 
+        Here we can see that ``PositionSetpointController`` inherits from ``ObeliskController`` and implements the two abstract methods required. ``ObeliskController`` is templated on the control message type and the state estimator message type.
+
+        ``ComputeControl`` and ``UpdateXHat`` are automatically registered as callbacks for the timer and subscriber respectively.
+
     .. tab:: Python
         .. code-block:: python
 
@@ -141,6 +145,9 @@ Estimator Code
             std::vector<double> joint_encoders_;
           };
 
+        Here we can see that ``JointEncodersPassthroughEstimator`` inherits from ``ObeliskEstimator`` and implements the one abstract method required. ``ObeliskEstimator`` is templated on the estimated message type.
+
+        ``ComputeStateEstimate`` is automatically registered as callbacks for timer. ``JointEncoderCallback`` is not automatically registered as a callback since it it not part of required component in the node. We can see that it is registered with the ``std::bind()`` call in the constructor.
     .. tab:: Python
         .. code-block:: python
 
