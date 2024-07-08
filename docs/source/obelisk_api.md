@@ -3,7 +3,7 @@ The Obelisk API defines a consistent set of interfaces to modularize the develop
 
 Below we will cover all the concepts needed to work with Obelisk, including all relevant parts of the ROS2 ecosystem.
 
-## Obelisk Overview
+## Overview
 In Obelisk we assume that there are three main blocks in every control system stack:
 - Controller
 - State estimator
@@ -23,10 +23,12 @@ There is a fundamental difference between the System block and every other block
 
 The System block may either be the hardware interface or the simulation interface. For each simulator there is a single simulation interface that supports all robots, and currently there is only one supported simulator: [Mujoco](https://mujoco.org/). On the other hand, for each robot there is a specific hardware interface. Each robot that is in Obelisk ecosystem will need a custom hardware interface written for it, but once the is written anyone using Obelisk can easily interface with the robot.
 
-### Obelisk Nodes
+## Obelisk Nodes
 Each block in the above figure is comprised by one or more Obelisk nodes. Obelisk nodes are specialized ROS2 nodes, so we will begin by describing ROS2 nodes.
 
-Nodes are processes that can interact with each other via a publish-subscribe system. This means that each node has the ability to both publish any number and type of messages and subscribe to any number and type of messages. Each node must be "launched" when booting up your stack, and this is normally handled via a launch file. All Obelisk nodes are ROS2 Lifecycle nodes, which means that each node keeps track of its internal state. Lifecycle nodes can undergo the following state transitions:
+Nodes are processes that can interact with each other via a publish-subscribe system. This means that each node has the ability to both publish any number and type of messages and subscribe to any number and type of messages. Every message is published to a "topic" which is effectively a message stream, where the topic name is given by a string. Then any node that wants to listen to that data just needs to subscribe to that topic.
+
+Each node must be "launched" when booting up your stack, and this is normally handled via a launch file. All Obelisk nodes are ROS2 Lifecycle nodes, which means that each node keeps track of its internal state. Lifecycle nodes can undergo the following state transitions:
 - Configuration
 - Activation
 - Deactivation
@@ -46,17 +48,19 @@ Some of the main features are:
 - Automatically launched - no need to write a custom launch file!
 - [Lifecycle](https://github.com/ros2/demos/blob/humble/lifecycle/README.rst) states (as briefly mentioned above)
 
-## Using Obelisk
-Obelisk supplies libraries in both C++ and Python which can be easily installed on your system and used as normal libraries. Obelisk also provides a default ROS2 workspace that can be an [underlay](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html#source-the-overlay) or included as a package dependency directly in your ROS2 workspace. The Obelisk workspace will provide access to all the messages and launch files whereas the libraries will allow you to write custom `ObeliskNodes`.
+Obelisk nodes make it so you don't have to worry about all the details of the ROS interface, so that you can focus on writing the callbacks, which is the meat of most control stacks.
 
-The libraries provide five main class interfaces:
-- `ObeliskController`
-- `ObeliskEstimator`
-- `ObeliskRobot`
-- `ObeliskSensor`
-- `ObeliskNode`
+## Obelisk Messages and Topics
+Obelisk comes with a set of custom message types that are designed to be used with Obelisk nodes. Having a standardized set of messages allows us to easily interface with other's code as it defines a basic input-output API, but also it allows us to encode useful meta-data in each message. Here we list all supported Obelisk message types (details on each message type is given in the code).
+- Controller messages:
+    - `PositionSetpoint`
+- Estimator messages:
+    - `EstimatedState`
+- Sensor messages:
+    - `JointEncoders`
+    - `TrueSimState`
 
-In your code, you can write classes that inherit from these classes and thus gain the benefit of being an `ObeliskNode`. Specific examples and code-level details are given at TBD.
+The topic names are configurable in the node configuration (yaml) file.
 
 <!-- This abstract interface is achieved by defining a set of common [messages](https://docs.ros.org/en/humble/Concepts/Basic/About-Interfaces.html) and [topics](https://docs.ros.org/en/humble/Concepts/Basic/About-Topics.html). Standardizing these messages and topics within the lab will allow anyone to interface with a robot that is in the Obelisk ecosystem without hassle. Similarily, this will make is easy to test code on any simulator in the ecosystem. Each simulator and robot will need to be brought into the ecosystem through a Obelisk wrapper that will allow it to interface with the Obelisk API. Once a robot is in the ecosystem anyone can use it easily without needing to re-create the entire stack.
 
