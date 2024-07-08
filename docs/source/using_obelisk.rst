@@ -147,7 +147,7 @@ Estimator Code
 
         Here we can see that ``JointEncodersPassthroughEstimator`` inherits from ``ObeliskEstimator`` and implements the one abstract method required. ``ObeliskEstimator`` is templated on the estimated message type.
 
-        ``ComputeStateEstimate`` is automatically registered as callbacks for timer. ``JointEncoderCallback`` is not automatically registered as a callback since it it not part of required component in the node. We can see that it is registered with the ``std::bind()`` call in the constructor.
+        ``ComputeStateEstimate`` is automatically registered as callbacks for timer. ``JointEncoderCallback`` is not automatically registered as a callback since it it not a part of a required component in the node. We can see that it is registered with the ``std::bind()`` call in the constructor.
     .. tab:: Python
         .. code-block:: python
 
