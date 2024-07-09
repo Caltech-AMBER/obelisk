@@ -20,7 +20,7 @@ find_package(obelisk_estimator_msgs REQUIRED)
 # ------- Mujoco ------- #
 include(FetchContent)
 set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
-set(COMP_ARCH "x86_64" CACHE STRING "computer architecture.")
+set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
 
 FetchContent_Declare(
   mujoco
@@ -55,7 +55,7 @@ set(OBELISK_CPP_HEADER_LIST
 add_library(ObeliskCpp INTERFACE)
 target_include_directories(ObeliskCpp INTERFACE include ${mujoco_SOURCE_DIR}/include)
 
-target_link_libraries(ObeliskCpp INTERFACE mujoco-lib glfw) #glfw)
+target_link_libraries(ObeliskCpp INTERFACE mujoco-lib glfw)
 
 ament_target_dependencies(ObeliskCpp INTERFACE
   rclcpp
