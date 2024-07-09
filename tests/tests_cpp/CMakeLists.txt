@@ -39,6 +39,8 @@ add_executable(NodeTest
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC ObeliskCpp)
 
+# target_compile_options(NodeTest PRIVATE -Wall -Wextra)
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)

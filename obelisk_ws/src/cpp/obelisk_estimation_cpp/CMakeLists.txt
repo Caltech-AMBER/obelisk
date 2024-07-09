@@ -18,7 +18,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ObeliskCpp)
 
 # Get Obelisk zoo
-include(FetchContent)
 FetchContent_Declare(
   Zoo
   SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/zoo
