@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
     mesa-utils \
     x11-apps \
     libyaml-dev \
+    mesa-common-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
