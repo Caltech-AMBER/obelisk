@@ -13,7 +13,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
 
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskSensorMsg, is_in_bound
+from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
 
@@ -24,25 +24,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
-
-    def _set_shared_ctrl(self, ctrl: List[float]) -> None:
-        """Set the shared control array.
-
-        This is a convenience function to set the shared control array in a thread-safe manner. This should be called in
-        the apply_control function. The shared control array is used to communicate the control input to the simulator.
-
-        The values can be accessed in the simulator by running
-        ```
-        with self.lock:
-            ctrl = list(self.shared_ctrl)
-        ```
-
-        Parameters:
-            ctrl: The control array of length n_u.
-        """
-        if hasattr(self, "lock"):
-            with self.lock:
-                self.shared_ctrl[:] = ctrl
 
     def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
@@ -72,6 +53,10 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         pub_sensor: Publisher,
     ) -> Callable:
         """Create a timer callback from the ObeliskSensorMsg type.
+
+        We can define this util for the mujoco simulator because we can enumerate all of the mujoco sensor types and
+        write custom timer callbacks for each of them. We essentially convert mujoco sensor types to Obelisk sensor
+        messages here.
 
         Parameters:
             msg_type: The Obelisk sensor message type.
@@ -179,38 +164,10 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
                 self.obk_timers[f"sensor_group_{i}"] = timer_sensor
 
-        # setting up the simulator
-        self.t_last = multiprocessing.Value("d", 0.0)  # shared mem for t_last
-        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u, lock=True)
-        self.lock = self.shared_ctrl.get_lock()
-        self.sim_process = multiprocessing.Process(target=self.run_simulator)
-        self.is_viewer_running = multiprocessing.Value("b", True)
+        # setting up the shared_ctrl array
+        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u)
 
         return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the simulator."""
-        super().on_activate(state)
-        self.t_last.value = self.t
-        self.sim_process.start()
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the simulator."""
-        super().on_cleanup(state)
-        if self.sim_process.is_alive():
-            self.is_viewer_running.value = False
-            self.sim_process.terminate()
-            self.sim_process.join()
-        return TransitionCallbackReturn.SUCCESS
-
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
-        """Apply the control message.
-
-        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
-        field of a mujoco model. YOU MUST CHECK THIS YOURSELF!
-        """
-        self._set_shared_ctrl(control_msg.u)
 
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the true simulator state."""
@@ -219,7 +176,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def run_simulator(self) -> None:
         """Run the mujoco simulator."""
         with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
-            while viewer.is_running() and self.is_viewer_running.value:
+            while viewer.is_running() and self.is_sim_running.value:
                 # simulate at realtime rate
                 # TODO(ahl): allow non-realtime rates
                 t = self.t

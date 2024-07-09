@@ -1,4 +1,6 @@
+import multiprocessing
 from abc import ABC, abstractmethod
+from typing import List
 
 import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
@@ -64,6 +66,27 @@ class ObeliskSimRobot(ObeliskRobot):
             msg_type=osm.TrueSimState,
             default_config_str="",
         )
+        self.shared_ctrl = None
+
+    def _set_shared_ctrl(self, ctrl: List[float]) -> None:
+        """Set the shared control array.
+
+        This is a convenience function to set the shared control array in a thread-safe manner. This should be called in
+        the apply_control function. The shared control array is used to communicate the control input to the simulator.
+
+        The values can be accessed in the simulator by running
+        ```
+        with self.lock:
+            ctrl = list(self.shared_ctrl)
+        ```
+
+        Parameters:
+            ctrl: The control array of length n_u.
+        """
+        assert self.shared_ctrl is not None, "Shared control array must be initialized in derived class!"
+        if hasattr(self, "lock"):
+            with self.lock:
+                self.shared_ctrl[:] = ctrl
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the simulation."""
@@ -78,7 +101,37 @@ class ObeliskSimRobot(ObeliskRobot):
             self.timer_true_sim_state = None
             self.publisher_true_sim_state = None
 
+        # setting up the simulator multiprocessing
+        self.t_last = multiprocessing.Value("d", 0.0)  # shared mem for t_last
+        self.lock = multiprocessing.Lock()
+        self.sim_process = multiprocessing.Process(target=self.run_simulator)
+        self.is_sim_running = multiprocessing.Value("b", True)
+
         return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Activate the simulator."""
+        super().on_activate(state)
+        self.t_last.value = self.t
+        self.sim_process.start()
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Clean up the simulator."""
+        super().on_cleanup(state)
+        if self.sim_process.is_alive():
+            self.is_sim_running.value = False
+            self.sim_process.terminate()
+            self.sim_process.join()
+        return TransitionCallbackReturn.SUCCESS
+
+    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+        """Apply the control message.
+
+        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
+        field of a sim model. YOU MUST CHECK THIS YOURSELF!
+        """
+        self._set_shared_ctrl(control_msg.u)
 
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the TrueSimState of the simulator.
