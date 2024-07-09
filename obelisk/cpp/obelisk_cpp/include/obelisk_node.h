@@ -420,31 +420,6 @@ namespace obelisk {
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual PostConfigure(
-            __attribute__((unused)) const rclcpp_lifecycle::State& prev_state) {
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual PostActivate(
-            __attribute__((unused)) const rclcpp_lifecycle::State& prev_state) {
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual PostDeactivate(
-            __attribute__((unused)) const rclcpp_lifecycle::State& prev_state) {
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual PostCleanup(
-            __attribute__((unused)) const rclcpp_lifecycle::State& prev_state) {
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual PostShutdown(
-            __attribute__((unused)) const rclcpp_lifecycle::State& prev_state) {
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
       protected:
         /**
          * @brief Creates a publisher, but first verifies if it is a Obelisk

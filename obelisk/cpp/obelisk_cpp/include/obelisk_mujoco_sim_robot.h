@@ -63,7 +63,7 @@ namespace obelisk {
                 RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
             }
 
-            return this->PostConfigure(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -75,7 +75,7 @@ namespace obelisk {
         on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
-            return this->PostActivate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -87,7 +87,7 @@ namespace obelisk {
         on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
 
-            return this->PostDeactivate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -104,7 +104,7 @@ namespace obelisk {
             nu_          = -1;
             num_sensors_ = 0;
 
-            return this->PostCleanup(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -121,7 +121,7 @@ namespace obelisk {
             nu_          = -1;
             num_sensors_ = 0;
 
-            return this->PostShutdown(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**

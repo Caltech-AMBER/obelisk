@@ -23,7 +23,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) final {
             ObeliskNode::on_configure(prev_state);
-            return this->PostConfigure(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -34,7 +34,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskNode::on_activate(prev_state);
-            return this->PostActivate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -45,7 +45,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskNode::on_deactivate(prev_state);
-            return this->PostDeactivate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -56,7 +56,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
             ObeliskNode::on_cleanup(prev_state);
-            return this->PostCleanup(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
         /**
@@ -67,7 +67,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
             ObeliskNode::on_shutdown(prev_state);
-            return this->PostShutdown(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
       protected:
