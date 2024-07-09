@@ -44,7 +44,6 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskNode::on_activate(prev_state);
-
             return this->PostActivate(prev_state);
         }
 
@@ -56,7 +55,6 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskNode::on_deactivate(prev_state);
-
             return this->PostDeactivate(prev_state);
         }
 

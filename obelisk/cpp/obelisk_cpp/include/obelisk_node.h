@@ -18,9 +18,9 @@ namespace obelisk {
         // ------------------------------------ //
         class ObeliskPublisherBase {
           public:
-            virtual void OnActivate()   = 0;
-            virtual void OnDeactivate() = 0;
-            virtual void Release()      = 0;
+            virtual void Activate()   = 0;
+            virtual void Deactivate() = 0;
+            virtual void Release()    = 0;
 
           protected:
           private:
@@ -31,9 +31,9 @@ namespace obelisk {
             ObeliskPublisher(typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr publisher)
                 : publisher_(publisher) {}
 
-            void OnActivate() override { publisher_->on_activate(); }
+            void Activate() override { publisher_->on_activate(); }
 
-            void OnDeactivate() override { publisher_->on_deactivate(); }
+            void Deactivate() override { publisher_->on_deactivate(); }
 
             void Release() override { publisher_.reset(); }
 
@@ -291,7 +291,7 @@ namespace obelisk {
 
             for (auto& [key, pub] : publishers_) {
                 if (pub) {
-                    pub->OnActivate();
+                    pub->Activate();
                 }
             }
 
@@ -316,7 +316,7 @@ namespace obelisk {
 
             for (auto& [key, pub] : publishers_) {
                 if (pub) {
-                    pub->OnDeactivate();
+                    pub->Deactivate();
                 }
             }
 
