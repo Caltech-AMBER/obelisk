@@ -42,7 +42,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """
         if hasattr(self, "lock"):
             with self.lock:
-                self.shared_ctrl[:] = [ctypes.c_double(value) for value in ctrl]
+                self.shared_ctrl[:] = ctrl
 
     def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
