@@ -46,7 +46,7 @@ class ObeliskEstimator(ABC, ObeliskNode):
         )
         self.register_obk_publisher(
             "pub_est_setting",
-            key="publisher_est",
+            key="pub_est",
             msg_type=None,  # generic, specified in config file
         )
 

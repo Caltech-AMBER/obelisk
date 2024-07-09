@@ -23,7 +23,7 @@ class ObeliskRobot(ABC, ObeliskNode):
         self.register_obk_subscription(
             "sub_ctrl_setting",
             self.apply_control,
-            key="subscriber_ctrl",
+            key="sub_ctrl",
             msg_type=None,  # generic, specified in config file
         )
 
@@ -60,7 +60,7 @@ class ObeliskSimRobot(ObeliskRobot):
         )
         self.register_obk_publisher(
             "pub_true_sim_state_setting",
-            key="publisher_true_sim_state",
+            key="pub_true_sim_state",
             msg_type=osm.TrueSimState,
             default_config_str="",
         )

@@ -16,7 +16,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         self.register_obk_subscription(
             "sub_sensor_setting",
             self.joint_encoder_callback,  # type: ignore
-            key="subscriber_sensor",  # key can be specified here or in the config file
+            key="sub_sensor",  # key can be specified here or in the config file
             msg_type=JointEncoders,
         )
 
@@ -35,5 +35,5 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         estimated_state_msg = EstimatedState()
         if self.joint_encoder_values is not None:
             estimated_state_msg.x_hat = self.joint_encoder_values
-            self.obk_publishers["publisher_est"].publish(estimated_state_msg)
+            self.obk_publishers["pub_est"].publish(estimated_state_msg)
             return estimated_state_msg

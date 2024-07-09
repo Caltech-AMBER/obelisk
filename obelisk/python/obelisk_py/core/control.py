@@ -27,13 +27,13 @@ class ObeliskController(ABC, ObeliskNode):
         )
         self.register_obk_publisher(
             "pub_ctrl_setting",
-            key="publisher_ctrl",
+            key="pub_ctrl",
             msg_type=None,  # generic, specified in config file
         )
         self.register_obk_subscription(
             "sub_est_setting",
             self.update_x_hat,
-            key="subscriber_est",
+            key="sub_est",
             msg_type=None,  # generic, specified in config file
         )
 
