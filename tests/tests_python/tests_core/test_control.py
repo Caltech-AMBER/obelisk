@@ -73,7 +73,7 @@ def test_publisher_registration(test_controller: TestController) -> None:
     Parameters:
         test_controller: An instance of TestController.
     """
-    pub_setting = next(s for s in test_controller._obk_pub_settings if s["key"] == "publisher_ctrl")
+    pub_setting = next(s for s in test_controller._obk_pub_settings if s["key"] == "pub_ctrl")
     assert pub_setting["msg_type"] is None  # Should be specified in config file
 
 
@@ -86,7 +86,7 @@ def test_subscription_registration(test_controller: TestController) -> None:
     Parameters:
         test_controller: An instance of TestController.
     """
-    sub_setting = next(s for s in test_controller._obk_sub_settings if s["key"] == "subscriber_est")
+    sub_setting = next(s for s in test_controller._obk_sub_settings if s["key"] == "sub_est")
     assert sub_setting["callback"] == test_controller.update_x_hat
     assert sub_setting["msg_type"] is None  # Should be specified in config file
 
@@ -114,11 +114,11 @@ def test_controller_configuration(test_controller: TestController, set_node_para
     assert "timer_ctrl" in test_controller.obk_timers
     assert isinstance(test_controller.obk_timers["timer_ctrl"], Timer)
 
-    assert "publisher_ctrl" in test_controller.obk_publishers
-    assert isinstance(test_controller.obk_publishers["publisher_ctrl"], Publisher)
+    assert "pub_ctrl" in test_controller.obk_publishers
+    assert isinstance(test_controller.obk_publishers["pub_ctrl"], Publisher)
 
-    assert "subscriber_est" in test_controller.obk_subscriptions
-    assert isinstance(test_controller.obk_subscriptions["subscriber_est"], Subscription)
+    assert "sub_est" in test_controller.obk_subscriptions
+    assert isinstance(test_controller.obk_subscriptions["sub_est"], Subscription)
 
 
 def test_abstract_methods() -> None:

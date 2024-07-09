@@ -78,7 +78,7 @@ def test_robot_subscription_registration(test_robot: TestRobot) -> None:
     Parameters:
         test_robot: An instance of TestRobot.
     """
-    sub_setting = next(s for s in test_robot._obk_sub_settings if s["key"] == "subscriber_ctrl")
+    sub_setting = next(s for s in test_robot._obk_sub_settings if s["key"] == "sub_ctrl")
     assert sub_setting["callback"] == test_robot.apply_control
     assert sub_setting["msg_type"] is None  # Should be specified in config file
 
@@ -97,8 +97,8 @@ def test_robot_configuration(test_robot: TestRobot, set_node_parameters: Callabl
     result = test_robot.on_configure(None)
 
     assert result == TransitionCallbackReturn.SUCCESS
-    assert "subscriber_ctrl" in test_robot.obk_subscriptions
-    assert isinstance(test_robot.obk_subscriptions["subscriber_ctrl"], Subscription)
+    assert "sub_ctrl" in test_robot.obk_subscriptions
+    assert isinstance(test_robot.obk_subscriptions["sub_ctrl"], Subscription)
 
 
 def test_sim_robot_initialization(test_sim_robot: TestSimRobot) -> None:
@@ -135,7 +135,7 @@ def test_sim_robot_publisher_registration(test_sim_robot: TestSimRobot) -> None:
     Parameters:
         test_sim_robot: An instance of TestSimRobot.
     """
-    pub_setting = next(s for s in test_sim_robot._obk_pub_settings if s["key"] == "publisher_true_sim_state")
+    pub_setting = next(s for s in test_sim_robot._obk_pub_settings if s["key"] == "pub_true_sim_state")
     assert pub_setting["msg_type"] == osm.TrueSimState
 
 
@@ -162,8 +162,8 @@ def test_sim_robot_configuration(test_sim_robot: TestSimRobot, set_node_paramete
     assert result == TransitionCallbackReturn.SUCCESS
     assert "timer_true_sim_state" in test_sim_robot.obk_timers
     assert isinstance(test_sim_robot.obk_timers["timer_true_sim_state"], Timer)
-    assert "publisher_true_sim_state" in test_sim_robot.obk_publishers
-    assert isinstance(test_sim_robot.obk_publishers["publisher_true_sim_state"], Publisher)
+    assert "pub_true_sim_state" in test_sim_robot.obk_publishers
+    assert isinstance(test_sim_robot.obk_publishers["pub_true_sim_state"], Publisher)
 
 
 def test_abstract_methods() -> None:

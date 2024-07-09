@@ -23,7 +23,7 @@ class TestEstimator(ObeliskEstimator):
         self.register_obk_subscription(
             "sub_sensor_setting",
             self.update_sensor,
-            key="subscriber_sensor",
+            key="sub_sensor",
             msg_type=None,  # generic, specified in config file
         )
 
@@ -84,7 +84,7 @@ def test_publisher_registration(test_estimator: TestEstimator) -> None:
     Parameters:
         test_estimator: An instance of TestEstimator.
     """
-    pub_setting = next(s for s in test_estimator._obk_pub_settings if s["key"] == "publisher_est")
+    pub_setting = next(s for s in test_estimator._obk_pub_settings if s["key"] == "pub_est")
     assert pub_setting["msg_type"] is None  # Should be specified in config file
 
 
@@ -97,7 +97,7 @@ def test_subscription_registration(test_estimator: TestEstimator) -> None:
     Parameters:
         test_estimator: An instance of TestEstimator.
     """
-    sub_setting = next(s for s in test_estimator._obk_sub_settings if s["key"] == "subscriber_sensor")
+    sub_setting = next(s for s in test_estimator._obk_sub_settings if s["key"] == "sub_sensor")
     assert sub_setting["callback"] == test_estimator.update_sensor
     assert sub_setting["msg_type"] is None  # Should be specified in config file
 
@@ -125,9 +125,9 @@ def test_estimator_configuration(test_estimator: TestEstimator, set_node_paramet
     assert result == TransitionCallbackReturn.SUCCESS
     assert "timer_est" in test_estimator.obk_timers
     assert isinstance(test_estimator.obk_timers["timer_est"], Timer)
-    assert "publisher_est" in test_estimator.obk_publishers
-    assert isinstance(test_estimator.obk_publishers["publisher_est"], Publisher)
-    assert "subscriber_sensor" in test_estimator.obk_subscriptions
+    assert "pub_est" in test_estimator.obk_publishers
+    assert isinstance(test_estimator.obk_publishers["pub_est"], Publisher)
+    assert "sub_sensor" in test_estimator.obk_subscriptions
     assert test_estimator._has_sensor_subscriber
 
 
