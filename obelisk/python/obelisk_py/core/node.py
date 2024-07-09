@@ -338,6 +338,9 @@ class ObeliskNode(LifecycleNode):
     ) -> Tuple[str, Type]:
         """Create a publisher from a configuration string and adds it to the publisher dictionary.
 
+        Also creates a key attribute for the publisher. For example, if the key is "pub_ctrl", then the publisher can be
+        accessed as self.pub_ctrl.
+
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
         For now, we assume the only property of the QoS profile the user will set is history depth, and we don't even
         expose the event_callbacks, qos_overriding_options, or publisher_class parameters.
@@ -398,6 +401,7 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        setattr(self, key, self.obk_publishers[key])  # create key attribute for publisher
         return key, msg_type
 
     def _create_subscription_from_config_str(
@@ -408,6 +412,9 @@ class ObeliskNode(LifecycleNode):
         msg_type: Optional[Type] = None,
     ) -> Tuple[str, Type]:
         """Create a subscription from a configuration string and adds it to the subscription dictionary.
+
+        Also creates a key attribute for the subscription. For example, if the key is "sub_ctrl", then the subscription
+        can be accessed as self.sub_ctrl.
 
         [NOTE] There are many unsupported features in this function, such as setting QoS profiles, callback groups, etc.
         For now, we assume the only property of the QoS profile the user will set is history depth, and we don't even
@@ -472,6 +479,7 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        setattr(self, key, self.obk_subscriptions[key])  # create key attribute for subscription
         return key, msg_type
 
     def _create_timer_from_config_str(
@@ -481,6 +489,9 @@ class ObeliskNode(LifecycleNode):
         key: Optional[str] = None,
     ) -> str:
         """Create a timer from a configuration string and adds it to the timer dictionary.
+
+        Also creates a key attribute for the timer. For example, if the key is "timer_ctrl", then the timer can be
+        accessed as self.timer_ctrl.
 
         Parameters:
             config_str: The configuration string.
@@ -525,6 +536,7 @@ class ObeliskNode(LifecycleNode):
         )
         timer.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
         self.obk_timers[key] = timer
+        setattr(self, key, self.obk_timers[key])  # create key attribute for timer
         return key
 
     # ################ #
