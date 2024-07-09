@@ -401,6 +401,7 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
         setattr(self, key, self.obk_publishers[key])  # create key attribute for publisher
         return key, msg_type
 
@@ -479,6 +480,7 @@ class ObeliskNode(LifecycleNode):
             callback_group=callback_group,
             non_obelisk=non_obelisk_field.lower() == "true",
         )
+        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
         setattr(self, key, self.obk_subscriptions[key])  # create key attribute for subscription
         return key, msg_type
 
@@ -536,6 +538,7 @@ class ObeliskNode(LifecycleNode):
         )
         timer.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
         self.obk_timers[key] = timer
+        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
         setattr(self, key, self.obk_timers[key])  # create key attribute for timer
         return key
 
