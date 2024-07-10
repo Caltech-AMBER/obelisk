@@ -6,9 +6,8 @@ namespace obelisk {
 
     template <typename ControlMessageT, typename EstimatorMessageT> class ObeliskController : public ObeliskNode {
       public:
-        explicit ObeliskController(const std::string& name, const std::string& ctrl_key = "publisher_ctrl",
-                                   const std::string& est_key   = "subscriber_est",
-                                   const std::string& timer_key = "timer_ctrl")
+        explicit ObeliskController(const std::string& name, const std::string& ctrl_key = "pub_ctrl",
+                                   const std::string& est_key = "sub_est", const std::string& timer_key = "timer_ctrl")
             : ObeliskNode(name), ctrl_key_(ctrl_key), est_key_(est_key), timer_key_(timer_key) {
 
             // Register all components

@@ -5,7 +5,7 @@
 namespace obelisk {
     template <typename ControlMessageT> class ObeliskRobot : public ObeliskNode {
       public:
-        explicit ObeliskRobot(const std::string& name, const std::string& sub_ctrl_key = "subscriber_ctrl")
+        explicit ObeliskRobot(const std::string& name, const std::string& sub_ctrl_key = "sub_ctrl")
             : ObeliskNode(name), sub_ctrl_key_(sub_ctrl_key) {
 
             // Register all components

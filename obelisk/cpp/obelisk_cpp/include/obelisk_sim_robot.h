@@ -9,7 +9,7 @@ namespace obelisk {
 
       public:
         explicit ObeliskSimRobot(const std::string& name, const std::string& state_timer_key = "timer_true_sim_state",
-                                 const std::string& state_pub_key = "publisher_true_sim_state")
+                                 const std::string& state_pub_key = "pub_true_sim_state")
             : ObeliskRobot<ControlMessageT>(name), state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
 
             // Register Components
