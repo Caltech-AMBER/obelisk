@@ -34,11 +34,11 @@ class ExamplePositionSetpointController(ObeliskController):
             obelisk_control_msg: The control message.
         """
         # computing the control input
-        u = 10 * np.sin(10 * self.t)  # example state-independent control input
+        u = 0.5 * np.sin(self.t)  # example state-independent control input
 
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = [u]    # TODO
+        position_setpoint_msg.u = [0.5 * np.sin(self.t + i / 10) for i in range(16)]
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

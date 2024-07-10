@@ -348,18 +348,9 @@
     </body>
     </body>
   </worldbody>
-
-  <!-- <actuator>
-      <position joint="mcp_joint" ctrlrange="-1.5708 1.5708" kp="1000.0" kv="100.0"/>
-  </actuator>
-
   
-  <sensor>
-      <jointpos name="sensor_joint1" joint="mcp_joint"/>
-  </sensor> -->
-
-  <!-- <actuator>
-    <position name="1" joint="mcp_joint" class="mcp_joint" />
+  <actuator>
+    <position name="1" joint="1" class="mcp_joint" />
     <position name="0" joint="0" class="pip" />
     <position name="2" joint="2" class="dip" />
     <position name="3" joint="3" class="fingertip" />
@@ -378,11 +369,11 @@
   </actuator>
 
   <sensor>
-    <jointpos name="trace1" joint="mcp_joint" />
-    <jointpos name="trace1" objtype="body" objname="fingertip" /> 
-     <jointpos name="trace1" objtype="body" objname="fingertip" />
+    <jointpos name="trace1" joint="1" />
+    <!-- <jointpos name="trace1" objtype="body" objname="fingertip" /> 
+    <jointpos name="trace1" objtype="body" objname="fingertip" />
     <framepos name="trace2" objtype="body" objname="fingertip_2" />
     <framepos name="trace3" objtype="body" objname="fingertip_3" />
-    <framepos name="trace4" objtype="body" objname="thumb_fingertip" />
-  </sensor> -->
+    <framepos name="trace4" objtype="body" objname="thumb_fingertip" /> -->
+  </sensor>
 </mujoco>
