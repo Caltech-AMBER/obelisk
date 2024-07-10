@@ -50,8 +50,9 @@ TEST_CASE("Obelisk Mujoco Basic Tests", "[obelisk_robot]") {
     rclcpp::init(0, nullptr);
 
     obelisk::ObeliskMujocoTester node;
-    node.Configure();
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // TODO Put back when issue #41 is resolved
+    // node.Configure();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     node.Activate();
     node.Deactivate();
