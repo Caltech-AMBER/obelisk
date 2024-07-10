@@ -64,13 +64,17 @@ onboard:
         non_obelisk: False
     sim:
       - ros_parameter: mujoco_setting
-        model_xml_path: dummy/dummy.xml
+        model_xml_path: leap/leap_hand.xml
+        # model_xml_path: dummy/dummy.xml
         n_u: 1
         time_step: 0.002
         num_steps_per_viz: 5
-        sensor_settings:
-        - topic: /obelisk/dummy/sensor
-          dt: 0.001
-          sensor_type: jointpos
-          sensor_names:
-          - sensor_joint1
+        # sensor_settings:
+        # - topic: /obelisk/dummy/sensor
+        #   dt: 0.001
+        #   sensor_type: jointpos
+        #   sensor_names:
+        #   - sensor_joint1
+          # - trace2
+          # - trace3
+          # - trace4
