@@ -227,6 +227,9 @@ cmake-build-*
 
 .build
 
+# vscode
+.vscode
+
 # ###### #
 # MUJOCO #
 # ###### #

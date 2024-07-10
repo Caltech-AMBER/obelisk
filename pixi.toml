@@ -129,6 +129,7 @@ pyright = ">=1.1.368"
 cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
+glfw = "3.4"
 
 # ################ #
 # ENVIRONMENT SETS #
@@ -164,7 +165,8 @@ ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", 
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
 # run the dummy tests
-cpp-test-dummy = { cmd = "obelisk/cpp/build/tests/dummy_test", depends-on = ["cpp-build"] }
+cpp-test-node = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build"] }
+cpp-test-node-debug = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build-debug"] }
 
 # run ctest
 cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }
@@ -175,10 +177,11 @@ cmake = { cmd = [
     "-GNinja",
     "-Sobelisk/cpp/",
     "-Bobelisk/cpp/build"
-], inputs = ["obelisk/cpp/CMakeLists.txt"], outputs = ["obelisk/cpp/build/CMakeFiles/"] }
+], inputs = ["obelisk/cpp/CMakeLists.txt", "tests/tests_cpp", "obelisk/cpp/"], outputs = ["obelisk/cpp/build/CMakeFiles/"] }
 
 # build the cpp code
 cpp-build = { cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
+cpp-build-debug = { cmd = ["cmake", "--build", "obelisk/cpp/build", "-DCMAKE_BUILD_TYPE=Debug"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
 
 # run python and c++ tests
 all-tests = { cmd = ["pytest"], depends-on = ["source-obelisk", "cpp-ctest"] }
