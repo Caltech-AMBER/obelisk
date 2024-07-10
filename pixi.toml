@@ -161,7 +161,7 @@ build = { features = ["cuda121", "build"] }
 
 [tasks]
 # builds in the obelisk_ws directory only if src has changes
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", depends-on=["messages-build"] }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws" }
 messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs", cwd="obelisk_ws" }
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true" } }
 
