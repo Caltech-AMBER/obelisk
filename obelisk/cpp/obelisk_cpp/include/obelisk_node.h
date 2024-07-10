@@ -16,6 +16,11 @@ namespace obelisk {
         // ------------------------------------ //
         // ------------ Publishers ------------ //
         // ------------------------------------ //
+
+        /**
+         * @brief Internal class used to create a heirarchy to allow to polymorphism to avoid type casting when
+         * Activating, Deactivating and Releasing all publishers. End users should never need this class.
+         */
         class ObeliskPublisherBase {
           public:
             virtual void Activate()   = 0;
@@ -26,6 +31,10 @@ namespace obelisk {
           private:
         };
 
+        /**
+         * @brief Class that inherits from ObeliskPublisherBase and holds a specific ROS2 publisher.
+         * End users should never need this class.
+         */
         template <typename MessageT> class ObeliskPublisher : public ObeliskPublisherBase {
           public:
             ObeliskPublisher(typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr publisher)
@@ -44,6 +53,9 @@ namespace obelisk {
             typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr publisher_;
         };
 
+        /**
+         * @brief Internal struct used to hold registered publisher info and a factory function to make the publisher.
+         */
         struct ObeliskPublisherInfo {
             std::string ros_param;
             std::string msg_type;
@@ -53,6 +65,10 @@ namespace obelisk {
         // ------------------------------------- //
         // ------------ Subscribers ------------ //
         // ------------------------------------- //
+        /**
+         * @brief Internal class used to create a heirarchy to allow to polymorphism to avoid type casting when
+         * Activating, Deactivating and Releasing all subscribers. End users should never need this class.
+         */
         class ObeliskSubscriptionBase {
           public:
             virtual void Release() = 0;
@@ -61,6 +77,10 @@ namespace obelisk {
           private:
         };
 
+        /**
+         * @brief Class that inherits from ObeliskPublisherBase and holds a specific ROS2 subscriber.
+         * End users should never need this class.
+         */
         template <typename MessageT> class ObeliskSubscription : public ObeliskSubscriptionBase {
           public:
             ObeliskSubscription(typename rclcpp::Subscription<MessageT>::SharedPtr subscription)
@@ -75,6 +95,10 @@ namespace obelisk {
             typename rclcpp::Subscription<MessageT>::SharedPtr subscription_;
         };
 
+        /**
+         * @brief Internal struct used to hold registered subscription info and a factory function to make the
+         * subscription.
+         */
         struct ObeliskSubscriptionInfo {
             std::string ros_param;
             std::string msg_type;
@@ -84,6 +108,9 @@ namespace obelisk {
         // ------------------------------------- //
         // --------------- Timers -------------- //
         // ------------------------------------- //
+        /**
+         * @brief Internal struct used to hold registered timer info and a factory function to make the timer.
+         */
         struct ObeliskTimerInfo {
             std::string ros_param;
             std::function<rclcpp::TimerBase::SharedPtr(const std::string&)> creator;
