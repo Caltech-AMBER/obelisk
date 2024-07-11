@@ -41,6 +41,8 @@ if [ "$dev_sys_deps" = true ]; then
         mesa-utils \
         x11-apps \
         libyaml-dev \
+        mesa-common-dev \
+        libglfw3-dev \
         locales
 else
     echo -e "\033[1;32mNot installing development system dependencies. To do so, pass the --dev-sys-deps flag.\033[0m"
