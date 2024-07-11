@@ -28,7 +28,8 @@ FetchContent_Declare(
 FetchContent_Populate(mujoco)
 
 # ------- Setup the Mujoco library ------- #
-find_library(MUJOCO_LIB mujoco-lib REQUIRED HINTS ${mujoco_SOURCE_DIR}/lib)
+message(STATUS "mujoco source dir: ${mujoco_SOURCE_DIR}")
+find_library(MUJOCO_LIB mujoco REQUIRED HINTS ${mujoco_SOURCE_DIR}/lib)
 add_library(mujoco-lib SHARED IMPORTED GLOBAL)
 target_include_directories(mujoco-lib INTERFACE ${mujoco_SOURCE_DIR}/include)
 target_include_directories(mujoco-lib INTERFACE ${mujoco_SOURCE_DIR}/include/mujoco)
@@ -53,13 +54,13 @@ set(CORE_INC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 #         "${CORE_INC}/obelisk_mujoco_sim_robot")
 
 # ------- Making the library ------- #
-add_library(Core INTERFACE)
-add_library(Obelisk::Core ALIAS Core)   # Namespaced alias
-target_include_directories(Core INTERFACE ${CORE_INC} ${mujoco_SOURCE_DIR}/include)
+add_library(ObkCore INTERFACE)
+add_library(Obelisk::Core ALIAS ObkCore)   # Namespaced alias
+target_include_directories(ObkCore INTERFACE ${CORE_INC} ${mujoco_SOURCE_DIR}/include)
 
-target_link_libraries(Core INTERFACE mujoco-lib glfw)
+target_link_libraries(ObkCore INTERFACE mujoco-lib glfw)
 
-ament_target_dependencies(Core INTERFACE
+ament_target_dependencies(ObkCore INTERFACE
   rclcpp
   rclcpp_lifecycle
   obelisk_control_msgs
