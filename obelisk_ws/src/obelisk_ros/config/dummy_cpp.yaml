@@ -1,7 +1,7 @@
 config: dummy
 onboard:
   control:
-    impl: cpp
+    pkg: obelisk_control_cpp
     executable: example_position_setpoint_controller
     # callback_groups:
     publishers:
@@ -28,7 +28,7 @@ onboard:
         callback_group: None
         # callback_key: timer_callback1
   estimation:
-    impl: cpp
+    pkg: obelisk_estimation_cpp
     executable: jointencoders_passthrough_estimator
     # callback_groups:
     publishers:
@@ -57,7 +57,7 @@ onboard:
   # sensing:
   robot:
     is_simulated: True
-    impl: cpp
+    pkg: obelisk_sim_cpp
     executable: obelisk_mujoco_robot
     # callback_groups:
     # publishers:
