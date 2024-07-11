@@ -6,6 +6,16 @@ if [ "$NOOB" != "true" ]; then
     exit 0
 fi
 
+if [ "$GLOBAL" != "true" ]; then
+    echo -e "\033[1;33mGLOBAL=false, so Obelisk is only sourced in pixi envs! \
+Avoids issue where the pixi python path is prepended to PATH globally.\033[0m"
+else
+    echo -e "\033[1;33mGLOBAL=true, so Obelisk is sourced globally! \
+This means that the pixi python path is prepended to PATH unconditionally! \
+This will affect your conda environments, so be careful!\033[0m"
+fi
+
+
 # sources the obelisk installations if not already sourced
 cmd_local='if which python | grep -q ".pixi"; then
     source $OBELISK_ROOT/obelisk_ws/install/setup.sh

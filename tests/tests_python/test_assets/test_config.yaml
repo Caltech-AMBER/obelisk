@@ -1,6 +1,6 @@
 onboard:
   control:
-    impl: python
+    pkg: test_pkg1
     executable: test_controller
     callback_groups:
       cbg1: MutuallyExclusiveCallbackGroup
@@ -29,17 +29,17 @@ onboard:
         callback_group: cbg1
         callback_key: timer_callback1
   estimation:
-    impl: cpp
+    pkg: test_pkg2
     executable: test_estimator
     callback_groups:
       cbg1: ReentrantCallbackGroup
   robot:
-    impl: python
+    pkg: test_pkg3
     executable: test_robot
     callback_groups:
       cbg1: MutuallyExclusiveCallbackGroup
   sensing:
-    - impl: python
+    - pkg: test_pkg4
       executable: test_sensor1
       callback_groups:
         cbg1: MutuallyExclusiveCallbackGroup
@@ -51,7 +51,7 @@ onboard:
           history_depth: 10
           callback_group: cbg1
           non_obelisk: False
-    - impl: cpp
+    - pkg: test_pkg5
       executable: test_sensor2
       callback_groups:
         cbg1: ReentrantCallbackGroup
