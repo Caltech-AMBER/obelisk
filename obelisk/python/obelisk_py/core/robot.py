@@ -15,8 +15,6 @@ class ObeliskRobot(ABC, ObeliskNode):
     Obelisk robots are representations of the physical robot. They take in Obelisk control messages and can optionally
     output Obelisk sensor messages. We expect code in this function to communicate with the low-level control interface
     of a real system.
-
-    [NOTE] In derived classes, you should declare settings for sensor publishers.
     """
 
     def __init__(self, node_name: str) -> None:
