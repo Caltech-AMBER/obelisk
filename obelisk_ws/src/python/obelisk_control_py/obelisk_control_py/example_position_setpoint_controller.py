@@ -1,73 +1,14 @@
 from typing import List, Optional
 
-import numpy as np
-import rclpy
-from obelisk_control_msgs.msg import PositionSetpoint
 from rclpy.executors import SingleThreadedExecutor
-from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
-from obelisk_py.control import ObeliskController
-from obelisk_py.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
-
-
-class ExamplePositionSetpointController(ObeliskController):
-    """Example position setpoint controller."""
-
-    def __init__(self) -> None:
-        """Initialize the example position setpoint controller."""
-        super().__init__("example_position_setpoint_controller")
-
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the controller."""
-        super().on_configure(state)
-        self.x_hat = None
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Activate the controller."""
-        super().on_activate(state)
-        self.x_hat = None
-        return TransitionCallbackReturn.SUCCESS
-
-    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Clean up the controller."""
-        super().on_cleanup(state)
-        del self.x_hat
-        return TransitionCallbackReturn.SUCCESS
-
-    def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
-        """Update the state estimate.
-
-        Parameters:
-            x_hat_msg: The Obelisk message containing the state estimate.
-        """
-        pass  # do nothing
-
-    def compute_control(self) -> ObeliskControlMsg:
-        """Compute the control signal for the dummy 2-link robot.
-
-        Returns:
-            obelisk_control_msg: The control message.
-        """
-        # computing the control input
-        u = 0.1 * np.sin(self.t)  # example state-independent control input
-
-        # setting the message
-        position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = [u]
-        self.publisher_ctrl.publish(position_setpoint_msg)
-        return position_setpoint_msg
+from obelisk_py.core.utils.ros import spin_obelisk
+from obelisk_py.zoo.control.example.example_position_setpoint_controller import ExamplePositionSetpointController
 
 
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
-    rclpy.init(args=args)
-    example_position_setpoint_controller = ExamplePositionSetpointController()
-    executor = SingleThreadedExecutor()
-    executor.add_node(example_position_setpoint_controller)
-    executor.spin()
-    example_position_setpoint_controller.destroy_node()
-    rclpy.shutdown()
+    spin_obelisk(args, ExamplePositionSetpointController, SingleThreadedExecutor)
 
 
 if __name__ == "__main__":

@@ -33,11 +33,7 @@ def set_node_parameters() -> None:
     def _set_node_parameters(node: Node, parameter_dict: Dict) -> None:
         parameters = []
         for name, value in parameter_dict.items():
-            if isinstance(value, list):
-                param_type = Parameter.Type.STRING_ARRAY
-            elif isinstance(value, int):
-                param_type = Parameter.Type.INTEGER
-            elif isinstance(value, str):
+            if isinstance(value, str):
                 param_type = Parameter.Type.STRING
             else:
                 raise ValueError(f"Unsupported parameter type for {name}")
