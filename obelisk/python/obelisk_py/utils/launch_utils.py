@@ -22,7 +22,7 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
             'obelisk_ros' package is assumed.
 
     Returns:
-        A dictionary containing the configuration settings.
+        config: A dictionary containing the configuration settings.
     """
     file_path = str(file_path)
     if not file_path.startswith("/"):
@@ -183,16 +183,9 @@ def get_launch_actions_from_node_settings(
     assert node_type in ["control", "estimation", "robot", "sensing"]
 
     def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
-        impl = node_settings["impl"]
+        package = node_settings["pkg"]
         executable = node_settings["executable"]
-
-        # parsing package name and parameters_dict based on node_type
-        if node_type == "robot" and str(node_settings["is_simulated"]).lower() == "true":
-            package = f"obelisk_sim_{'py' if impl == 'python' else 'cpp'}"
-            parameters_dict = get_parameters_dict(node_settings)
-        else:
-            package = f"obelisk_{node_type}_{'py' if impl == 'python' else 'cpp'}"
-            parameters_dict = get_parameters_dict(node_settings)
+        parameters_dict = get_parameters_dict(node_settings)
 
         launch_actions = []
         component_node = LifecycleNode(
