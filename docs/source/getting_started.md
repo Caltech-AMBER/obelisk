@@ -1,7 +1,7 @@
 # Getting Started
-All instructions in this section assume you are using Ubuntu 22.04. The development dependencies should be installed when `source dev_setup.sh` is run from the repository root.
+All instructions in this section assume you are using Ubuntu 22.04. The development dependencies should be installed when `source dev_setup.sh` is run from the repository root. TODO: fill this out once installation has stabilized.
 
-There are two options for using `obelisk`. One is to use the same dependency management and containerization tools used for development to ensure reproducibility. The other is to simply install `obelisk` as a dependency of your project without using these tools. We will explain how to do both here.
+<!-- There are two options for using `obelisk`. One is to use the same dependency management and containerization tools used for development to ensure reproducibility. The other is to simply install `obelisk` as a dependency of your project without using these tools. We will explain how to do both here.
 
 ## Option 1: Quick Installation
 To install the `obelisk` ROS2 packages, if you have installed `pixi`, you can run
@@ -15,11 +15,11 @@ Similarly, if you have ROS2 locally installed already, you can instead run in th
 colcon build --symlink-install
 echo "source install/setup.sh" >> ~/.bashrc
 ```
-to build our packages and manually install them as an underlay.
+to build our packages and manually install them as an underlay. -->
 
 <!-- TODO(@ahl): when the `obelisk_py` and `obelisk_cpp` packages have content, include instructions for how to install them as well. -->
 
-## Option 2: Isolation
+<!-- ## Option 2: Isolation -->
 <!-- TODO(@ahl): look this over and verify how to use isolation to do dependency management. Update docs in a separate PR. -->
 <!-- Once you have cloned this repository, you can run in the repo root:
 ```

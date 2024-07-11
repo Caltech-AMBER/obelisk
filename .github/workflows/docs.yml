@@ -2,7 +2,7 @@ name: Deploy Sphinx documentation to Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, api-docs]
 
 jobs:
   pages:
@@ -20,6 +20,9 @@ jobs:
     - name: install sphinx-rtd-theme
       run: |
         pip install sphinx_rtd_theme
+    - name: install sphinx_tabs
+      run: |
+        pip install sphinx-tabs
     - id: deployment
       uses: sphinx-notes/pages@v3
       with:

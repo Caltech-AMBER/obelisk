@@ -104,6 +104,7 @@ mujoco = ">=3.1.0"
 myst-parser = ">=3.0.1"
 sphinx = ">=7.3.7"
 sphinx-rtd-theme = ">=2.0.0"
+sphinx-tabs = ">=3.0.0"
 
 
 # test
