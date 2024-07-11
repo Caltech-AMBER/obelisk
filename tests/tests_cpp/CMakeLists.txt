@@ -38,5 +38,4 @@ find_package(std_msgs REQUIRED)
 ament_target_dependencies(NodeTest PUBLIC rclcpp std_msgs)
 
 include(Catch)
-include(CTest)
 catch_discover_tests(NodeTest)
