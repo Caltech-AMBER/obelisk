@@ -43,3 +43,6 @@ services:
     stdin_open: true
     tty: true
     command: /bin/bash
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    user: "${UID}:${GID}"

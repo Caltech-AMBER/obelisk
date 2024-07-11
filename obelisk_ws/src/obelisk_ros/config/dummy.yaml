@@ -49,7 +49,7 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: True
+    is_simulated: False
     pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
     # callback_groups:
@@ -65,7 +65,6 @@ onboard:
     sim:
       - ros_parameter: mujoco_setting
         model_xml_path: leap/leap_hand.xml
-        # model_xml_path: dummy/dummy.xml
         n_u: 16
         time_step: 0.002
         num_steps_per_viz: 5

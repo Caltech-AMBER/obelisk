@@ -17,8 +17,8 @@ class ObeliskLeapHand(ObeliskRobot):
 
     N_MOTORS = 16
 
-    def __init__(self):
-        # super().__init__()
+    def __init__(self, node_name):
+        super().__init__(node_name)
         dxl.setup()
         dxl.sync_PID(range(self.N_MOTORS))
 
@@ -28,4 +28,4 @@ class ObeliskLeapHand(ObeliskRobot):
 
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
         for id in range(self.N_MOTORS):
-            dxl.write_pos(LeapHand.radians_to_dxl_pos(control_msg.u[id]), id=id)
+            dxl.write_pos(ObeliskLeapHand.radians_to_dxl_pos(control_msg.u[id]), id=id)
