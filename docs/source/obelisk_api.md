@@ -1,5 +1,5 @@
 # Obelisk API
-The Obelisk API defines a consistent set of interfaces to modularize the development of robotics stacks. At the core of Obelisk is ROS2, which provides a Publish-Subscribe (or Pub-Sub) interface for heterogenous nodes to interact with each other. Obelisk provides unified interfaces to simulators, hardware, state estimators, controllers, and other utilities like visualization and logging. Obelisk provides libraries written natively in both C++ and Python that allow you to easily interface with the Obelisk ecosystem. It should be noted that Obelisk is designed to make robotics control system development easier, but if a desired feature is not natively supported, Obelisk is easily extendable! It is possible to interface with non-Obelisk ROS2 systems from the Obelisk ecosystem, but this will be significantly more effort than staying in the Obelisk ecosystem. Obelisk is open source, so if you want a feature added, feel free to submit a pull request on [Github](https://github.com/Caltech-AMBER/obelisk).
+The Obelisk API defines a consistent set of interfaces to modularize the development of robotics stacks. At the core of Obelisk is ROS2, which provides a publish-subscribe interface for heterogenous nodes to interact with each other. Obelisk provides unified interfaces to simulators, hardware, state estimators, controllers, and other utilities like visualization and logging as well as libraries written natively in both C++ and Python that allow you to easily interface with the Obelisk ecosystem. It is possible to interface with non-Obelisk ROS2 systems from the Obelisk ecosystem, but this will be significantly more effort than staying in the Obelisk ecosystem. Obelisk is open source, so if you want a feature added, feel free to submit a pull request on [Github](https://github.com/Caltech-AMBER/obelisk).
 
 Below we will cover all the concepts needed to work with Obelisk, including all relevant parts of the ROS2 ecosystem.
 
@@ -17,14 +17,14 @@ The block diagram is as follows:
 
 ![block-diagram](images/block-diagram.png)
 
-The blocks in pink are *required*, so every system using Obelisk must at least include one Controller, one State Estimator, and one System, but additional blocks may be added. Further, each of these blocks expects to be connected to each other in this configuration. For example, the state estimator always receives information from the System, and outputs an estimate to the Controller. When writing a robotics stack in Obelisk these connections are *always* present. These connections are a minimal requirement, and more can always be added. For example, the Controller may outputmore than just the control action.
+The blocks in pink are *required*, so every system using Obelisk must at least include one Controller, one State Estimator, and one System, but additional blocks may be added. Further, each of these blocks expects to be connected to each other in this configuration. For example, the state estimator always receives information from the System, and outputs an estimate to the Controller. When writing a robotics stack in Obelisk, these connections are *always* present, but are only a minimal requirement, and more can always be added. For example, the Controller may output more than just the control action.
 
 For the Controller, State Estimator, and Offboard Sensors, Obelisk provides a set of abstract class interfaces. You must implement certain abstract functions in these classes, but much of the boilerplate code is handled for you.
 
-On the other hand, the System block is different from every other block: the System block is what is being controlled, and thus is not normally implemented by the user. The System block may either be the hardware interface or the simulation interface, both of which are provided by Obelisk. For each simulator there is a single simulation interface that supports all robots, and currently there is only one supported simulator: [Mujoco](https://mujoco.org/). On the other hand, for each robot there is a specific hardware interface. Each robot that is in Obelisk ecosystem will need a custom hardware interface written for it, but once the is written anyone using Obelisk can easily interface with the robot.
+On the other hand, the System block is different from every other block: the System block is what is being controlled, and thus is not normally implemented by the user. The System block may either be the hardware interface or the simulation interface, both of which are provided by Obelisk. For each simulator, there is a single simulation interface that supports all robots, and currently there is only one supported simulator: [Mujoco](https://mujoco.org/). On the other hand, for each robot there is a specific hardware interface. Each robot that is in Obelisk ecosystem will need a custom hardware interface written for it, but once it is written, anyone using Obelisk can easily interface with it.
 
 ## Obelisk Nodes
-Each block in the above figure is comprised by one or more Obelisk nodes. Obelisk nodes are specialized ROS2 nodes, so we will begin by describing ROS2 nodes.
+Each block in the above figure is composed of one or more *Obelisk nodes*. Obelisk nodes are specialized ROS2 nodes, so we will begin by describing ROS2 nodes.
 
 Nodes are processes that can interact with each other via a publish-subscribe system. This means that each node has the ability to both publish any number and type of messages and subscribe to any number and type of messages. Every message is published to a "topic" which is effectively a message stream, where the topic name is given by a string. Then any node that wants to listen to that data just needs to subscribe to that topic.
 
@@ -35,15 +35,15 @@ Each node must be "launched" when booting up your stack, and this is normally ha
 - Cleanup
 - Shutdown
 
-During each of these, internal functions are automtically called to facilitate the transition. We provide "post-transition hooks" that you can implement to execute code during a transition. More information on generic ROS2 nodes can be found [here](https://docs.ros.org/en/humble/Concepts/Basic/About-Nodes.html).
+During each of these, internal functions are automatically called to facilitate the transition. More information on generic ROS2 nodes can be found [here](https://docs.ros.org/en/humble/Concepts/Basic/About-Nodes.html).
 
-An Obelisk node is a specific ROS2 node that has special features designed to make bringing up a robotics stack easy and hassle free. All of these are made up of the following parts:
+An Obelisk node is a specific ROS2 node that has special features designed to make bringing up a robotics stack easy and hassle-free. All of these are made up of the following parts:
 
 ![node](images/node.png)
 
 Some of the main features are:
 - Automatic handling (activation, deactivation, cleanup) of all Components
-- Easily configurable via a yaml file
+- Easy stack configuration via a yaml file
 - Nominally only publish and subscribe to Obelisk messages
 - Automatically launched - no need to write a custom launch file!
 - [Lifecycle](https://github.com/ros2/demos/blob/humble/lifecycle/README.rst) states (as briefly mentioned above)
