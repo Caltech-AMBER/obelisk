@@ -199,3 +199,9 @@ EOF
 sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
 echo "$obk_aliases" >> ~/.bashrc
 echo -e "\033[1;32mObelisk aliases added to ~/.bashrc!\033[0m"
+
+# install dynamixel sdk
+cd ~
+git clone https://github.com/ROBOTIS-GIT/DynamixelSDK.git
+cd DynamixelSDK/python
+sudo python3 setup.py install
