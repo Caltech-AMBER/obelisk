@@ -1,7 +1,7 @@
 config: dummy
 onboard:
   control:
-    impl: python
+    pkg: obelisk_control_py
     executable: example_position_setpoint_controller
     # callback_groups:
     publishers:
@@ -24,7 +24,7 @@ onboard:
         timer_period_sec: 0.001
         callback_group: None
   estimation:
-    impl: python
+    pkg: obelisk_estimation_py
     executable: jointencoders_passthrough_estimator
     # callback_groups:
     publishers:
@@ -50,7 +50,7 @@ onboard:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
     is_simulated: True
-    impl: python
+    pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
     # callback_groups:
     # publishers:
