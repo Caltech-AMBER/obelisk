@@ -16,6 +16,7 @@ author = "AMBER Lab"
 extensions = [
     "myst_parser",
     "sphinx_rtd_theme",
+    "sphinx_tabs.tabs",
 ]
 
 templates_path = ["_templates"]
