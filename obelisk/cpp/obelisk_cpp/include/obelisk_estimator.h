@@ -3,6 +3,20 @@
 #include "obelisk_node.h"
 
 namespace obelisk {
+    /**
+     * @brief Abstract Obelisk estimator node
+     *
+     * Obelisk estimators are stateful. That is, all the quantities required to compute the estimate are stored in the
+     * estimator object itself. This is done because the processes generating each of these quantities may act
+     * asynchronously. Similarly, the state estimate may be queried asynchronously.
+     *
+     * When implementing a new ObeliskEstimator, the user should declare all quantities required to compute the state
+     * estimate in on_configure. These quantities should be updated by various updateX methods. Finally, the
+     * compute_estimate method should be implemented to compute the state estimate using the updated quantities. Note
+     * that the estimate message should be of type ObeliskEstimatorMsg to be compatible with the Obelisk ecosystem.
+     *
+     * This class is templated on the Estimated message type that is published.
+     */
     template <typename EstimatorMessageT> class ObeliskEstimator : public ObeliskNode {
       public:
         explicit ObeliskEstimator(const std::string& name, const std::string& est_pub_key = "pub_est",
@@ -27,7 +41,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates the node.
+         * @brief Activates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -38,7 +52,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates the node.
+         * @brief Deactivates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -49,7 +63,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief Cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -60,7 +74,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the ros node.
+         * @brief Shutsdown the ros node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -72,8 +86,16 @@ namespace obelisk {
 
       protected:
         /**
-         * @brief Abstract method to be implemented downstream. This is
-         * automatically registered as the timer callback.
+         * @brief Compute the state estimate
+         *
+         * Abstract method to be implemented downstream. This is
+         * automatically registered as the timer callback. The expection is that this function is where the publisher is
+         * called.
+         *
+         * The publish call is the important part, NOT the returned value, since the topic is what the ObeliskRobot
+         * subscribes to.
+         *
+         * @return the state estimate message
          */
         virtual EstimatorMessageT ComputeStateEstimate() = 0;
 

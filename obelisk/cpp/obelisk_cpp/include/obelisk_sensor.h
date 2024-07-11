@@ -3,6 +3,14 @@
 #include "obelisk_node.h"
 
 namespace obelisk {
+    /**
+     * @brief Obelisk sensor node
+     *
+     * Obelisk sensors interface directly with sensing hardware. This could mean that this node runs from the robot,
+     * runs from some offboard computer which connects to the sensors, or anything else. ObeliskSensors don't nominally
+     * need to subscribe to any topics. They simply expect to publish some number of sensor messages.
+     *
+     */
     class ObeliskSensor : public ObeliskNode {
       public:
         explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) { has_sensor_pub_ = false; }
@@ -37,7 +45,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates the node.
+         * @brief Activates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -48,7 +56,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates the node.
+         * @brief Deactivates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -59,7 +67,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief Cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -73,7 +81,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the node.
+         * @brief Shutsdown the node.
          *
          * @param prev_state the state of the ros node.
          */

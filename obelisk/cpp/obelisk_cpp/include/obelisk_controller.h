@@ -4,6 +4,21 @@
 
 namespace obelisk {
 
+    /**
+     *  @brief Abstract Obelisk controller node.
+     *
+     * Obelisk controllers are stateful. That is, all the quantities required to compute the control signal are stored
+     * in the controller object itself. This is done because the processes generating each of these quantities may act
+     * asynchronously. Similarly, the control action may be queried asynchronously.
+     *
+     * When implementing a new ObeliskController, the user should declare all quantities required to compute the control
+     * input in on_configure. These quantities should be updated by various UpdateX methods. Finally, the
+     * ComputeControl method should be implemented to compute the control signal using the updated quantities. Note that
+     * the control message should be of type ObeliskControlMsg to be compatible with the Obelisk ecosystem.
+     *
+     * The class has two template parameters: one for the control message type that the node publishes
+     * and one for the estimated message type that the node recieves.
+     */
     template <typename ControlMessageT, typename EstimatorMessageT> class ObeliskController : public ObeliskNode {
       public:
         explicit ObeliskController(const std::string& name, const std::string& ctrl_key = "pub_ctrl",
@@ -18,7 +33,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief configures the node.
+         * @brief Configures the node.
          *
          * @param prev_state the state of the ros node.
          * @return success if everything completes.
@@ -30,7 +45,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates the node.
+         * @brief Activates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -41,7 +56,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates the node.
+         * @brief Deactivates the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -52,7 +67,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief Cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -63,7 +78,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shuts down the ros node.
+         * @brief Shuts down the ros node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -75,14 +90,27 @@ namespace obelisk {
 
       protected:
         /**
-         * @brief Abstract method to be implemented downstream. This is
-         * automatically registered as the timer callback.
+         * @brief Compute the control signal.
+         *
+         * Abstract method to be implemented downstream. This is
+         * automatically registered as the timer callback. The expection is that this function is where the publisher is
+         * called.
+         *
+         * The publish call is the important part, NOT the returned value, since the topic is what the ObeliskRobot
+         * subscribes to.
+         *
+         * @return An Obelisk message type containing the control signal and relevant metadata.
+         *
          */
         virtual ControlMessageT ComputeControl() = 0;
 
         /**
-         * @brief Abstract method to be implemented downstream. This is
+         * @brief Update the state estimate
+         *
+         * Abstract method to be implemented downstream. This is
          * automatically registered as the subscriber callback.
+         *
+         * @param msg: the Obelisk message containing the state estimate.
          */
         virtual void UpdateXHat(const EstimatorMessageT& msg) = 0;
 
