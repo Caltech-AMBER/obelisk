@@ -9,7 +9,7 @@ class JointEncodersPassthroughEstimator
     JointEncodersPassthroughEstimator(const std::string& name)
         : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
-        this->RegisterSubscription<obelisk_sensor_msgs::msg::JointEncoders>(
+        this->RegisterObkSubscription<obelisk_sensor_msgs::msg::JointEncoders>(
             "sub_sensor_setting", "sub_sensor",
             std::bind(&JointEncodersPassthroughEstimator::JointEncoderCallback, this, std::placeholders::_1));
     }

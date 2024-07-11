@@ -4,6 +4,18 @@
 #include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 
 namespace obelisk {
+    /**
+     * @brief Abstract Obelisk simulated robot node.
+     *
+     * Simulated robots can be seen as a special case of the hardware robot, where all the sensors used to control the
+     * robot are contained in the simulator and privileged information about the system can be published directly for
+     * logging or debugging purposes. This privileged information is known as the TrueSimState of the simulator.
+     *
+     * Each ObeliskSimRobot is associated with a simulator. For instance, we currently support MuJoCo, but there is
+     * nothing preventing the end user from implementing their own simulator of choice or us from implementing other
+     * simulators.
+     *
+     */
     template <typename ControlMessageT> class ObeliskSimRobot : public ObeliskRobot<ControlMessageT> {
         using TrueSimState = obelisk_sensor_msgs::msg::TrueSimState;
 
@@ -13,9 +25,9 @@ namespace obelisk {
             : ObeliskRobot<ControlMessageT>(name), state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
 
             // Register Components
-            this->RegisterTimer("timer_true_sim_state_setting", state_timer_key_,
-                                std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
-            this->template RegisterPublisher<TrueSimState>("pub_true_sim_state_setting", state_pub_key_);
+            this->RegisterObkTimer("timer_true_sim_state_setting", state_timer_key_,
+                                   std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
+            this->template RegisterObkPublisher<TrueSimState>("pub_true_sim_state_setting", state_pub_key_);
 
             stop_thread_ = false;
         }
@@ -39,7 +51,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates up the node.
+         * @brief Activates up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -51,7 +63,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates up the node.
+         * @brief Deactivates up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -63,7 +75,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief Cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -77,7 +89,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the node the node.
+         * @brief Shutsdown the node the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -91,6 +103,12 @@ namespace obelisk {
         }
 
       protected:
+        /**
+         * @brief Ends the simulation thread
+         *
+         * Cleanly ends the simulation thread by switching the flag then joining the thread.
+         * Logs the end of the thread.
+         */
         void EndSimThread() {
             // Cleanup the sim thread
             bool current_thread_status = stop_thread_;
@@ -128,6 +146,12 @@ namespace obelisk {
          */
         virtual void RunSimulator() = 0;
 
+        /**
+         * @brief Calls the RunSimulator() function
+         *
+         * This is here to avoid potential issues binding an abstract method.
+         * This may be removed if these potential issues are determined to be non-issues.
+         */
         void StartSim() { this->RunSimulator(); }
 
         // ---------- Member Variables --------- //

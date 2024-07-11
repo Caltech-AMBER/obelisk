@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y \
     x11-apps \
     libyaml-dev \
     mesa-common-dev \
+    libglfw3-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \

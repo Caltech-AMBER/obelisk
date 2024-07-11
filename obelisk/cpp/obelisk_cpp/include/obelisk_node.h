@@ -131,9 +131,43 @@ namespace obelisk {
     } // namespace internal
 
     /**
-     * ObeliskNode class.
-     * A lifecycle node whose publishers and subscribers can only publish and
-     * subscribe to Obelisk messages.
+     * @brief Abstract generic Obelisk node
+     *
+     * A lifecycle node whose publishers and subscribers can only publish and subscribe to Obelisk messages.
+     *
+     * By convention, the initialization function should only declare ROS parameters and define stateful quantities.
+     * Some guidelines for the on_configure, on_activate, and on_deactivate callbacks are provided below.
+     *
+     * Lifecycle Callbacks
+     * -------------------
+     * The on_configure callback should do the following:
+     *   * Instantiate required ROS parameters.
+     *   * Instantiate optional ROS parameters.
+     *   * Declare publishers, timers, and subscribers (any timers should be deactivated here).
+     *   * Initialize stateful quantities.
+     *
+     * The on_activate callback should do the following:
+     *   * Activate any timers that were declared in on_configure (by calling reset()).
+     *   * Resetting any variables or stateful quantities that need particular initial values upon activation.
+     *
+     * The on_deactivate callback should do the following:
+     *   * Deactivate any timers that were activated in on_activate (by calling cancel()).
+     *
+     * The on_cleanup callback should do the following:
+     *   * Clean up any resources that were allocated in on_configure.
+     *
+     * The on_shutdown callback should do the following:
+     *   * Also perform clean up. The main difference is that if shutting down, the node cannot reactivate.
+     *
+     * Configuration Strings
+     * ---------------------
+     * The configuration of publishers, subscribers, and timers are done via a concept called configuration strings. A
+     * configuration string is formatted as follows:
+     *   "field1:value1,field2:value2,...,fieldN:valueN".
+     * That is, each field-value pair is separated by a comma, and the field and value are separated by a colon. This
+     * lets the user specify the configuration of the publisher in a single string, which is a compressed way to
+     * configure publishers or subscribers using the data types available to ROS2 parameters. This also means the user
+     * can omit fields in favor of default values if desired or pass fields in any order.
      */
     class ObeliskNode : public rclcpp_lifecycle::LifecycleNode {
       public:
@@ -165,8 +199,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename MessageT>
-        void RegisterPublisher(const std::string& ros_param, const std::string& key,
-                               const std::string& default_config_str = "") {
+        void RegisterObkPublisher(const std::string& ros_param, const std::string& key,
+                                  const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskPublisherInfo info;
@@ -212,8 +246,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename MessageT, typename CallbackT>
-        void RegisterSubscription(const std::string& ros_param, const std::string& key, CallbackT&& callback,
-                                  const std::string& default_config_str = "") {
+        void RegisterObkSubscription(const std::string& ros_param, const std::string& key, CallbackT&& callback,
+                                     const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskSubscriptionInfo info;
@@ -258,8 +292,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename CallbackT>
-        void RegisterTimer(const std::string& ros_param, const std::string& key, CallbackT&& callback,
-                           const std::string& default_config_str = "") {
+        void RegisterObkTimer(const std::string& ros_param, const std::string& key, CallbackT&& callback,
+                              const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskTimerInfo info;

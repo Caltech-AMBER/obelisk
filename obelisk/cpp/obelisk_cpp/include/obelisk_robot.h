@@ -3,13 +3,22 @@
 #include "obelisk_node.h"
 
 namespace obelisk {
+    /**
+     * @brief Abstract Obelisk robot node.
+     *
+     * Obelisk robots are representations of the physical robot. They take in Obelisk control messages and can
+     * optionally output Obelisk sensor messages. We expect code in this function to communicate with the low-level
+     * control interface of a real system.
+     *
+     * This class is templated on the type of Control message it is expected to receive.
+     */
     template <typename ControlMessageT> class ObeliskRobot : public ObeliskNode {
       public:
         explicit ObeliskRobot(const std::string& name, const std::string& sub_ctrl_key = "sub_ctrl")
             : ObeliskNode(name), sub_ctrl_key_(sub_ctrl_key) {
 
             // Register all components
-            this->RegisterSubscription<ControlMessageT>(
+            this->RegisterObkSubscription<ControlMessageT>(
                 "sub_ctrl_setting", sub_ctrl_key_, std::bind(&ObeliskRobot::ApplyControl, this, std::placeholders::_1));
         }
 
@@ -26,7 +35,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief activates up the node.
+         * @brief Activates up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -38,7 +47,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief deactivates up the node.
+         * @brief Deactivates up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -50,7 +59,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief cleans up the node.
+         * @brief Cleans up the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -62,7 +71,7 @@ namespace obelisk {
         }
 
         /**
-         * @brief shutsdown the node the node.
+         * @brief Shutsdown the node the node.
          *
          * @param prev_state the state of the ros node.
          */
@@ -74,6 +83,12 @@ namespace obelisk {
         }
 
       protected:
+        /**
+         * @brief Apply the control message
+         *
+         * Code to interface with the simulator or hardware should be implemented here.
+         *
+         */
         virtual void ApplyControl(const ControlMessageT& msg) = 0;
 
         std::string sub_ctrl_key_;

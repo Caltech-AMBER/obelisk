@@ -1,7 +1,7 @@
 config: dummy
 onboard:
   control:
-    impl: python
+    pkg: obelisk_control_py
     executable: example_position_setpoint_controller
     # callback_groups:
     publishers:
@@ -28,7 +28,7 @@ onboard:
         callback_group: None
         # callback_key: timer_callback1
   estimation:
-    impl: python
+    pkg: obelisk_estimation_py
     executable: jointencoders_passthrough_estimator
     # callback_groups:
     publishers:
@@ -57,7 +57,7 @@ onboard:
   # sensing:
   robot:
     is_simulated: True
-    impl: python
+    pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
     # callback_groups:
     # publishers:
