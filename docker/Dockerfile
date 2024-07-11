@@ -8,17 +8,18 @@ SHELL ["/bin/bash", "-c"]
 ARG USER=user
 ARG UID=1000
 ARG GID=1000
+ARG OBELISK_ROOT=/
 ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
+ENV OBELISK_ROOT=$OBELISK_ROOT
 
 # set timezone
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# essential dependencies
-RUN apt-get update -y && \
-	apt-get install -y \
+# basic dependencies from docker_setup.sh (up until sudo and below)
+RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
     cmake \
@@ -30,8 +31,15 @@ RUN apt-get update -y && \
     python-is-python3 \
     python3-pip \
     python3-argcomplete \
+    mesa-utils \
+    x11-apps \
+    libyaml-dev \
+    mesa-common-dev \
+    libglfw3-dev \
+    locales \
     sudo && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    locale-gen en_US.UTF-8
 
 # create non-root user with sudo privileges for certain commands
 RUN groupadd --gid $GID $USER && \
@@ -43,16 +51,12 @@ RUN groupadd --gid $GID $USER && \
 # switch to new user and workdir
 USER ${UID}
 
-# pixi, uv, and nvm (for pyright)
-RUN curl -fsSL https://pixi.sh/install.sh | bash && \
-curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    source /home/${USER}/.bashrc && \
-    export NVM_DIR="$HOME/.nvm" && \
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && \
-    nvm install 20
+# run docker setup script in Dockerfile
+COPY docker_setup.sh /tmp/docker_setup.sh
+RUN source /tmp/docker_setup.sh --skip-docker && \
+    sudo rm /tmp/docker_setup.sh
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}

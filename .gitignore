@@ -226,3 +226,16 @@ log
 cmake-build-*
 
 .build
+
+# vscode
+.vscode
+
+# ###### #
+# MUJOCO #
+# ###### #
+MUJOCO_LOG.TXT
+
+# ###### #
+# VSCODE #
+# ###### #
+.vscode

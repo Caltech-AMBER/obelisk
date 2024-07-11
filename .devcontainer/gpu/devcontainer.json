@@ -1,0 +1,24 @@
+{
+    "name": "Obelisk GPU Dev Container",
+    "dockerComposeFile": "../../docker/docker-compose.yml",
+    "service": "obelisk",
+    "workspaceFolder": "${localWorkspaceFolder}",
+    "shutdownAction": "stopCompose",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "mutantdino.resourcemonitor",
+                "ms-azuretools.vscode-docker",
+                "nvidia.nsight-vscode-edition",
+                "ritwickdey.liveserver",
+                "ms-vscode.cmake-tools",
+                "ms-python.python",
+                "charliermarsh.ruff"
+            ]
+        }
+    },
+    "initializeCommand": "export OBELISK_ROOT=${localWorkspaceFolder}",
+    "remoteEnv": {
+        "OBELISK_ROOT": "${localEnv: OBELISK_ROOT}"
+    }
+}

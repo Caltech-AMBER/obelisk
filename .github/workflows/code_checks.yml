@@ -1,6 +1,7 @@
 name: Core Tests
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -10,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  code-checks:
     runs-on: ubuntu-22.04
 
     steps:
@@ -27,18 +28,25 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
+      - name: Set Up Development Environment
+        run: |
+          source dev_setup.sh
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml up -d
+      - name: Build ROS2 Messages
+        run: |
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build"
+      - name: Build and Source ROS2
+        run: |
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu source-obelisk"
       - name: Run Ruff Linter
         run: |
-          pixi run --environment test-workflow ruff check docs/ obelisk/ tests/ --output-format=github
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
       - name: Run Ruff Formatter
         run: |
-          pixi run --environment test-workflow ruff format docs/ obelisk/ tests/ --diff
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff"
       - name: Run Pyright
         run: |
-          pixi run --environment test-workflow pyright
-      - name: Test with pytest
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu pyright"
+      - name: Test with pytest and ctest
         run: |
-          pixi run --environment test-workflow pytest
-      - name: Test with CTest
-        run: |
-          pixi run --environment test-workflow cpp-ctest
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu all-tests"
