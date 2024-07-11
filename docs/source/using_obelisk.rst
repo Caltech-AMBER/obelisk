@@ -96,7 +96,7 @@ Controller Code
                         obelisk_control_msg: The control message.
                     """
                     # computing the control input
-                    u = 0.1 * np.sin(self.t)  # example state-independent control input
+                    u = np.sin(self.t)  # example state-independent control input
 
                     # setting the message
                     position_setpoint_msg = PositionSetpoint()
