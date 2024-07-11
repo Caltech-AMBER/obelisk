@@ -24,9 +24,9 @@ namespace obelisk {
             : ObeliskNode(name), est_pub_key_(est_pub_key), est_timer_key_(est_timer_key) {
 
             // Register all components
-            this->RegisterPublisher<EstimatorMessageT>("pub_est_setting", est_pub_key_);
-            this->RegisterTimer("timer_est_setting", est_timer_key_,
-                                std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
+            this->RegisterObkPublisher<EstimatorMessageT>("pub_est_setting", est_pub_key_);
+            this->RegisterObkTimer("timer_est_setting", est_timer_key_,
+                                   std::bind(&ObeliskEstimator::ComputeStateEstimate, this));
         }
 
         /**

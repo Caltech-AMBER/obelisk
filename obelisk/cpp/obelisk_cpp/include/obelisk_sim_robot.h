@@ -25,9 +25,9 @@ namespace obelisk {
             : ObeliskRobot<ControlMessageT>(name), state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
 
             // Register Components
-            this->RegisterTimer("timer_true_sim_state_setting", state_timer_key_,
-                                std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
-            this->template RegisterPublisher<TrueSimState>("pub_true_sim_state_setting", state_pub_key_);
+            this->RegisterObkTimer("timer_true_sim_state_setting", state_timer_key_,
+                                   std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
+            this->template RegisterObkPublisher<TrueSimState>("pub_true_sim_state_setting", state_pub_key_);
 
             stop_thread_ = false;
         }

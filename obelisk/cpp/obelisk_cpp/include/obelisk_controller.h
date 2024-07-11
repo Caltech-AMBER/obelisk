@@ -26,9 +26,10 @@ namespace obelisk {
             : ObeliskNode(name), ctrl_key_(ctrl_key), est_key_(est_key), timer_key_(timer_key) {
 
             // Register all components
-            this->RegisterTimer("timer_ctrl_setting", timer_key_, std::bind(&ObeliskController::ComputeControl, this));
-            this->RegisterPublisher<ControlMessageT>("pub_ctrl_setting", ctrl_key_);
-            this->RegisterSubscription<EstimatorMessageT>(
+            this->RegisterObkTimer("timer_ctrl_setting", timer_key_,
+                                   std::bind(&ObeliskController::ComputeControl, this));
+            this->RegisterObkPublisher<ControlMessageT>("pub_ctrl_setting", ctrl_key_);
+            this->RegisterObkSubscription<EstimatorMessageT>(
                 "sub_est_setting", est_key_, std::bind(&ObeliskController::UpdateXHat, this, std::placeholders::_1));
         }
 

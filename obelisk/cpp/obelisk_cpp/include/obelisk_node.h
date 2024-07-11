@@ -199,8 +199,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename MessageT>
-        void RegisterPublisher(const std::string& ros_param, const std::string& key,
-                               const std::string& default_config_str = "") {
+        void RegisterObkPublisher(const std::string& ros_param, const std::string& key,
+                                  const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskPublisherInfo info;
@@ -246,8 +246,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename MessageT, typename CallbackT>
-        void RegisterSubscription(const std::string& ros_param, const std::string& key, CallbackT&& callback,
-                                  const std::string& default_config_str = "") {
+        void RegisterObkSubscription(const std::string& ros_param, const std::string& key, CallbackT&& callback,
+                                     const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskSubscriptionInfo info;
@@ -292,8 +292,8 @@ namespace obelisk {
          * @param default_config_str (optional, default is "") string giving the default configuration
          */
         template <typename CallbackT>
-        void RegisterTimer(const std::string& ros_param, const std::string& key, CallbackT&& callback,
-                           const std::string& default_config_str = "") {
+        void RegisterObkTimer(const std::string& ros_param, const std::string& key, CallbackT&& callback,
+                              const std::string& default_config_str = "") {
             this->declare_parameter(ros_param, default_config_str);
 
             internal::ObeliskTimerInfo info;
