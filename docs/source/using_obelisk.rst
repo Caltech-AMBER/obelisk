@@ -2,7 +2,7 @@
 Using Obelisk - Basic Example
 =============================
 
-Obelisk supplies libraries in both C++ and Python which can be easily installed on your system and used as normal libraries. Obelisk also provides a default ROS2 workspace that can be an `underlay <https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html#source-the-overlay>`_ or included as a package dependency directly in your ROS2 workspace. The Obelisk workspace will provide access to all the messages and launch files whereas the libraries will allow you to write custom `ObeliskNodes`.
+Obelisk supplies libraries in both C++ and Python which can be easily installed on your system and used as normal libraries. Obelisk also provides a default ROS2 workspace that can be an `underlay <https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html#source-the-overlay>`_ or included as a package dependency directly in your ROS2 workspace. The Obelisk workspace will provide access to all the messages and launch files whereas the libraries will allow you to write custom `ObeliskNodes`. For concrete examples, see `this repository <https://github.com/Caltech-AMBER/obelisk-examples>`_.
 
 The libraries provide five main class interfaces:
 
@@ -14,7 +14,7 @@ The libraries provide five main class interfaces:
 
 In your code, you can write classes that inherit from these classes and thus gain the benefit of being an ``ObeliskNode``.
 
-Below we will walk through an example where we write code to control a simple two-link robot with a single actuator.
+Below, we will walk through an example where we write code to control a simple two-link robot with a single actuator.
 
 Controller Code
 ^^^^^^^^^^^^^^^
@@ -101,7 +101,7 @@ Controller Code
                     # setting the message
                     position_setpoint_msg = PositionSetpoint()
                     position_setpoint_msg.u = [u]
-                    self.obk_publishers["publisher_ctrl"].publish(position_setpoint_msg)
+                    self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
                     assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
                     return position_setpoint_msg  # type: ignore
 
@@ -305,13 +305,12 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
   config: dummy
   onboard:
     control:
-      impl: python
+      pkg: obelisk_control_py
       executable: example_position_setpoint_controller
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/dummy/ctrl
           msg_type: PositionSetpoint
-          key: "asdf"
           history_depth: 10
           callback_group: None
           non_obelisk: False
@@ -327,7 +326,7 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
           timer_period_sec: 0.001
           callback_group: None
     estimation:
-      impl: python
+      pkg: obelisk_estimation_py
       executable: jointencoders_passthrough_estimator
       publishers:
         - ros_parameter: pub_est_setting
@@ -351,7 +350,7 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
     # sensing:
     robot:
       is_simulated: True
-      impl: python
+      pkg: obelisk_sim_py
       executable: obelisk_mujoco_robot
       # callback_groups:
       # publishers:
@@ -389,7 +388,7 @@ First we give the name of this configuration (``dummy``), and which device this 
 .. code-block:: yaml
 
   control:
-    impl: python
+    pkg: obelisk_control_py
     executable: example_position_setpoint_controller
     publishers:
       - ros_parameter: pub_ctrl_setting
@@ -412,20 +411,20 @@ First we give the name of this configuration (``dummy``), and which device this 
         callback_group: None
 
 
-Now we configure our Controller node. ``impl`` gives the implementation language, and ``executable`` tells us what the name is of the executable with ``main`` in it. Now we need to configure all of the Components in this node. Publishers and subscribers have the following options.
+Now we configure our Controller node. ``pkg`` gives the name of the package containing the Obelisk node, and ``executable`` tells us what the name is of the executable with ``main`` in it. Now we need to configure all of the Components in this node. Publishers and subscribers have the following options.
 
-- ``ros_parameter`` gives the string name of the ros parameter declared in the code. This is how the launch file get these options to the correct node.
+- ``ros_parameter`` gives the string name of the ros parameter declared in the code. This is how the launch file gets these options to the correct node.
 - ``topic`` gives the string topic name that will either be published or subscribed to.
 - ``msg_type`` gives the type of message we want to publish or subscribe to. **Note this is only ever used in the Python implementation. In C++ the message type must be specified in the code as a templated parameter.**
-- ``key`` TBD
-- ``history_depth`` (optional) gives the number of messages to hold in teh queue before deleting additional messages. If this not set we the use the default value of 10.
+- ``key`` gives the string key associated with the component if not already specified in the code implementation. **Note this is only ever used in the Python implementation. In C++, the key must be specified during component declaration time.**
+- ``history_depth`` (optional) gives the number of messages to hold in the queue before deleting additional messages. If this not set we the use the default value of 10.
 - ``callback_group`` (optional) gives the string name of the callback group to use. The callback groups can be configured within this configuration file. If no value is specified, then the node's default callback group is used.
-- ``non_obelisk`` (optional) determine whether this node can publish non-obelisk messages. **Note if this is set to true, then this may cause problems with the interfaces, so only use if you are sure this is what you need.** If no value is specified, then the default value of `False` is used.
+- ``non_obelisk`` (optional) determine whether this node can publish non-Obelisk messages. **Note if this is set to true, then this may cause problems with the interfaces, so only use if you are sure this is what you need.** If no value is specified, then the default value of `False` is used.
 
 Timers have the following options.
 
-- ``ros_parameter`` gives the string name of the ros parameter declared in the code. This is how the launch file get these options to the correct node.
-- ``timer_period_sec`` gives the period of the timer in seconds
+- ``ros_parameter`` gives the string name of the ros parameter declared in the code.
+- ``timer_period_sec`` gives the period of the timer in seconds.
 - ``callback_group`` (optional) gives the string name of the callback group to use. The callback groups can be configured within this configuration file. If no value is specified, then the node's default callback group is used.
 
 This is repeated for every non-system node in the block diagram, which in this case is just an additional estimator.
@@ -433,7 +432,7 @@ This is repeated for every non-system node in the block diagram, which in this c
 .. code-block:: yaml
 
   estimation:
-      impl: python
+      pkg: obelisk_estimation_py
       executable: jointencoders_passthrough_estimator
       publishers:
         - ros_parameter: pub_est_setting
@@ -456,13 +455,13 @@ This is repeated for every non-system node in the block diagram, which in this c
           callback_group: None
 
 
-The finally we need to configure the ``robot`` (aka the system).
+Lastly, we need to configure the ``robot`` (aka, the system).
 
 .. code-block:: yaml
 
   robot:
     is_simulated: True
-    impl: python
+    pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
     # callback_groups:
     # publishers:
@@ -488,13 +487,13 @@ The finally we need to configure the ``robot`` (aka the system).
           - sensor_joint1
 
 
-``is_simulated`` marks if we are running on hardware or in simulation. ``impl`` again tells us which language the interface is written in. ``executable`` once again gives the name of the executable with ``main`` in it.
+``is_simulated`` marks if we are running on hardware or in simulation. ``pkg`` and ``executable`` are as before.
 
-Now we must configure the Components of the node, which in this example is just a subscriber. These Components have all the same options as the non-system Components given above.
+Now, we must configure the Components of the node, which in this example is just a subscriber. These Components have all the same options as the non-system Components given above.
 
-Lastly, since this is a simulation we must provide the simulator with all relevant information. Here we are using the Mujoco simulation interface. The new settings here are
+Lastly, since this is a simulation, we must provide the simulator with all relevant information. Here, we are using the Mujoco simulation interface. The new settings here are:
 
-- ``n_u`` gives the number of control inputs (i.e. the number of scalars)
+- ``n_u`` gives the number of control inputs (i.e., the number of scalars)
 - ``time_step`` (optional) gives the length of a simulation time step. If no value is provided, the default value of 0.002 seconds will be used.
 - ``num_steps_per_viz`` (optional) gives the number of steps to use between simulation rendering. If no value is provided, the default value of 8 steps will be used.
 
