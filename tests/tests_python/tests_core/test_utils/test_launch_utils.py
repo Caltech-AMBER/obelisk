@@ -18,7 +18,7 @@ def test_config() -> Dict[str, Any]:
     return {
         "onboard": {
             "control": {
-                "impl": "python",
+                "pkg": "test_pkg1",
                 "executable": "test_controller",
                 "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
                 "publishers": [
@@ -55,18 +55,18 @@ def test_config() -> Dict[str, Any]:
                 ],
             },
             "estimation": {
-                "impl": "cpp",
+                "pkg": "test_pkg2",
                 "executable": "test_estimator",
                 "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
             },
             "robot": {
-                "impl": "python",
+                "pkg": "test_pkg3",
                 "executable": "test_robot",
                 "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
             },
             "sensing": [
                 {
-                    "impl": "python",
+                    "pkg": "test_pkg4",
                     "executable": "test_sensor1",
                     "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
                     "publishers": [
@@ -82,7 +82,7 @@ def test_config() -> Dict[str, Any]:
                     ],
                 },
                 {
-                    "impl": "cpp",
+                    "pkg": "test_pkg5",
                     "executable": "test_sensor2",
                     "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
                     "timers": [
@@ -207,7 +207,7 @@ def test_get_launch_actions_from_node_settings(
     # Test for sensors (multiple nodes)
     sensors_settings = [
         {
-            "impl": "python",
+            "pkg": "test_pkg1",
             "executable": "test_sensor1",
             "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
             "publishers": [
@@ -223,7 +223,7 @@ def test_get_launch_actions_from_node_settings(
             ],
         },
         {
-            "impl": "cpp",
+            "pkg": "test_pkg2",
             "executable": "test_sensor2",
             "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
             "timers": [
@@ -306,7 +306,7 @@ def test_get_parameters_dict_empty_node(test_config: Dict[str, Any]) -> None:
         test_config: Test configuration fixture.
     """
     minimal_node_settings = {
-        "impl": "python",
+        "pkg": "test_pkg1",
         "executable": "test_minimal",
         "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
     }
@@ -318,7 +318,7 @@ def test_get_parameters_dict_empty_node(test_config: Dict[str, Any]) -> None:
 def test_get_launch_actions_from_node_settings_invalid_type(test_global_state_node: LifecycleNode) -> None:
     """Test the get_launch_actions_from_node_settings function with an invalid node type."""
     invalid_node_settings = {
-        "impl": "python",
+        "pkg": "test_pkg1",
         "executable": "test_invalid",
         "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
     }
