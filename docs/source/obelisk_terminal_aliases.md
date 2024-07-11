@@ -66,4 +66,4 @@ obk-kill <config_name>
 ### `obk-help`
 Display the help message.
 
-In all the above commands, <config_name> refers to the config field of the config file used for launching obelisk.
+In all the above commands, `<config_name>` refers to the config field of the config file used for launching obelisk.
