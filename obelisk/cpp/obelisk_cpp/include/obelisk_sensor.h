@@ -1,0 +1,102 @@
+#pragma once
+
+#include "obelisk_node.h"
+
+namespace obelisk {
+    /**
+     * @brief Obelisk sensor node
+     *
+     * Obelisk sensors interface directly with sensing hardware. This could mean that this node runs from the robot,
+     * runs from some offboard computer which connects to the sensors, or anything else. ObeliskSensors don't nominally
+     * need to subscribe to any topics. They simply expect to publish some number of sensor messages.
+     *
+     */
+    class ObeliskSensor : public ObeliskNode {
+      public:
+        explicit ObeliskSensor(const std::string& name) : ObeliskNode(name) { has_sensor_pub_ = false; }
+
+        /**
+         * @brief Configures the node.
+         * Verifies that at least one registered publisher is publishing an Obelisk sensor message.
+         *
+         * @param prev_state the previous state of the system
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_configure(const rclcpp_lifecycle::State& prev_state) final {
+            ObeliskNode::on_configure(prev_state);
+
+            has_sensor_pub_ = false;
+
+            // TODO (@zolkin): find a better way to do this
+            using internal::sensor_message_names;
+            for (const auto [key, reg_pub] : registered_publishers_) {
+                const std::string* name_ptr =
+                    std::find(sensor_message_names.begin(), sensor_message_names.end(), reg_pub.msg_type);
+                if (name_ptr != sensor_message_names.end()) {
+                    has_sensor_pub_ = true;
+                }
+            }
+
+            if (!has_sensor_pub_) {
+                throw std::runtime_error("Need a sensor publisher in an Obelisk Sensor Node!");
+            }
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Activates the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_activate(const rclcpp_lifecycle::State& prev_state) final {
+            this->ObeliskNode::on_activate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Deactivates the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
+            this->ObeliskNode::on_deactivate(prev_state);
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Cleans up the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
+            this->ObeliskNode::on_cleanup(prev_state);
+
+            has_sensor_pub_ = false;
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Shutsdown the node.
+         *
+         * @param prev_state the state of the ros node.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
+            this->ObeliskNode::on_shutdown(prev_state);
+
+            has_sensor_pub_ = false;
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+      protected:
+        bool has_sensor_pub_;
+
+      private:
+    };
+} // namespace obelisk

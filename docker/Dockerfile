@@ -34,6 +34,8 @@ RUN apt-get update && apt-get install -y \
     mesa-utils \
     x11-apps \
     libyaml-dev \
+    mesa-common-dev \
+    libglfw3-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
@@ -56,4 +58,5 @@ RUN source /tmp/docker_setup.sh --skip-docker && \
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}
