@@ -116,6 +116,9 @@ pytest = "<=8.0.0"
 pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
+# Dynamixel SDK for LEAP hand
+dynamixel-sdk = "<=3.7.31"
+
 
 # dev
 [feature.dev.pypi-dependencies]
