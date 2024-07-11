@@ -11,11 +11,12 @@ find_package(ament_cmake REQUIRED)
 # Get the Obelisk library
 include(FetchContent)
 FetchContent_Declare(
-  ObeliskCpp
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/obelisk_cpp
+  Obelisk
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
 )
 
-FetchContent_MakeAvailable(ObeliskCpp)
+# Lets us Get Obelisk::Core and Obelisk::Zoo
+FetchContent_MakeAvailable(Obelisk)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

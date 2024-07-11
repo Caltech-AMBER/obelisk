@@ -12,14 +12,15 @@ find_package(rclcpp REQUIRED)
 # Get the Obelisk library
 include(FetchContent)
 FetchContent_Declare(
-  ObeliskCpp
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/obelisk_cpp
+  Obelisk
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
 )
 
-FetchContent_MakeAvailable(ObeliskCpp)
+# Lets us Get Obelisk::Core and Obelisk::Zoo
+FetchContent_MakeAvailable(Obelisk)
 
 add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
-target_link_libraries(obelisk_mujoco_robot PUBLIC ObeliskCpp)
+target_link_libraries(obelisk_mujoco_robot PUBLIC Obelisk::Core)
 
 ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
 

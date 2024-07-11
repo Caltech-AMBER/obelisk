@@ -11,22 +11,15 @@ find_package(ament_cmake REQUIRED)
 # Get the Obelisk library
 include(FetchContent)
 FetchContent_Declare(
-  ObeliskCpp
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/obelisk_cpp
+  Obelisk
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
 )
 
-FetchContent_MakeAvailable(ObeliskCpp)
-
-# Get Obelisk zoo
-FetchContent_Declare(
-  Zoo
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp/zoo
-)
-
-FetchContent_MakeAvailable(Zoo)
+# Lets us Get Obelisk::Core and Obelisk::Zoo
+FetchContent_MakeAvailable(Obelisk)
 
 add_executable(jointencoders_passthrough_estimator src/jointencoders_passthrough_estimator.cpp)
-target_link_libraries(jointencoders_passthrough_estimator PUBLIC ObeliskCpp Zoo)
+target_link_libraries(jointencoders_passthrough_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -38,6 +31,5 @@ endif()
 install(TARGETS
   jointencoders_passthrough_estimator
   DESTINATION lib/${PROJECT_NAME})
-
 
 ament_package()

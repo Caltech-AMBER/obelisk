@@ -1,6 +1,6 @@
-message(STATUS "Building obelisk_cpp tests")
+message(STATUS "Configuring obelisk_cpp tests")
 
-# Catch2 for testing
+# ------- Catch2 for testing ------- #
 include(FetchContent)
 
 FetchContent_Declare(
@@ -30,7 +30,7 @@ add_executable(NodeTest
     claude_obelisk_estimator_test.cpp)
 
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(NodeTest PUBLIC ObeliskCpp)
+target_link_libraries(NodeTest PUBLIC Obelisk::Core)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
