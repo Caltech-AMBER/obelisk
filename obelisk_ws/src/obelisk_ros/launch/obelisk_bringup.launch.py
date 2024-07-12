@@ -54,7 +54,10 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
     auto_start = context.launch_configurations.get("auto_start")
+    auto_start = "true" if auto_start is None else auto_start.lower()
     bag = context.launch_configurations.get("bag")
+    bag = "true" if bag is None else bag.lower()
+
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
