@@ -330,7 +330,14 @@ def setup_logging_dir(config_name: str) -> str:
     Sets the ROS_LOG_DIR environment variable to this location.
     """
     # Check for the directory
-    general_log_file_path = os.getcwd() + "/obk_logs"
+    if "ROS_HOME" in os.environ:
+        logging_ws = os.environ.get("ROS_HOME", "/home/")
+    elif "OBELISK_ROOT" in os.environ:
+        logging_ws = os.environ.get("OBELISK_ROOT", "/home/")
+    else:
+        raise EnvironmentError("OBELISK_ROOT and ROS_HOME are not set!")
+
+    general_log_file_path = logging_ws + "/obk_logs"
     if not os.path.exists("obk_logs"):
         os.makedirs(general_log_file_path)
 
