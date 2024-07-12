@@ -325,7 +325,7 @@ def setup_logging_dir(config_name: str) -> str:
     """
     Configures the logging directory.
 
-    Checks if there is already an obk_logs directory, and if not, create on.
+    Checks if there is already an obk_logs directory, and if not, create it.
     Then creates a folder inside of that will the date and the name of the config.
     Sets the ROS_LOG_DIR environment variable to this location.
     """
