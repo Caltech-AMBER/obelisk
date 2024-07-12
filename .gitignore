@@ -239,3 +239,6 @@ MUJOCO_LOG.TXT
 # VSCODE #
 # ###### #
 .vscode
+
+# Obelisk
+obk-logs/

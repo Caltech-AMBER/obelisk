@@ -1,4 +1,6 @@
+import os
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -193,7 +195,7 @@ def get_launch_actions_from_node_settings(
             name=f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}",
             package=package,
             executable=executable,
-            output="screen",
+            output="both",
             parameters=[parameters_dict],
         )
         launch_actions += [component_node]
@@ -317,3 +319,30 @@ def get_launch_actions_from_node_settings(
         return node_launch_actions
     else:
         return _single_component_launch_actions(node_settings)
+
+
+def setup_logging_dir(config_name: str) -> str:
+    """
+    Configures the logging directory.
+
+    Checks if there is already an obk-logs directory, and if not, create on.
+    Then creates a folder inside of that will the date and the name of the config.
+    Sets the ROS_LOG_DIR environment variable to this location.
+    """
+    # Check for the directory
+    general_log_file_path = os.getcwd() + "/obk-logs"
+    if not os.path.exists("obk-logs"):
+        os.makedirs(general_log_file_path)
+
+    # Get current date and time and replace space with underscore
+    now = datetime.now()
+    curr_date_time = now.strftime("%m-%d-%Y-%H:%M:%S")
+
+    # Now make a folder for this specific run
+    run_log_file_path = general_log_file_path + "/" + config_name + "-" + curr_date_time
+    os.makedirs(run_log_file_path)
+
+    # Set the ROS environment variable
+    os.environ["ROS_LOG_DIR"] = run_log_file_path
+
+    return run_log_file_path
