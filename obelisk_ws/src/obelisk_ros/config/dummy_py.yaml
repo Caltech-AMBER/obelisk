@@ -49,13 +49,9 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: False
-    pkg: obelisk_leap_py
-    executable: obelisk_leap_hand
-    # is_simulated: True
-    # pkg: obelisk_sim_py
-    # executable: obelisk_mujoco_robot
-    
+    is_simulated: False # True
+    pkg: obelisk_leap_py  # obelisk_sim_py
+    executable: obelisk_leap_hand # obelisk_mujoco_robot
     # callback_groups:
     publishers:
       - ros_parameter: pub_sensor_setting
