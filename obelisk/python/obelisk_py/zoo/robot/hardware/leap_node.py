@@ -24,7 +24,7 @@ class ObeliskLeapHand(ObeliskRobot):
 
     @staticmethod
     def radians_to_dxl_pos(radians: float) -> int:
-        return int((radians - math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS))
+        return int(radians / (2 * math.pi) * 4095)
 
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
         for id in range(self.N_MOTORS):

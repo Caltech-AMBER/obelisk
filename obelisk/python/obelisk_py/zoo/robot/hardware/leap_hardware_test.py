@@ -4,13 +4,9 @@ import time
 import dxl_motor_helper as dxl
 
 dxl.setup()
-init_pos = dxl.read_pos(id=1)
 
+for i in range(16):
+    dxl.enable_motor(i)
+    dxl.disable_motor(i)
 
-
-while 1:
-    dxl.write_pos(init_pos + int(math.sin(time.time() * 3) * 200), id=1)
-    dxl.write_pos(init_pos + int(math.sin(time.time() * 5) * 200), id=2)
-    
-# test_motor.disable_torque()
 dxl.shutdown()

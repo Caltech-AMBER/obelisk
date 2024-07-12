@@ -48,6 +48,8 @@ RUN groupadd --gid $GID $USER && \
     usermod -aG sudo ${USER} && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+RUN sudo usermod -a -G dialout ${USER}
+
 # switch to new user and workdir
 USER ${UID}
 

@@ -2,10 +2,6 @@
     "name": "Obelisk GPU Dev Container",
     "dockerComposeFile": "../../docker/docker-compose.yml",
     "service": "obelisk",
-    "runArgs": [
-        "--privileged",
-        "--device=/dev/ttyUSB0:/dev/ttyUSB0"
-    ],
     "workspaceFolder": "${localWorkspaceFolder}",
     "shutdownAction": "stopCompose",
     "customizations": {
