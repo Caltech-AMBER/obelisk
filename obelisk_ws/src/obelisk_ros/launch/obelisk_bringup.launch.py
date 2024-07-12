@@ -28,20 +28,20 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
     config_file_path = LaunchConfiguration("config_file_path")
     device_name = LaunchConfiguration("device_name")
     auto_start = LaunchConfiguration("auto_start")
-    bagging_on = LaunchConfiguration("bagging_on")
+    bag = LaunchConfiguration("bag")
 
     config_file_path_arg = DeclareLaunchArgument("config_file_path")
     device_name_arg = DeclareLaunchArgument("device_name")
     auto_start_arg = DeclareLaunchArgument("auto_start", default_value="True")
-    bagging_on_arg = DeclareLaunchArgument("bagging_on", default_value="True")
+    bag_arg = DeclareLaunchArgument("bag", default_value="True")
 
-    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg, bagging_on_arg]
+    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg, bag_arg]
     launch_args.update(
         {
             "config_file_path": config_file_path,
             "device_name": device_name,
             "auto_start": auto_start,
-            "bagging_on": bagging_on,
+            "bag": bag,
         }
     )
 
@@ -54,7 +54,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
     auto_start = context.launch_configurations.get("auto_start")
-    bagging_on = context.launch_configurations.get("bagging_on")
+    bag = context.launch_configurations.get("bag")
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
@@ -70,7 +70,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     run_log_file_path = setup_logging_dir(config_name)
     bag_path = run_log_file_path + "/obk_stack_bag"
 
-    if bagging_on != "False":
+    if bag.lower() == "true":
         obelisk_launch_actions += [ExecuteProcess(cmd=["ros2", "bag", "record", "-a", "-o", bag_path], output="both")]
 
     # create global state node
