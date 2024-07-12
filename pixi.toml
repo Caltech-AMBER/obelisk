@@ -55,6 +55,7 @@ channels = ["robostack-staging"]
 [feature.ros2base.dependencies]
 ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
+ros-humble-rviz-visual-tools = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -71,7 +72,6 @@ colcon-common-extensions = "*"
 # ros-humble-moveit-ros-planning-interface = "*"
 # ros-humble-moveit-ros-visualization = "*"
 # ros-humble-moveit-visual-tools = "*"
-# ros-humble-rviz-visual-tools = "*"
 # ros-humble-ros2-controllers = "*"
 # ros-humble-joint-state-publisher = "*"
 # ros-humble-joint-state-publisher-gui = "*"
