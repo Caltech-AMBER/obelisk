@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List, Tuple
 
 import launch
@@ -15,6 +16,8 @@ from obelisk_py.core.utils.launch_utils import (
     load_config_file,
     setup_logging_dir,
 )
+
+os.environ["ROS_LOG_DIR"] = "/home/zolkin/AmberLab/Project-Obelisk/obelisk/obk_logs/debug_dummy"
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 
@@ -50,6 +53,9 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
 def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     """Returns the launch actions associated with all the nodes in the Obelisk architecture."""
+    # Reset config to adjust the logging directory
+    launch.logging.launch_config.reset()
+
     # parsing the launch arguments
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
