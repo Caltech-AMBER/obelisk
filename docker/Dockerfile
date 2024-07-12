@@ -48,6 +48,7 @@ RUN groupadd --gid $GID $USER && \
     usermod -aG sudo ${USER} && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+# Expose ports to container
 RUN sudo usermod -a -G dialout ${USER}
 
 # switch to new user and workdir

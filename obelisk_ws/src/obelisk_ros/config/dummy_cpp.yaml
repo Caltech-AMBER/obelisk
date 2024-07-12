@@ -56,7 +56,7 @@ onboard:
         # callback_key: timer_callback1
   # sensing:
   robot:
-    is_simulated: True
+    is_simulated: False
     pkg: obelisk_sim_cpp
     executable: obelisk_mujoco_robot
     # callback_groups:

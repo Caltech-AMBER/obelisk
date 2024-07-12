@@ -465,6 +465,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-cyclonedds-0.10.4-py311h8eb0f6d_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-diagnostic-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-domain-coordinator-0.10.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-dynamixel-sdk-3.7.60-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-eigen3-cmake-module-0.1.1-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastcdr-1.0.24-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
@@ -889,6 +890,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-cyclonedds-0.10.4-py311h8eb0f6d_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-diagnostic-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-domain-coordinator-0.10.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-dynamixel-sdk-3.7.60-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-eigen3-cmake-module-0.1.1-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastcdr-1.0.24-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
@@ -1434,6 +1436,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-cyclonedds-0.10.4-py311h8eb0f6d_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-diagnostic-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-domain-coordinator-0.10.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-dynamixel-sdk-3.7.60-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-eigen3-cmake-module-0.1.1-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastcdr-1.0.24-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
@@ -1893,6 +1896,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-cyclonedds-0.10.4-py311h8eb0f6d_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-diagnostic-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-domain-coordinator-0.10.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-dynamixel-sdk-3.7.60-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-eigen3-cmake-module-0.1.1-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastcdr-1.0.24-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
@@ -6769,34 +6773,6 @@ packages:
   - typing-extensions ; python_version < '3.10' and extra == 'typing'
   - defusedxml ; extra == 'xmp'
   requires_python: '>=3.8'
-- kind: pypi
-  name: pillow
-  version: 10.3.0
-  url: https://files.pythonhosted.org/packages/81/ff/ad3c942d865f9e45ce84eeb31795e6d4d94e1f1eea51026d5154028510d7/pillow-10.3.0-cp311-cp311-manylinux_2_28_x86_64.whl
-  sha256: 1b87bd9d81d179bd8ab871603bd80d8645729939f90b71e62914e816a76fc6bd
-  requires_dist:
-  - furo ; extra == 'docs'
-  - olefile ; extra == 'docs'
-  - sphinx>=2.4 ; extra == 'docs'
-  - sphinx-copybutton ; extra == 'docs'
-  - sphinx-inline-tabs ; extra == 'docs'
-  - sphinx-removed-in ; extra == 'docs'
-  - sphinxext-opengraph ; extra == 'docs'
-  - olefile ; extra == 'fpx'
-  - olefile ; extra == 'mic'
-  - check-manifest ; extra == 'tests'
-  - coverage ; extra == 'tests'
-  - defusedxml ; extra == 'tests'
-  - markdown2 ; extra == 'tests'
-  - olefile ; extra == 'tests'
-  - packaging ; extra == 'tests'
-  - pyroma ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-cov ; extra == 'tests'
-  - pytest-timeout ; extra == 'tests'
-  - typing-extensions ; python_version < '3.10' and extra == 'typing'
-  - defusedxml ; extra == 'xmp'
-  requires_python: '>=3.8'
 - kind: conda
   name: pip
   version: '24.0'
@@ -9029,6 +9005,32 @@ packages:
   purls: []
   size: 11857
   timestamp: 1707308880778
+- kind: conda
+  name: ros-humble-dynamixel-sdk
+  version: 3.7.60
+  build: py311hb335429_6
+  build_number: 6
+  subdir: linux-64
+  url: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-dynamixel-sdk-3.7.60-py311hb335429_6.tar.bz2
+  sha256: d640b8b6dc0ec5b3b0cda1ec88381784957ecb2bc7906ce5307587bde7d1ae3d
+  md5: 42479dc0ee48fcf9ca05ef3cb5e83dbb
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc-ng >=12
+  - libgcc-ng >=12
+  - libstdcxx-ng >=12
+  - numpy >=1.23.5,<2.0a0
+  - python
+  - python_abi 3.11.* *_cp311
+  - ros-humble-ros-workspace
+  - ros2-distro-mutex 0.5.*
+  - ros2-distro-mutex 0.5.* humble
+  arch: x86_64
+  platform: linux
+  license: BSD-3-Clause
+  purls: []
+  size: 60097
+  timestamp: 1707309168295
 - kind: conda
   name: ros-humble-eigen3-cmake-module
   version: 0.1.1
