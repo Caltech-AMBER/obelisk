@@ -190,7 +190,7 @@ namespace obelisk {
 
             while (!this->stop_thread_) {
                 if (!glfwWindowShouldClose(window_)) {
-                    auto start      = std::chrono::steady_clock::now();
+                    auto start_time = std::chrono::steady_clock::now();
 
                     mjtNum simstart = data_->time;
                     while (data_->time - simstart < num_steps_per_viz_ * time_step_) {
@@ -227,11 +227,12 @@ namespace obelisk {
                     // process pending GUI events, call GLFW callbacks
                     glfwPollEvents();
 
-                    auto end  = std::chrono::steady_clock::now();
-                    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-                    if (diff.count() < (num_steps_per_viz_ * time_step_) * 1e6) {
-                        int undershoot = static_cast<int>((num_steps_per_viz_ * time_step_) * 1e6) - diff.count();
-                        std::this_thread::sleep_for(std::chrono::microseconds(undershoot));
+                    auto end_time   = std::chrono::steady_clock::now();
+                    auto total_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+                    const int des_time_us = static_cast<int>((num_steps_per_viz_ * time_step_) * 1e6);
+                    if (total_time.count() < des_time_us) {
+                        const int time_diff_us = des_time_us - total_time.count();
+                        std::this_thread::sleep_for(std::chrono::microseconds(time_diff_us));
                     }
                 }
             }
