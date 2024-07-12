@@ -4,7 +4,7 @@
   <name>obelisk_leap_py</name>
   <version>0.0.1</version>
   <description>Python Obelisk ROS2 package for LEAP hand control.</description>
-  <maintainer email="alberthli@caltech.edu">alberthli</maintainer>
+  <maintainer email="ghua@caltech.edu">gavinhua</maintainer>
   <license>MIT</license>
 
   <export>
