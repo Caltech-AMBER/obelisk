@@ -27,11 +27,11 @@ enabled = set()
 MIN_POS = 0
 MAX_POS = 4095
 
-# Initialize GroupBulkWrite instance
-groupBulkWrite = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
+# Initialize BULK_WRITER instance
+BULK_WRITER = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
 
-# Initialize GroupBulkRead instace for Present Position
-groupBulkRead = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
+# Initialize BULK_READER instace for Present Position
+BULK_READER = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
 
 def setup(n: int):
     if PORT_HANDLER.openPort():

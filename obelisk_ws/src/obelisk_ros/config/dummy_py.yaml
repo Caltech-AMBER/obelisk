@@ -49,14 +49,21 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: True
-    # pkg: obelisk_leap_py
-    # executable: obelisk_leap_hand
-    pkg: obelisk_sim_py
-    executable: obelisk_mujoco_robot
+    is_simulated: False
+    pkg: obelisk_leap_py
+    executable: obelisk_leap_hand
+    # is_simulated: True
+    # pkg: obelisk_sim_py
+    # executable: obelisk_mujoco_robot
     
     # callback_groups:
-    # publishers:
+    publishers:
+      - ros_parameter: pub_sensor_setting
+        topic: /obelisk/dummy/sensor
+        msg_type: JointEncoders
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
     subscribers:
       - ros_parameter: sub_ctrl_setting
         # key: sub1
@@ -77,3 +84,7 @@ onboard:
           sensor_type: jointpos
           sensor_names:
           - trace1
+    timers:
+      - ros_parameter: timer_sensor_setting
+        timer_period_sec: 0.02
+        callback_group: None

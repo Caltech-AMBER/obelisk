@@ -20,11 +20,21 @@ class ObeliskLeapHand(ObeliskRobot):
 
     def __init__(self, node_name):
         super().__init__(node_name)
-        # self.register_obk_publisher("pub_joint_encoders", key="pub_joint_encoders", msg_type=JointEncoders)
+        self.register_obk_publisher(
+            "pub_sensor_setting",
+            key="pub_sensor",
+            msg_type=JointEncoders,
+        )
+        self.register_obk_timer(
+            "timer_sensor_setting",
+            self.get_state,
+            key="timer_sensor",
+        )
         dxl.setup(self.N_MOTORS)
         dxl.sync_PID(range(self.N_MOTORS))
         for i in range(self.N_MOTORS):
             dxl.enable_motor(i)
+        self.yhat = [0 for _ in range(self.N_MOTORS)]
 
 
     @staticmethod
@@ -40,19 +50,18 @@ class ObeliskLeapHand(ObeliskRobot):
         for i in range(self.N_MOTORS):
             val = self._radians_to_dxl_pos(control_msg.u[i])
             arr = [DXL_LOBYTE(DXL_LOWORD(val)), DXL_HIBYTE(DXL_LOWORD(val)), DXL_LOBYTE(DXL_HIWORD(val)), DXL_HIBYTE(DXL_HIWORD(val))]
-            if not dxl.groupBulkWrite.addParam(i, dxl.ADDR.GOAL_POSITION, dxl.MSG_LENS.GOAL_POSITION, arr):
+            if not dxl.BULK_WRITER.addParam(i, dxl.ADDR.GOAL_POSITION, dxl.MSG_LENS.GOAL_POSITION, arr):
                 print("failed to add param")
-        dxl.groupBulkWrite.txPacket()
-        dxl.groupBulkWrite.clearParam()
-        print(self.get_state().y)
-
+        dxl.BULK_WRITER.txPacket()
+        dxl.BULK_WRITER.clearParam()
 
     def get_state(self) -> ObeliskSensorMsg:
         joint_encoders = JointEncoders()
         for i in range(self.N_MOTORS):
-            dxl.groupBulkRead.addParam(i, dxl.ADDR.PRESENT_POSITION, dxl.MSG_LENS.PRESENT_POSITION)
-        dxl.groupBulkRead.txRxPacket()
+            dxl.BULK_READER.addParam(i, dxl.ADDR.PRESENT_POSITION, dxl.MSG_LENS.PRESENT_POSITION)
+        dxl.BULK_READER.txRxPacket()
         for i in range(self.N_MOTORS):
-            position = dxl.groupBulkRead.getData(i, dxl.ADDR.PRESENT_POSITION, dxl.MSG_LENS.PRESENT_POSITION)
+            position = dxl.BULK_READER.getData(i, dxl.ADDR.PRESENT_POSITION, dxl.MSG_LENS.PRESENT_POSITION)
             joint_encoders.y.append(self._dxl_pos_to_radians(position))
+        self.obk_publishers["pub_sensor"].publish(joint_encoders)
         return joint_encoders
