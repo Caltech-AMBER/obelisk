@@ -325,21 +325,21 @@ def setup_logging_dir(config_name: str) -> str:
     """
     Configures the logging directory.
 
-    Checks if there is already an obk-logs directory, and if not, create on.
+    Checks if there is already an obk_logs directory, and if not, create on.
     Then creates a folder inside of that will the date and the name of the config.
     Sets the ROS_LOG_DIR environment variable to this location.
     """
     # Check for the directory
-    general_log_file_path = os.getcwd() + "/obk-logs"
-    if not os.path.exists("obk-logs"):
+    general_log_file_path = os.getcwd() + "/obk_logs"
+    if not os.path.exists("obk_logs"):
         os.makedirs(general_log_file_path)
 
     # Get current date and time and replace space with underscore
     now = datetime.now()
-    curr_date_time = now.strftime("%m-%d-%Y-%H:%M:%S")
+    curr_date_time = now.strftime("%Y%m%d_%H%M%S")
 
     # Now make a folder for this specific run
-    run_log_file_path = general_log_file_path + "/" + config_name + "-" + curr_date_time
+    run_log_file_path = general_log_file_path + "/" + config_name + "_" + curr_date_time
     os.makedirs(run_log_file_path)
 
     # Set the ROS environment variable

@@ -68,7 +68,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
 
     # Setup logging
     run_log_file_path = setup_logging_dir(config_name)
-    bag_path = run_log_file_path + "/obk-stack-bag"
+    bag_path = run_log_file_path + "/obk_stack_bag"
 
     if bagging_on != "False":
         obelisk_launch_actions += [ExecuteProcess(cmd=["ros2", "bag", "record", "-a", "-o", bag_path], output="both")]

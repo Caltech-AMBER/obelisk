@@ -241,4 +241,4 @@ MUJOCO_LOG.TXT
 .vscode
 
 # Obelisk
-obk-logs/
+obk_logs/
