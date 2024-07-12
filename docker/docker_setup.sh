@@ -141,6 +141,7 @@ function obk-launch {
     local config_file_path=""
     local device_name=""
     local auto_start="True"
+    local bag="True"
 
     while [[ $# -gt 0 ]]; do
         key="$1"
@@ -157,6 +158,10 @@ function obk-launch {
             auto_start="${key#*=}"
             shift
             ;;
+            bag=*)
+            bag="${key#*=}"
+            shift
+            ;;
             *)
             echo "Unknown option $key"
             return 1
@@ -171,15 +176,15 @@ function obk-launch {
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=${config_file_path} device_name:=${device_name} auto_start:=${auto_start}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=${config_file_path} device_name:=${device_name} auto_start:=${auto_start} bag:=${bag}
 }
 
 # help command
 alias obk-help='echo -e "\033[1;34mObelisk Commands:\n\
 obk-launch:\n\
   Launches the obelisk_bringup.launch.py with specified arguments.\n\
-  Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>\n\
-  Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True\n\n\
+  Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False> bag=<True|False>\n\
+  Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True bag=True\n\n\
 State Transitions:\n\
   obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
   obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\
