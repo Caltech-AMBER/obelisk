@@ -49,7 +49,7 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: False
+    is_simulated: True
     pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
     # callback_groups:
