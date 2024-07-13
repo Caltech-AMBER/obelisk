@@ -18,7 +18,7 @@
   <asset>
     <material name="black" rgba="0.1 0.1 0.1 1"/>
     <material name="white" rgba="0.1 0.1 0.1 1"/>
-    
+
     <mesh name="pelvis" file="pelvis.STL"/>
     <mesh name="left_hip_yaw_link" file="left_hip_yaw_link.STL"/>
     <mesh name="left_hip_roll_link" file="left_hip_roll_link.STL"/>
@@ -390,7 +390,7 @@
     <motor class="h1" name="L_thumb_proximal_pitch_joint" joint="L_thumb_proximal_pitch_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="L_thumb_intermediate_joint" joint="L_thumb_intermediate_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="L_thumb_distal_joint" joint="L_thumb_distal_joint" ctrlrange="-1 1"/>
-    
+
     <motor class="h1" name="R_index_proximal_joint" joint="R_index_proximal_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="R_index_intermediate_joint" joint="R_index_intermediate_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="R_middle_proximal_joint" joint="R_middle_proximal_joint" ctrlrange="-1 1"/>
@@ -403,7 +403,7 @@
     <motor class="h1" name="R_thumb_proximal_pitch_joint" joint="R_thumb_proximal_pitch_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="R_thumb_intermediate_joint" joint="R_thumb_intermediate_joint" ctrlrange="-1 1"/>
     <motor class="h1" name="R_thumb_distal_joint" joint="R_thumb_distal_joint" ctrlrange="-1 1"/>
-    
+
     <motor class="h1" name="left_hand_joint" joint="left_hand_joint" ctrlrange="-6 6"/>
     <motor class="h1" name="right_hand_joint" joint="right_hand_joint" ctrlrange="-6 6"/>
   </actuator>

@@ -565,7 +565,7 @@
     <collision>
       <origin xyz="0.05 0.0 -0.05" rpy="0 0 0" />
       <geometry>
-        <box size="0.28 0.03 0.024"/> 
+        <box size="0.28 0.03 0.024"/>
       </geometry>
     </collision>
   </link>
@@ -920,8 +920,8 @@
       effort="6"
       velocity="12" />
   </joint>
-    <joint 
-      name="L_base_link_joint" 
+    <joint
+      name="L_base_link_joint"
       type="fixed">
       <origin
       xyz="0.003 0 0"
@@ -1129,7 +1129,7 @@
         upper="0.8"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_thumb_proximal_pitch_joint"
         multiplier="1.6"
         offset="0" />
@@ -1188,7 +1188,7 @@
         upper="1.2"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_thumb_proximal_pitch_joint"
         multiplier="2.4"
         offset="0" />
@@ -1302,7 +1302,7 @@
         upper="1.7"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_index_proximal_joint"
         multiplier="1"
         offset="0" />
@@ -1398,7 +1398,7 @@
         </geometry>
       </collision>
     </link>
-    
+
     <joint
       name="L_middle_intermediate_joint"
       type="revolute">
@@ -1416,7 +1416,7 @@
         upper="1.7"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_middle_proximal_joint"
         multiplier="1"
         offset="0" />
@@ -1530,7 +1530,7 @@
         upper="1.7"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_ring_proximal_joint"
         multiplier="1"
         offset="0" />
@@ -1644,7 +1644,7 @@
         upper="1.7"
         effort="1"
         velocity="0.5" />
-      <mimic 
+      <mimic
         joint="L_pinky_proximal_joint"
         multiplier="1"
         offset="0" />
@@ -1928,8 +1928,8 @@
       velocity="12" />
   </joint>
 
-    <joint 
-      name="R_base_link_joint" 
+    <joint
+      name="R_base_link_joint"
       type="fixed">
       <origin
       xyz="0.003 0 0"
@@ -2137,7 +2137,7 @@
       upper="0.8"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_thumb_proximal_pitch_joint"
       multiplier="1.6"
       offset="0" />
@@ -2196,7 +2196,7 @@
       upper="1.2"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_thumb_proximal_pitch_joint"
       multiplier="2.4"
       offset="0" />
@@ -2310,7 +2310,7 @@
       upper="1.7"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_index_proximal_joint"
       multiplier="1"
       offset="0" />
@@ -2424,7 +2424,7 @@
       upper="1.7"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_middle_proximal_joint"
       multiplier="1"
       offset="0" />
@@ -2538,7 +2538,7 @@
       upper="1.7"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_ring_proximal_joint"
       multiplier="1"
       offset="0" />
@@ -2652,7 +2652,7 @@
       upper="1.7"
       effort="1"
       velocity="0.5" />
-    <mimic 
+    <mimic
       joint="R_pinky_proximal_joint"
       multiplier="1"
       offset="0" />

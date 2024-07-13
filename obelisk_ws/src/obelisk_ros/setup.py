@@ -29,7 +29,7 @@ setup(
     entry_points={
         "console_scripts": [
             "global_state = obelisk_ros.global_state:main",
-            'state_publisher = obelisk_ros.state_publisher:main',
+            "state_publisher = obelisk_ros.state_publisher:main",
         ],
     },
 )

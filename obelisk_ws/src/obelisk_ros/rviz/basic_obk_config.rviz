@@ -52,7 +52,7 @@ Visualization Manager:
       Collision Enabled: false
       Description File: ""
       Description Source: Topic
-      Description Topic: 
+      Description Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
