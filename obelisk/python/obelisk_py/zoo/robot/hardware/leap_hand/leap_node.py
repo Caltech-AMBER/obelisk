@@ -69,5 +69,5 @@ class ObeliskLeapHand(ObeliskRobot):
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Shutdown the LEAP Hand."""
         super().on_shutdown(state)
-        dxl.shutdown()
+        dxl.shutdown(self.N_MOTORS)
         return TransitionCallbackReturn.SUCCESS

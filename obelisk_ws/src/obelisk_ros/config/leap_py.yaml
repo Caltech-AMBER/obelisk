@@ -1,4 +1,4 @@
-config: dummy
+config: leap
 onboard:
   control:
     pkg: obelisk_control_py
@@ -6,7 +6,7 @@ onboard:
     # callback_groups:
     publishers:
       - ros_parameter: pub_ctrl_setting
-        topic: /obelisk/dummy/ctrl
+        topic: /obelisk/leap/ctrl
         msg_type: PositionSetpoint
         key: "asdf"
         history_depth: 10
@@ -14,7 +14,7 @@ onboard:
         non_obelisk: False
     subscribers:
       - ros_parameter: sub_est_setting
-        topic: /obelisk/dummy/est
+        topic: /obelisk/leap/est
         msg_type: EstimatedState
         history_depth: 10
         callback_group: None
@@ -29,7 +29,7 @@ onboard:
     # callback_groups:
     publishers:
       - ros_parameter: pub_est_setting
-        topic: /obelisk/dummy/est
+        topic: /obelisk/leap/est
         msg_type: EstimatedState
         history_depth: 10
         callback_group: None
@@ -37,7 +37,7 @@ onboard:
     subscribers:
       - ros_parameter: sub_sensor_setting
         # key: sub1
-        topic: /obelisk/dummy/sensor
+        topic: /obelisk/leap/sensor
         msg_type: JointEncoders
         history_depth: 10
         callback_group: None
@@ -49,15 +49,21 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: True
+
+    # === simulation ===
+    # is_simulated: False
     # pkg: obelisk_leap_py
     # executable: obelisk_leap_hand
+    # === hardware ===
+    is_simulated: True
     pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
+    # ==================
+
     # callback_groups:
     publishers:
       - ros_parameter: pub_sensor_setting
-        topic: /obelisk/dummy/sensor
+        topic: /obelisk/leap/sensor
         msg_type: JointEncoders
         history_depth: 10
         callback_group: None
@@ -65,7 +71,7 @@ onboard:
     subscribers:
       - ros_parameter: sub_ctrl_setting
         # key: sub1
-        topic: /obelisk/dummy/ctrl
+        topic: /obelisk/leap/ctrl
         msg_type: PositionSetpoint
         history_depth: 10
         callback_group: None
@@ -77,7 +83,7 @@ onboard:
         time_step: 0.002
         num_steps_per_viz: 5
         sensor_settings:
-        - topic: /obelisk/dummy/sensor
+        - topic: /obelisk/leap/sensor
           dt: 0.001
           sensor_type: jointpos
           sensor_names:
