@@ -10,12 +10,9 @@ from urdf_parser_py.urdf import URDF
 
 
 class StatePublisher(Node):
-    # TODO: Re-write this to be a proper node so that I can declare params properly
-    #   Make sure that I can receive the xml correctly
-    #   Make sure the joint names string list is correct
-    #   Publish the correct joint state message
-    #   Verify all the stuff with the fixed frame
-    #   Make a good rviz config
+    # TODO: Put this logic into a generic `ObeliskRobotViz` node.
+    # The node should take in some type of estimated state or true sim state and return the JointState messages for
+    # the `robot_state_publisher`.
     def __init__(self):
         rclpy.init()
         super().__init__("state_publisher")

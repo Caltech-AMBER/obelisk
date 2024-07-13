@@ -128,6 +128,9 @@ namespace obelisk {
             obelisk_sensor_msgs::msg::JointEncoders::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME};
 
+        inline const std::array<std::string, 1> estimator_message_names = {
+            obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};
+
     } // namespace internal
 
     /**

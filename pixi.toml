@@ -57,6 +57,7 @@ ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
 ros-humble-joint-state-publisher = "*"
+ros-humble-urdf = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -167,9 +168,13 @@ ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", 
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true", GLOBAL="false" } }
 messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs", cwd="obelisk_ws" }
 
-# run the dummy tests
+# run the core tests
 cpp-test-node = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build"] }
 cpp-test-node-debug = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build-debug"] }
+
+# run the viz tests
+cpp-test-viz = { cmd = "obelisk/cpp/build/tests/VizTest", depends-on = ["cpp-build"] }
+
 
 # run ctest
 cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }
