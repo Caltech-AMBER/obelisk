@@ -2,7 +2,7 @@ config: dummy
 onboard:
   control:
     pkg: obelisk_control_py
-    executable: example_position_setpoint_controller
+    executable: leap_controller
     # callback_groups:
     publishers:
       - ros_parameter: pub_ctrl_setting
@@ -49,9 +49,11 @@ onboard:
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: False
-    pkg: obelisk_leap_py
-    executable: obelisk_leap_hand
+    is_simulated: True
+    # pkg: obelisk_leap_py
+    # executable: obelisk_leap_hand
+    pkg: obelisk_sim_py
+    executable: obelisk_mujoco_robot
     # callback_groups:
     publishers:
       - ros_parameter: pub_sensor_setting

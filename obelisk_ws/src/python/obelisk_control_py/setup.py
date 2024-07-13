@@ -25,6 +25,7 @@ setup(
     entry_points={
         "console_scripts": [
             "example_position_setpoint_controller = obelisk_control_py.example_position_setpoint_controller:main",
+            "leap_controller = obelisk_control_py.leap_controller:main",
         ],
     },
 )
