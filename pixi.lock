@@ -535,6 +535,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-ignition-math6-vendor-0.0.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-image-transport-3.1.8-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-interactive-markers-2.3.2-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-joint-state-publisher-2.4.0-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-kdl-parser-2.6.4-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-keyboard-handler-0.0.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-laser-geometry-2.4.0-py311hb335429_6.tar.bz2
@@ -753,6 +754,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/79/8a57016a761d11491b913460a3d1545cdbe96dca6acb1279102814c9147b/ruff-0.5.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/eb/de/be0ba39ee73760bf33329b7c6f95bc67e96593c69c881671e312538e24bb/typeguard-4.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/07/4d/410156100224c5e2f0011d435e477b57aed9576fc7fe137abcf14ec16e11/virtualenv-20.26.3-py3-none-any.whl
       - pypi: ./obelisk/python
   dev-no-gpu:
@@ -1040,6 +1042,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-ignition-math6-vendor-0.0.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-image-transport-3.1.8-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-interactive-markers-2.3.2-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-joint-state-publisher-2.4.0-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-kdl-parser-2.6.4-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-keyboard-handler-0.0.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-laser-geometry-2.4.0-py311hb335429_6.tar.bz2
@@ -1258,6 +1261,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/79/8a57016a761d11491b913460a3d1545cdbe96dca6acb1279102814c9147b/ruff-0.5.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/eb/de/be0ba39ee73760bf33329b7c6f95bc67e96593c69c881671e312538e24bb/typeguard-4.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/07/4d/410156100224c5e2f0011d435e477b57aed9576fc7fe137abcf14ec16e11/virtualenv-20.26.3-py3-none-any.whl
       - pypi: ./obelisk/python
   docs:
@@ -1371,6 +1375,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ec/e8/462afb18f3627d11d4dab74228b52094e1a121d57fe57957c821c50bbfba/glfw-2.7.0-py2.py27.py3.py30.py31.py32.py33.py34.py35.py36.py37.py38-none-manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/75/06/4df55e1b7b112d183f65db9503bff189e97179b256e1ea450a3c365241e0/importlib_resources-6.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e3/d5/bc0f22ac108743062ab703f8d6d71c9c7b077b8839fa358700bfb81770b8/kiwisolver-1.4.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/9a/87/cff3c63ebe067ec9a7cc1948c379b8a16e7990c29bd5baf77c0a1dbd03c0/lxml-5.2.2-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f4/ff/da311c1e679eed54d3aed67754a4e859bd3b773060c2fa187962e60fcb85/matplotlib-3.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/3b/18/c8e99020c8e10a680be91ec254f5290cb1bbe88353682843854208acadc5/mujoco-3.1.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/28/95/b56fc6b2abe37c03923b50415df483cf93e09e7438872280a5486131d804/numpy-2.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -1379,10 +1384,12 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/99/48/00e31747821d3fc56faddd00a4725454d1e694a8b67d715cf20f531506a5/PyOpenGL-3.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9d/ea/6d76df31432a0e6fdf81681a895f009a4bb47b3c39036db3e1b528191d52/pyparsing-3.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b4/33/720548182ffa8344418126017aa1d4ab4aeec9a2275f04ce3f3573d8ace8/PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/73/67/8ece580cc363331d9a53055130f86b096bf16e38156e33b1d3014fffda6b/ruamel.yaml-0.18.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/30/d3/5fe978cd01a61c12efd24d65fa68c6f28f28c8073a06cf11db3a854390ca/ruamel.yaml.clib-0.2.8-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/20/38/f5c473fe9b90c8debdd29ea68d5add0289f1936d6f923b6b9cc0b931194c/zipp-3.19.2-py3-none-any.whl
       - pypi: ./obelisk/python
   ros2-install:
@@ -1667,6 +1674,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-ignition-math6-vendor-0.0.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-image-transport-3.1.8-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-interactive-markers-2.3.2-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-joint-state-publisher-2.4.0-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-kdl-parser-2.6.4-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-keyboard-handler-0.0.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-laser-geometry-2.4.0-py311hb335429_6.tar.bz2
@@ -2211,6 +2219,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-ignition-math6-vendor-0.0.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-image-transport-3.1.8-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-interactive-markers-2.3.2-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-joint-state-publisher-2.4.0-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-kdl-parser-2.6.4-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-keyboard-handler-0.0.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-laser-geometry-2.4.0-py311hb335429_6.tar.bz2
@@ -2419,6 +2428,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a4/f7/22d6b620ed895a05d40802d8281eff924dc6190f682d933d4efff60db3b5/ruamel.yaml.clib-0.2.8-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/eb/de/be0ba39ee73760bf33329b7c6f95bc67e96593c69c881671e312538e24bb/typeguard-4.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
       - pypi: ./obelisk/python
 packages:
 - kind: conda
@@ -7296,6 +7306,18 @@ packages:
   purls: []
   size: 61574
   timestamp: 1716874187109
+- kind: pypi
+  name: lxml
+  version: 5.2.2
+  url: https://files.pythonhosted.org/packages/9a/87/cff3c63ebe067ec9a7cc1948c379b8a16e7990c29bd5baf77c0a1dbd03c0/lxml-5.2.2-cp312-cp312-manylinux_2_28_x86_64.whl
+  sha256: d26a618ae1766279f2660aca0081b2220aca6bd1aa06b2cf73f07383faf48927
+  requires_dist:
+  - cssselect>=0.7 ; extra == 'cssselect'
+  - html5lib ; extra == 'html5'
+  - lxml-html-clean ; extra == 'html-clean'
+  - beautifulsoup4 ; extra == 'htmlsoup'
+  - cython>=3.0.10 ; extra == 'source'
+  requires_python: '>=3.6'
 - kind: conda
   name: lxml
   version: 5.2.2
@@ -10785,6 +10807,35 @@ packages:
   purls: []
   size: 322347
   timestamp: 1707317146067
+- kind: conda
+  name: ros-humble-joint-state-publisher
+  version: 2.4.0
+  build: py311hb335429_6
+  build_number: 6
+  subdir: linux-64
+  url: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-joint-state-publisher-2.4.0-py311hb335429_6.tar.bz2
+  sha256: d7dcd43146b0823c73443242f2ab3772afaf307ba8a7000a6911d1baf4977c10
+  md5: af462518ab903df4d90f86f406c219ae
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc-ng >=12
+  - libgcc-ng >=12
+  - libstdcxx-ng >=12
+  - numpy >=1.23.5,<2.0a0
+  - python
+  - python_abi 3.11.* *_cp311
+  - ros-humble-rclpy
+  - ros-humble-ros-workspace
+  - ros-humble-sensor-msgs
+  - ros-humble-std-msgs
+  - ros2-distro-mutex 0.5.*
+  - ros2-distro-mutex 0.5.* humble
+  arch: x86_64
+  platform: linux
+  license: BSD-3-Clause
+  purls: []
+  size: 29302
+  timestamp: 1707316415038
 - kind: conda
   name: ros-humble-kdl-parser
   version: 2.6.4
@@ -15769,6 +15820,14 @@ packages:
   purls: []
   size: 746941
   timestamp: 1647071114396
+- kind: pypi
+  name: urdf-parser-py
+  version: 0.0.4
+  url: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
+  sha256: e983f637145fded67bcff6a542302069bb975b2edf1b18318c093abba1b794cc
+  requires_dist:
+  - pyyaml
+  - lxml
 - kind: pypi
   name: urllib3
   version: 2.2.2

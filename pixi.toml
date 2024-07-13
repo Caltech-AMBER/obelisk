@@ -56,6 +56,7 @@ channels = ["robostack-staging"]
 ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
+ros-humble-joint-state-publisher = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -73,7 +74,6 @@ ros-humble-rviz-visual-tools = "*"
 # ros-humble-moveit-ros-visualization = "*"
 # ros-humble-moveit-visual-tools = "*"
 # ros-humble-ros2-controllers = "*"
-# ros-humble-joint-state-publisher = "*"
 # ros-humble-joint-state-publisher-gui = "*"
 # ros-humble-diagnostic-updater = "*"
 # ros-humble-geographic-msgs = "*"
@@ -97,6 +97,7 @@ ros-humble-rviz-visual-tools = "*"
 [feature.obelisk.pypi-dependencies]
 mujoco = ">=3.1.0"
 "ruamel.yaml" = ">=0.18.0"
+urdf_parser_py = "*"
 
 
 # docs

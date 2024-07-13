@@ -17,6 +17,7 @@ setup(
         (os.path.join("share", package_name, "config"), glob(os.path.join("config", "*.yaml"))),
         (os.path.join("share", package_name, "config"), glob(os.path.join("config", "*.yml"))),
         (os.path.join("share", package_name, "config"), glob(os.path.join("config", "*.obk"))),
+        (os.path.join("share", package_name, "rviz"), glob(os.path.join("rviz", "*.rviz"))),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -28,6 +29,7 @@ setup(
     entry_points={
         "console_scripts": [
             "global_state = obelisk_ros.global_state:main",
+            'state_publisher = obelisk_ros.state_publisher:main',
         ],
     },
 )
