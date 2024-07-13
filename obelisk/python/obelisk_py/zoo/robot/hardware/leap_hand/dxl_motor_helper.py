@@ -4,7 +4,7 @@ from typing import Iterable
 from dynamixel_sdk import GroupBulkRead, GroupBulkWrite, PacketHandler, PortHandler
 
 PACKET_HANDLER = PacketHandler(protocol_version=2.0)
-PORT_HANDLER = PortHandler(port_name='/dev/ttyUSB0')
+PORT_HANDLER = PortHandler(port_name="/dev/ttyUSB0")
 BULK_WRITER = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
 BULK_READER = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
 
@@ -14,14 +14,18 @@ BAUDRATE = 4000000
 TORQUE_ENABLE = 1
 TORQUE_DISABLE = 0
 
+
 class MsgLens:
     """Message lengths for different types of messages."""
+
     TOGGLE_TORQUE = 1
     GOAL_POSITION = 4
     PRESENT_POSITION = 4
 
+
 class MsgAddrs:
     """Addresses for different types of messages."""
+
     TOGGLE_TORQUE = 64
     GOAL_POSITION = 116
     PRESENT_POSITION = 132
@@ -32,7 +36,7 @@ class MsgAddrs:
 
 def setup(n: int) -> None:
     """Setup the Dynamixel motors.
-    
+
     Args:
         n: The number of motors to setup (the motor IDs are 0 to n-1).
     """
@@ -52,7 +56,7 @@ def setup(n: int) -> None:
 
 def shutdown(n: int) -> None:
     """Shutdown the Dynamixel motors.
-    
+
     Args:
         n: The number of motors to shutdown (the motor IDs are 0 to n-1).
     """
@@ -63,7 +67,7 @@ def shutdown(n: int) -> None:
 
 def toggle_motor_torque(id: int, mode: int) -> None:
     """Enable/disable a motor.
-    
+
     Args:
         id: The motor ID.
         mode: The mode to set the motor to.
@@ -75,7 +79,7 @@ def toggle_motor_torque(id: int, mode: int) -> None:
 
 def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> None:
     """Write PID values to multiple motors.
-    
+
     Args:
         motors: The motor IDs to write to.
         kp: The proportional gain.
@@ -93,7 +97,7 @@ def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> Non
 
 def comm_error_check(dxl_comm_result: int, dxl_error: int, id: int) -> None:
     """Check for communication errors.
-    
+
     Args:
         dxl_comm_result: The communication result.
         dxl_error: The error code.

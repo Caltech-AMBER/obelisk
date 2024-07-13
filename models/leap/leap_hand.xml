@@ -1,7 +1,7 @@
 <mujoco model="leap_hand">
 <include file="../common.xml" />
 
-  <!-- 
+  <!--
     This model was generated with the following steps:
       - Downloaded leap_hand_right.urdf from https://github.com/dexsuite/dex-urdf
       - Fixed urdf inertias using Drake's `fix_inertia` tool
@@ -348,7 +348,7 @@
     </body>
     </body>
   </worldbody>
-  
+
   <actuator>
     <position name="1" joint="1" class="mcp_joint" />
     <position name="0" joint="0" class="pip" />
@@ -370,7 +370,7 @@
 
   <sensor>
     <jointpos name="trace1" joint="1" />
-    <!-- <jointpos name="trace1" objtype="body" objname="fingertip" /> 
+    <!-- <jointpos name="trace1" objtype="body" objname="fingertip" />
     <jointpos name="trace1" objtype="body" objname="fingertip" />
     <framepos name="trace2" objtype="body" objname="fingertip_2" />
     <framepos name="trace3" objtype="body" objname="fingertip_3" />

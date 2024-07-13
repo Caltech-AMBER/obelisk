@@ -54,7 +54,7 @@ onboard:
     # executable: obelisk_leap_hand
     pkg: obelisk_sim_py
     executable: obelisk_mujoco_robot
-    
+
     # callback_groups:
     # publishers:
     subscribers:
