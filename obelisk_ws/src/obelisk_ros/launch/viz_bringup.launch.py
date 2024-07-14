@@ -20,12 +20,20 @@ def generate_launch_description() -> None:
 
     return LaunchDescription(
         [
-            # Node(
-            #      package='tf2_ros',
-            #      executable='static_transform_publisher',
-            #      arguments = ['--x', '0', '--y', '0', '--z', '0', '--yaw', '0', '--pitch', '0', '--roll', '0', '--frame-id',
-            #                    'world', '--child-frame-id', 'robot_world']
-            # ),
+            Node(
+                package="obelisk_viz_cpp",
+                executable="default_robot_viz",
+                name="robot_viz",
+                output="screen",
+                parameters=[
+                    {
+                        "robot_viz_urdf_path_param": urdf,
+                        "robot_viz_pub_viz_joint_settings": "topic:joint_states",
+                        "robot_viz_sub_viz_est_settings": "topic:estimated_state",
+                        "robot_viz_timer_viz_joint_settings": "timer_period_sec:0.05",
+                    }
+                ],
+            ),
             Node(
                 package="robot_state_publisher",
                 executable="robot_state_publisher",

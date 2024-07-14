@@ -19,22 +19,29 @@ namespace obelisk::viz {
         explicit ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
                                  const std::string& timer_key = "time_joints")
             : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key) {
-            urdf_path_param_ = name + "urdf_path_param";
+            urdf_path_param_ = name + "_urdf_path_param";
             this->declare_parameter(urdf_path_param_, "");
 
-            pub_settings_ = name + "pub_viz_joint_settings";
+            pub_settings_ = name + "_pub_viz_joint_settings";
             this->declare_parameter<std::string>(pub_settings_, "");
 
-            timer_settings_ = name + "timer_viz_joint_settings";
+            timer_settings_ = name + "_timer_viz_joint_settings";
             this->RegisterObkTimer(timer_settings_, timer_key_, std::bind(&ObeliskVizRobot::PublishJointState, this));
 
-            sub_settings_ = name + "sub_viz_est_settings";
+            sub_settings_ = name + "_sub_viz_est_settings";
             this->RegisterObkSubscription<EstimatorMessageT>(
                 sub_settings_, est_key_,
                 std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
 
             // Create the tf broadcaster
             base_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+            RCLCPP_WARN_STREAM(this->get_logger(), "urdf param: " << urdf_path_param_);
+            RCLCPP_WARN_STREAM(this->get_logger(), "pub settings: " << pub_settings_);
+            RCLCPP_WARN_STREAM(this->get_logger(), "sub settings: " << sub_settings_);
+            RCLCPP_WARN_STREAM(this->get_logger(), "timer settings: " << timer_settings_);
+
+            first_message_received_ = false;
         }
 
         /**
@@ -156,6 +163,9 @@ namespace obelisk::viz {
             const std::lock_guard<std::mutex> lock(state_mut_);
 
             this->ParseEstimatedState(msg);
+
+            first_message_received_ = true;
+            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "First state estimate message received.");
         }
 
         /**
@@ -165,12 +175,14 @@ namespace obelisk::viz {
         virtual void ParseEstimatedState(const EstimatorMessageT& msg) = 0;
 
         void PublishJointState() {
-            // Secture the mutex
+            // Secure the mutex
             const std::lock_guard<std::mutex> lock(state_mut_);
 
-            // Publish
-            js_publisher_->publish(joint_state_);
-            base_broadcaster_->sendTransform(base_tf_);
+            // Publish only once we have received a message
+            if (first_message_received_) {
+                js_publisher_->publish(joint_state_);
+                base_broadcaster_->sendTransform(base_tf_);
+            }
         }
 
         // Publisher
@@ -186,8 +198,10 @@ namespace obelisk::viz {
         // TF broadcaster to broadcase the location of the base frame in the world
         std::unique_ptr<tf2_ros::TransformBroadcaster> base_broadcaster_;
 
-        std::string timer_key_;
+        bool first_message_received_;
+
         std::string est_key_;
+        std::string timer_key_;
         std::string urdf_path_param_;
 
         std::string pub_settings_;

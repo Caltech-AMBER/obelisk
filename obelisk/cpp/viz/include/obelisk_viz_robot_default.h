@@ -65,8 +65,9 @@ namespace obelisk::viz {
             // TODO: verify the message against the URDF
 
             // Construct the message
-            this->joint_state_.position = msg.q_joints;
-            this->joint_state_.name     = msg.joint_names;
+            this->joint_state_.position     = msg.q_joints;
+            this->joint_state_.name         = msg.joint_names;
+            this->joint_state_.header.stamp = this->base_tf_.header.stamp;
         }
 
       private:
