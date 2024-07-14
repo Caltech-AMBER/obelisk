@@ -2,7 +2,7 @@
 
 #include "obelisk_viz_robot.h"
 
-namespace obelisk {
+namespace obelisk::viz {
     class ObeliskVizRobotTester : public ObeliskVizRobot<obelisk_estimator_msgs::msg::EstimatedState> {
       public:
         ObeliskVizRobotTester() : ObeliskVizRobot("obelisk_viz_robot_tester") {
@@ -43,11 +43,11 @@ namespace obelisk {
       protected:
         void ParseEstimatedState(const obelisk_estimator_msgs::msg::EstimatedState& msg) {}
     };
-} // namespace obelisk
+} // namespace obelisk::viz
 
 TEST_CASE("Obelisk Viz Robot Basic Tests", "[obelisk_viz_robot]") {
     rclcpp::init(0, nullptr);
-    obelisk::ObeliskVizRobotTester viz_robot;
+    obelisk::viz::ObeliskVizRobotTester viz_robot;
 
     viz_robot.Configure();
     viz_robot.Activate();

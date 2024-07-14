@@ -31,6 +31,7 @@ add_executable(NodeTest
 
 add_executable(VizTest
     test_viz_robot.cpp
+    test_viz_robot_default.cpp
     )
 
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)

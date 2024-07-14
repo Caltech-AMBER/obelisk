@@ -11,6 +11,8 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcl REQUIRED)
 find_package(urdf REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 # ------- Obelisk Messages ------- #
 find_package(obelisk_control_msgs REQUIRED)
@@ -37,4 +39,6 @@ ament_target_dependencies(ObkViz INTERFACE
   obelisk_sensor_msgs
   std_msgs
   urdf
-  sensor_msgs)
+  sensor_msgs
+  tf2_ros
+  tf2)

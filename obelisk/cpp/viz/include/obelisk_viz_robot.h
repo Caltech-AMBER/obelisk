@@ -6,10 +6,14 @@
 #include <urdf/model.h>
 
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 #include "obelisk_node.h"
 
-namespace obelisk {
+//
+
+namespace obelisk::viz {
     template <typename EstimatorMessageT> class ObeliskVizRobot : public ObeliskNode {
       public:
         explicit ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
@@ -28,6 +32,9 @@ namespace obelisk {
             this->RegisterObkSubscription<EstimatorMessageT>(
                 sub_settings_, est_key_,
                 std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
+
+            // Create the tf broadcaster
+            base_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
         }
 
         /**
@@ -146,29 +153,38 @@ namespace obelisk {
       protected:
         void ParseEstimatedStateSafe(const EstimatorMessageT& msg) {
             // Start a lock guard here to ensure safety
-            const std::lock_guard<std::mutex> lock(joint_state_mut_);
+            const std::lock_guard<std::mutex> lock(state_mut_);
 
             this->ParseEstimatedState(msg);
         }
 
+        /**
+         * @brief Must parse the estimated state into a JointState message and a TransformedStamped
+         * joint_state_ and base_tf_ must be populated by this function.
+         */
         virtual void ParseEstimatedState(const EstimatorMessageT& msg) = 0;
 
         void PublishJointState() {
             // Secture the mutex
-            const std::lock_guard<std::mutex> lock(joint_state_mut_);
+            const std::lock_guard<std::mutex> lock(state_mut_);
 
             // Publish
             js_publisher_->publish(joint_state_);
+            base_broadcaster_->sendTransform(base_tf_);
         }
 
         // Publisher
         rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>::SharedPtr js_publisher_;
 
         // Need a mutex for the common joint state message
-        std::mutex joint_state_mut_;
+        std::mutex state_mut_;
 
         // Hold a joint state message
         sensor_msgs::msg::JointState joint_state_;
+        geometry_msgs::msg::TransformStamped base_tf_;
+
+        // TF broadcaster to broadcase the location of the base frame in the world
+        std::unique_ptr<tf2_ros::TransformBroadcaster> base_broadcaster_;
 
         std::string timer_key_;
         std::string est_key_;
@@ -180,4 +196,4 @@ namespace obelisk {
 
       private:
     };
-} // namespace obelisk
+} // namespace obelisk::viz
