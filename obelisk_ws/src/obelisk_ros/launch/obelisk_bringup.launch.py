@@ -10,7 +10,11 @@ from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from rclpy.impl import rcutils_logger
 
-from obelisk_py.core.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
+from obelisk_py.core.utils.launch_utils import (
+    get_launch_actions_from_node_settings,
+    get_launch_actions_from_viz_settings,
+    load_config_file,
+)
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 
@@ -50,6 +54,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
+    # print(obelisk_config["viz"])
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
@@ -120,6 +125,10 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             "sensing",
             global_state_node,
         )
+    if "viz" in obelisk_config:
+        logger.info("We have viz in the config!")
+        obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)
+
     return obelisk_launch_actions
 
 

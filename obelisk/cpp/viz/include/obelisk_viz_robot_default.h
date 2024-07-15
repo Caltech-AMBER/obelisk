@@ -26,7 +26,7 @@ namespace obelisk::viz {
                 this->get_clock()->now(); // Gets the current time. Change to get the time from the message
             this->base_tf_.header.frame_id =
                 "world"; // TODO: Consider making this not hardcoded. This must match the rviz fixed frame
-            this->base_tf_.child_frame_id = msg.base_link_name.c_str();
+            this->base_tf_.child_frame_id = (this->get_parameter("tf_prefix").as_string() + msg.base_link_name).c_str();
 
             // Check for floating vs fixed base
             if (msg.q_base.empty()) {

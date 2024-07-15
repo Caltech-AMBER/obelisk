@@ -19,16 +19,18 @@ namespace obelisk::viz {
         explicit ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
                                  const std::string& timer_key = "time_joints")
             : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key) {
-            urdf_path_param_ = name + "_urdf_path_param";
+            urdf_path_param_ = "urdf_path_param";
             this->declare_parameter(urdf_path_param_, "");
 
-            pub_settings_ = name + "_pub_viz_joint_settings";
+            this->declare_parameter("tf_prefix", "");
+
+            pub_settings_ = "pub_viz_joint_settings";
             this->declare_parameter<std::string>(pub_settings_, "");
 
-            timer_settings_ = name + "_timer_viz_joint_settings";
+            timer_settings_ = "timer_viz_joint_settings";
             this->RegisterObkTimer(timer_settings_, timer_key_, std::bind(&ObeliskVizRobot::PublishJointState, this));
 
-            sub_settings_ = name + "_sub_viz_est_settings";
+            sub_settings_ = "sub_viz_est_settings";
             this->RegisterObkSubscription<EstimatorMessageT>(
                 sub_settings_, est_key_,
                 std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
@@ -90,6 +92,7 @@ namespace obelisk::viz {
             // The user can only configure the topic name and history depth.
             // *** Note: The launch file must re-map the corresponding `robot_state_publisher`
             //     topic to be this topic, otherwise the topics won't match. ***
+            // TODO: Let the user configure the callback
             auto config_map = ParseConfigStr(this->get_parameter(pub_settings_).as_string());
             js_publisher_   = rclcpp_lifecycle::LifecycleNode::create_publisher<sensor_msgs::msg::JointState>(
                 GetTopic(config_map), GetHistoryDepth(config_map));
