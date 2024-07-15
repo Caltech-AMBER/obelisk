@@ -710,6 +710,7 @@ class ObeliskNode(LifecycleNode):
             final_key = self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
             timer_dict["key"] = final_key  # if no key passed, use value from config file
 
+        self.get_logger().info(f"{self.get_name()} configured.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -717,6 +718,8 @@ class ObeliskNode(LifecycleNode):
         super().on_activate(state)
         for timer in self.obk_timers.values():
             timer.reset()  # activate timers
+
+        self.get_logger().info(f"{self.get_name()} activated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -724,6 +727,8 @@ class ObeliskNode(LifecycleNode):
         super().on_deactivate(state)
         for timer in self.obk_timers.values():
             timer.cancel()  # deactivate timers
+
+        self.get_logger().info(f"{self.get_name()} deactivated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -749,10 +754,12 @@ class ObeliskNode(LifecycleNode):
             for subscription in self.subscriptions:
                 self.destroy_subscription(subscription)
 
+        self.get_logger().info(f"{self.get_name()} cleaned up")
         return TransitionCallbackReturn.SUCCESS
 
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Shut down the controller."""
         super().on_shutdown(state)
         self.on_cleanup(state)
+        self.get_logger().info(f"{self.get_name()} shut down.")
         return TransitionCallbackReturn.SUCCESS

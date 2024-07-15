@@ -1,4 +1,3 @@
-import os
 from typing import Dict, List, Tuple
 
 import launch
@@ -16,8 +15,6 @@ from obelisk_py.core.utils.launch_utils import (
     load_config_file,
     setup_logging_dir,
 )
-
-os.environ["ROS_LOG_DIR"] = "/home/zolkin/AmberLab/Project-Obelisk/obelisk/obk_logs/debug_dummy"
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 
