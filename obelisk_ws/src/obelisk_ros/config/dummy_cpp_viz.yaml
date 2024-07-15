@@ -83,7 +83,7 @@ onboard:
           sensor_names:
           - sensor_joint1
   viz:
-    on: True
+    on: False
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:
@@ -94,17 +94,17 @@ onboard:
         robot_topic: robot_description
         tf_prefix: g1
         subscribers:
-          - ros_parameter: sub_viz_est_settings
+          - ros_parameter: sub_viz_est_setting
             topic: estimated_state
             history_depth: 10
             callback_group: None
             non_obelisk: False
         publishers:
-          - ros_parameter: pub_viz_joint_settings
+          - ros_parameter: pub_viz_joint_setting
             topic: joint_states_g1
             history_depth: 10
             callback_group: None
         timers:
-          - ros_parameter: timer_viz_joint_settings
+          - ros_parameter: timer_viz_joint_setting
             timer_period_sec: 0.05
             callback_group: None

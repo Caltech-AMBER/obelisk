@@ -62,7 +62,26 @@ namespace obelisk::viz {
                 throw std::runtime_error("The message's q_joint and joint_names vectors have different lengths!");
             }
 
-            // TODO: verify the message against the URDF
+            // Verify the message against the URDF
+            if (msg.joint_names.size() != this->model_.joints_.size()) {
+                throw std::runtime_error("The message's number of joints does match the URDF!");
+            }
+
+            for (const auto& msg_joint : msg.joint_names) {
+                bool valid_name = false;
+                for (const auto& joint : this->model_.joints_) {
+                    if (joint.first == msg_joint) {
+                        valid_name = true;
+                    }
+                }
+                if (!valid_name) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(),
+                                        "The joint name: "
+                                            << msg_joint
+                                            << " found in the message does not match a joint name in the URDF!");
+                    throw std::runtime_error("At least one joint name does not match!");
+                }
+            }
 
             // Construct the message
             this->joint_state_.position     = msg.q_joints;

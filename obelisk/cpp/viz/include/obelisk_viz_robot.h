@@ -11,39 +11,35 @@
 
 #include "obelisk_node.h"
 
-//
-
 namespace obelisk::viz {
+    /**
+     * @brief Abstract class to help display a robot model in RViz
+     *
+     * This class listens to Obelisk estimator messages and converts them to messages needed by RViz and a
+     * robot_state_publisher to display a robot in the visualizer.
+     *
+     * Ultimately this class must publish the joint states and transform from the fixed frame to a base link.
+     *
+     * This class is templated on the estimator message that it is listenting for.
+     */
     template <typename EstimatorMessageT> class ObeliskVizRobot : public ObeliskNode {
       public:
-        explicit ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
-                                 const std::string& timer_key = "time_joints")
-            : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key) {
-            urdf_path_param_ = "urdf_path_param";
-            this->declare_parameter(urdf_path_param_, "");
-
+        ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
+                        const std::string& timer_key = "time_joints")
+            : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key), first_message_received_(false) {
+            this->declare_parameter("urdf_path_param", "");
             this->declare_parameter("tf_prefix", "");
 
-            pub_settings_ = "pub_viz_joint_settings";
-            this->declare_parameter<std::string>(pub_settings_, "");
+            this->declare_parameter<std::string>("pub_viz_joint_setting", "");
+            this->RegisterObkTimer("timer_viz_joint_setting", timer_key_,
+                                   std::bind(&ObeliskVizRobot::PublishJointState, this));
 
-            timer_settings_ = "timer_viz_joint_settings";
-            this->RegisterObkTimer(timer_settings_, timer_key_, std::bind(&ObeliskVizRobot::PublishJointState, this));
-
-            sub_settings_ = "sub_viz_est_settings";
             this->RegisterObkSubscription<EstimatorMessageT>(
-                sub_settings_, est_key_,
+                "sub_viz_est_setting", est_key_,
                 std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
 
             // Create the tf broadcaster
             base_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
-            RCLCPP_WARN_STREAM(this->get_logger(), "urdf param: " << urdf_path_param_);
-            RCLCPP_WARN_STREAM(this->get_logger(), "pub settings: " << pub_settings_);
-            RCLCPP_WARN_STREAM(this->get_logger(), "sub settings: " << sub_settings_);
-            RCLCPP_WARN_STREAM(this->get_logger(), "timer settings: " << timer_settings_);
-
-            first_message_received_ = false;
         }
 
         /**
@@ -56,7 +52,7 @@ namespace obelisk::viz {
         on_configure(const rclcpp_lifecycle::State& prev_state) override {
             ObeliskNode::on_configure(prev_state);
 
-            std::string urdf_file = this->get_parameter(urdf_path_param_).as_string();
+            std::string urdf_file = this->get_parameter("urdf_path_param").as_string();
             std::ifstream file(urdf_file);
             if (!file) {
                 throw std::runtime_error("Could not open URDF!");
@@ -66,13 +62,12 @@ namespace obelisk::viz {
             buffer << file.rdbuf();
             std::string urdf_str = buffer.str();
 
-            urdf::Model model;
-            if (!model.initString(urdf_str)) {
+            if (!model_.initString(urdf_str)) {
                 throw std::runtime_error("Could not parse URDF!");
             }
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Successfully parsed URDF file.");
-            RCLCPP_INFO_STREAM(this->get_logger(), "Robot name: " << model.getName());
+            RCLCPP_INFO_STREAM(this->get_logger(), "Robot name: " << model_.getName());
 
             // Create the subscriber has a valid message type
             // TODO (@zolkin): find a better way to do this
@@ -93,7 +88,7 @@ namespace obelisk::viz {
             // *** Note: The launch file must re-map the corresponding `robot_state_publisher`
             //     topic to be this topic, otherwise the topics won't match. ***
             // TODO: Let the user configure the callback
-            auto config_map = ParseConfigStr(this->get_parameter(pub_settings_).as_string());
+            auto config_map = ParseConfigStr(this->get_parameter("pub_viz_joint_setting").as_string());
             js_publisher_   = rclcpp_lifecycle::LifecycleNode::create_publisher<sensor_msgs::msg::JointState>(
                 GetTopic(config_map), GetHistoryDepth(config_map));
 
@@ -188,28 +183,27 @@ namespace obelisk::viz {
             }
         }
 
-        // Publisher
+        // JointState publisher
         rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>::SharedPtr js_publisher_;
 
         // Need a mutex for the common joint state message
         std::mutex state_mut_;
 
-        // Hold a joint state message
+        // This is written to in ParseEstimatedState and published in PublishJointState
         sensor_msgs::msg::JointState joint_state_;
+
+        // This is written to in ParseEstimatedState and published in PublishJointState
         geometry_msgs::msg::TransformStamped base_tf_;
 
         // TF broadcaster to broadcase the location of the base frame in the world
         std::unique_ptr<tf2_ros::TransformBroadcaster> base_broadcaster_;
 
-        bool first_message_received_;
-
         std::string est_key_;
         std::string timer_key_;
-        std::string urdf_path_param_;
 
-        std::string pub_settings_;
-        std::string sub_settings_;
-        std::string timer_settings_;
+        bool first_message_received_;
+
+        urdf::Model model_;
 
       private:
     };

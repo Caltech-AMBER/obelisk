@@ -7,11 +7,11 @@ namespace obelisk::viz {
       public:
         ObeliskVizRobotTester() : ObeliskVizRobot("obelisk_viz_robot_tester") {
             this->set_parameter(rclcpp::Parameter(
-                this->urdf_path_param_,
+                "urdf_path_param",
                 "/home/zolkin/AmberLab/Project-Obelisk/obelisk/obelisk_ws/src/robots/g1_description/urdf/g1.urdf"));
-            this->set_parameter(rclcpp::Parameter(this->pub_settings_, "topic:topic1"));
-            this->set_parameter(rclcpp::Parameter(this->sub_settings_, "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter(this->timer_settings_, "timer_period_sec:1"));
+            this->set_parameter(rclcpp::Parameter("pub_viz_joint_setting", "topic:topic1"));
+            this->set_parameter(rclcpp::Parameter("sub_viz_est_setting", "topic:topic2"));
+            this->set_parameter(rclcpp::Parameter("timer_viz_joint_setting", "timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
         }
 
