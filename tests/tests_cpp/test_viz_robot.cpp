@@ -1,14 +1,19 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdlib>
+#include <filesystem>
+
 #include "obelisk_viz_robot.h"
 
 namespace obelisk::viz {
     class ObeliskVizRobotTester : public ObeliskVizRobot<obelisk_estimator_msgs::msg::EstimatedState> {
       public:
         ObeliskVizRobotTester() : ObeliskVizRobot("obelisk_viz_robot_tester") {
-            this->set_parameter(rclcpp::Parameter(
-                "urdf_path_param",
-                "/home/zolkin/AmberLab/Project-Obelisk/obelisk/obelisk_ws/src/robots/g1_description/urdf/g1.urdf"));
+            std::string obk_root            = std::getenv("OBELISK_ROOT");
+            std::filesystem::path data_path = obk_root;
+            data_path += "/tests/tests_cpp/test_data/r2d2.urdf";
+            std::cout << "path: " << data_path << std::endl;
+            this->set_parameter(rclcpp::Parameter("urdf_path_param", data_path));
             this->set_parameter(rclcpp::Parameter("pub_viz_joint_setting", "topic:topic1"));
             this->set_parameter(rclcpp::Parameter("sub_viz_est_setting", "topic:topic2"));
             this->set_parameter(rclcpp::Parameter("timer_viz_joint_setting", "timer_period_sec:1"));
