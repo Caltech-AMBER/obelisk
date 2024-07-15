@@ -6,7 +6,7 @@ from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
 
-class ExamplePositionSetpointController(ObeliskController):
+class LeapPositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
     def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
@@ -28,17 +28,14 @@ class ExamplePositionSetpointController(ObeliskController):
         pass  # do nothing
 
     def compute_control(self) -> ObeliskControlMsg:
-        """Compute the control signal for the dummy 2-link robot.
+        """Compute the control signal for the LEAP hand.
 
         Returns:
-            obelisk_control_msg: The control message.
+            The control message.
         """
-        # computing the control input
-        u = np.sin(self.t)  # example state-independent control input
-
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = [u]
+        position_setpoint_msg.u = [(np.sin(self.t * 3) / 5) for _ in range(16)]  # example state-independent input
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

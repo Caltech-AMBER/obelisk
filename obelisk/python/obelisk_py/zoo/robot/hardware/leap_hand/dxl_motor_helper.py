@@ -1,19 +1,31 @@
 import sys
+from typing import Iterable
 
-import numpy as np
-from dynamixel_sdk import *
+from dynamixel_sdk import GroupBulkRead, GroupBulkWrite, PacketHandler, PortHandler
 
 PACKET_HANDLER = PacketHandler(protocol_version=2.0)
-PORT_HANDLER = PortHandler(port_name='/dev/ttyUSB0')
+PORT_HANDLER = PortHandler(port_name="/dev/ttyUSB0")
+BULK_WRITER = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
+BULK_READER = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
 
+MIN_POS = 0
+MAX_POS = 4095
 BAUDRATE = 4000000
+TORQUE_ENABLE = 1
+TORQUE_DISABLE = 0
 
-class MSG_LENS:
+
+class MsgLens:
+    """Message lengths for different types of messages."""
+
     TOGGLE_TORQUE = 1
     GOAL_POSITION = 4
     PRESENT_POSITION = 4
 
-class ADDR:
+
+class MsgAddrs:
+    """Addresses for different types of messages."""
+
     TOGGLE_TORQUE = 64
     GOAL_POSITION = 116
     PRESENT_POSITION = 132
@@ -22,18 +34,12 @@ class ADDR:
     KD = 80
 
 
-enabled = set()
+def setup(n: int) -> None:
+    """Setup the Dynamixel motors.
 
-MIN_POS = 0
-MAX_POS = 4095
-
-# Initialize BULK_WRITER instance
-BULK_WRITER = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
-
-# Initialize BULK_READER instace for Present Position
-BULK_READER = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
-
-def setup(n: int):
+    Args:
+        n: The number of motors to setup (the motor IDs are 0 to n-1).
+    """
     if PORT_HANDLER.openPort():
         print(f"Port {PORT_HANDLER.port_name} opened")
     else:
@@ -45,70 +51,63 @@ def setup(n: int):
         print("Failed to change the baudrate")
         sys.exit()
     for i in range(n):
-        if read_enable_status(i):
-            enabled.add(i)
+        toggle_motor_torque(i, TORQUE_ENABLE)
 
-def shutdown():
+
+def shutdown(n: int) -> None:
+    """Shutdown the Dynamixel motors.
+
+    Args:
+        n: The number of motors to shutdown (the motor IDs are 0 to n-1).
+    """
+    for i in range(n):
+        toggle_motor_torque(i, TORQUE_DISABLE)
     PORT_HANDLER.closePort()
 
-def enable_motor(id) -> None:
-    if id not in enabled:
-        enabled.add(id)
-    enable_torque(id)
+
+def toggle_motor_torque(id: int, mode: int) -> None:
+    """Enable/disable a motor.
+
+    Args:
+        id: The motor ID.
+        mode: The mode to set the motor to.
+    """
+    dxl_comm_result, dxl_error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, id, MsgAddrs.TOGGLE_TORQUE, mode)
+    comm_error_check(dxl_comm_result, dxl_error, id)
     print(f"Motor {id} enabled")
 
-def disable_motor(id) -> None:
-    if id in enabled:
-        enabled.remove(id)
-    disable_torque(id)
-    print(f"Motor {id} disabled")
 
-def read_enable_status(id) -> bool:
-    dxl_enabled, dxl_comm_result, dxl_error = PACKET_HANDLER.read1ByteTxRx(PORT_HANDLER, id, ADDR.TOGGLE_TORQUE)
-    comm_error_check(dxl_comm_result, dxl_error, id)
-    return dxl_enabled
+def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> None:
+    """Write PID values to multiple motors.
 
-def enable_torque(id) -> None:
-    TORQUE_ENABLE = 1
-    dxl_comm_result, dxl_error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, id, ADDR.TOGGLE_TORQUE, TORQUE_ENABLE)
-    comm_error_check(dxl_comm_result, dxl_error, id)
+    Args:
+        motors: The motor IDs to write to.
+        kp: The proportional gain.
+        ki: The integral gain.Kd
+        kd: The derivative gain.
+    """
+    for motor in motors:
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KP, kp)
+        comm_error_check(dxl_comm_result, dxl_error, motor)
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KI, ki)
+        comm_error_check(dxl_comm_result, dxl_error, motor)
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KD, kd)
+        comm_error_check(dxl_comm_result, dxl_error, motor)
 
-def disable_torque(id) -> None:
-    TORQUE_DISABLE = 0
-    dxl_comm_result, dxl_error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, id, ADDR.TOGGLE_TORQUE, TORQUE_DISABLE)
-    comm_error_check(dxl_comm_result, dxl_error, id)
 
-def write_pos(pos, id) -> None:
-    enable_motor(id)
-    dxl_comm_result, dxl_error = PACKET_HANDLER.write4ByteTxRx(PORT_HANDLER, id, ADDR.GOAL_POSITION, np.clip(pos, MIN_POS, MAX_POS))
-    comm_error_check(dxl_comm_result, dxl_error, id)
+def comm_error_check(dxl_comm_result: int, dxl_error: int, id: int) -> None:
+    """Check for communication errors.
 
-def read_pos(id) -> int:
-    enable_motor(id)
-    dxl_present_position, dxl_comm_result, dxl_error = PACKET_HANDLER.read4ByteTxRx(PORT_HANDLER, id, ADDR.PRESENT_POSITION)
-    comm_error_check(dxl_comm_result, dxl_error, id)
-    return dxl_present_position
-
-def comm_error_check(dxl_comm_result, dxl_error, id):
-    error = True
-    COMM_SUCCESS = 0
-    if dxl_comm_result != COMM_SUCCESS:
+    Args:
+        dxl_comm_result: The communication result.
+        dxl_error: The error code.
+        id: The motor ID.
+    """
+    comm_success = 0
+    if dxl_comm_result != comm_success:
         print(PACKET_HANDLER.getTxRxResult(dxl_comm_result))
     elif dxl_error != 0:
         print(PACKET_HANDLER.getRxPacketError(dxl_error))
     else:
-        error = False
-    if error:
-        print(f"Error in Dynamixel ID: {id}")
-        shutdown()
-        sys.exit()
-
-def sync_PID(motors, Kp=500, Ki=10, Kd=50):
-    for motor in motors:
-        enable_motor(motor)
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, ADDR.KP, Kp)
-        comm_error_check(dxl_comm_result, dxl_error, motor)
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, ADDR.KI, Ki)
-        comm_error_check(dxl_comm_result, dxl_error, motor)
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, ADDR.KD, Kd)
-        comm_error_check(dxl_comm_result, dxl_error, motor)
+        return
+    print(f"Error in Dynamixel ID: {id}")

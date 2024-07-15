@@ -1,7 +1,7 @@
 <mujoco model="leap_hand">
 <include file="../common.xml" />
 
-  <!-- 
+  <!--
     This model was generated with the following steps:
       - Downloaded leap_hand_right.urdf from https://github.com/dexsuite/dex-urdf
       - Fixed urdf inertias using Drake's `fix_inertia` tool
@@ -348,7 +348,7 @@
     </body>
     </body>
   </worldbody>
-  
+
   <actuator>
     <position name="1" joint="1" class="mcp_joint" />
     <position name="0" joint="0" class="pip" />
@@ -369,11 +369,21 @@
   </actuator>
 
   <sensor>
+    <jointpos name="trace0" joint="0" />
     <jointpos name="trace1" joint="1" />
-    <!-- <jointpos name="trace1" objtype="body" objname="fingertip" /> 
-    <jointpos name="trace1" objtype="body" objname="fingertip" />
-    <framepos name="trace2" objtype="body" objname="fingertip_2" />
-    <framepos name="trace3" objtype="body" objname="fingertip_3" />
-    <framepos name="trace4" objtype="body" objname="thumb_fingertip" /> -->
+    <jointpos name="trace2" joint="2" />
+    <jointpos name="trace3" joint="3" />
+    <jointpos name="trace4" joint="4" />
+    <jointpos name="trace5" joint="5" />
+    <jointpos name="trace6" joint="6" />
+    <jointpos name="trace7" joint="7" />
+    <jointpos name="trace8" joint="8" />
+    <jointpos name="trace9" joint="9" />
+    <jointpos name="trace10" joint="10" />
+    <jointpos name="trace11" joint="11" />
+    <jointpos name="trace12" joint="12" />
+    <jointpos name="trace13" joint="13" />
+    <jointpos name="trace14" joint="14" />
+    <jointpos name="trace15" joint="15" />
   </sensor>
 </mujoco>

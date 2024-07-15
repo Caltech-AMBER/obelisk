@@ -48,7 +48,7 @@ RUN groupadd --gid $GID $USER && \
     usermod -aG sudo ${USER} && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Expose ports to container
+# add user to dialout group to enable serial port access from the container
 RUN sudo usermod -a -G dialout ${USER}
 
 # switch to new user and workdir

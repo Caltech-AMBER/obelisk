@@ -8,7 +8,6 @@ from obelisk_py.core.utils.ros import spin_obelisk
 
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
-    # spin_obelisk(args, ObeliskLeapHand, MultiThreadedExecutor)
     spin_obelisk(args, ObeliskMujocoRobot, MultiThreadedExecutor)
 
 
