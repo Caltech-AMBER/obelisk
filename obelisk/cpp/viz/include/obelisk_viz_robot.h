@@ -167,11 +167,17 @@ namespace obelisk::viz {
         }
 
         /**
-         * @brief Must parse the estimated state into a JointState message and a TransformedStamped
+         * @brief Abstract method to parse the estimated state into a JointState message and a TransformedStamped.
          * joint_state_ and base_tf_ must be populated by this function.
+         *
+         * @param msg the estimator message
          */
         virtual void ParseEstimatedState(const EstimatorMessageT& msg) = 0;
 
+        /**
+         * @brief Publishes the joint state and base transform.
+         * Only publishes afer the first estimated state message has been received.
+         */
         void PublishJointState() {
             // Secure the mutex
             const std::lock_guard<std::mutex> lock(state_mut_);
