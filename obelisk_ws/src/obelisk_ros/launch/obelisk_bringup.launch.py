@@ -4,13 +4,17 @@ import launch
 import launch_ros
 import lifecycle_msgs.msg
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, EmitEvent, OpaqueFunction, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, EmitEvent, ExecuteProcess, OpaqueFunction, RegisterEventHandler
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from rclpy.impl import rcutils_logger
 
-from obelisk_py.core.utils.launch_utils import get_launch_actions_from_node_settings, load_config_file
+from obelisk_py.core.utils.launch_utils import (
+    get_launch_actions_from_node_settings,
+    load_config_file,
+    setup_logging_dir,
+)
 
 logger = rcutils_logger.RcutilsLogger(name="obelisk_bringup")
 
@@ -24,17 +28,20 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
     config_file_path = LaunchConfiguration("config_file_path")
     device_name = LaunchConfiguration("device_name")
     auto_start = LaunchConfiguration("auto_start")
+    bag = LaunchConfiguration("bag")
 
     config_file_path_arg = DeclareLaunchArgument("config_file_path")
     device_name_arg = DeclareLaunchArgument("device_name")
     auto_start_arg = DeclareLaunchArgument("auto_start", default_value="True")
+    bag_arg = DeclareLaunchArgument("bag", default_value="True")
 
-    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg]
+    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg, bag_arg]
     launch_args.update(
         {
             "config_file_path": config_file_path,
             "device_name": device_name,
             "auto_start": auto_start,
+            "bag": bag,
         }
     )
 
@@ -43,10 +50,17 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
 def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     """Returns the launch actions associated with all the nodes in the Obelisk architecture."""
+    # Reset config to adjust the logging directory
+    launch.logging.launch_config.reset()
+
     # parsing the launch arguments
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
     auto_start = context.launch_configurations.get("auto_start")
+    auto_start = "true" if auto_start is None else auto_start.lower()
+    bag = context.launch_configurations.get("bag")
+    bag = "true" if bag is None else bag.lower()
+
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
@@ -58,13 +72,17 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     assert "robot" in obelisk_config
     obelisk_launch_actions = []
 
+    # Setup logging
+    run_log_file_path = setup_logging_dir(config_name)
+    logger.info(f"Logging directory set to {run_log_file_path}")
+
+    if bag.lower() == "true":
+        bag_path = run_log_file_path + "/obk_stack_bag"
+        obelisk_launch_actions += [ExecuteProcess(cmd=["ros2", "bag", "record", "-a", "-o", bag_path], output="both")]
+
     # create global state node
     global_state_node = LifecycleNode(
-        namespace="",
-        package="obelisk_ros",
-        executable="global_state",
-        name=config_name,
-        output="screen",
+        namespace="", package="obelisk_ros", executable="global_state", name=config_name, output="both"
     )
     shutdown_event = EmitEvent(event=launch.events.Shutdown())
     shutdown_event_handler = RegisterEventHandler(
