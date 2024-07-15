@@ -7,9 +7,8 @@ from rclpy.qos import QoSProfile
 from tf2_ros import TransformBroadcaster
 from urdf_parser_py.urdf import URDF
 
-
+# TODO: Remove
 class StatePublisher(Node):  # noqa: D101
-    # TODO: re-do this node to publish dummy estimated messages so that I can test the whole stack
     def __init__(self) -> None:
         """Basic testing function. Will be removed later."""
         rclpy.init()
