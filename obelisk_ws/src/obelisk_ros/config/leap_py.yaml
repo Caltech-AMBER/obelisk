@@ -8,7 +8,6 @@ onboard:
       - ros_parameter: pub_ctrl_setting
         topic: /obelisk/leap/ctrl
         msg_type: PositionSetpoint
-        key: "asdf"
         history_depth: 10
         callback_group: None
         non_obelisk: False

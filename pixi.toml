@@ -118,7 +118,7 @@ pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
 # Dynamixel SDK for LEAP hand
-dynamixel-sdk = "*"
+dynamixel-sdk = ">=3.7"
 
 
 # dev
