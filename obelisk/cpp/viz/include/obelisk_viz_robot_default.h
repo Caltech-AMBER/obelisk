@@ -14,7 +14,8 @@ namespace obelisk::viz {
              * base_link_name: name of the base link
              * q_base: vector of (x, y, z, quat_x, quat_y, quat_z, quat_w), if length is zero then assume fixed base and
              * set default value
-             * joint_names: names of all the joints q_joints: vector of joint positions
+             * joint_names: names of all the joints
+             * q_joints: vector of joint positions
              *
              * The length of "joint_names" must match the length of q_joints
              *
