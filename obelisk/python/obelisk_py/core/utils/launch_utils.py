@@ -222,7 +222,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
 
             # Get the other viz specific params
             urdf_file_name = "urdf/" + settings["urdf"]
-            urdf_path = os.path.join(get_package_share_directory("g1_description"), urdf_file_name)
+            urdf_path = os.path.join(get_package_share_directory(settings["robot_pkg"]), urdf_file_name)
             parameters_dict["urdf_path_param"] = urdf_path
             if "tf_prefix" in settings:
                 tf_prefix = settings["tf_prefix"] + "/"
@@ -250,6 +250,10 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
             pub_settings = settings["publishers"]
             timer_settings = settings["timers"]
 
+            robot_topic = "robot_description"
+            if "robot_topic" in settings:
+                robot_topic = settings["robot_topic"]
+
             launch_actions += [
                 Node(
                     package="robot_state_publisher",
@@ -271,7 +275,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
                         ),  # remap the topic that the robot_state_publisher listens to
                         (
                             "/robot_description",
-                            settings["robot_topic"],
+                            robot_topic,
                         ),  # remap the topic where the robot description is published to
                     ],
                 )

@@ -16,6 +16,11 @@ def generate_launch_description() -> None:
     with open(urdf, "r") as infp:
         robot_desc = infp.read()
 
+    urdf_file_name = "urdf/go2_description.urdf"
+    urdf = os.path.join(get_package_share_directory("go2_description"), urdf_file_name)
+    with open(urdf, "r") as infp:
+        robot_desc2 = infp.read()
+
     return LaunchDescription(
         [
             Node(
@@ -23,7 +28,7 @@ def generate_launch_description() -> None:
                 executable="state_publisher",
                 name="state_publisher",
                 output="screen",
-                parameters=[{"robot_description": robot_desc}],
+                parameters=[{"robot_description": robot_desc, "robot_description2": robot_desc2}],
             ),
         ]
     )

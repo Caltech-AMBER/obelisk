@@ -16,6 +16,7 @@ Documentation for ``obelisk``
    development.md
    obelisk_api.md
    using_obelisk.rst
+   visualization.md
    obelisk_terminal_aliases.md
    faq.md
 
