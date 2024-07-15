@@ -28,14 +28,17 @@ class ExamplePositionSetpointController(ObeliskController):
         pass  # do nothing
 
     def compute_control(self) -> ObeliskControlMsg:
-        """Compute the control signal for the LEAP hand.
+        """Compute the control signal for the dummy 2-link robot.
 
         Returns:
-            The control message.
+            obelisk_control_msg: The control message.
         """
+        # computing the control input
+        u = np.sin(self.t)  # example state-independent control input
+
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = [(np.sin(self.t * 3) / 5)]  # example state-independent input
+        position_setpoint_msg.u = [u]
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore
