@@ -54,7 +54,6 @@ channels = ["robostack-staging"]
 
 [feature.ros2base.dependencies]
 ros-humble-ros-base = "*"
-ros-humble-cyclonedds = "*"
 colcon-common-extensions = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
