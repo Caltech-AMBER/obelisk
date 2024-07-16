@@ -338,7 +338,7 @@ def setup_logging_dir(config_name: str) -> str:
         raise EnvironmentError("OBELISK_ROOT and ROS_HOME are not set!")
 
     general_log_file_path = logging_ws + "/obk_logs"
-    if not os.path.exists("obk_logs"):
+    if not os.path.exists(general_log_file_path):
         os.makedirs(general_log_file_path)
 
     # Get current date and time and replace space with underscore
