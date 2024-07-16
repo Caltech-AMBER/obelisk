@@ -25,6 +25,7 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
 ```
   viz:
     on: True
+    viz_tool: rviz
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:
@@ -80,8 +81,9 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
 ```
 The visualization section starts with the `viz` tag. Then we have all the "global" visualization settings, i.e. all the settings that apply to everything, such as Rviz settings.
 - `on` is a boolean flag to turn on or off the visualizer and spin the nodes. If this is false, all the following settings are skipped.
-- `rviz_pkg` is the package where the Rviz configuration file is found.
-- `rviz_config` is the name of the Rviz configuration file. ***Note that we assume this is stored in a folder named `rviz` in the package listed above.*** Be sure that this folder is "installed" when building ROS.
+- `viz_tool` (optional) selects which visualization tool to bring up. For now the only two supported options are `rviz` and `foxglove`. If not present, the default is `rviz`.
+- `rviz_pkg` (optional) is the package where the Rviz configuration file is found. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
+- `rviz_config` (optional) is the name of the Rviz configuration file. ***Note that we assume this is stored in a folder named `rviz` in the package listed above.*** Be sure that this folder is "installed" when building ROS. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
 
 Then under `viz_nodes` we have a list of nodes and their settings. We will examine only one as they always have the same fields.
 ```

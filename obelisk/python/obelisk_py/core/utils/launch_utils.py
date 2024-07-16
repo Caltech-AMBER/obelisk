@@ -8,7 +8,8 @@ import launch
 import launch_ros
 import lifecycle_msgs.msg
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, RegisterEventHandler
+from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
+from launch.launch_description_sources import FrontendLaunchDescriptionSource
 from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
@@ -259,7 +260,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
                 Node(
                     package="robot_state_publisher",
                     executable="robot_state_publisher",
-                    name="robot_state_publisher",
+                    name=f"robot_state_publisher_{suffix}",
                     output="screen",
                     parameters=[
                         {
@@ -289,12 +290,27 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
         for i, viz_node_settings in enumerate(node_settings):
             launch_actions += _single_viz_node_launch_actions(viz_node_settings, suffix=i)
 
-        # Setup Rviz
-        rviz_file_name = "rviz/" + settings["rviz_config"]
-        rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
-        launch_actions += [
-            Node(package="rviz2", executable="rviz2", name="rviz2", output="screen", arguments=["-d", rviz_config_path])
-        ]
+        if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
+            # Setup Rviz
+            rviz_file_name = "rviz/" + settings["rviz_config"]
+            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+            launch_actions += [
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
+                    arguments=["-d", rviz_config_path],
+                )
+            ]
+        elif settings["viz_tool"] == "foxglove":
+            # setup fox glove
+            xml_launch_file = os.path.join(
+                get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
+            )
+            launch_actions += [IncludeLaunchDescription(FrontendLaunchDescriptionSource(xml_launch_file))]
+        else:
+            raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
 
     return launch_actions
 

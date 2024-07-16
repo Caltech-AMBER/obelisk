@@ -58,6 +58,7 @@ colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
 ros-humble-joint-state-publisher = "*"
 ros-humble-urdf = "*"
+ros-humble-foxglove-bridge="*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later

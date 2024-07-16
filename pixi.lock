@@ -524,6 +524,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-cmake-module-2.2.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foonathan-memory-vendor-1.2.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foxglove-bridge-0.7.4-py311hb44581c_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry2-0.25.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-gmock-vendor-1.10.9004-py311hb335429_6.tar.bz2
@@ -1033,6 +1034,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-cmake-module-2.2.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foonathan-memory-vendor-1.2.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foxglove-bridge-0.7.4-py311hb44581c_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry2-0.25.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-gmock-vendor-1.10.9004-py311hb335429_6.tar.bz2
@@ -1667,6 +1669,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-cmake-module-2.2.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foonathan-memory-vendor-1.2.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foxglove-bridge-0.7.4-py311hb44581c_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry2-0.25.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-gmock-vendor-1.10.9004-py311hb335429_6.tar.bz2
@@ -2212,6 +2215,7 @@ environments:
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-2.6.7-py311h70423f0_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-fastrtps-cmake-module-2.2.2-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foonathan-memory-vendor-1.2.0-py311hb335429_6.tar.bz2
+      - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foxglove-bridge-0.7.4-py311hb44581c_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry-msgs-4.2.3-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-geometry2-0.25.5-py311hb335429_6.tar.bz2
       - conda: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-gmock-vendor-1.10.9004-py311hb335429_6.tar.bz2
@@ -7985,34 +7989,6 @@ packages:
   - typing-extensions ; python_version < '3.10' and extra == 'typing'
   - defusedxml ; extra == 'xmp'
   requires_python: '>=3.8'
-- kind: pypi
-  name: pillow
-  version: 10.3.0
-  url: https://files.pythonhosted.org/packages/81/ff/ad3c942d865f9e45ce84eeb31795e6d4d94e1f1eea51026d5154028510d7/pillow-10.3.0-cp311-cp311-manylinux_2_28_x86_64.whl
-  sha256: 1b87bd9d81d179bd8ab871603bd80d8645729939f90b71e62914e816a76fc6bd
-  requires_dist:
-  - furo ; extra == 'docs'
-  - olefile ; extra == 'docs'
-  - sphinx>=2.4 ; extra == 'docs'
-  - sphinx-copybutton ; extra == 'docs'
-  - sphinx-inline-tabs ; extra == 'docs'
-  - sphinx-removed-in ; extra == 'docs'
-  - sphinxext-opengraph ; extra == 'docs'
-  - olefile ; extra == 'fpx'
-  - olefile ; extra == 'mic'
-  - check-manifest ; extra == 'tests'
-  - coverage ; extra == 'tests'
-  - defusedxml ; extra == 'tests'
-  - markdown2 ; extra == 'tests'
-  - olefile ; extra == 'tests'
-  - packaging ; extra == 'tests'
-  - pyroma ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-cov ; extra == 'tests'
-  - pytest-timeout ; extra == 'tests'
-  - typing-extensions ; python_version < '3.10' and extra == 'typing'
-  - defusedxml ; extra == 'xmp'
-  requires_python: '>=3.8'
 - kind: conda
   name: pip
   version: '24.0'
@@ -10538,6 +10514,40 @@ packages:
   purls: []
   size: 9011
   timestamp: 1707309962109
+- kind: conda
+  name: ros-humble-foxglove-bridge
+  version: 0.7.4
+  build: py311hb44581c_6
+  build_number: 6
+  subdir: linux-64
+  url: https://conda.anaconda.org/robostack-staging/linux-64/ros-humble-foxglove-bridge-0.7.4-py311hb44581c_6.tar.bz2
+  sha256: b984f9fe06ff68cdd6b9757ce1cc57ea8f747daec9f562f49d9c77901072b3df
+  md5: 7bbff28b89a466457b1adc53a976d434
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc-ng >=12
+  - libgcc-ng >=12
+  - libstdcxx-ng >=12
+  - libzlib >=1.2.13,<1.3.0a0
+  - numpy >=1.23.5,<2.0a0
+  - openssl >=3.2.1,<4.0a0
+  - python
+  - python_abi 3.11.* *_cp311
+  - ros-humble-ament-index-cpp
+  - ros-humble-rclcpp
+  - ros-humble-rclcpp-components
+  - ros-humble-resource-retriever
+  - ros-humble-ros-workspace
+  - ros-humble-rosgraph-msgs
+  - ros2-distro-mutex 0.5.*
+  - ros2-distro-mutex 0.5.* humble
+  - zlib
+  arch: x86_64
+  platform: linux
+  license: BSD-3-Clause
+  purls: []
+  size: 1111533
+  timestamp: 1707315517328
 - kind: conda
   name: ros-humble-geometry-msgs
   version: 4.2.3

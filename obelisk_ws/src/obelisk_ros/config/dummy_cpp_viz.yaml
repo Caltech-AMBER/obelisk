@@ -84,6 +84,7 @@ onboard:
           - sensor_joint1
   viz:
     on: True
+    viz_tool: rviz
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:
@@ -91,7 +92,7 @@ onboard:
         executable: default_robot_viz
         robot_pkg: g1_description
         urdf: g1.urdf
-        robot_topic: robot_description
+        robot_topic: g1_description
         tf_prefix: g1
         subscribers:
           - ros_parameter: sub_viz_est_setting
