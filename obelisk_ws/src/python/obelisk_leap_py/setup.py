@@ -3,7 +3,7 @@ from glob import glob
 
 from setuptools import setup
 
-package_name = "obelisk_control_py"
+package_name = "obelisk_leap_py"
 
 setup(
     name=package_name,
@@ -17,15 +17,14 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="alberthli",
-    maintainer_email="alberthli@caltech.edu",
-    description="Python Obelisk ROS2 package for control.",
+    maintainer="gavinhua",
+    maintainer_email="ghua@caltech.edu",
+    description="Python Obelisk ROS2 package for simulation.",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "example_position_setpoint_controller = obelisk_control_py.example_position_setpoint_controller:main",
-            "leap_controller = obelisk_control_py.leap_controller:main",
+            "obelisk_leap_hand = obelisk_leap_py.obelisk_leap_hand:main",
         ],
     },
 )
