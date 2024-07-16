@@ -65,7 +65,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
-    # print(obelisk_config["viz"])
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
@@ -141,7 +140,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             global_state_node,
         )
     if "viz" in obelisk_config:
-        logger.info("We have viz in the config!")
+        logger.info("Viz present in config file.")
         obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)
 
     return obelisk_launch_actions

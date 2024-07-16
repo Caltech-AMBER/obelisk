@@ -1,14 +1,14 @@
 # Visualization
 Obelisk comes with a suite of tools for visualizing the robot. Some of these include:
-- Robot visualization nodes to display robots in Rviz
+- Robot visualization nodes to display robots in Rviz or [Foxglove](https://docs.foxglove.dev/docs/introduction)
 - (todo) Custom rviz plugins for visualizing Obelisk messages
 
 ## Robot Visualization
-Often times you may want to display a visual of a robot in a specified configuration, or see the motion of a robot throughout a trajectory, or maybe you want to check the estimated state vs the true state. In all of these cases we need to be able to see the robot. Obelisk provides two nodes to help with this:
+Oftentimes you may want to display a visual of a robot in a specified configuration, or see the motion of a robot throughout a trajectory, or maybe you want to check the estimated state vs the true state. In all of these cases we need to be able to see the robot. Obelisk provides two nodes to help with this:
 - `ObeliskVizRobot` which is an abstract class, designed to be inherited
 - `ObeliskVizRobotDefault` which is a concrete child of `ObeliskVizRobot` designed to work with most common estimated message types
 
-These nodes are designed to be running when estimated state messages are being published. They can be configured to listen to any chosen topic. Once listening to this topic, they will parse incoming estimated state messages into a format that RViz understands. Concretely this means that the estimated state is being transformed into a `sensor_msgs/msg/JointState` message and a `tf2` transform between the fixed frame (default is `world`) and the base link on the robot. The `JointState` message is being published so that a `robot_state_publisher` (see [here](https://index.ros.org/p/robot_state_publisher/github-ros-robot_state_publisher/#humble)) can transform it into the transforms needed by Rviz.
+These nodes are designed to run while estimated state messages are being published. They can be configured to listen to any chosen topic. Once listening to this topic, they will parse incoming estimated state messages into a format that the visualizer understands. Concretely, this means that the estimated state is being transformed into a `sensor_msgs/msg/JointState` message and a `tf2` transform between the fixed frame (default is `world`) and the base link on the robot. The `JointState` message is being published so that a `robot_state_publisher` (see [here](https://index.ros.org/p/robot_state_publisher/github-ros-robot_state_publisher/#humble)) can transform it into the transforms needed by Rviz.
 
 With the proper configuration settings, the launch file will automatically bring up Rviz (with the desired configuration file), bring up the `robot_state_publisher` and the `ObeliskVizRobot`. Multiple robots can be brought up by specifying multiple `ObeliskVizRobots`.
 
@@ -79,13 +79,13 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
 ```
-The visualization section starts with the `viz` tag. Then we have all the "global" visualization settings, i.e. all the settings that apply to everything, such as Rviz settings.
+The visualization section starts with the `viz` tag. Then we have all the "global" visualization settings, i.e., all the settings that apply to everything, such as Rviz settings.
 - `on` is a boolean flag to turn on or off the visualizer and spin the nodes. If this is false, all the following settings are skipped.
 - `viz_tool` (optional) selects which visualization tool to bring up. For now the only two supported options are `rviz` and `foxglove`. If not present, the default is `rviz`.
 - `rviz_pkg` (optional) is the package where the Rviz configuration file is found. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
 - `rviz_config` (optional) is the name of the Rviz configuration file. ***Note that we assume this is stored in a folder named `rviz` in the package listed above.*** Be sure that this folder is "installed" when building ROS. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
 
-Then under `viz_nodes` we have a list of nodes and their settings. We will examine only one as they always have the same fields.
+Then, under `viz_nodes` we have a list of nodes and their settings. We will examine only one as they always have the same fields.
 ```
 - pkg: obelisk_viz_cpp
     executable: default_robot_viz

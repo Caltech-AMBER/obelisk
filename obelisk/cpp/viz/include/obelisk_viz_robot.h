@@ -20,7 +20,7 @@ namespace obelisk::viz {
      *
      * Ultimately this class must publish the joint states and transform from the fixed frame to a base link.
      *
-     * This class is templated on the estimator message that it is listenting for.
+     * This class is templated on the estimator message that it is listening for.
      */
     template <typename EstimatorMessageT> class ObeliskVizRobot : public ObeliskNode {
       public:
@@ -69,7 +69,7 @@ namespace obelisk::viz {
             RCLCPP_INFO_STREAM(this->get_logger(), "Successfully parsed URDF file.");
             RCLCPP_INFO_STREAM(this->get_logger(), "Robot name: " << model_.getName());
 
-            // Create the subscriber has a valid message type
+            // Verify that a subscriber has a estimator message type
             // TODO (@zolkin): find a better way to do this
             bool has_estimator_sub = false;
             using internal::estimator_message_names;
