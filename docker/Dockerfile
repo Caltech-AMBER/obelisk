@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
     mesa-utils \
     x11-apps \
     libyaml-dev \
+    libyaml-cpp-dev \
     mesa-common-dev \
     libglfw3-dev \
     locales \

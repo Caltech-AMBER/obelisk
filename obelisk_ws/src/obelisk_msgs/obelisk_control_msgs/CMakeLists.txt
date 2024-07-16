@@ -15,6 +15,7 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PositionSetpoint.msg"
+  "msg/CartesianTrajectory.msg"
   DEPENDENCIES
   std_msgs
 )

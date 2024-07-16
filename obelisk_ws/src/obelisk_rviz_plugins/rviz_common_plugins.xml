@@ -1,0 +1,5 @@
+<library path="cartesian_traj_display">
+  <class type="obelisk::rviz::CartesianTrajectoryDisplay" base_class_type="rviz_common::Display">
+    <description></description>
+  </class>
+</library>
