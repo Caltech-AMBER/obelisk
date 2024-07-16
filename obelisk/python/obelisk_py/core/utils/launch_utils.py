@@ -312,13 +312,10 @@ def get_launch_actions_from_node_settings(
         ]
         return launch_actions
 
-    if node_type == "sensing":
-        node_launch_actions = []
-        for i, sensor_settings in enumerate(node_settings):
-            node_launch_actions += _single_component_launch_actions(sensor_settings, suffix=i)
-        return node_launch_actions
-    else:
-        return _single_component_launch_actions(node_settings)
+    node_launch_actions = []
+    for i, node_setting in enumerate(node_settings):
+        node_launch_actions += _single_component_launch_actions(node_setting, suffix=i)
+    return node_launch_actions
 
 
 def setup_logging_dir(config_name: str) -> str:
