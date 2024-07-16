@@ -17,53 +17,59 @@ def test_config() -> Dict[str, Any]:
     """Fixture to provide test configuration data."""
     return {
         "onboard": {
-            "control": {
-                "pkg": "test_pkg1",
-                "executable": "test_controller",
-                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
-                "publishers": [
-                    {
-                        "ros_parameter": "pub_ctrl_settings1",
-                        "key": "pub1",
-                        "topic": "/test/controller/pub1",
-                        "msg_type": "TestMsg",
-                        "history_depth": 10,
-                        "callback_group": "cbg1",
-                        "non_obelisk": False,
-                    }
-                ],
-                "subscribers": [
-                    {
-                        "ros_parameter": "sub_ctrl_settings1",
-                        "key": "sub1",
-                        "topic": "/test/controller/sub1",
-                        "msg_type": "TestMsg",
-                        "history_depth": 5,
-                        "callback_key": "sub_callback1",
-                        "callback_group": "cbg2",
-                        "non_obelisk": False,
-                    }
-                ],
-                "timers": [
-                    {
-                        "ros_parameter": "timer_ctrl_settings1",
-                        "key": "timer1",
-                        "timer_period_sec": 0.1,
-                        "callback_group": "cbg1",
-                        "callback_key": "timer_callback1",
-                    }
-                ],
-            },
-            "estimation": {
-                "pkg": "test_pkg2",
-                "executable": "test_estimator",
-                "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-            },
-            "robot": {
-                "pkg": "test_pkg3",
-                "executable": "test_robot",
-                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-            },
+            "control": [
+                {
+                    "pkg": "test_pkg1",
+                    "executable": "test_controller",
+                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
+                    "publishers": [
+                        {
+                            "ros_parameter": "pub_ctrl_settings1",
+                            "key": "pub1",
+                            "topic": "/test/controller/pub1",
+                            "msg_type": "TestMsg",
+                            "history_depth": 10,
+                            "callback_group": "cbg1",
+                            "non_obelisk": False,
+                        }
+                    ],
+                    "subscribers": [
+                        {
+                            "ros_parameter": "sub_ctrl_settings1",
+                            "key": "sub1",
+                            "topic": "/test/controller/sub1",
+                            "msg_type": "TestMsg",
+                            "history_depth": 5,
+                            "callback_key": "sub_callback1",
+                            "callback_group": "cbg2",
+                            "non_obelisk": False,
+                        }
+                    ],
+                    "timers": [
+                        {
+                            "ros_parameter": "timer_ctrl_settings1",
+                            "key": "timer1",
+                            "timer_period_sec": 0.1,
+                            "callback_group": "cbg1",
+                            "callback_key": "timer_callback1",
+                        }
+                    ],
+                }
+            ],
+            "estimation": [
+                {
+                    "pkg": "test_pkg2",
+                    "executable": "test_estimator",
+                    "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
+                }
+            ],
+            "robot": [
+                {
+                    "pkg": "test_pkg3",
+                    "executable": "test_robot",
+                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
+                }
+            ],
             "sensing": [
                 {
                     "pkg": "test_pkg4",
@@ -134,7 +140,7 @@ def test_get_component_settings_subdict(test_config: Dict[str, Any]) -> None:
     Args:
         test_config: Test configuration fixture.
     """
-    node_settings = test_config["onboard"]["control"]
+    node_settings = test_config["onboard"]["control"][0]
 
     # Test publishers
     pub_settings = get_component_settings_subdict(node_settings, "publishers")
@@ -170,7 +176,7 @@ def test_get_parameters_dict(test_config: Dict[str, Any]) -> None:
     Args:
         test_config: Test configuration fixture.
     """
-    node_settings = test_config["onboard"]["control"]
+    node_settings = test_config["onboard"]["control"][0]
     parameters_dict = get_parameters_dict(node_settings)
 
     expected_dict = {

@@ -3,6 +3,7 @@
 # script flags
 skip_docker=false
 dev_sys_deps=false
+cyclone_perf=true
 
 for arg in "$@"; do
   case $arg in
@@ -13,6 +14,10 @@ for arg in "$@"; do
     --dev-sys-deps)
       dev_sys_deps=true
       shift # Installs development system dependencies
+      ;;
+    --no-cyclone-perf)
+      cyclone_perf=false
+      shift # Disables cyclone performance optimizations
       ;;
     *)
       # Unknown option
@@ -128,6 +133,22 @@ if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
 	echo -e "\033[1;32m.env file created under $OBELISK_ROOT/docker!\033[0m"
 else
 	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
+fi
+
+# enable cyclone performance optimizations
+# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
+if [ "$cyclone_perf" = true ]; then
+    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
+else
+    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --no-cyclone-perf flag.\033[0m"
 fi
 
 # rest of setup commands from docker/docker_setup.sh

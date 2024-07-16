@@ -203,13 +203,10 @@ def get_launch_actions_from_node_settings(
         launch_actions += get_handlers(component_node, global_state_node)
         return launch_actions
 
-    if node_type == "sensing":
-        node_launch_actions = []
-        for i, sensor_settings in enumerate(node_settings):
-            node_launch_actions += _single_component_launch_actions(sensor_settings, suffix=i)
-        return node_launch_actions
-    else:
-        return _single_component_launch_actions(node_settings)
+    node_launch_actions = []
+    for i, node_setting in enumerate(node_settings):
+        node_launch_actions += _single_component_launch_actions(node_setting, suffix=i)
+    return node_launch_actions
 
 
 def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
