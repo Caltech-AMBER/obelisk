@@ -90,40 +90,18 @@ onboard:
     viz_nodes:
       - pkg: obelisk_viz_cpp
         executable: default_robot_viz
-        robot_pkg: g1_description
-        urdf: g1.urdf
-        robot_topic: g1_description
-        tf_prefix: g1
+        robot_pkg: dummy_bot
+        urdf: dummy_bot.urdf
+        robot_topic: robot_description
         subscribers:
           - ros_parameter: sub_viz_est_setting
-            topic: estimated_state
+            topic: /obelisk/dummy/est
             history_depth: 10
             callback_group: None
             non_obelisk: False
         publishers:
           - ros_parameter: pub_viz_joint_setting
-            topic: joint_states_g1
-            history_depth: 10
-            callback_group: None
-        timers:
-          - ros_parameter: timer_viz_joint_setting
-            timer_period_sec: 0.05
-            callback_group: None
-      - pkg: obelisk_viz_cpp
-        executable: default_robot_viz
-        robot_pkg: go2_description
-        urdf: go2_description.urdf
-        robot_topic: go2_description
-        tf_prefix: go2
-        subscribers:
-          - ros_parameter: sub_viz_est_setting
-            topic: estimated_state2
-            history_depth: 10
-            callback_group: None
-            non_obelisk: False
-        publishers:
-          - ros_parameter: pub_viz_joint_setting
-            topic: joint_states_go2
+            topic: joint_states
             history_depth: 10
             callback_group: None
         timers:

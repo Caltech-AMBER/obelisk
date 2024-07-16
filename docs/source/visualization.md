@@ -1,7 +1,6 @@
 # Visualization
 Obelisk comes with a suite of tools for visualizing the robot. Some of these include:
 - Robot visualization nodes to display robots in Rviz or [Foxglove](https://docs.foxglove.dev/docs/introduction)
-- (todo) Custom rviz plugins for visualizing Obelisk messages
 
 ## Robot Visualization
 Oftentimes you may want to display a visual of a robot in a specified configuration, or see the motion of a robot throughout a trajectory, or maybe you want to check the estimated state vs the true state. In all of these cases we need to be able to see the robot. Obelisk provides two nodes to help with this:
@@ -118,3 +117,13 @@ Then, under `viz_nodes` we have a list of nodes and their settings. We will exam
 - Finally we have all the normal component settings, which we will not go over here.
 
 The `robot_topic` and `tf_prefix` are mostly useful when you have multiple robots to display. By changing these options we can prevent name clashes.
+
+## Implementing a Custom Robot Visualization
+To implement a custom visualization, you must write code that inherits from `ObeliskVizRobot`. The source code for `ObeliskVizRobotDefault` should act as a guide. Specific todo items are listed here:
+
+- Inherit from `ObeliskVizRobot`
+- Implement the `ParseEstimatedStateMessage` function. In this function, you must:
+  - Fill in `joint_state_` with the robot's joint state information.
+  - Fill in `base_tf_` with the transform from the fixed frame (normally called "world") to the base link on the robot.
+  - You should support publishing the transform with a specific tf prefix, which you can access through the ROS parameter `tf_prefix`.
+  - You should verify the contents of the message and print helpful warning messages if the message is not correct.

@@ -238,7 +238,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
                 name="obelisk_viz" if suffix is None else f"obelisk_viz_{suffix}",
                 package=package,
                 executable=executable,
-                output="screen",
+                output="both",
                 parameters=[parameters_dict],
             )
             launch_actions += [component_node]

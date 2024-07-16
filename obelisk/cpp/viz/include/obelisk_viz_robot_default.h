@@ -61,12 +61,18 @@ namespace obelisk::viz {
             // ----------- Create the JointState message ----------- //
             // Verify the message is self consistent
             if (msg.q_joints.size() != msg.joint_names.size()) {
-                throw std::runtime_error("The message's q_joint and joint_names vectors have different lengths!");
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                    "The message's q_joint and joint_names vectors have different lengths!"
+                                        << "Number of joint values: " << msg.q_joints.size()
+                                        << ". Number of joint names:" << msg.joint_names.size());
             }
 
             // Verify the message against the URDF
             if (msg.joint_names.size() != this->model_.joints_.size()) {
-                throw std::runtime_error("The message's number of joints does match the URDF!");
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                    "The message's number of joints does match the URDF!"
+                                        << "Number of joint names in the message: " << msg.joint_names.size()
+                                        << ". Number of joint names in the URDF:" << this->model_.joints_.size());
             }
 
             for (const auto& msg_joint : msg.joint_names) {
@@ -78,10 +84,9 @@ namespace obelisk::viz {
                 }
                 if (!valid_name) {
                     RCLCPP_ERROR_STREAM(this->get_logger(),
-                                        "The joint name: "
-                                            << msg_joint
+                                        "At least one joint name in the message does not match the URDF!"
+                                            << "The joint name: " << msg_joint
                                             << " found in the message does not match a joint name in the URDF!");
-                    throw std::runtime_error("At least one joint name does not match!");
                 }
             }
 

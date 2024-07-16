@@ -99,7 +99,7 @@ ros-humble-foxglove-bridge="*"
 [feature.obelisk.pypi-dependencies]
 mujoco = ">=3.1.0"
 "ruamel.yaml" = ">=0.18.0"
-urdf_parser_py = "*"
+urdf_parser_py = ">=0.0.4"
 
 
 # docs
