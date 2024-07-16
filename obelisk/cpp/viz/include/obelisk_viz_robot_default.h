@@ -62,7 +62,7 @@ namespace obelisk::viz {
             // Verify the message is self consistent
             if (msg.q_joints.size() != msg.joint_names.size()) {
                 RCLCPP_ERROR_STREAM(this->get_logger(),
-                                    "The message's q_joint and joint_names vectors have different lengths!"
+                                    "The message's q_joint and joint_names vectors have different lengths! "
                                         << "Number of joint values: " << msg.q_joints.size()
                                         << ". Number of joint names:" << msg.joint_names.size());
             }
@@ -70,7 +70,7 @@ namespace obelisk::viz {
             // Verify the message against the URDF
             if (msg.joint_names.size() != this->model_.joints_.size()) {
                 RCLCPP_ERROR_STREAM(this->get_logger(),
-                                    "The message's number of joints does match the URDF!"
+                                    "The message's number of joints does match the URDF! "
                                         << "Number of joint names in the message: " << msg.joint_names.size()
                                         << ". Number of joint names in the URDF:" << this->model_.joints_.size());
             }
@@ -84,7 +84,7 @@ namespace obelisk::viz {
                 }
                 if (!valid_name) {
                     RCLCPP_ERROR_STREAM(this->get_logger(),
-                                        "At least one joint name in the message does not match the URDF!"
+                                        "At least one joint name in the message does not match the URDF! "
                                             << "The joint name: " << msg_joint
                                             << " found in the message does not match a joint name in the URDF!");
                 }
