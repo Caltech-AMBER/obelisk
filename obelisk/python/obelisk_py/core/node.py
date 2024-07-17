@@ -60,6 +60,8 @@ class ObeliskNode(LifecycleNode):
         """Initialize the Obelisk node."""
         super().__init__(node_name)
         self.declare_parameter("callback_group_settings", "")
+        # ROS parameter deisgned to let the user feed a file path for their own code
+        self.declare_parameter("params_path", "")
 
         # for auto-configuration
         self._obk_pub_settings = []

@@ -180,6 +180,9 @@ namespace obelisk {
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
 
+            // ROS parameter deisgned to let the user feed a file path for their own code
+            this->declare_parameter<std::string>("params_path", "");
+
             RCLCPP_INFO_STREAM(this->get_logger(), node_name << " created.");
         };
 
@@ -189,6 +192,11 @@ namespace obelisk {
             : LifecycleNode(node_name, namespace_, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
+
+            // ROS parameter deisgned to let the user feed a file path for their own code
+            this->declare_parameter<std::string>("params_path", "");
+
+            RCLCPP_INFO_STREAM(this->get_logger(), node_name << " created.");
         };
 
         /**
