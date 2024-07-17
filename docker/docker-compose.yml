@@ -29,6 +29,7 @@ services:
       - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
       - /etc/sysctl.d/60-cyclonedds.conf:/etc/sysctl.d/60-cyclonedds.conf
+      - /usr/share/glvnd/egl_vendor.d/10_nvidia.json:/usr/share/glvnd/egl_vendor.d/10_nvidia.json
     ports:
       - 7007:7007
     privileged: true

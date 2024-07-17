@@ -14,7 +14,7 @@ platforms = ["linux-64"]
 
 [activation]
 scripts = ["obelisk_ws/install/setup.sh"]
-
+env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
 
 # ############ #
 # FEATURE SETS #
