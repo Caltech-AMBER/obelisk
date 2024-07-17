@@ -181,7 +181,7 @@ cpp-test-viz = { cmd = "obelisk/cpp/build/tests/VizTest", depends-on = ["cpp-bui
 
 
 # run ctest
-cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }
+cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = ["cpp-build"] }
 
 # cmake
 cmake = { cmd = [
