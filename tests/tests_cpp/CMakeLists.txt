@@ -29,8 +29,17 @@ add_executable(NodeTest
     claude_obelisk_robot_test.cpp
     claude_obelisk_estimator_test.cpp)
 
+add_executable(VizTest
+    test_viz_robot.cpp
+    test_viz_robot_default.cpp
+    )
+
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC Obelisk::Core)
+
+
+target_link_libraries(VizTest PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(VizTest PUBLIC Obelisk::Core Obelisk::Viz)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -39,3 +48,4 @@ ament_target_dependencies(NodeTest PUBLIC rclcpp std_msgs)
 
 include(Catch)
 catch_discover_tests(NodeTest)
+catch_discover_tests(VizTest)

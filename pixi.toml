@@ -55,6 +55,10 @@ channels = ["robostack-staging"]
 [feature.ros2base.dependencies]
 ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
+ros-humble-rviz-visual-tools = "*"
+ros-humble-joint-state-publisher = "*"
+ros-humble-urdf = "*"
+ros-humble-foxglove-bridge="*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -71,9 +75,7 @@ colcon-common-extensions = "*"
 # ros-humble-moveit-ros-planning-interface = "*"
 # ros-humble-moveit-ros-visualization = "*"
 # ros-humble-moveit-visual-tools = "*"
-# ros-humble-rviz-visual-tools = "*"
 # ros-humble-ros2-controllers = "*"
-# ros-humble-joint-state-publisher = "*"
 # ros-humble-joint-state-publisher-gui = "*"
 # ros-humble-diagnostic-updater = "*"
 # ros-humble-geographic-msgs = "*"
@@ -97,6 +99,7 @@ colcon-common-extensions = "*"
 [feature.obelisk.pypi-dependencies]
 mujoco = ">=3.1.0"
 "ruamel.yaml" = ">=0.18.0"
+urdf_parser_py = ">=0.0.4"
 
 
 # docs
@@ -169,9 +172,13 @@ ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", 
 source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true", GLOBAL="false" } }
 messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs", cwd="obelisk_ws" }
 
-# run the dummy tests
+# run the core tests
 cpp-test-node = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build"] }
 cpp-test-node-debug = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build-debug"] }
+
+# run the viz tests
+cpp-test-viz = { cmd = "obelisk/cpp/build/tests/VizTest", depends-on = ["cpp-build"] }
+
 
 # run ctest
 cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }

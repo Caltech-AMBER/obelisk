@@ -8,8 +8,9 @@ import launch
 import launch_ros
 import lifecycle_msgs.msg
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, RegisterEventHandler
-from launch_ros.actions import LifecycleNode
+from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
+from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
 
@@ -182,7 +183,7 @@ def get_launch_actions_from_node_settings(
     Returns:
         A list of launch actions.
     """
-    assert node_type in ["control", "estimation", "robot", "sensing"]
+    assert node_type in ["control", "estimation", "robot", "sensing", "viz"]
 
     def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
         package = node_settings["pkg"]
@@ -199,123 +200,231 @@ def get_launch_actions_from_node_settings(
             parameters=[parameters_dict],
         )
         launch_actions += [component_node]
-
-        # transition events to match the global state node
-        configure_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
-            )
-        )
-        activate_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
-            )
-        )
-        deactivate_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_DEACTIVATE,
-            )
-        )
-        cleanup_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CLEANUP,
-            )
-        )
-        unconfigured_shutdown_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_UNCONFIGURED_SHUTDOWN,
-            )
-        )
-        inactive_shutdown_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_INACTIVE_SHUTDOWN,
-            )
-        )
-        active_shutdown_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(component_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVE_SHUTDOWN,
-            )
-        )
-
-        # making event handlers
-        configure_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="configuring",
-                goal_state="inactive",
-                entities=[configure_event],
-            )
-        )
-        activate_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="activating",
-                goal_state="active",
-                entities=[activate_event],
-            )
-        )
-        deactivate_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="deactivating",
-                goal_state="inactive",
-                entities=[deactivate_event],
-            )
-        )
-        cleanup_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="cleaningup",
-                goal_state="unconfigured",
-                entities=[cleanup_event],
-            )
-        )
-        unconfigured_shutdown_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="unconfigured",
-                goal_state="shuttingdown",
-                entities=[unconfigured_shutdown_event],
-            )
-        )
-        inactive_shutdown_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="inactive",
-                goal_state="shuttingdown",
-                entities=[inactive_shutdown_event],
-            )
-        )
-        active_shutdown_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="active",
-                goal_state="shuttingdown",
-                entities=[active_shutdown_event],
-            )
-        )
-        launch_actions += [
-            configure_handler,
-            activate_handler,
-            deactivate_handler,
-            cleanup_handler,
-            unconfigured_shutdown_handler,
-            inactive_shutdown_handler,
-            active_shutdown_handler,
-        ]
+        launch_actions += get_handlers(component_node, global_state_node)
         return launch_actions
 
     node_launch_actions = []
     for i, node_setting in enumerate(node_settings):
         node_launch_actions += _single_component_launch_actions(node_setting, suffix=i)
     return node_launch_actions
+
+
+def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
+    """Gets and configures all the launch actions related to viz given the settings from the yaml."""
+    launch_actions = []
+    if settings["on"]:
+
+        def _single_viz_node_launch_actions(settings: Dict, suffix: Optional[int] = None) -> List:
+            package = settings["pkg"]
+            executable = settings["executable"]
+            parameters_dict = get_parameters_dict(settings)
+
+            # Get the other viz specific params
+            urdf_file_name = "urdf/" + settings["urdf"]
+            urdf_path = os.path.join(get_package_share_directory(settings["robot_pkg"]), urdf_file_name)
+            parameters_dict["urdf_path_param"] = urdf_path
+            if "tf_prefix" in settings:
+                tf_prefix = settings["tf_prefix"] + "/"
+            else:
+                tf_prefix = ""
+
+            parameters_dict["tf_prefix"] = tf_prefix
+            launch_actions = []
+            component_node = LifecycleNode(
+                namespace="",
+                name="obelisk_viz" if suffix is None else f"obelisk_viz_{suffix}",
+                package=package,
+                executable=executable,
+                output="both",
+                parameters=[parameters_dict],
+            )
+            launch_actions += [component_node]
+            launch_actions += get_handlers(component_node, global_state_node)
+
+            # Read the URDF for the robot_state_publisher
+            with open(urdf_path, "r") as urdf:
+                robot_desc = urdf.read()
+
+            # Get the topic where JointStates will be published to
+            pub_settings = settings["publishers"]
+            timer_settings = settings["timers"]
+
+            robot_topic = "robot_description"
+            if "robot_topic" in settings:
+                robot_topic = settings["robot_topic"]
+
+            launch_actions += [
+                Node(
+                    package="robot_state_publisher",
+                    executable="robot_state_publisher",
+                    name=f"robot_state_publisher_{suffix}",
+                    output="screen",
+                    parameters=[
+                        {
+                            "use_sim_time": False,
+                            "robot_description": robot_desc,
+                            "frame_prefix": tf_prefix,
+                            "publish_frequency": 1.0 / timer_settings[0]["timer_period_sec"],
+                        }
+                    ],
+                    remappings=[
+                        (
+                            "/joint_states",
+                            pub_settings[0]["topic"],
+                        ),  # remap the topic that the robot_state_publisher listens to
+                        (
+                            "/robot_description",
+                            robot_topic,
+                        ),  # remap the topic where the robot description is published to
+                    ],
+                )
+            ]
+
+            return launch_actions
+
+        # Get the launch actions for each ObeliskViz node
+        node_settings = settings["viz_nodes"]
+        for i, viz_node_settings in enumerate(node_settings):
+            launch_actions += _single_viz_node_launch_actions(viz_node_settings, suffix=i)
+
+        if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
+            # Setup Rviz
+            rviz_file_name = "rviz/" + settings["rviz_config"]
+            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+            launch_actions += [
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
+                    arguments=["-d", rviz_config_path],
+                )
+            ]
+        elif settings["viz_tool"] == "foxglove":
+            # setup fox glove
+            xml_launch_file = os.path.join(
+                get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
+            )
+            launch_actions += [IncludeLaunchDescription(FrontendLaunchDescriptionSource(xml_launch_file))]
+        else:
+            raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
+
+    return launch_actions
+
+
+def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode) -> List:
+    """Gets all the handlers for the Lifecycle node."""
+    # transition events to match the global state node
+    configure_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
+    )
+    activate_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+        )
+    )
+    deactivate_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_DEACTIVATE,
+        )
+    )
+    cleanup_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CLEANUP,
+        )
+    )
+    unconfigured_shutdown_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_UNCONFIGURED_SHUTDOWN,
+        )
+    )
+    inactive_shutdown_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_INACTIVE_SHUTDOWN,
+        )
+    )
+    active_shutdown_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(component_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVE_SHUTDOWN,
+        )
+    )
+
+    # making event handlers
+    configure_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="configuring",
+            goal_state="inactive",
+            entities=[configure_event],
+        )
+    )
+    activate_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="activating",
+            goal_state="active",
+            entities=[activate_event],
+        )
+    )
+    deactivate_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="deactivating",
+            goal_state="inactive",
+            entities=[deactivate_event],
+        )
+    )
+    cleanup_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="cleaningup",
+            goal_state="unconfigured",
+            entities=[cleanup_event],
+        )
+    )
+    unconfigured_shutdown_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="unconfigured",
+            goal_state="shuttingdown",
+            entities=[unconfigured_shutdown_event],
+        )
+    )
+    inactive_shutdown_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="inactive",
+            goal_state="shuttingdown",
+            entities=[inactive_shutdown_event],
+        )
+    )
+    active_shutdown_handler = RegisterEventHandler(
+        launch_ros.event_handlers.on_state_transition.OnStateTransition(
+            target_lifecycle_node=global_state_node,
+            start_state="active",
+            goal_state="shuttingdown",
+            entities=[active_shutdown_event],
+        )
+    )
+    launch_actions = [
+        configure_handler,
+        activate_handler,
+        deactivate_handler,
+        cleanup_handler,
+        unconfigured_shutdown_handler,
+        inactive_shutdown_handler,
+        active_shutdown_handler,
+    ]
+    return launch_actions
 
 
 def setup_logging_dir(config_name: str) -> str:

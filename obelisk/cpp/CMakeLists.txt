@@ -10,6 +10,7 @@ message(STATUS "Building obelisk_cpp")
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard to use")
 
 add_subdirectory(obelisk_cpp)
+add_subdirectory(viz)
 add_subdirectory(zoo)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
