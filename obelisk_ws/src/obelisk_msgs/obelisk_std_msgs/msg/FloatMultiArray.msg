@@ -6,6 +6,5 @@
 
 string MESSAGE_NAME="FloatMultiArray"
 
-std_msgs/MultiArrayDimension[] dim
-uint32 data_offset
+std_msgs/MultiArrayLayout layout
 float64[] data
