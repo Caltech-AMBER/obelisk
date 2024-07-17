@@ -74,8 +74,3 @@ onboard:
             sensor_type: jointpos
             sensor_names:
             - sensor_joint1
-          - topic: /obelisk/dummy/cam1
-            dt: 0.05
-            sensor_type: camera
-            sensor_names:
-            - cam1

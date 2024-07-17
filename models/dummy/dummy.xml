@@ -6,7 +6,6 @@
 
     <visual>
         <map znear="0.01" zfar="50"/>
-        <global azimuth="180" elevation="-30" offheight="256" offwidth="256" fovy="70"/>
     </visual>
 
     <!-- Must collision filter second link from static first link -->
@@ -27,9 +26,6 @@
                 <joint name="joint1" type="hinge" pos="0 0 0" axis="0 1 0" range="-1.5708 1.5708"/>
             </body>
         </body>
-
-        <!-- Cameras -->
-        <camera name="cam1" pos="0.5 0 0.25" mode="fixed" fovy="70" resolution="128 128" quat="1 0 0 0" />
     </worldbody>
 
     <!-- Actuators -->
