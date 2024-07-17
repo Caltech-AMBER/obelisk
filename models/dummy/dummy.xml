@@ -6,6 +6,7 @@
 
     <visual>
         <map znear="0.01" zfar="50"/>
+        <global azimuth="180" elevation="-30" offheight="256" offwidth="256" fovy="70"/>
     </visual>
 
     <!-- Must collision filter second link from static first link -->

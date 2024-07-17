@@ -25,7 +25,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
-        self.renderer = None
 
     def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
