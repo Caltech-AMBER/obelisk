@@ -103,6 +103,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 msg.y = np_to_multiarray(np.stack(images))  # (num_images, height, width, channels), dtype: uint8
                 pub_sensor.publish(msg)
 
+        else:
+            raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
+
         return timer_callback
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:  # noqa: PLR0915
@@ -133,7 +136,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
         self.mj_model = MjModel.from_xml_path(model_xml_path)
         self.mj_data = MjData(self.mj_model)
-        mujoco.mj_forward(self.mj_model, self.mj_data)  # initialize data
+        mujoco.mj_forward(self.mj_model, self.mj_data)  # type: ignore
 
         # set the configuration parameters for non-sensor fields
         self.n_u = int(config_dict["n_u"])
