@@ -68,14 +68,9 @@ int main() {
         if (getchar() == ESC_ASCII_VALUE)
             break;
 
-// Write goal position
-#if defined(XL320) // XL-320 uses 2 byte Position data
-        dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_GOAL_POSITION,
-                                                        dxl_goal_position[index], &dxl_error);
-#else
+        // Write goal position
         dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, DXL_ID, ADDR_GOAL_POSITION,
                                                         dxl_goal_position[index], &dxl_error);
-#endif
         if (dxl_comm_result != COMM_SUCCESS) {
             printf("%s\n", packetHandler->getTxRxResult(dxl_comm_result));
         } else if (dxl_error != 0) {
