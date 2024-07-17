@@ -190,6 +190,9 @@ def get_launch_actions_from_node_settings(
         executable = node_settings["executable"]
         parameters_dict = get_parameters_dict(node_settings)
 
+        if "params_path" in node_settings:
+            parameters_dict["params_path"] = node_settings["params_path"]
+
         launch_actions = []
         component_node = LifecycleNode(
             namespace="",
