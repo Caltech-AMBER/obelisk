@@ -94,7 +94,8 @@ ros-humble-foxglove-bridge="*"
 # ros-humble-rqt = "*"
 # ros-humble-test-msgs = "*"
 
-ros-humble-dynamixel-sdk = "<=3.7.60"
+ros-humble-dynamixel-sdk = "*"
+# ros-humble-dynamixel-sdk = ">=3.7.60"
 
 
 # obelisk
@@ -123,7 +124,7 @@ pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
 # Dynamixel SDK for LEAP hand
-dynamixel-sdk = ">=3.7"
+dynamixel-sdk = ">=3.7.0"
 
 
 # dev
