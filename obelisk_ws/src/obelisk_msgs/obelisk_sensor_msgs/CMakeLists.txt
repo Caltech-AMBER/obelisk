@@ -12,12 +12,15 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(obelisk_std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/JointEncoders.msg"
   "msg/TrueSimState.msg"
+  "msg/MujocoImage.msg"
   DEPENDENCIES
   std_msgs
+  obelisk_std_msgs
 )
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS

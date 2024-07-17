@@ -15,6 +15,7 @@ from rclpy.publisher import Publisher
 
 from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
+from obelisk_py.core.utils.msg import np_to_multiarray
 
 
 class ObeliskMujocoRobot(ObeliskSimRobot):
@@ -24,6 +25,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
+        self.renderer = None
 
     def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
@@ -43,6 +45,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         if sensor_type == "jointpos":
             assert is_in_bound(osm.JointEncoders, ObeliskSensorMsg)
             return osm.JointEncoders  # type: ignore
+        elif sensor_type == "camera":
+            assert is_in_bound(osm.MujocoImage, ObeliskSensorMsg)
+            return osm.MujocoImage  # type: ignore
         else:
             raise NotImplementedError(f"Sensor type {sensor_type} not supported! Check your spelling or open a PR.")
 
@@ -66,15 +71,37 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         Returns:
             The timer callback function.
         """
+        if msg_type in [osm.JointEncoders]:
 
-        def timer_callback() -> None:
-            """Timer callback for the sensor."""
-            msg = msg_type()
-            y = []
-            for sensor_name in sensor_names:
-                y.append(self.mj_data.sensor(sensor_name).data)
-            msg.y = list(np.concatenate(y))  # like we assume all ObeliskControlMsg objs have a u field, sensors have y
-            pub_sensor.publish(msg)
+            def timer_callback() -> None:
+                """Timer callback for the sensor."""
+                msg = msg_type()
+                y = []
+                for sensor_name in sensor_names:
+                    y.append(self.mj_data.sensor(sensor_name).data)
+                msg.y = list(np.concatenate(y))  # assume all ObeliskSensorMsg objs have a y field
+                pub_sensor.publish(msg)
+
+        elif msg_type == osm.MujocoImage:
+
+            def timer_callback() -> None:
+                """Timer callback for the sensor."""
+                images = []
+                for cam_name in sensor_names:
+                    try:
+                        cam_id = self.mj_model.cam(cam_name).id
+                        width, height = self.mj_model.cam_resolution[cam_id]
+                        with mujoco.Renderer(self.mj_model, height, width) as renderer:
+                            renderer.update_scene(self.mj_data, camera=cam_name)
+                            image = renderer.render()
+                            images.append(image)
+                    except KeyError as e:
+                        self.get_logger().error(f"Could not find camera {cam_name} in the model!")
+                        raise e
+
+                msg = msg_type()
+                msg.y = np_to_multiarray(np.stack(images))  # (num_images, height, width, channels), dtype: uint8
+                pub_sensor.publish(msg)
 
         return timer_callback
 
@@ -106,6 +133,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
         self.mj_model = MjModel.from_xml_path(model_xml_path)
         self.mj_data = MjData(self.mj_model)
+        mujoco.mj_forward(self.mj_model, self.mj_data)  # initialize data
 
         # set the configuration parameters for non-sensor fields
         self.n_u = int(config_dict["n_u"])
@@ -160,6 +188,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     callback=timer_callback,
                     callback_group=cbg,
                 )
+                self.get_logger().info(f"Created sensor publisher and timer for topic {topic} with dt {dt}.")
                 timer_sensor.cancel()
                 self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
                 self.obk_timers[f"sensor_group_{i}"] = timer_sensor

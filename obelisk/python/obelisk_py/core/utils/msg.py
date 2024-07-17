@@ -1,20 +1,34 @@
+from typing import Union
+
 import numpy as np
-from obelisk_std_msgs.msg import FloatMultiArray
+from obelisk_std_msgs.msg import FloatMultiArray, UInt8MultiArray
 from std_msgs.msg import MultiArrayDimension, MultiArrayLayout
 
+MultiArray = Union[FloatMultiArray, UInt8MultiArray]
 
-def multiarray_to_np(msg: FloatMultiArray) -> np.ndarray:
-    """Convert FloatMultiArray message to numpy array.
+
+def multiarray_to_np(msg: MultiArray) -> np.ndarray:
+    """Convert MultiArray message to numpy array.
 
     multiarray(i,j,k,...) = data[data_offset + dim_stride[0]*i + dim_stride[1]*j + dim_stride[2]*k + ...]
 
     Parameters:
-        msg: FloatMultiArray message.
+        msg: MultiArray message.
 
     Returns:
         Numpy array.
+
+    Raises:
+        ValueError: If the message has an unsupported type.
     """
-    flat_data = np.array(msg.data, dtype=np.float64)
+    if isinstance(msg, UInt8MultiArray):
+        dtype = np.uint8
+    elif isinstance(msg, FloatMultiArray):
+        dtype = np.float64
+    else:
+        raise ValueError(f"Unsupported message type: {type(msg)}")
+
+    flat_data = np.array(msg.data, dtype=dtype)
     if msg.layout.data_offset:
         flat_data = flat_data[msg.layout.data_offset :]
 
@@ -23,8 +37,8 @@ def multiarray_to_np(msg: FloatMultiArray) -> np.ndarray:
     return np.lib.stride_tricks.as_strided(flat_data, shape=shape, strides=strides)
 
 
-def np_to_multiarray(arr: np.ndarray) -> FloatMultiArray:
-    """Convert numpy array to FloatMultiArray message.
+def np_to_multiarray(arr: np.ndarray) -> MultiArray:
+    """Convert numpy array to MultiArray message.
 
     multiarray(i,j,k,...) = data[data_offset + dim_stride[0]*i + dim_stride[1]*j + dim_stride[2]*k + ...]
 
@@ -32,9 +46,18 @@ def np_to_multiarray(arr: np.ndarray) -> FloatMultiArray:
         arr: Numpy array.
 
     Returns:
-        FloatMultiArray message.
+        MultiArray message.
+
+    Raises:
+        ValueError: If the array has an unsupported dtype.
     """
-    msg = FloatMultiArray()
+    if arr.dtype == np.uint8:
+        msg = UInt8MultiArray()
+    elif arr.dtype == np.float64:
+        msg = FloatMultiArray()
+    else:
+        raise ValueError(f"Unsupported dtype: {arr.dtype}")
+
     flat_data = arr.ravel()
     msg.data = flat_data.tolist()
     msg.layout = MultiArrayLayout()
