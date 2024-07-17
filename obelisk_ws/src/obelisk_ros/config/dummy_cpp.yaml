@@ -3,7 +3,7 @@ onboard:
   control:
     - pkg: obelisk_control_cpp
       executable: example_position_setpoint_controller
-      params_path: /path/to/my/file
+      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
       # callback_groups:
       publishers:
         - ros_parameter: pub_ctrl_setting

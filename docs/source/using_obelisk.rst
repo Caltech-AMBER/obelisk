@@ -305,75 +305,89 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
   config: dummy
   onboard:
     control:
-      pkg: obelisk_control_py
-      executable: example_position_setpoint_controller
-      publishers:
-        - ros_parameter: pub_ctrl_setting
-          topic: /obelisk/dummy/ctrl
-          msg_type: PositionSetpoint
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      subscribers:
-        - ros_parameter: sub_est_setting
-          topic: /obelisk/dummy/est
-          msg_type: EstimatedState
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      timers:
-        - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.001
-          callback_group: None
+      - pkg: obelisk_control_cpp
+        executable: example_position_setpoint_controller
+        params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
+        # callback_groups:
+        publishers:
+          - ros_parameter: pub_ctrl_setting
+            # key: pub1
+            topic: /obelisk/dummy/ctrl
+            msg_type: PositionSetpoint
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        subscribers:
+          - ros_parameter: sub_est_setting
+            # key: sub1
+            topic: /obelisk/dummy/est
+            msg_type: EstimatedState
+            history_depth: 10
+            # callback_key: sub_callback1
+            callback_group: None
+            non_obelisk: False
+        timers:
+          - ros_parameter: timer_ctrl_setting
+            # key: timer1
+            timer_period_sec: 0.001
+            callback_group: None
+            # callback_key: timer_callback1
     estimation:
-      pkg: obelisk_estimation_py
-      executable: jointencoders_passthrough_estimator
-      publishers:
-        - ros_parameter: pub_est_setting
-          topic: /obelisk/dummy/est
-          msg_type: EstimatedState
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      subscribers:
-        - ros_parameter: sub_sensor_setting
-          # key: sub1
-          topic: /obelisk/dummy/sensor
-          msg_type: JointEncoders
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      timers:
-        - ros_parameter: timer_est_setting
-          timer_period_sec: 0.001
-          callback_group: None
+      - pkg: obelisk_estimation_cpp
+        executable: jointencoders_passthrough_estimator
+        # callback_groups:
+        publishers:
+          - ros_parameter: pub_est_setting
+            # key: pub1
+            topic: /obelisk/dummy/est
+            msg_type: EstimatedState
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        subscribers:
+          - ros_parameter: sub_sensor_setting
+            # key: sub1
+            topic: /obelisk/dummy/sensor
+            msg_type: JointEncoders
+            history_depth: 10
+            # callback_key: sub_callback1
+            callback_group: None
+            non_obelisk: False
+        timers:
+          - ros_parameter: timer_est_setting
+            # key: timer1
+            timer_period_sec: 0.001
+            callback_group: None
+            # callback_key: timer_callback1
     # sensing:
     robot:
-      is_simulated: True
-      pkg: obelisk_sim_py
-      executable: obelisk_mujoco_robot
-      # callback_groups:
-      # publishers:
-      subscribers:
-        - ros_parameter: sub_ctrl_setting
-          # key: sub1
-          topic: /obelisk/dummy/ctrl
-          msg_type: PositionSetpoint
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      sim:
-        - ros_parameter: mujoco_setting
-          model_xml_path: dummy/dummy.xml
-          n_u: 1
-          time_step: 0.002
-          num_steps_per_viz: 5
-          sensor_settings:
-          - topic: /obelisk/dummy/sensor
-            dt: 0.001
-            sensor_type: jointpos
-            sensor_names:
-            - sensor_joint1
+      - is_simulated: True
+        pkg: obelisk_sim_cpp
+        executable: obelisk_mujoco_robot
+        # callback_groups:
+        # publishers:
+        subscribers:
+          - ros_parameter: sub_ctrl_setting
+            # key: sub1
+            topic: /obelisk/dummy/ctrl
+            msg_type: PositionSetpoint
+            history_depth: 10
+            # callback_key: sub_callback1
+            callback_group: None
+            non_obelisk: False
+        sim:
+          - ros_parameter: mujoco_setting
+            model_xml_path: dummy/dummy.xml
+            n_u: 1
+            time_step: 0.002
+            num_steps_per_viz: 5
+            sensor_settings:
+            - topic: /obelisk/dummy/sensor
+              dt: 0.001
+              sensor_type: jointpos
+              sensor_names:
+              - sensor_joint1
+
 
 Breaking down the configuration file
 ------------------------------------
@@ -390,6 +404,7 @@ First we give the name of this configuration (``dummy``), and which device this 
   control:
     pkg: obelisk_control_py
     executable: example_position_setpoint_controller
+    params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
     publishers:
       - ros_parameter: pub_ctrl_setting
         topic: /obelisk/dummy/ctrl
@@ -411,7 +426,9 @@ First we give the name of this configuration (``dummy``), and which device this 
         callback_group: None
 
 
-Now we configure our Controller node. ``pkg`` gives the name of the package containing the Obelisk node, and ``executable`` tells us what the name is of the executable with ``main`` in it. Now we need to configure all of the Components in this node. Publishers and subscribers have the following options.
+Now we configure our Controller node. ``pkg`` gives the name of the package containing the Obelisk node, and ``executable`` tells us what the name is of the executable with ``main`` in it.
+``params_path`` (optional) is a string parameter that allows you to specify a file path that can be accessed within your code. This is useful for things like accessing controller gains that are specfied through a seperate yaml file. Note that there is no convention on how the file path is processed as that is up to you as the user.
+Now we need to configure all of the Components in this node. Publishers and subscribers have the following options.
 
 - ``ros_parameter`` gives the string name of the ros parameter declared in the code. This is how the launch file gets these options to the correct node.
 - ``topic`` gives the string topic name that will either be published or subscribed to.
