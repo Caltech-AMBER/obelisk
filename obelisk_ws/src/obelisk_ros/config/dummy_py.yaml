@@ -1,76 +1,76 @@
 config: dummy
 onboard:
   control:
-    pkg: obelisk_control_py
-    executable: example_position_setpoint_controller
-    # callback_groups:
-    publishers:
-      - ros_parameter: pub_ctrl_setting
-        topic: /obelisk/dummy/ctrl
-        msg_type: PositionSetpoint
-        key: "asdf"
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
-    subscribers:
-      - ros_parameter: sub_est_setting
-        topic: /obelisk/dummy/est
-        msg_type: EstimatedState
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
-    timers:
-      - ros_parameter: timer_ctrl_setting
-        timer_period_sec: 0.001
-        callback_group: None
+    - pkg: obelisk_control_py
+      executable: example_position_setpoint_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/dummy/ctrl
+          msg_type: PositionSetpoint
+          key: "asdf"
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/dummy/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
   estimation:
-    pkg: obelisk_estimation_py
-    executable: jointencoders_passthrough_estimator
-    # callback_groups:
-    publishers:
-      - ros_parameter: pub_est_setting
-        topic: /obelisk/dummy/est
-        msg_type: EstimatedState
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
-    subscribers:
-      - ros_parameter: sub_sensor_setting
-        # key: sub1
-        topic: /obelisk/dummy/sensor
-        msg_type: JointEncoders
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
-    timers:
-      - ros_parameter: timer_est_setting
-        timer_period_sec: 0.001
-        callback_group: None
+    - pkg: obelisk_estimation_py
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/dummy/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          # key: sub1
+          topic: /obelisk/dummy/sensor
+          msg_type: JointEncoders
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
   # sensing:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
-    is_simulated: True
-    pkg: obelisk_sim_py
-    executable: obelisk_mujoco_robot
-    # callback_groups:
-    # publishers:
-    subscribers:
-      - ros_parameter: sub_ctrl_setting
-        # key: sub1
-        topic: /obelisk/dummy/ctrl
-        msg_type: PositionSetpoint
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
-    sim:
-      - ros_parameter: mujoco_setting
-        model_xml_path: dummy/dummy.xml
-        n_u: 1
-        time_step: 0.002
-        num_steps_per_viz: 5
-        sensor_settings:
-        - topic: /obelisk/dummy/sensor
-          dt: 0.001
-          sensor_type: jointpos
-          sensor_names:
-          - sensor_joint1
+    - is_simulated: True
+      pkg: obelisk_sim_py
+      executable: obelisk_mujoco_robot
+      # callback_groups:
+      # publishers:
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          # key: sub1
+          topic: /obelisk/dummy/ctrl
+          msg_type: PositionSetpoint
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      sim:
+        - ros_parameter: mujoco_setting
+          model_xml_path: dummy/dummy.xml
+          n_u: 1
+          time_step: 0.002
+          num_steps_per_viz: 5
+          sensor_settings:
+          - topic: /obelisk/dummy/sensor
+            dt: 0.001
+            sensor_type: jointpos
+            sensor_names:
+            - sensor_joint1

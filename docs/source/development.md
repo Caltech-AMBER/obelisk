@@ -89,5 +89,6 @@ The C++ libraries in `obelisk/cpp` are built with CMake.
 
 All `obelisk` C++ libraries are placed in `obelisk/`. Each library should have its own folder. Within that folder there should be an `include` folder, a `CMakeLists.txt`, and the source files (i.e., not the header files - those go in `include`).
 
+(testing)=
 ### Testing
 Unit tests are managed with [`Catch2`](https://github.com/catchorg/Catch2). Ultimately we plan to run the tests with [`CTest`](https://cmake.org/cmake/help/book/mastering-cmake/chapter/Testing%20With%20CMake%20and%20CTest.html), and therefore all unit tests need to be registered with `CTest`, see [here](https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md). The tests are all placed within `tests/tests_cpp`.

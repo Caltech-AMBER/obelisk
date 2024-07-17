@@ -128,6 +128,9 @@ namespace obelisk {
             obelisk_sensor_msgs::msg::JointEncoders::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME};
 
+        inline const std::array<std::string, 1> estimator_message_names = {
+            obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};
+
     } // namespace internal
 
     /**
@@ -177,6 +180,9 @@ namespace obelisk {
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
 
+            // ROS parameter designed to let the user feed a file path for their own code
+            this->declare_parameter<std::string>("params_path", "");
+
             RCLCPP_INFO_STREAM(this->get_logger(), node_name << " created.");
         };
 
@@ -186,6 +192,11 @@ namespace obelisk {
             : LifecycleNode(node_name, namespace_, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
             this->declare_parameter<std::string>("callback_group_setting", "");
+
+            // ROS parameter designed to let the user feed a file path for their own code
+            this->declare_parameter<std::string>("params_path", "");
+
+            RCLCPP_INFO_STREAM(this->get_logger(), node_name << " created.");
         };
 
         /**
