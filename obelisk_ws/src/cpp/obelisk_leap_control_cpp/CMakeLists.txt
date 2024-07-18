@@ -45,7 +45,12 @@ target_link_libraries(obelisk_leap_controller PUBLIC
   ${rosidl_typesupport_cpp_LIBRARIES}
 )
 
+# =========================
+# !!!RUN THIS LINE BEFORE RUNNING THE LEAP HAND!!!
+# This is necessary to load rosidl_typesupport_cpp for some reason
+
 # export LD_LIBRARY_PATH=/home/gavin/caltech/surf2024/obelisk/.pixi/envs/dev/lib:$LD_LIBRARY_PATH
+# =========================
 
 set_property(TARGET obelisk_leap_controller APPEND PROPERTY
     ENVIRONMENT "LD_LIBRARY_PATH=$ENV{OBELISK_ROOT}/.pixi/envs/dev/lib:$ENV{LD_LIBRARY_PATH}")

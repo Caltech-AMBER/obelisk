@@ -20,8 +20,6 @@ namespace obelisk {
               packet_handler_(dynamixel::PacketHandler::getPacketHandler()),
               group_reader_(port_handler_, packet_handler_), group_writer_(port_handler_, packet_handler_),
               state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
-
-            // Register Components
             this->RegisterObkTimer("timer_sensor_setting", state_timer_key_,
                                    std::bind(&ObeliskLeapHand::PublishState, this));
             this->template RegisterObkPublisher<leap_sensor_msg>("pub_sensor_setting", state_pub_key_);
@@ -35,7 +33,7 @@ namespace obelisk {
             } else {
                 std::cerr << "Failed to set baud rate\n";
             }
-            for (int i = 0; i < N_MOTORS; i++) {
+            for (int i = 1; i < N_MOTORS; i++) {
                 int err = packet_handler_->write1ByteTxRx(port_handler_, i, 64, 1); // Enable torque
                 err |= packet_handler_->write2ByteTxRx(port_handler_, i, 84, 500);  // kP
                 err |= packet_handler_->write2ByteTxRx(port_handler_, i, 82, 10);   // kI
@@ -48,7 +46,7 @@ namespace obelisk {
         }
 
         void ApplyControl(const leap_control_msg& control_msg) {
-            for (int i = 0; i < N_MOTORS; i++) {
+            for (int i = 1; i < N_MOTORS; i++) {
                 uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.u.at(i));
                 uint8_t pos_arr[4] = {
                     static_cast<uint8_t>(pos),
@@ -64,18 +62,19 @@ namespace obelisk {
             group_writer_.clearParam();
         }
 
-        leap_sensor_msg PublishState() {
+        void PublishState() {
             auto msg = leap_sensor_msg();
-            for (int i = 0; i < N_MOTORS; i++) {
+            for (int i = 1; i < N_MOTORS; i++) {
                 group_reader_.addParam(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
             }
-            void(this - group_reader_.txRxPacket());
+            if (this->group_reader_.txRxPacket() != COMM_SUCCESS) {
+                std::cerr << "Failed to read motors\n";
+            }
             for (int i = 0; i < N_MOTORS; i++) {
                 int pos = group_reader_.getData(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
                 msg.y.emplace_back(ObeliskLeapHand::DxlPosToRadians(pos));
             }
-            publishers_.find("pub_sensor")->second->Activate();
-            return msg;
+            this->GetPublisher<leap_sensor_msg>(state_pub_key_)->publish(msg);
         }
 
       private:
