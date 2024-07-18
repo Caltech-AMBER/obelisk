@@ -58,9 +58,9 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
         http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | \
         tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
-    apt-get update -y && \
-    apt-get install -y \
-    ros-humble-ros-base \
+    apt-get update -y
+RUN apt-get install -y \
+    # ros-humble-ros-base \
     ros-dev-tools \
     ros-humble-rosidl-generator-cpp \
     ros-humble-rosidl-default-generators
@@ -75,9 +75,9 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 USER ${UID}
 
 # run docker setup script in Dockerfile
-# COPY docker_setup.sh /tmp/docker_setup.sh
-# RUN source /tmp/docker_setup.sh --skip-docker && \
-#     sudo rm /tmp/docker_setup.sh
+COPY docker_setup.sh /tmp/docker_setup.sh
+RUN source /tmp/docker_setup.sh --skip-docker && \
+    sudo rm /tmp/docker_setup.sh
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"

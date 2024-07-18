@@ -24,6 +24,7 @@ env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
 [dependencies]
 python = ">=3.10"
 pip = ">=24.0"
+setuptools = "<=70.4"
 
 [pypi-dependencies]
 matplotlib = ">=3.9.0"
