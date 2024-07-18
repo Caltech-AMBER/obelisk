@@ -60,7 +60,7 @@ RUN sudo usermod -a -G dialout ${USER}
 #         tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
 #     apt-get update -y
 # RUN apt-get install -y \
-#     # ros-humble-ros-base \
+#     ros-humble-ros-base \
 #     ros-dev-tools \
 #     ros-humble-rosidl-generator-cpp \
 #     ros-humble-rosidl-default-generators
@@ -68,7 +68,6 @@ RUN sudo usermod -a -G dialout ${USER}
 #     ros-humble-rmw-cyclonedds-cpp
 # RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 # ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-# ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 ##############################################
 
 # switch to new user and workdir
