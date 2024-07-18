@@ -26,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   ament_cmake
   std_msgs
+  obelisk_std_msgs
   rosidl_default_generators
 )
 include_directories(${THIS_PACKAGE_INCLUDE_DEPENDS})
