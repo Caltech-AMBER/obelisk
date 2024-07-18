@@ -2,10 +2,9 @@
 #include <iostream>
 
 #include "dynamixel_sdk.h"
-#include "obelisk_sensor_msgs/msg/joint_encoders.h"
-// #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
+#include "obelisk_sensor_msgs/msg/joint_encoders.h"
 
 namespace obelisk {
     using leap_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
@@ -14,19 +13,18 @@ namespace obelisk {
     class ObeliskLeapHand : public ObeliskRobot<leap_control_msg> {
 
       public:
-        ObeliskLeapHand(const std::string& node_name)
+        ObeliskLeapHand(const std::string& node_name, const std::string& state_timer_key = "timer_sensor",
+                        const std::string& state_pub_key = "pub_sensor")
             : ObeliskRobot<leap_control_msg>(node_name),
               port_handler_(dynamixel::PortHandler::getPortHandler("/dev/ttyUSB0")),
               packet_handler_(dynamixel::PacketHandler::getPacketHandler()),
-              group_reader_(port_handler_, packet_handler_), group_writer_(port_handler_, packet_handler_) {
-            // RegisterObkPublisher<leap_sensor_msg>(
-            //     "pub_sensor_setting",
-            //     "pub_sensor"
-            // );
-            // RegisterObkTimer<NULL> (
-            //     "timer_sensor_setting",
-            //     "timer_sensor",
-            // );
+              group_reader_(port_handler_, packet_handler_), group_writer_(port_handler_, packet_handler_),
+              state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
+
+            // Register Components
+            this->RegisterObkTimer("timer_sensor_setting", state_timer_key_,
+                                   std::bind(&ObeliskLeapHand::PublishState, this));
+            this->template RegisterObkPublisher<leap_sensor_msg>("pub_sensor_setting", state_pub_key_);
             if (port_handler_->openPort()) {
                 std::cout << "Opened port\n";
             } else {
@@ -66,7 +64,7 @@ namespace obelisk {
             group_writer_.clearParam();
         }
 
-        leap_sensor_msg GetState() {
+        leap_sensor_msg PublishState() {
             auto msg = leap_sensor_msg();
             for (int i = 0; i < N_MOTORS; i++) {
                 group_reader_.addParam(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
@@ -76,7 +74,7 @@ namespace obelisk {
                 int pos = group_reader_.getData(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
                 msg.y.emplace_back(ObeliskLeapHand::DxlPosToRadians(pos));
             }
-            // publishers_.find("pub_sensor")->second->(msg);
+            publishers_.find("pub_sensor")->second->Activate();
             return msg;
         }
 
@@ -85,6 +83,9 @@ namespace obelisk {
         dynamixel::PacketHandler* packet_handler_;
         dynamixel::GroupBulkRead group_reader_;
         dynamixel::GroupBulkWrite group_writer_;
+
+        const std::string state_timer_key_;
+        const std::string state_pub_key_;
 
         static constexpr int DXL_MAX_POS        = 4095;
         static constexpr int DXL_MIN_POS        = 0;

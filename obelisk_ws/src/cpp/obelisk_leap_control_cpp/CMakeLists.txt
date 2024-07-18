@@ -8,6 +8,10 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rosidl_runtime_c REQUIRED)
+find_package(rosidl_runtime_cpp REQUIRED)
+find_package(rosidl_typesupport_cpp REQUIRED)
+
 
 # Get the Obelisk library
 include(FetchContent)
@@ -23,7 +27,28 @@ add_executable(obelisk_leap_controller src/obelisk_leap_controller.cpp)
 target_link_libraries(obelisk_leap_controller PUBLIC Obelisk::Core)
 target_link_libraries(obelisk_leap_controller PUBLIC Obelisk::Zoo)
 
+target_link_libraries(obelisk_leap_controller
+  PUBLIC
+  rosidl_runtime_c::rosidl_runtime_c
+  rosidl_runtime_cpp::rosidl_runtime_cpp
+)
+
+ament_target_dependencies(obelisk_leap_controller PUBLIC
+  "rosidl_typesupport_cpp"
+)
+
+
 ament_target_dependencies(obelisk_leap_controller PUBLIC rclcpp)
+
+
+target_link_libraries(obelisk_leap_controller PUBLIC
+  ${rosidl_typesupport_cpp_LIBRARIES}
+)
+
+# export LD_LIBRARY_PATH=/home/gavin/caltech/surf2024/obelisk/.pixi/envs/dev/lib:$LD_LIBRARY_PATH
+
+set_property(TARGET obelisk_leap_controller APPEND PROPERTY
+    ENVIRONMENT "LD_LIBRARY_PATH=$ENV{OBELISK_ROOT}/.pixi/envs/dev/lib:$ENV{LD_LIBRARY_PATH}")
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

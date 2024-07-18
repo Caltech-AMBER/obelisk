@@ -7,47 +7,31 @@
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
 
-class LeapPositionSetpointController : public obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
-                                                                         obelisk_estimator_msgs::msg::EstimatedState> {
+using leap_controller_msg = obelisk_control_msgs::msg::PositionSetpoint;
+using leap_estimator_msg  = obelisk_estimator_msgs::msg::EstimatedState;
+
+class LeapPositionSetpointController : public obelisk::ObeliskController<leap_controller_msg, leap_estimator_msg> {
   public:
     LeapPositionSetpointController(const std::string& name)
-        : obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
-                                     obelisk_estimator_msgs::msg::EstimatedState>(name) {
-        std::string file_string = this->get_parameter("params_path").as_string();
-        std::string obk_root    = std::getenv("OBELISK_ROOT");
-        std::filesystem::path file_path(obk_root);
-        file_path += file_string;
-
-        RCLCPP_WARN_STREAM(this->get_logger(), "File path: " << file_path);
-
-        if (!std::filesystem::exists(file_path)) {
-            throw std::runtime_error("file path provided is invalid!");
-        }
-
-        std::ifstream params_file(file_path);
-        std::string contents;
-        params_file >> contents;
-        amplitude_ = std::stof(contents);
-    }
+        : obelisk::ObeliskController<leap_controller_msg, leap_estimator_msg>(name) {}
 
   protected:
-    void UpdateXHat(__attribute__((unused)) const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
+    void UpdateXHat(__attribute__((unused)) const leap_estimator_msg& msg) override {}
 
-    obelisk_control_msgs::msg::PositionSetpoint ComputeControl() override {
-        obelisk_control_msgs::msg::PositionSetpoint msg;
+    leap_controller_msg ComputeControl() override {
+        leap_controller_msg msg;
 
         msg.u.clear();
-        rclcpp::Time time = this->get_clock()->now();
-        double time_sec   = time.seconds();
+        double time_sec = this->get_clock()->now().seconds();
 
         for (int i = 0; i < 16; i++) {
             msg.u.emplace_back(amplitude_ * sin(time_sec));
         }
 
-        this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_)->publish(msg);
+        this->GetPublisher<leap_controller_msg>(this->ctrl_key_)->publish(msg);
 
         return msg;
     };
 
-    float amplitude_;
+    float amplitude_ = 0.3;
 };
