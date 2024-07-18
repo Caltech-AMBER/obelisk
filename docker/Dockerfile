@@ -51,13 +51,33 @@ RUN groupadd --gid $GID $USER && \
 # add user to dialout group to enable serial port access from the container
 RUN sudo usermod -a -G dialout ${USER}
 
+# DEBUG
+##############################################
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+        -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+        http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | \
+        tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
+    apt-get update -y && \
+    apt-get install -y \
+    ros-humble-ros-base \
+    ros-dev-tools \
+    ros-humble-rosidl-generator-cpp \
+    ros-humble-rosidl-default-generators
+RUN apt-get install -y \
+    ros-humble-rmw-cyclonedds-cpp
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+##############################################
+
 # switch to new user and workdir
 USER ${UID}
 
 # run docker setup script in Dockerfile
-COPY docker_setup.sh /tmp/docker_setup.sh
-RUN source /tmp/docker_setup.sh --skip-docker && \
-    sudo rm /tmp/docker_setup.sh
+# COPY docker_setup.sh /tmp/docker_setup.sh
+# RUN source /tmp/docker_setup.sh --skip-docker && \
+#     sudo rm /tmp/docker_setup.sh
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"
