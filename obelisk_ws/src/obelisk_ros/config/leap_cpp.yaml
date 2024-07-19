@@ -56,9 +56,12 @@ onboard:
           # callback_key: timer_callback1
   # sensing:
   robot:
-    - is_simulated: False
-      pkg: obelisk_leap_cpp
-      executable: obelisk_leap_robot
+    # - is_simulated: False
+    #   pkg: obelisk_leap_cpp
+    #   executable: obelisk_leap_robot
+    - is_simulated: True
+      pkg: obelisk_sim_cpp
+      executable: obelisk_mujoco_robot
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
@@ -78,16 +81,31 @@ onboard:
           non_obelisk: False
       sim:
         - ros_parameter: mujoco_setting
-          model_xml_path: leap/leap.xml
+          model_xml_path: leap_rh/leap_palm_up.xml
           n_u: 16
           time_step: 0.002
           num_steps_per_viz: 5
           sensor_settings:
           - topic: /obelisk/leap/sensor
-            dt: 0.001
+            dt: 0.002
             sensor_type: jointpos
             sensor_names:
-            - sensor_joint1
+            - if_mcp_sensor
+            - if_rot_sensor
+            - if_pip_sensor
+            - if_dip_sensor
+            - mf_mcp_sensor
+            - mf_rot_sensor
+            - mf_pip_sensor
+            - mf_dip_sensor
+            - rf_mcp_sensor
+            - rf_rot_sensor
+            - rf_pip_sensor
+            - rf_dip_sensor
+            - th_cmc_sensor
+            - th_axl_sensor
+            - th_mcp_sensor
+            - th_ipl_sensor
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
