@@ -10,9 +10,19 @@ namespace obelisk {
     using leap_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
     using leap_sensor_msg  = obelisk_sensor_msgs::msg::JointEncoders;
 
+    /**
+     * @brief Obelisk robot interface for the Leap hand hardware
+     */
     class ObeliskLeapHand : public ObeliskRobot<leap_control_msg> {
 
       public:
+        /**
+         * @brief Construct a new Obelisk Leap Hand object
+         *
+         * @param node_name Name of the node
+         * @param state_timer_key Key for the state timer
+         * @param state_pub_key Key for the state publisher
+         */
         ObeliskLeapHand(const std::string& node_name, const std::string& state_timer_key = "timer_sensor",
                         const std::string& state_pub_key = "pub_sensor")
             : ObeliskRobot<leap_control_msg>(node_name),
@@ -28,12 +38,12 @@ namespace obelisk {
             } else {
                 std::cerr << "Failed to open port\n";
             }
-            if (port_handler_->setBaudRate(4000000)) {
-                std::cout << "Set baud rate to 4000000\n";
+            if (port_handler_->setBaudRate(BAUDRATE)) {
+                std::cout << "Set baud rate to" << BAUDRATE << "\n";
             } else {
                 std::cerr << "Failed to set baud rate\n";
             }
-            for (int i = 1; i < N_MOTORS; i++) {
+            for (int i = 0; i < N_MOTORS; i++) {
                 int err = packet_handler_->write1ByteTxRx(port_handler_, i, 64, 1); // Enable torque
                 err |= packet_handler_->write2ByteTxRx(port_handler_, i, 84, 500);  // kP
                 err |= packet_handler_->write2ByteTxRx(port_handler_, i, 82, 10);   // kI
@@ -45,8 +55,13 @@ namespace obelisk {
             std::cout << "Initialized motors\n";
         }
 
+        /**
+         * @brief Apply a control message to the Leap hand
+         *
+         * @param control_msg Control message to apply
+         */
         void ApplyControl(const leap_control_msg& control_msg) {
-            for (int i = 1; i < N_MOTORS; i++) {
+            for (int i = 0; i < N_MOTORS; i++) {
                 uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.u.at(i));
                 uint8_t pos_arr[4] = {
                     static_cast<uint8_t>(pos),
@@ -62,12 +77,16 @@ namespace obelisk {
             group_writer_.clearParam();
         }
 
+        /**
+         * @brief Publish the current state of the Leap hand. This function expects to be called
+         * by a timer callback.
+         */
         void PublishState() {
             auto msg = leap_sensor_msg();
-            for (int i = 1; i < N_MOTORS; i++) {
+            for (int i = 0; i < N_MOTORS; i++) {
                 group_reader_.addParam(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
             }
-            if (this->group_reader_.txRxPacket() != COMM_SUCCESS) {
+            if (group_reader_.txRxPacket() != COMM_SUCCESS) {
                 std::cerr << "Failed to read motors\n";
             }
             for (int i = 0; i < N_MOTORS; i++) {
@@ -85,6 +104,8 @@ namespace obelisk {
 
         const std::string state_timer_key_;
         const std::string state_pub_key_;
+
+        static constexpr int BAUDRATE           = 4000000;
 
         static constexpr int DXL_MAX_POS        = 4095;
         static constexpr int DXL_MIN_POS        = 0;
