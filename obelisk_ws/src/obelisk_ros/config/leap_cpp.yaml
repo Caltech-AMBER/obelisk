@@ -56,12 +56,15 @@ onboard:
           # callback_key: timer_callback1
   # sensing:
   robot:
+    # === hardware ===
     # - is_simulated: False
     #   pkg: obelisk_leap_cpp
     #   executable: obelisk_leap_robot
+    # === simulation ===
     - is_simulated: True
       pkg: obelisk_sim_cpp
       executable: obelisk_mujoco_robot
+    # =================
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
@@ -72,11 +75,9 @@ onboard:
           non_obelisk: False
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/leap/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       sim:
