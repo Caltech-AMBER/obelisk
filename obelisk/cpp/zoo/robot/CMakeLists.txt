@@ -7,10 +7,6 @@ message(STATUS "Configuring Dynamixel Interface")
 find_package(ament_cmake REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
-# TODO: don't use absolute paths
-include_directories("$ENV{OBELISK_ROOT}/.pixi/envs/dev/include/dynamixel_sdk")
-
-
 # add_executable(dynamixel_control leap_test.cpp)
 add_executable(dynamixel_control leap_hand_interface.h)
 
