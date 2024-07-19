@@ -20,8 +20,8 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-# TODO: don't use absolute paths
 include_directories("$ENV{OBELISK_ROOT}/.pixi/envs/dev/include/dynamixel_sdk")
+include_directories("$ENV{OBELISK_ROOT}/.pixi/envs/dev-no-gpu/include/dynamixel_sdk")
 
 add_executable(obelisk_leap_robot src/obelisk_leap_robot.cpp)
 target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Core)
