@@ -1,9 +1,9 @@
-<!-- LEAP Hand Cube Rotation
+<!-- LEAP Hand Palm Up
 
-This file contains the LEAP Hand cube rotation description.
+This file contains the LEAP Hand mounted palm up description.
 
 -->
-<mujoco model="cube_rotation">
+<mujoco model="leap_palm_up">
   <compiler angle="radian" meshdir="./meshes"/>
   <include file="../common.xml" />
   <include file="leap_rh_settings.xml"/>
@@ -19,7 +19,7 @@ This file contains the LEAP Hand cube rotation description.
     <global azimuth="180" elevation="-30" offheight="376" offwidth="672" fovy="70"/>
   </visual>
 
-  <!-- cube rotation description -->
+  <!-- mounted leap hand description -->
   <worldbody>
     <!-- visual geom denoting the global origin -->
     <!-- <geom name="leap_origin" pos="0 0 0" group="1" type="sphere" size="0.0025" contype="0" conaffinity="0" density="0" rgba="1 0 0 1"/> -->
