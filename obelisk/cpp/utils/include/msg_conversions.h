@@ -11,12 +11,6 @@ namespace obelisk::utils::msgs {
             Eigen::TensorMap<Eigen::Tensor<ScalarT, N>> tensor(data.data(), dims[Indices]...);
             return tensor;
         }
-
-        // template <std::size_t N, std::size_t... Indices>
-        // void SetTensorElement(Eigen::Tensor<double, N>& tensor, double val, const std::array<int, N>& element,
-        // std::index_sequence<Indices...>) {
-        //     tensor(element[Indices]...) = val;
-        // }
     } // namespace internal
 
     template <int Size>
@@ -64,6 +58,34 @@ namespace obelisk::utils::msgs {
     template <int Size>
     obelisk_std_msgs::msg::FloatMultiArray TensorToMultiArray(const Eigen::Tensor<double, Size>& tensor) {
         obelisk_std_msgs::msg::FloatMultiArray msg;
+        msg.layout.data_offset = 0;
+
+        // Get data into flat vector
+        msg.data.resize(tensor.size());
+        std::copy(tensor.data(), tensor.data() + tensor.size(), msg.data.begin());
+
+        // // Compute stride lengths
+        std_msgs::msg::MultiArrayDimension dim;
+        dim.label  = "dim_" + std::to_string(Size);
+        dim.size   = tensor.dimension(Size - 1);
+        dim.stride = 1;
+
+        msg.layout.dim.emplace_back(dim); // The stride for the last dimension
+        for (int i = tensor.dimensions().size() - 2; i >= 0; --i) {
+            dim.label  = "dim_" + std::to_string(i);
+            dim.size   = tensor.dimension(i);
+            dim.stride = msg.layout.dim.back().stride * tensor.dimension(i + 1);
+
+            msg.layout.dim.emplace_back(dim);
+        }
+        std::reverse(msg.layout.dim.begin(), msg.layout.dim.end()); // Reverse to match dimension order
+
+        return msg;
+    }
+
+    template <int Size>
+    obelisk_std_msgs::msg::UInt8MultiArray TensorToMultiArray(const Eigen::Tensor<uint8_t, Size>& tensor) {
+        obelisk_std_msgs::msg::UInt8MultiArray msg;
         msg.layout.data_offset = 0;
 
         // Get data into flat vector
