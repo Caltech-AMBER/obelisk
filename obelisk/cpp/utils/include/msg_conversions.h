@@ -1,5 +1,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include "rclcpp/rclcpp.hpp"
+
 #include "obelisk_std_msgs/msg/float_multi_array.hpp"
 #include "obelisk_std_msgs/msg/u_int8_multi_array.hpp"
 
@@ -29,14 +31,14 @@ namespace obelisk::utils::msgs {
      * @return the Eigen Tensor
      */
     template <int Size>
-    Eigen::Tensor<double, Size> MutliArrayToTensor(const obelisk_std_msgs::msg::FloatMultiArray& msg) {
+    Eigen::Tensor<double, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::FloatMultiArray& msg) {
 
         // Get the flat part of the data
         std::vector<double> data(msg.data.begin() + msg.layout.data_offset, msg.data.end());
 
         if (msg.layout.dim.size() != Size) {
-            // TODO: Consider just logging this, but without a node, we don't have access to a logger.
-            throw std::runtime_error("Templated size does not match the size provided by the message!");
+            RCLCPP_ERROR_STREAM(rclcpp::get_logger("msg_conversion"),
+                                "Templated size does not match the size provided by the message!");
         }
 
         std::array<int, Size> sizes;
@@ -56,14 +58,14 @@ namespace obelisk::utils::msgs {
      * @return the Eigen Tensor
      */
     template <int Size>
-    Eigen::Tensor<uint8_t, Size> MutliArrayToTensor(const obelisk_std_msgs::msg::UInt8MultiArray& msg) {
+    Eigen::Tensor<uint8_t, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::UInt8MultiArray& msg) {
 
         // Get the flat part of the data
         std::vector<uint8_t> data(msg.data.begin() + msg.layout.data_offset, msg.data.end());
 
         if (msg.layout.dim.size() != Size) {
-            // TODO: Consider just logging this, but without a node, we don't have access to a logger.
-            throw std::runtime_error("Templated size does not match the size provided by the message!");
+            RCLCPP_ERROR_STREAM(rclcpp::get_logger("msg_conversion"),
+                                "Templated size does not match the size provided by the message!");
         }
 
         std::array<int, Size> sizes;
@@ -91,7 +93,7 @@ namespace obelisk::utils::msgs {
         msg.data.resize(tensor.size());
         std::copy(tensor.data(), tensor.data() + tensor.size(), msg.data.begin());
 
-        // // Compute stride lengths
+        // Compute stride lengths
         std_msgs::msg::MultiArrayDimension dim;
         dim.label  = "dim_" + std::to_string(Size);
         dim.size   = tensor.dimension(Size - 1);
@@ -125,7 +127,7 @@ namespace obelisk::utils::msgs {
         msg.data.resize(tensor.size());
         std::copy(tensor.data(), tensor.data() + tensor.size(), msg.data.begin());
 
-        // // Compute stride lengths
+        // Compute stride lengths
         std_msgs::msg::MultiArrayDimension dim;
         dim.label  = "dim_" + std::to_string(Size);
         dim.size   = tensor.dimension(Size - 1);
