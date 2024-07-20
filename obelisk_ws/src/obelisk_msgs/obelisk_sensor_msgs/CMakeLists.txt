@@ -17,7 +17,7 @@ find_package(obelisk_std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/JointEncoders.msg"
   "msg/TrueSimState.msg"
-  "msg/MujocoImage.msg"
+  "msg/ObkImage.msg"
   DEPENDENCIES
   std_msgs
   obelisk_std_msgs

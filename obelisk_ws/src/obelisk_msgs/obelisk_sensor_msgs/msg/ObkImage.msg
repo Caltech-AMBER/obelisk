@@ -1,2 +1,2 @@
-string MESSAGE_NAME="MujocoImage"
+string MESSAGE_NAME="ObkImage"
 obelisk_std_msgs/UInt8MultiArray y
