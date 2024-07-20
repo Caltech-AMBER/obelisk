@@ -14,6 +14,7 @@ find_package(rcl REQUIRED)
 find_package(obelisk_control_msgs REQUIRED)
 find_package(obelisk_sensor_msgs REQUIRED)
 find_package(obelisk_estimator_msgs REQUIRED)
+find_package(obelisk_std_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 include(FetchContent)
