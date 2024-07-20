@@ -13,7 +13,7 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 
 [activation]
-scripts = ["obelisk_ws/install/setup.sh", "scripts/update_ld_library_path.sh"]
+scripts = ["obelisk_ws/install/setup.sh"]
 env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
 
 # ############ #
@@ -25,6 +25,7 @@ env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
 python = ">=3.10"
 pip = ">=24.0"
 setuptools = "<=70.4"
+compilers = "*"
 
 [pypi-dependencies]
 matplotlib = ">=3.9.0"
@@ -138,6 +139,7 @@ cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
 glfw = "3.4"
+mesalib = "*"
 
 # ################ #
 # ENVIRONMENT SETS #

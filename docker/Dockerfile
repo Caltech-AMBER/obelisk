@@ -21,9 +21,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # basic dependencies from docker_setup.sh (up until sudo and below)
 RUN apt-get update && apt-get install -y \
     curl \
-    build-essential \
-    cmake \
-    clang-tools-12 \
     nano \
     vim \
     git \
@@ -31,11 +28,8 @@ RUN apt-get update && apt-get install -y \
     python-is-python3 \
     python3-pip \
     python3-argcomplete \
-    mesa-utils \
-    x11-apps \
     libyaml-dev \
     mesa-common-dev \
-    libglfw3-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
@@ -49,7 +43,7 @@ RUN groupadd --gid $GID $USER && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # add user to dialout group to enable serial port access from the container
-RUN sudo usermod -a -G dialout ${USER}
+RUN usermod -a -G dialout ${USER}
 
 # switch to new user and workdir
 USER ${UID}
