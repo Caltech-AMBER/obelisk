@@ -33,9 +33,6 @@ if [ "$dev_sys_deps" = true ]; then
     echo -e "\033[1;32mInstalling development system dependencies...\033[0m"
     sudo apt-get install -y \
         curl \
-        build-essential \
-        cmake \
-        clang-tools-12 \
         nano \
         vim \
         git \
@@ -43,11 +40,8 @@ if [ "$dev_sys_deps" = true ]; then
         python-is-python3 \
         python3-pip \
         python3-argcomplete \
-        mesa-utils \
-        x11-apps \
         libyaml-dev \
         mesa-common-dev \
-        libglfw3-dev \
         locales
 else
     echo -e "\033[1;32mNot installing development system dependencies. To do so, pass the --dev-sys-deps flag.\033[0m"

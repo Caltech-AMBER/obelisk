@@ -1,15 +1,14 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>obelisk_sensor_msgs</name>
+  <name>obelisk_std_msgs</name>
   <version>0.0.1</version>
-  <description>Obelisk messages from world interface to state estimator.</description>
+  <description>Obelisk messages that support standard data structures.</description>
   <maintainer email="alberthli@caltech.edu">Albert Li</maintainer>
   <license>Apache License 2.0</license>
   <author email="alberthli@caltech.edu">Albert Li</author>
 
   <depend>std_msgs</depend>
-  <depend>obelisk_std_msgs</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>

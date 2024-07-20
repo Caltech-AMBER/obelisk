@@ -9,7 +9,7 @@ PointerAlignment: Left
 # AlignAfterOpenBracket: DontAlign
 AlignConsecutiveAssignments:
   Enabled: true
-  AcrossEmptyLines: true
+  AcrossEmptyLines: false
   AcrossComments: false
 AlignConsecutiveMacros:
   Enabled: true

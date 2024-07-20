@@ -34,12 +34,18 @@ add_executable(VizTest
     test_viz_robot_default.cpp
     )
 
+add_executable(UtilsTest
+    tests_utils.cpp
+    )
+
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC Obelisk::Core)
 
-
 target_link_libraries(VizTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(VizTest PUBLIC Obelisk::Core Obelisk::Viz)
+
+target_link_libraries(UtilsTest PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(UtilsTest PUBLIC Obelisk::Utils)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -49,3 +55,4 @@ ament_target_dependencies(NodeTest PUBLIC rclcpp std_msgs)
 include(Catch)
 catch_discover_tests(NodeTest)
 catch_discover_tests(VizTest)
+catch_discover_tests(UtilsTest)
