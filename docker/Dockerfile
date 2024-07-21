@@ -55,5 +55,5 @@ RUN source /tmp/docker_setup.sh --skip-docker && \
 
 # add local user binary folder to PATH variable
 ENV PATH="${PATH}:/home/${USER}/.local/bin"
-ENV XDG_RUNTIME_DIR=/run/${USER}/${UID}
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}
