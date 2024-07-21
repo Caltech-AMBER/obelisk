@@ -19,16 +19,10 @@ ENV XDG_RUNTIME_DIR=/run/user/${UID}
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# basic dependencies from docker_setup.sh (up until sudo and below)
+# basic dependencies that are not handled by pixi
 RUN apt-get update && apt-get install -y \
     curl \
-    nano \
-    vim \
     git \
-    python3-dev \
-    python-is-python3 \
-    python3-pip \
-    python3-argcomplete \
     mesa-common-dev \
     locales \
     sudo && \

@@ -37,13 +37,7 @@ if [ "$dev_sys_deps" = true ]; then
     echo -e "\033[1;32mInstalling development system dependencies...\033[0m"
     sudo apt-get install -y \
         curl \
-        nano \
-        vim \
         git \
-        python3-dev \
-        python-is-python3 \
-        python3-pip \
-        python3-argcomplete \
         mesa-common-dev \
         locales
 else

@@ -127,6 +127,10 @@ dynamixel-sdk = ">=3.7"
 
 
 # dev
+[feature.dev.dependencies]
+nano = "*"
+vim = "*"
+
 [feature.dev.pypi-dependencies]
 pre-commit = ">=3.7.1"
 ruff = ">=0.4.9"
