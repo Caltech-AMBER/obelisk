@@ -30,6 +30,14 @@ else
         ros-humble-rosidl-generator-cpp \
         ros-humble-rosidl-default-generators
     source /opt/ros/humble/setup.bash
+    read -p $'\033[1;33mROS 2 has been installed. Would you like to add the source command to your .bashrc file? [y/n]\033[0m' -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+        echo -e "\033[1;32mROS 2 source command added to .bashrc!\033[0m"
+    else
+        echo -e "\033[1;33mROS 2 source command not added to .bashrc. You will need to source it manually!\033[0m"
+    fi
 
     # python-specific deps
     pip install -U \
