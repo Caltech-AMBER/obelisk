@@ -14,7 +14,7 @@ platforms = ["linux-64"]
 
 [activation]
 scripts = ["obelisk_ws/install/setup.sh"]
-env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="latest", RCUTILS_COLORIZED_OUTPUT="1" }
+env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="latest", RCUTILS_COLORIZED_OUTPUT="1", OBELISK_ROOT="$PIXI_PROJECT_ROOT" }
 
 # ############ #
 # FEATURE SETS #
