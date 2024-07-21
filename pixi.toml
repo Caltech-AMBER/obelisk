@@ -14,7 +14,7 @@ platforms = ["linux-64"]
 
 [activation]
 scripts = ["obelisk_ws/install/setup.sh"]
-env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
+env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="latest", RCUTILS_COLORIZED_OUTPUT="1" }
 
 # ############ #
 # FEATURE SETS #
@@ -130,7 +130,7 @@ dynamixel-sdk = ">=3.7"
 [feature.dev.pypi-dependencies]
 pre-commit = ">=3.7.1"
 ruff = ">=0.4.9"
-pyright = ">=1.1.368"
+pyright = "*"
 
 
 # build
