@@ -9,8 +9,6 @@ services:
         GID: $UID
         OBELISK_ROOT: $OBELISK_ROOT
       dockerfile: Dockerfile
-      ssh:
-        - default
     network_mode: host
     ipc: host
     environment:
@@ -33,6 +31,7 @@ services:
       - $HOME/.bash_aliases:$HOME/.bash_aliases
       - /etc/sysctl.d/60-cyclonedds.conf:/etc/sysctl.d/60-cyclonedds.conf
       - $HOME/.gitconfig:$HOME/.gitconfig
+      - $HOME/.ssh:$HOME/.ssh
     ports:
       - 7007:7007
     privileged: true
