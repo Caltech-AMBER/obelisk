@@ -47,4 +47,7 @@ COPY docker_setup.sh /tmp/docker_setup.sh
 RUN source /tmp/docker_setup.sh --skip-docker && \
     sudo rm /tmp/docker_setup.sh
 
+# ssh stuff
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+
 WORKDIR /home/${USER}
