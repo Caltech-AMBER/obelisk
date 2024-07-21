@@ -1,0 +1,38 @@
+services:
+  obelisk:
+    shm_size: '12gb'
+    build:
+      context: .
+      args:
+        USER: $USER
+        UID: $UID
+        GID: $UID
+        OBELISK_ROOT: $OBELISK_ROOT
+      dockerfile: Dockerfile
+    network_mode: host
+    ipc: host
+    environment:
+      DISPLAY: $DISPLAY
+      USER: $USER
+      UID: $UID
+      GID: $UID
+      OBELISK_ROOT: $OBELISK_ROOT
+      QT_X11_NO_MITSHM: 1
+    security_opt:
+      - seccomp=unconfined
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - $OBELISK_ROOT:$OBELISK_ROOT
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $HOME/.Xauthority:$HOME/.Xauthority:rw
+      - $HOME/.bashrc:$HOME/.bashrc
+      - $HOME/.bash_aliases:$HOME/.bash_aliases
+      - /etc/sysctl.d/60-cyclonedds.conf:/etc/sysctl.d/60-cyclonedds.conf
+    ports:
+      - 7007:7007
+    privileged: true
+    working_dir: $OBELISK_ROOT
+    stdin_open: true
+    tty: true
+    command: /bin/bash
