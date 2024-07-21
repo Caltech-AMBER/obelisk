@@ -27,6 +27,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
+      - $HOME/.bash_aliases:$HOME/.bash_aliases
       - /etc/sysctl.d/60-cyclonedds.conf:/etc/sysctl.d/60-cyclonedds.conf
     ports:
       - 7007:7007
