@@ -13,6 +13,7 @@ ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
 ENV OBELISK_ROOT=$OBELISK_ROOT
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
 # set timezone
 ENV TZ=America/Los_Angeles
@@ -53,7 +54,4 @@ COPY docker_setup.sh /tmp/docker_setup.sh
 RUN source /tmp/docker_setup.sh --skip-docker && \
     sudo rm /tmp/docker_setup.sh
 
-# add local user binary folder to PATH variable
-ENV PATH="${PATH}:/home/${USER}/.local/bin"
-ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}
