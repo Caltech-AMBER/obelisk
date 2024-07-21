@@ -5,7 +5,7 @@ if [ -z "$PIXI_ENVIRONMENT_NAME" ]; then
         echo -e "/033[1;31mOBELISK_ROOT is not set. Run dev_setup.sh first!\033[0m"
         exit 0
     fi
-    
+
     echo -e "\033[1;32mBuilding Obelisk messages outside of a pixi env...\033[0m"
     cd $OBELISK_ROOT/obelisk_ws
     colcon build --symlink-install --parallel-workers $(nproc) \
