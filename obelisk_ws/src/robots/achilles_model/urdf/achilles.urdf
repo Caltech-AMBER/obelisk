@@ -1,0 +1,715 @@
+<?xml version="1.0" ?>
+<robot name="achilles">
+  <link name="base_link"/>
+  <link name="torso">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.107903"/>
+      <mass value="8.3"/>
+      <inertia ixx="0.172676" ixy="0.0" ixz="0.0" iyy="0.102985" iyz="0.0" izz="0.087971"/>
+    </inertial>
+    <collision name="torso_collision">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/torso.STL"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/torso.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="base_to_torso_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="torso"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+
+  <!-- Left Leg -->
+  <link name="left_hip_yaw">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.066483 -0.001451 -0.062589"/>
+      <mass value="0.80187"/>
+      <inertia ixx="0.001907" ixy="0" ixz="0" iyy="0.002034" iyz="0" izz="0.001175"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_yaw.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_hip_yaw_joint" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="35.0" lower="-1" upper="1" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 0.090 -0.334"/>
+    <parent link="torso"/>
+    <child link="left_hip_yaw"/>
+  </joint>
+
+  <link name="left_hip_roll">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0465 0.055 0.000784"/>
+      <mass value="0.843"/>
+      <inertia ixx="0.000867" ixy="0" ixz="0" iyy="0.001086" iyz="0" izz="0.001082"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_roll.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_hip_roll_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <limit effort="70.0" lower="-1" upper="1" velocity="10"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="-0.055 0 -0.083"/>
+    <parent link="left_hip_yaw"/>
+    <child link="left_hip_roll"/>
+  </joint>
+
+  <link name="left_hip_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0139 -0.0336 -0.076"/>
+      <mass value="2.42"/>
+      <inertia ixx="0.0206" ixy="0" ixz="0" iyy="0.0173" iyz="0" izz="0.00594"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_hip_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="35.0" lower="-1.5" upper="0.5" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0.055 0.0395 0"/>
+    <parent link="left_hip_roll"/>
+    <child link="left_hip_pitch"/>
+  </joint>
+
+  <link name="left_hip_center">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="left_hip_center_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 -0.0395 0"/>
+    <parent link="left_hip_pitch"/>
+    <child link="left_hip_center"/>
+  </joint>
+
+  <link name="left_knee_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.001 0.003 -0.131"/>
+      <mass value="0.556"/>
+      <inertia ixx="0.00666" ixy="0" ixz="0" iyy="0.006613" iyz="0" izz="0.000226"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_knee_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_knee_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0.0 -0.0395 -0.275"/>
+    <parent link="left_hip_pitch"/>
+    <child link="left_knee_pitch"/>
+    <limit effort="70.0" lower="0" upper="2" velocity="10"/>
+    <dynamics damping="0.01"/>
+  </joint>
+
+  <link name="left_ankle_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0272 0.0 -0.0156"/>
+      <mass value="0.180"/>
+      <inertia ixx="0.000031" ixy="0" ixz="0" iyy="0.000286" iyz="0" izz="0.000272"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/ankle_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_ankle_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.275"/>
+    <parent link="left_knee_pitch"/>
+    <child link="left_ankle_pitch"/>
+    <limit effort="35" lower="-1" upper="1" velocity="20"/>
+    <dynamics damping="0.01"/>
+  </joint>
+
+  <link name="left_foot">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="left_foot_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="left_ankle_pitch"/>
+    <child link="left_foot"/>
+  </joint>
+
+    <!-- Left Arm-->
+  <link name="left_shoulder_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0.05 0"/>
+      <mass value="0.796"/>
+      <inertia ixx="0.000943" ixy="0" ixz="0" iyy="0.00056" iyz="0" izz="0.000675"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_shoulder_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_shoulder_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="35" lower="-1.58" upper="1.58" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 0.159 0"/>
+    <parent link="torso"/>
+    <child link="left_shoulder_pitch"/>
+  </joint>
+
+  <link name="left_shoulder_roll">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.0708"/>
+      <mass value="0.484"/>
+      <inertia ixx="0.000498" ixy="0" ixz="0" iyy="0.000458" iyz="0" izz="0.000384"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_shoulder_roll.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_shoulder_roll_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <limit effort="12" lower="0" upper="3.141592653589793" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 0.063 0"/>
+    <parent link="left_shoulder_pitch"/>
+    <child link="left_shoulder_roll"/>
+  </joint>
+
+  <link name="left_shoulder_center">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="left_shoulder_center_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="left_shoulder_roll"/>
+    <child link="left_shoulder_center"/>
+  </joint>
+
+  <link name="left_shoulder_yaw">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.059"/>
+      <mass value="0.5847"/>
+      <inertia ixx="0.0007" ixy="0" ixz="0" iyy="0.000796" iyz="0" izz="0.000348"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_yaw.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_shoulder_yaw_joint" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 -0.0986"/>
+    <parent link="left_shoulder_roll"/>
+    <child link="left_shoulder_yaw"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="12" lower="-1.58" upper="1.58" velocity="20"/>
+  </joint>
+
+  <link name="left_elbow_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.1284"/>
+      <mass value="0.297"/>
+      <inertia ixx="0.0018" ixy="0" ixz="0" iyy="0.0018" iyz="0" izz="0.0001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/left_elbow_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="left_elbow_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="24" lower="-1.58" upper="0" velocity="10"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.133"/>
+    <parent link="left_shoulder_yaw"/>
+    <child link="left_elbow_pitch"/>
+  </joint>
+
+  <link name="left_hand">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <!-- Hand radius is 0.03 m -->
+  <joint name="left_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 0.0 -0.19"/>
+    <parent link="left_elbow_pitch"/>
+    <child link="left_hand"/>
+  </joint>
+
+
+
+  <!-- Right Leg -->
+  <link name="right_hip_yaw">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.066483 0.001451 -0.062589"/>
+      <mass value="0.80187"/>
+      <inertia ixx="0.001907" ixy="0" ixz="0" iyy="0.002034" iyz="0" izz="0.001175"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_yaw.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_hip_yaw_joint" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="35.0" lower="-1" upper="1" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 -0.090 -0.334"/>
+    <parent link="torso"/>
+    <child link="right_hip_yaw"/>
+  </joint>
+
+  <link name="right_hip_roll">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0465 -0.055 0.000784"/>
+      <mass value="0.843"/>
+      <inertia ixx="0.000867" ixy="0" ixz="0" iyy="0.001086" iyz="0" izz="0.001082"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_roll.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_hip_roll_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <limit effort="70.0" lower="-1" upper="1" velocity="10"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="-0.055 0 -0.083"/>
+    <parent link="right_hip_yaw"/>
+    <child link="right_hip_roll"/>
+  </joint>
+
+  <link name="right_hip_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0139 0.0336 -0.076"/>
+      <mass value="2.42"/>
+      <inertia ixx="0.0206" ixy="0" ixz="0" iyy="0.0173" iyz="0" izz="0.00594"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_hip_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="35.0" lower="-1.5" upper="1.5" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0.055 -0.0395 0"/>
+    <parent link="right_hip_roll"/>
+    <child link="right_hip_pitch"/>
+  </joint>
+
+  <link name="right_hip_center">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="right_hip_center_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0.0395 0"/>
+    <parent link="right_hip_pitch"/>
+    <child link="right_hip_center"/>
+  </joint>
+
+  <link name="right_knee_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.001 -0.003 -0.131"/>
+      <mass value="0.556"/>
+      <inertia ixx="0.00666" ixy="0" ixz="0" iyy="0.006613" iyz="0" izz="0.000226"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_knee_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_knee_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0.0 0.0395 -0.275"/>
+    <parent link="right_hip_pitch"/>
+    <child link="right_knee_pitch"/>
+    <limit effort="70.0" lower="0" upper="2" velocity="10"/>
+    <dynamics damping="0.01"/>
+  </joint>
+
+  <link name="right_ankle_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0272 -0.0 -0.0156"/>
+      <mass value="0.180"/>
+      <inertia ixx="0.000031" ixy="0" ixz="0" iyy="0.000286" iyz="0" izz="0.000272"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/ankle_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_ankle_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.275"/>
+    <parent link="right_knee_pitch"/>
+    <child link="right_ankle_pitch"/>
+    <limit effort="35" lower="-1" upper="1" velocity="20"/>
+    <dynamics damping="0.01"/>
+  </joint>
+
+  <link name="right_foot">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="right_foot_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="right_ankle_pitch"/>
+    <child link="right_foot"/>
+  </joint>
+
+
+    <!-- Right Arm-->
+  <link name="right_shoulder_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 -0.05 0"/>
+      <mass value="0.796"/>
+      <inertia ixx="0.000943" ixy="0" ixz="0" iyy="0.00056" iyz="0" izz="0.000675"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_shoulder_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="35" lower="-1.58" upper="1.58" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 -0.159 0"/>
+    <parent link="torso"/>
+    <child link="right_shoulder_pitch"/>
+  </joint>
+
+  <link name="right_shoulder_roll">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.0708"/>
+      <mass value="0.484"/>
+      <inertia ixx="0.000498" ixy="0" ixz="0" iyy="0.000458" iyz="0" izz="0.000384"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_roll.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_shoulder_roll_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <limit effort="35" lower="-3.14" upper="0" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 -0.063 0"/>
+    <parent link="right_shoulder_pitch"/>
+    <child link="right_shoulder_roll"/>
+  </joint>
+
+  <link name="right_shoulder_center">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="right_shoulder_center_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="right_shoulder_roll"/>
+    <child link="right_shoulder_center"/>
+  </joint>
+
+  <link name="right_shoulder_yaw">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.059"/>
+      <mass value="0.5847"/>
+      <inertia ixx="0.0007" ixy="0" ixz="0" iyy="0.000796" iyz="0" izz="0.000348"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_yaw.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_shoulder_yaw_joint" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 -0.0986"/>
+    <parent link="right_shoulder_roll"/>
+    <child link="right_shoulder_yaw"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="12.0" lower="-1.58" upper="1.58" velocity="20"/>
+  </joint>
+
+  <link name="right_elbow_pitch">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 -0.1284"/>
+      <mass value="0.297"/>
+      <inertia ixx="0.0018" ixy="0" ixz="0" iyy="0.0018" iyz="0" izz="0.0001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="file:///home/adrian/achilles_model/meshes/right_elbow_pitch.STL"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="right_elbow_pitch_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="24" lower="-1.58" upper="0" velocity="20"/>
+    <dynamics damping="0.01"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.133"/>
+    <parent link="right_shoulder_yaw"/>
+    <child link="right_elbow_pitch"/>
+  </joint>
+
+  <link name="right_hand">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <!-- Hand radius is 0.03 m -->
+  <joint name="right_hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 0.0 -0.19"/>
+    <parent link="right_elbow_pitch"/>
+    <child link="right_hand"/>
+  </joint>
+
+  <link name="static_com">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-06" ixy="0" ixz="0" iyy="1e-06" iyz="0" izz="1e-06"/>
+    </inertial>
+  </link>
+  <joint name="static_com_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="torso"/>
+    <child link="static_com"/>
+  </joint>
+
+  <transmission name="left_hip_yaw_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_hip_yaw_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_hip_yaw_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_hip_roll_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_hip_roll_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_hip_roll_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_hip_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_hip_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_hip_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_knee_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_knee_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_knee_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_ankle_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_ankle_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_ankle_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="left_shoulder_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_shoulder_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_shoulder_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_shoulder_roll_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_shoulder_roll_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_shoulder_roll_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_shoulder_yaw_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_shoulder_yaw_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_shoulder_yaw_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_elbow_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_elbow_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_elbow_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="right_hip_yaw_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_hip_yaw_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_hip_yaw_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_hip_roll_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_hip_roll_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_hip_roll_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_hip_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_hip_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_hip_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_knee_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_knee_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_knee_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_ankle_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_ankle_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_ankle_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="right_shoulder_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_shoulder_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_shoulder_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_shoulder_roll_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_shoulder_roll_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_shoulder_roll_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_shoulder_yaw_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_shoulder_yaw_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_shoulder_yaw_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_elbow_pitch_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_elbow_pitch_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_elbow_pitch_actuator">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+</robot>
