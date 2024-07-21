@@ -3,31 +3,44 @@
 # script flags
 skip_docker=true
 cyclone_perf=false
+bash_aliases=false
+obk_aliases=false
 
 for arg in "$@"; do
-  case $arg in
-    --no-skip-docker)
-      skip_docker=false
-      shift # Enables Docker and nvidia-container-toolkit installation
-      ;;
-    --cyclone-perf)
-      cyclone_perf=true
-      shift # Enables cyclone performance optimizations
-      ;;
-    *)
-      # Unknown option
-      echo "Unknown option: $arg"
-      echo "Usage: $0 [--skip-docker]"
-      exit 1
-      ;;
-  esac
+    case $arg in
+        --all)
+            skip_docker=false
+            cyclone_perf=true
+            bash_aliases=true
+            obk_aliases=true
+            shift # Allows all system-level changes at once
+            ;;
+        --no-skip-docker)
+            skip_docker=false
+            shift # Enables Docker and nvidia-container-toolkit installation
+            ;;
+        --cyclone-perf)
+            cyclone_perf=true
+            shift # Enables cyclone performance optimizations
+            ;;
+        --bash-aliases)
+            bash_aliases=true
+            shift # Ensures the ~/.bash_aliases file is created and sourced in ~/.bashrc
+            ;;
+        --obk-aliases)
+            obk_aliases=true
+            shift # Adds obelisk aliases to the ~/.bash_aliases file
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $arg"
+            echo "Usage: $0 [--skip-docker]"
+            exit 1
+            ;;
+    esac
 done
 
-# ######## #
-# OPTIONAL #
-# ######## #
-
-# check if skip-docker
+# [1] installs docker and nvidia-container-toolkit
 if [ "$skip_docker" = true ]; then
     echo -e "\033[1;33mSkipping Docker and nvidia-container-toolkit installation.\033[0m"
 else
@@ -89,63 +102,36 @@ else
     fi
 fi
 
-# enable cyclone performance optimizations
-# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
-if [ "$cyclone_perf" = true ]; then
-    # check whether /etc/sysctl.d/60-cyclonedds.conf is a directory - if it is, delete it
-    if [ -d /etc/sysctl.d/60-cyclonedds.conf ]; then
-        sudo rm -rf /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    # apply performance optimizations
-    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
-else
-    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --no-cyclone-perf flag.\033[0m"
-fi
-
-# ######### #
-# MANDATORY #
-# ######### #
-# [NOTE] everything under this heading will modify your local filesystem!
-
-# --- [1] bash aliases --- #
-# add ~/.bash_aliases check to ~/.bashrc if it doesn't exist already (does by default)
-block='if [ -f ~/.bash_aliases ]; then
+# [2] adds ~/.bash_aliases check to ~/.bashrc if it doesn't exist already (does by default)
+if [ "$bash_aliases" = true ]; then
+    block='if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi'
-if ! grep -q "$block" ~/.bashrc; then
-    echo "$block" >> ~/.bashrc
-    echo -e "\033[1;32mAdded code to source ~/.bash_aliases in ~/.bashrc!\033[0m"
+    if ! grep -q "$block" ~/.bashrc; then
+        echo "$block" >> ~/.bashrc
+        echo -e "\033[1;32mAdded code to source ~/.bash_aliases in ~/.bashrc!\033[0m"
+    fi
+
+    # check whether ~/.bash_aliases exists; if not, touch it
+    if [ ! -f ~/.bash_aliases ]; then
+        touch ~/.bash_aliases
+        echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
+    else
+        echo -e "\033[1;33m~/.bash_aliases file already exists, skipping...\033[0m"
+    fi
 fi
 
-# check whether ~/.bash_aliases exists; if not, touch it
-if [ ! -f ~/.bash_aliases ]; then
-    touch ~/.bash_aliases
-    echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
-else
-    echo -e "\033[1;33m~/.bash_aliases file already exists, skipping...\033[0m"
-fi
-
-# --- [2] obelisk root --- #
 # set OBELISK_ROOT to the directory where dev_setup.sh is located if it doesn't exist already
-if [ -z "$OBELISK_ROOT" ]; then
-	export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-	echo "export OBELISK_ROOT=$OBELISK_ROOT" >> ~/.bashrc
-	echo -e "\033[1;32mOBELISK_ROOT is now set to $OBELISK_ROOT!\033[0m"
-else
-	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
-fi
+# if [ -z "$OBELISK_ROOT" ]; then
+# 	export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# 	echo "export OBELISK_ROOT=$OBELISK_ROOT" >> ~/.bashrc
+# 	echo -e "\033[1;32mOBELISK_ROOT is now set to $OBELISK_ROOT!\033[0m"
+# else
+# 	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
+# fi
 
-# --- [3] expose environment variables to docker --- #
-# create a .env file under the docker directory with the USER, UID, and GID of the local system
+# [4] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
+export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
 	echo "USER=$USER" > $OBELISK_ROOT/docker/.env
 	echo "UID=$(id -u)" >> $OBELISK_ROOT/docker/.env
@@ -156,6 +142,5 @@ else
 	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
 fi
 
-# --- [4] additional setup (installs pixi and adds obelisk aliases to ~/.bash_aliases) --- #
 # rest of setup commands from docker/docker_setup.sh
-source docker/docker_setup.sh
+source docker/docker_setup.sh $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") $([ "$obk_aliases" = true ] && echo "--obk-aliases")
