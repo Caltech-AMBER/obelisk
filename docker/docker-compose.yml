@@ -9,6 +9,8 @@ services:
         GID: $UID
         OBELISK_ROOT: $OBELISK_ROOT
       dockerfile: Dockerfile
+      ssh:
+        - default
     network_mode: host
     ipc: host
     environment:
