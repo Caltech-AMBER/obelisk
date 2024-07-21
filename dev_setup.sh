@@ -1,23 +1,18 @@
 #!/bin/bash
 
 # script flags
-skip_docker=false
-dev_sys_deps=false
-cyclone_perf=true
+skip_docker=true
+cyclone_perf=false
 
 for arg in "$@"; do
   case $arg in
-    --skip-docker)
-      skip_docker=true
-      shift # Remove --skip-docker from processing
+    --no-skip-docker)
+      skip_docker=false
+      shift # Enables Docker and nvidia-container-toolkit installation
       ;;
-    --dev-sys-deps)
-      dev_sys_deps=true
-      shift # Installs development system dependencies
-      ;;
-    --no-cyclone-perf)
-      cyclone_perf=false
-      shift # Disables cyclone performance optimizations
+    --cyclone-perf)
+      cyclone_perf=true
+      shift # Enables cyclone performance optimizations
       ;;
     *)
       # Unknown option
@@ -31,18 +26,6 @@ done
 # ######## #
 # OPTIONAL #
 # ######## #
-
-# basic dependencies
-if [ "$dev_sys_deps" = true ]; then
-    echo -e "\033[1;32mInstalling development system dependencies...\033[0m"
-    sudo apt-get install -y \
-        curl \
-        git \
-        mesa-common-dev \
-        locales
-else
-    echo -e "\033[1;32mNot installing development system dependencies. To do so, pass the --dev-sys-deps flag.\033[0m"
-fi
 
 # check if skip-docker
 if [ "$skip_docker" = true ]; then
