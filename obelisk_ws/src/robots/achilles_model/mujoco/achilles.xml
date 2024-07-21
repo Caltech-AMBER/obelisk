@@ -19,29 +19,29 @@
   <!-- List the location of all meshes -->
   <asset>
     <texture type='skybox' builtin='gradient' width='128' height='128' rgb1='0.4 0.6 0.8' rgb2='0 0 0'/>
-    <mesh file="meshes/torso.STL" name="torso"/>
+    <mesh file="../meshes/torso.STL" name="torso"/>
 
-    <mesh file="meshes/left_hip_yaw.STL" name="left_hip_yaw"/>
-    <mesh file="meshes/left_hip_roll.STL" name="left_hip_roll"/>
-    <mesh file="meshes/left_hip_pitch.STL" name="left_hip_pitch"/>
-    <mesh file="meshes/left_knee_pitch.STL" name="left_knee_pitch"/>
+    <mesh file="../meshes/left_hip_yaw.STL" name="left_hip_yaw"/>
+    <mesh file="../meshes/left_hip_roll.STL" name="left_hip_roll"/>
+    <mesh file="../meshes/left_hip_pitch.STL" name="left_hip_pitch"/>
+    <mesh file="../meshes/left_knee_pitch.STL" name="left_knee_pitch"/>
 
-    <mesh file="meshes/left_shoulder_pitch.STL" name="left_shoulder_pitch"/>
-    <mesh file="meshes/left_shoulder_roll.STL" name="left_shoulder_roll"/>
-    <mesh file="meshes/left_shoulder_yaw.STL" name="left_shoulder_yaw"/>
-    <mesh file="meshes/left_elbow_pitch.STL" name="left_elbow_pitch"/>
+    <mesh file="../meshes/left_shoulder_pitch.STL" name="left_shoulder_pitch"/>
+    <mesh file="../meshes/left_shoulder_roll.STL" name="left_shoulder_roll"/>
+    <mesh file="../meshes/left_shoulder_yaw.STL" name="left_shoulder_yaw"/>
+    <mesh file="../meshes/left_elbow_pitch.STL" name="left_elbow_pitch"/>
 
-    <mesh file="meshes/right_hip_yaw.STL" name="right_hip_yaw"/>
-    <mesh file="meshes/right_hip_roll.STL" name="right_hip_roll"/>
-    <mesh file="meshes/right_hip_pitch.STL" name="right_hip_pitch"/>
-    <mesh file="meshes/right_knee_pitch.STL" name="right_knee_pitch"/>
+    <mesh file="../meshes/right_hip_yaw.STL" name="right_hip_yaw"/>
+    <mesh file="../meshes/right_hip_roll.STL" name="right_hip_roll"/>
+    <mesh file="../meshes/right_hip_pitch.STL" name="right_hip_pitch"/>
+    <mesh file="../meshes/right_knee_pitch.STL" name="right_knee_pitch"/>
 
-    <mesh file="meshes/right_shoulder_pitch.STL" name="right_shoulder_pitch"/>
-    <mesh file="meshes/right_shoulder_roll.STL" name="right_shoulder_roll"/>
-    <mesh file="meshes/right_shoulder_yaw.STL" name="right_shoulder_yaw"/>
-    <mesh file="meshes/right_elbow_pitch.STL" name="right_elbow_pitch"/>
+    <mesh file="../meshes/right_shoulder_pitch.STL" name="right_shoulder_pitch"/>
+    <mesh file="../meshes/right_shoulder_roll.STL" name="right_shoulder_roll"/>
+    <mesh file="../meshes/right_shoulder_yaw.STL" name="right_shoulder_yaw"/>
+    <mesh file="../meshes/right_elbow_pitch.STL" name="right_elbow_pitch"/>
 
-    <mesh file="meshes/ankle_pitch.STL" name="ankle_pitch"/>
+    <mesh file="../meshes/ankle_pitch.STL" name="ankle_pitch"/>
 
     <texture builtin="checker" height="512" name="plane" rgb1="0.9 0.9 0.99"
               rgb2="0.7 0.7 0.7"

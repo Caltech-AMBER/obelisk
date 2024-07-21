@@ -10,13 +10,13 @@
     <collision name="torso_collision">
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/torso.STL"/>
+        <mesh filename="package://achilles_model/meshes/torso.STL"/>
       </geometry>
     </collision>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/torso.STL"/>
+        <mesh filename="package://achilles_model/meshes/torso.STL"/>
       </geometry>
     </visual>
   </link>
@@ -36,7 +36,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_yaw.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_hip_yaw.STL"/>
       </geometry>
     </visual>
   </link>
@@ -58,7 +58,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_roll.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_hip_roll.STL"/>
       </geometry>
     </visual>
   </link>
@@ -80,7 +80,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_hip_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_hip_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -115,7 +115,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_knee_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_knee_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -137,7 +137,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/ankle_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/ankle_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -173,7 +173,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_shoulder_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_shoulder_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -195,7 +195,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_shoulder_roll.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_shoulder_roll.STL"/>
       </geometry>
     </visual>
   </link>
@@ -230,7 +230,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_yaw.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_shoulder_yaw.STL"/>
       </geometry>
     </visual>
   </link>
@@ -251,7 +251,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/left_elbow_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/left_elbow_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -290,7 +290,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_yaw.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_hip_yaw.STL"/>
       </geometry>
     </visual>
   </link>
@@ -312,7 +312,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_roll.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_hip_roll.STL"/>
       </geometry>
     </visual>
   </link>
@@ -334,7 +334,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_hip_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_hip_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -369,7 +369,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_knee_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_knee_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -391,7 +391,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/ankle_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/ankle_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -428,7 +428,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_shoulder_pitch.STL"/>
       </geometry>
     </visual>
   </link>
@@ -450,7 +450,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_roll.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_shoulder_roll.STL"/>
       </geometry>
     </visual>
   </link>
@@ -485,7 +485,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_shoulder_yaw.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_shoulder_yaw.STL"/>
       </geometry>
     </visual>
   </link>
@@ -506,7 +506,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="file:///home/adrian/achilles_model/meshes/right_elbow_pitch.STL"/>
+        <mesh filename="package://achilles_model/meshes/right_elbow_pitch.STL"/>
       </geometry>
     </visual>
   </link>
