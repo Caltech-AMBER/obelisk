@@ -13,6 +13,9 @@ obk_aliases=$(cat << 'EOF'
 # >>> obelisk >>>
 # !! Contents in this block are managed by obelisk !!
 
+# convenience alias for building obelisk within a pixi env
+alias obk-build='source $OBELISK_ROOT/scripts/build_obelisk.sh'
+
 # convenience aliases for lifecycle commands
 function obk-lifecycle {
     if [[ -z "$1" || -z "$2" ]]; then
@@ -141,6 +144,11 @@ function obk-launch {
 
 # help command
 alias obk-help='echo -e "\033[1;34mObelisk Commands:\n\
+obk-build:\n\
+  Builds Obelisk nodes after you have activated a pixi environment.\n\
+  Usage:
+    pixi shell -e <env_name>
+    obk-build\n\n\
 obk-launch:\n\
   Launches the obelisk_bringup.launch.py with specified arguments.\n\
   Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False> bag=<True|False>\n\
