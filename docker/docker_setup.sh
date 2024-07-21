@@ -8,7 +8,7 @@ else
 	echo -e "\033[1;33mPixi is already installed. Skipping Pixi installation.\033[0m"
 fi
 
-# add some obelisk aliases to the .bashrc
+# add some obelisk aliases to the ~/.bash_aliases file
 obk_aliases=$(cat << 'EOF'
 # >>> obelisk >>>
 # !! Contents in this block are managed by obelisk !!
@@ -161,6 +161,6 @@ In all the above commands, <config_name> refers to the config field of the confi
 # <<< obelisk <<<
 EOF
 )
-sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
-echo "$obk_aliases" >> ~/.bashrc
-echo -e "\033[1;32mObelisk aliases added to ~/.bashrc!\033[0m"
+sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bash_aliases > ~/.bash_aliases.tmp && cp ~/.bash_aliases.tmp ~/.bash_aliases && rm ~/.bash_aliases.tmp
+echo "$obk_aliases" >> ~/.bash_aliases
+echo -e "\033[1;32mObelisk aliases added to ~/.bash_aliases!\033[0m"
