@@ -29,7 +29,6 @@ services:
       - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
       - $HOME/.bash_aliases:$HOME/.bash_aliases
-      - /etc/sysctl.d/60-cyclonedds.conf:/etc/sysctl.d/60-cyclonedds.conf
       - $HOME/.gitconfig:$HOME/.gitconfig
       - $HOME/.ssh:$HOME/.ssh
     ports:
