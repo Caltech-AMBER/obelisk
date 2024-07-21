@@ -44,7 +44,6 @@ if [ "$dev_sys_deps" = true ]; then
         python-is-python3 \
         python3-pip \
         python3-argcomplete \
-        libyaml-dev \
         mesa-common-dev \
         locales
 else
