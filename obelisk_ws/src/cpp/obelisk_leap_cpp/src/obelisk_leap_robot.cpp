@@ -5,6 +5,6 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 int main(int argc, char* argv[]) {
-    obelisk::utils::SpinObelisk<obelisk::ObeliskLeapHand, rclcpp::executors::MultiThreadedExecutor>(argc, argv,
-                                                                                                    "leap_hand");
+    obelisk::utils::SpinObelisk<obelisk::ObeliskLeapHand, rclcpp::executors::SingleThreadedExecutor>(argc, argv,
+                                                                                                     "leap_hand");
 }

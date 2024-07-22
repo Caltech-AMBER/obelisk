@@ -94,13 +94,20 @@ namespace obelisk {
          * by a timer callback.
          */
         void PublishState() {
-            auto msg = leap_sensor_msg();
+            static int repeated_errs        = 0;
+            const static int MAX_REPEAT_ERR = 10; // we are reading at a high rate, so sometimes we will get errors
+            auto msg                        = leap_sensor_msg();
             for (int i = 0; i < N_MOTORS; i++) {
                 group_reader_.addParam(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
             }
             if (group_reader_.txRxPacket() != COMM_SUCCESS) {
-                std::cerr << "Failed to read motors\n";
+                repeated_errs++;
+                if (repeated_errs > MAX_REPEAT_ERR) {
+                    std::cerr << "Failed to read motors\n";
+                }
+                return;
             }
+            repeated_errs = 0;
             for (int i = 0; i < N_MOTORS; i++) {
                 int pos = group_reader_.getData(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
                 msg.y.emplace_back(ObeliskLeapHand::DxlPosToRadians(pos));
