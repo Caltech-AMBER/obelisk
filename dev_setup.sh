@@ -121,26 +121,19 @@ fi'
     fi
 fi
 
-# set OBELISK_ROOT to the directory where dev_setup.sh is located if it doesn't exist already
-# if [ -z "$OBELISK_ROOT" ]; then
-# 	export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-# 	echo "export OBELISK_ROOT=$OBELISK_ROOT" >> ~/.bashrc
-# 	echo -e "\033[1;32mOBELISK_ROOT is now set to $OBELISK_ROOT!\033[0m"
-# else
-# 	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
-# fi
-
-# [4] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
+# [3] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
+# create or delete and replace the contents of $OBELISK_ROOT/docker/.env
 export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
-	echo "USER=$USER" > $OBELISK_ROOT/docker/.env
-	echo "UID=$(id -u)" >> $OBELISK_ROOT/docker/.env
-	echo "GID=$(id -g)" >> $OBELISK_ROOT/docker/.env
-	echo "OBELISK_ROOT=$OBELISK_ROOT" >> $OBELISK_ROOT/docker/.env
-	echo -e "\033[1;32m.env file created under $OBELISK_ROOT/docker!\033[0m"
-else
-	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
+env_file="$OBELISK_ROOT/docker/.env"
+if [ -f $env_file ]; then
+    rm $env_file
 fi
+touch $env_file
+echo "USER=$USER" > $env_file
+echo "UID=$(id -u)" >> $env_file
+echo "GID=$(id -g)" >> $env_file
+echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
+echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
 # rest of setup commands from docker/docker_setup.sh
 source docker/docker_setup.sh $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") $([ "$obk_aliases" = true ] && echo "--obk-aliases")
