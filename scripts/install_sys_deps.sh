@@ -1,7 +1,44 @@
 #!/bin/bash
 
-read -p $'\033[1;33mThis script will install system dependencies that modify your local filesystem! Continue? [y/n]\033[0m' -n 1 -r
-echo
+# script flags
+autoaccept=false
+source_ros=false
+no_source_ros=true
+
+for arg in "$@"; do
+    case $arg in
+        --y)
+            autoaccept=true
+            shift # Auto-accepts installation
+            ;;
+        -y)
+            autoaccept=true
+            shift # Auto-accepts installation
+            ;;
+        --source-ros)
+            source_ros=true
+            shift # Sources base ROS in ~/.bashrc
+            ;;
+        --no-source-ros)
+            no_source_ros=true
+            shift # Does not source base ROS in ~/.bashrc
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $arg"
+            echo "Usage: $0 [--y] [--source-ros]"
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$autoaccept" = true ]; then
+    REPLY='y'
+else
+    read -p $'\033[1;33mThis script will install system dependencies that modify your local filesystem! Continue? [y/n]\033[0m' -n 1 -r
+    echo
+fi
+
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo -e "\033[1;33mNot installing local system dependencies!\033[0m"
 else
@@ -30,8 +67,17 @@ else
         ros-humble-rosidl-generator-cpp \
         ros-humble-rosidl-default-generators
     source /opt/ros/humble/setup.bash
-    read -p $'\033[1;33mROS 2 has been installed. Would you like to add the source command to your .bashrc file? [y/n]\033[0m' -n 1 -r
-    echo
+
+    # parse the user's response to adding the ROS source command to ~/.bashrc - specifying no source takes precedence
+    if [ "$no_source_ros" = true ]; then
+        REPLY='n'
+    elif [ "$source_ros" = true ]; then
+        REPLY='y'
+    else
+        read -p $'\033[1;33mROS 2 has been installed. Would you like to add the source command to your .bashrc file? [y/n]\033[0m' -n 1 -r
+        echo
+    fi
+
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
         echo -e "\033[1;32mROS 2 source command added to .bashrc!\033[0m"

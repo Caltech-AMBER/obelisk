@@ -36,6 +36,8 @@ Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have
     ```
     bash scripts/install_sys_deps.sh
     ```
+    This will prompt you to confirm changes to your local filesystem. To auto-accept the installations, use the `-y` flag. To source the base ROS installation in the `~/.bashrc` without prompting, use the `--source-ros` flag. To not source it without prompting, use the `--no-source-ros` flag.
+
     If you have run the initial setup script with the `--obk-aliases` flag, then running
     ```
     obk-build
