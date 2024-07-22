@@ -131,7 +131,7 @@ echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
 echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
 # rest of setup commands from docker/docker_setup.sh
-source docker/docker_setup.sh \
+source $OBELISK_ROOT/docker/docker_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
     $([ "$bash_aliases" = true ] && echo "--bash-aliases") \
