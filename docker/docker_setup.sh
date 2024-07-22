@@ -15,6 +15,10 @@ for arg in "$@"; do
             cyclone_perf=true
             shift # Enables cyclone performance optimizations
             ;;
+        --bash-aliases)
+            bash_aliases=true
+            shift # Ensures the ~/.bash_aliases file is created and sourced in ~/.bashrc
+            ;;
         --obk-aliases)
             obk_aliases=true
             shift # Adds obelisk aliases to the ~/.bash_aliases file
