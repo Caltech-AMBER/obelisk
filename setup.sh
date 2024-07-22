@@ -3,6 +3,7 @@
 # script flags
 skip_docker=true
 cyclone_perf=false
+pixi=false
 bash_aliases=false
 obk_aliases=false
 
@@ -11,6 +12,7 @@ for arg in "$@"; do
         --all)
             skip_docker=false
             cyclone_perf=true
+            pixi=true
             bash_aliases=true
             obk_aliases=true
             shift # Allows all system-level changes at once
@@ -23,6 +25,10 @@ for arg in "$@"; do
             cyclone_perf=true
             shift # Enables cyclone performance optimizations
             ;;
+        --pixi)
+            pixi=true
+            shift # Installs pixi
+            ;;
         --bash-aliases)
             bash_aliases=true
             shift # Ensures the ~/.bash_aliases file is created and sourced in ~/.bashrc
@@ -31,10 +37,18 @@ for arg in "$@"; do
             obk_aliases=true
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
+        --help)
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            return
+            ;;
+        -h)
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            return
+            ;;
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--skip-docker]"
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
             exit 1
             ;;
     esac
@@ -136,4 +150,4 @@ echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
 echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
 # rest of setup commands from docker/docker_setup.sh
-source docker/docker_setup.sh $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") $([ "$obk_aliases" = true ] && echo "--obk-aliases")
+source docker/docker_setup.sh $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") $([ "$pixi" = true ] && echo "--pixi") $([ "$obk_aliases" = true ] && echo "--obk-aliases")

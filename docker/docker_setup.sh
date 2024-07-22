@@ -1,11 +1,16 @@
 #!/bin/bash
 
 # script flags
+pixi=false
 cyclone_perf=false
 obk_aliases=false
 
 for arg in "$@"; do
     case $arg in
+        --pixi)
+            pixi=true
+            shift # Installs pixi
+            ;;
         --cyclone-perf)
             cyclone_perf=true
             shift # Enables cyclone performance optimizations
@@ -17,18 +22,20 @@ for arg in "$@"; do
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--skip-docker]"
+            echo "Usage: $0 [--cyclone-perf] [--obk-aliases]"
             exit 1
             ;;
     esac
 done
 
 # [1] installs pixi
-if ! command -v pixi &> /dev/null; then
-	echo -e "\033[1;32mPixi is not installed. Installing Pixi...\033[0m"
-	curl -fsSL https://pixi.sh/install.sh | bash
-else
-	echo -e "\033[1;33mPixi is already installed. Skipping Pixi installation.\033[0m"
+if [ "$pixi" = true ]; then
+    if ! command -v pixi &> /dev/null; then
+        echo -e "\033[1;32mPixi is not installed. Installing Pixi...\033[0m"
+        curl -fsSL https://pixi.sh/install.sh | bash
+    else
+        echo -e "\033[1;33mPixi is already installed. Skipping Pixi installation.\033[0m"
+    fi
 fi
 
 # [2] enables cyclone performance optimizations
@@ -95,6 +102,11 @@ export RCUTILS_COLORIZED_OUTPUT=1
         PS1="${BLUE}[obk]${RESET} $PS1"
         export PS1
         export HAS_OBK_ACTIVATED=true
+    fi
+
+    # regardless of whether obk has been run, source the obelisk ros packages if install dir exists
+    if [ -d "$OBELISK_ROOT/obelisk_ws/install" ]; then
+        source $OBELISK_ROOT/obelisk_ws/install/setup.bash
     fi
 }
 
