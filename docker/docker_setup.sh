@@ -133,8 +133,11 @@ export RCUTILS_COLORIZED_OUTPUT=1
         export HAS_OBK_ACTIVATED=true
     fi
 
-    # regardless of whether obk has been run, source the obelisk ros packages if install dir exists
+    # regardless of whether obk has been run, source the obelisk ros packages
     if [ -d "$OBELISK_ROOT/obelisk_ws/install" ]; then
+        source $OBELISK_ROOT/obelisk_ws/install/setup.bash
+    else
+        source $OBELISK_ROOT/scripts/build_obelisk.sh
         source $OBELISK_ROOT/obelisk_ws/install/setup.bash
     fi
 }
