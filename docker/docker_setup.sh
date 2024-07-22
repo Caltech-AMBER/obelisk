@@ -60,8 +60,33 @@ else
     echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --no-cyclone-perf flag.\033[0m"
 fi
 
-# [3] adds obelisk aliases to the ~/.bash_aliases file
+# [3] adds ~/.bash_aliases check to ~/.bashrc if it doesn't exist already (does by default)
+if [ "$bash_aliases" = true ]; then
+    block='if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi'
+    if ! grep -q "$block" ~/.bashrc; then
+        echo "$block" >> ~/.bashrc
+        echo -e "\033[1;32mAdded code to source ~/.bash_aliases in ~/.bashrc!\033[0m"
+    fi
+
+    # check whether ~/.bash_aliases exists; if not, touch it
+    if [ ! -f ~/.bash_aliases ]; then
+        touch ~/.bash_aliases
+        echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
+    else
+        echo -e "\033[1;33m~/.bash_aliases file already exists, skipping...\033[0m"
+    fi
+fi
+
+# [4] adds obelisk aliases to the ~/.bash_aliases file
 if [ "$obk_aliases" = true ]; then
+    # check if ~/.bash_aliases exists; if not, return
+    if [ ! -f ~/.bash_aliases ]; then
+        echo -e "\033[1;33m~/.bash_aliases does not exist. Run this command with the --bash-aliases flag!\033[0m"
+        return
+    fi
+
     OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
     obk_aliases=$(cat << 'EOF'
 # >>> obelisk >>>

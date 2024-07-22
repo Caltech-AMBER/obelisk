@@ -116,26 +116,7 @@ else
     fi
 fi
 
-# [2] adds ~/.bash_aliases check to ~/.bashrc if it doesn't exist already (does by default)
-if [ "$bash_aliases" = true ]; then
-    block='if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi'
-    if ! grep -q "$block" ~/.bashrc; then
-        echo "$block" >> ~/.bashrc
-        echo -e "\033[1;32mAdded code to source ~/.bash_aliases in ~/.bashrc!\033[0m"
-    fi
-
-    # check whether ~/.bash_aliases exists; if not, touch it
-    if [ ! -f ~/.bash_aliases ]; then
-        touch ~/.bash_aliases
-        echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
-    else
-        echo -e "\033[1;33m~/.bash_aliases file already exists, skipping...\033[0m"
-    fi
-fi
-
-# [3] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
+# [2] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
 # create or delete and replace the contents of $OBELISK_ROOT/docker/.env
 export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 env_file="$OBELISK_ROOT/docker/.env"
@@ -150,4 +131,8 @@ echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
 echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
 # rest of setup commands from docker/docker_setup.sh
-source docker/docker_setup.sh $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") $([ "$pixi" = true ] && echo "--pixi") $([ "$obk_aliases" = true ] && echo "--obk-aliases")
+source docker/docker_setup.sh \
+    $([ "$pixi" = true ] && echo "--pixi") \
+    $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
+    $([ "$bash_aliases" = true ] && echo "--bash-aliases") \
+    $([ "$obk_aliases" = true ] && echo "--obk-aliases")

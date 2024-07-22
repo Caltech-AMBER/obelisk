@@ -44,7 +44,7 @@ USER ${UID}
 
 # run docker setup script in Dockerfile
 COPY docker_setup.sh /tmp/docker_setup.sh
-RUN source /tmp/docker_setup.sh --cyclone-perf && \
+RUN source /tmp/docker_setup.sh --pixi --cyclone-perf && \
     sudo rm /tmp/docker_setup.sh
 
 WORKDIR /home/${USER}
