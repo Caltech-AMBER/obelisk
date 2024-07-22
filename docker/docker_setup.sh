@@ -142,8 +142,9 @@ export RCUTILS_COLORIZED_OUTPUT=1
     fi
 }
 
-# convenience alias for building obelisk within a pixi env
+# convenience aliases for building/cleaning obelisk source packages
 alias obk-build='source $OBELISK_ROOT/scripts/build_obelisk.sh'
+alias obk-clean='bash $OBELISK_ROOT/scripts/clean_obelisk.sh'
 
 # convenience aliases for lifecycle commands
 function obk-lifecycle {
