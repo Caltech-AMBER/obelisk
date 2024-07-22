@@ -65,7 +65,8 @@ else
         ros-humble-ros-base \
         ros-dev-tools \
         ros-humble-rosidl-generator-cpp \
-        ros-humble-rosidl-default-generators
+        ros-humble-rosidl-default-generators \
+        ros-humble-rmw-cyclonedds-cpp
     source /opt/ros/humble/setup.bash
 
     # parse the user's response to adding the ROS source command to ~/.bashrc - specifying no source takes precedence
