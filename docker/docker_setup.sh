@@ -133,6 +133,15 @@ export RCUTILS_COLORIZED_OUTPUT=1
         export HAS_OBK_ACTIVATED=true
     fi
 
+    # checks if current shell is a conda or pixi shell - if not, source base ros if /opt/ros/humble/setup.bash exists
+    # in the case of conda, it will source base ros if $CONDA_DEFAULT_ENV is "base" still
+    if [[ -z "$CONDA_DEFAULT_ENV" || "$CONDA_DEFAULT_ENV" == "base" ]] && [[ -z "$PIXI_ENVIRONMENT_NAME" ]]; then
+        if [ -f "/opt/ros/humble/setup.bash" ]; then
+            echo -e "\033[1;32mSourcing base ROS2 Humble installation...\033[0m"
+            source /opt/ros/humble/setup.bash
+        fi
+    fi
+
     # regardless of whether obk has been run, source the obelisk ros packages
     if [ -d "$OBELISK_ROOT/obelisk_ws/install" ]; then
         source $OBELISK_ROOT/obelisk_ws/install/setup.bash
@@ -142,8 +151,9 @@ export RCUTILS_COLORIZED_OUTPUT=1
     fi
 }
 
-# convenience alias for building obelisk within a pixi env
+# convenience aliases for building/cleaning obelisk source packages
 alias obk-build='source $OBELISK_ROOT/scripts/build_obelisk.sh'
+alias obk-clean='bash $OBELISK_ROOT/scripts/clean_obelisk.sh'
 
 # convenience aliases for lifecycle commands
 function obk-lifecycle {
