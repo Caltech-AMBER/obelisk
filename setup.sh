@@ -1,53 +1,60 @@
 #!/bin/bash
 
 # script flags
-skip_docker=false
-dev_sys_deps=false
-cyclone_perf=true
+skip_docker=true
+cyclone_perf=false
+pixi=false
+bash_aliases=false
+obk_aliases=false
 
 for arg in "$@"; do
-  case $arg in
-    --skip-docker)
-      skip_docker=true
-      shift # Remove --skip-docker from processing
-      ;;
-    --dev-sys-deps)
-      dev_sys_deps=true
-      shift # Installs development system dependencies
-      ;;
-    --no-cyclone-perf)
-      cyclone_perf=false
-      shift # Disables cyclone performance optimizations
-      ;;
-    *)
-      # Unknown option
-      echo "Unknown option: $arg"
-      echo "Usage: $0 [--skip-docker]"
-      exit 1
-      ;;
-  esac
+    case $arg in
+        --all)
+            skip_docker=false
+            cyclone_perf=true
+            pixi=true
+            bash_aliases=true
+            obk_aliases=true
+            shift # Allows all system-level changes at once
+            ;;
+        --no-skip-docker)
+            skip_docker=false
+            shift # Enables Docker and nvidia-container-toolkit installation
+            ;;
+        --cyclone-perf)
+            cyclone_perf=true
+            shift # Enables cyclone performance optimizations
+            ;;
+        --pixi)
+            pixi=true
+            shift # Installs pixi
+            ;;
+        --bash-aliases)
+            bash_aliases=true
+            shift # Ensures the ~/.bash_aliases file is created and sourced in ~/.bashrc
+            ;;
+        --obk-aliases)
+            obk_aliases=true
+            shift # Adds obelisk aliases to the ~/.bash_aliases file
+            ;;
+        --help)
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            return
+            ;;
+        -h)
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            return
+            ;;
+        *)
+            # Unknown option
+            echo "Unknown option: $arg"
+            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            exit 1
+            ;;
+    esac
 done
 
-# basic dependencies
-if [ "$dev_sys_deps" = true ]; then
-    echo -e "\033[1;32mInstalling development system dependencies...\033[0m"
-    sudo apt-get install -y \
-        curl \
-        nano \
-        vim \
-        git \
-        python3-dev \
-        python-is-python3 \
-        python3-pip \
-        python3-argcomplete \
-        libyaml-dev \
-        mesa-common-dev \
-        locales
-else
-    echo -e "\033[1;32mNot installing development system dependencies. To do so, pass the --dev-sys-deps flag.\033[0m"
-fi
-
-# check if skip-docker
+# [1] installs docker and nvidia-container-toolkit
 if [ "$skip_docker" = true ]; then
     echo -e "\033[1;33mSkipping Docker and nvidia-container-toolkit installation.\033[0m"
 else
@@ -109,41 +116,23 @@ else
     fi
 fi
 
-# set OBELISK_ROOT to the directory where dev_setup.sh is located if it doesn't exist already
-if [ -z "$OBELISK_ROOT" ]; then
-	export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-	echo "export OBELISK_ROOT=$OBELISK_ROOT" >> ~/.bashrc
-	echo -e "\033[1;32mOBELISK_ROOT is now set to $OBELISK_ROOT!\033[0m"
-else
-	echo -e "\033[1;33mOBELISK_ROOT is already set to $OBELISK_ROOT, skipping...\033[0m"
+# [2] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
+# create or delete and replace the contents of $OBELISK_ROOT/docker/.env
+export OBELISK_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+env_file="$OBELISK_ROOT/docker/.env"
+if [ -f $env_file ]; then
+    rm $env_file
 fi
-
-# create a .env file under the docker directory with the USER, UID, and GID of the local system
-if [ ! -f "$OBELISK_ROOT/docker/.env" ]; then
-	echo "USER=$USER" > $OBELISK_ROOT/docker/.env
-	echo "UID=$(id -u)" >> $OBELISK_ROOT/docker/.env
-	echo "GID=$(id -g)" >> $OBELISK_ROOT/docker/.env
-	echo "OBELISK_ROOT=$OBELISK_ROOT" >> $OBELISK_ROOT/docker/.env
-	echo -e "\033[1;32m.env file created under $OBELISK_ROOT/docker!\033[0m"
-else
-	echo -e "\033[1;33m.env file already exists under $OBELISK_ROOT/docker, skipping...\033[0m"
-fi
-
-# enable cyclone performance optimizations
-# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
-if [ "$cyclone_perf" = true ]; then
-    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
-else
-    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --no-cyclone-perf flag.\033[0m"
-fi
+touch $env_file
+echo "USER=$USER" > $env_file
+echo "UID=$(id -u)" >> $env_file
+echo "GID=$(id -g)" >> $env_file
+echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
+echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
 # rest of setup commands from docker/docker_setup.sh
-source docker/docker_setup.sh
+source $OBELISK_ROOT/docker/docker_setup.sh \
+    $([ "$pixi" = true ] && echo "--pixi") \
+    $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
+    $([ "$bash_aliases" = true ] && echo "--bash-aliases") \
+    $([ "$obk_aliases" = true ] && echo "--obk-aliases")

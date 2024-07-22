@@ -12,7 +12,6 @@ services:
     network_mode: host
     ipc: host
     environment:
-      NVIDIA_DRIVER_CAPABILITIES: all
       DISPLAY: $DISPLAY
       USER: $USER
       UID: $UID
@@ -29,19 +28,9 @@ services:
       - $HOME/.Xauthority:$HOME/.Xauthority:rw
       - $HOME/.bashrc:$HOME/.bashrc
       - $HOME/.bash_aliases:$HOME/.bash_aliases
-      - $HOME/.gitconfig:$HOME/.gitconfig
-      - $HOME/.ssh:$HOME/.ssh
     ports:
       - 7007:7007
     privileged: true
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
     working_dir: $OBELISK_ROOT
     stdin_open: true
     tty: true

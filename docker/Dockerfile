@@ -13,22 +13,16 @@ ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
 ENV OBELISK_ROOT=$OBELISK_ROOT
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
 # set timezone
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# basic dependencies from docker_setup.sh (up until sudo and below)
+# basic dependencies that are not handled by pixi
 RUN apt-get update && apt-get install -y \
     curl \
-    nano \
-    vim \
     git \
-    python3-dev \
-    python-is-python3 \
-    python3-pip \
-    python3-argcomplete \
-    libyaml-dev \
     mesa-common-dev \
     locales \
     sudo && \
@@ -50,10 +44,7 @@ USER ${UID}
 
 # run docker setup script in Dockerfile
 COPY docker_setup.sh /tmp/docker_setup.sh
-RUN source /tmp/docker_setup.sh --skip-docker && \
+RUN source /tmp/docker_setup.sh --pixi --cyclone-perf && \
     sudo rm /tmp/docker_setup.sh
 
-# add local user binary folder to PATH variable
-ENV PATH="${PATH}:/home/${USER}/.local/bin"
-ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}
