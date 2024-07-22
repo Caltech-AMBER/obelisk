@@ -30,7 +30,7 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Set Up Development Environment
         run: |
-          source dev_setup.sh
+          source setup.sh
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build ROS2 Messages
         run: |
