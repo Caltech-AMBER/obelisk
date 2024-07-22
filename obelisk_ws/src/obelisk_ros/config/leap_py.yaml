@@ -47,14 +47,14 @@ onboard:
           callback_group: None
   # sensing:
   robot:
-    # === simulation ===
-    # - is_simulated: False
-    #   pkg: obelisk_leap_py
-    #   executable: obelisk_leap_hand
     # === hardware ===
-    - is_simulated: True
-      pkg: obelisk_sim_py
-      executable: obelisk_mujoco_robot
+    - is_simulated: False
+      pkg: obelisk_leap_py
+      executable: obelisk_leap_hand
+    # === simulation ===
+    # - is_simulated: True
+    #   pkg: obelisk_sim_py
+    #   executable: obelisk_mujoco_robot
     # ==================
       # callback_groups:
       publishers:

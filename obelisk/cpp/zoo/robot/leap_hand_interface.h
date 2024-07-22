@@ -38,16 +38,28 @@ namespace obelisk {
             } else {
                 std::cerr << "Failed to open port\n";
             }
+
             if (port_handler_->setBaudRate(BAUDRATE)) {
                 std::cout << "Set baud rate to" << BAUDRATE << "\n";
             } else {
                 std::cerr << "Failed to set baud rate\n";
             }
+
+            const int TORQUE_ADDR       = 64;
+            const int TORQUE_ENABLE_VAL = 1;
+            const int KP_ADDR           = 84;
+            const int KI_ADDR           = 82;
+            const int KD_ADDR           = 80;
+            const int KP_VAL            = 500;
+            const int KI_VAL            = 10;
+            const int KD_VAL            = 50;
+
             for (int i = 0; i < N_MOTORS; i++) {
-                int err = packet_handler_->write1ByteTxRx(port_handler_, i, 64, 1); // Enable torque
-                err |= packet_handler_->write2ByteTxRx(port_handler_, i, 84, 500);  // kP
-                err |= packet_handler_->write2ByteTxRx(port_handler_, i, 82, 10);   // kI
-                err |= packet_handler_->write2ByteTxRx(port_handler_, i, 80, 50);   // kD
+                int err =
+                    packet_handler_->write1ByteTxRx(port_handler_, i, TORQUE_ADDR, TORQUE_ENABLE_VAL); // Enable torque
+                err |= packet_handler_->write2ByteTxRx(port_handler_, i, KP_ADDR, KP_VAL);             // kP
+                err |= packet_handler_->write2ByteTxRx(port_handler_, i, KI_ADDR, KI_VAL);             // kI
+                err |= packet_handler_->write2ByteTxRx(port_handler_, i, KD_ADDR, KD_VAL);             // kD
                 if (err != 0) {
                     std::cerr << "Failed to initialize motor " << i << "\n";
                 }

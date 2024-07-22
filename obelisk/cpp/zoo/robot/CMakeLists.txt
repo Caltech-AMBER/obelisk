@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(dynamixel_interface LANGUAGES CXX)
 
 message(STATUS "Configuring Dynamixel Interface")
