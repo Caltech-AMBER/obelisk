@@ -18,6 +18,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/JointEncoders.msg"
   "msg/TrueSimState.msg"
   "msg/ObkImage.msg"
+  "msg/ObkImu.msg"
+  "msg/ObkFramePose.msg"
   DEPENDENCIES
   std_msgs
   obelisk_std_msgs

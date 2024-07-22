@@ -1,2 +1,6 @@
 string MESSAGE_NAME="JointEncoders"
-float64[] y
+
+builtin_interfaces/Time stamp
+
+float64[] joint_pos
+float64[] joint_vel
