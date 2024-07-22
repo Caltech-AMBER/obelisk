@@ -33,15 +33,7 @@ numpy = ">=1.26"
 obelisk_py = { path="./obelisk/python", editable=true }
 
 
-# TODO(ahl): once obelisk is stable, check if cuda deps are needed
 # cuda
-[feature.cuda118]
-channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
-system-requirements = {cuda="11.8.0"}
-
-[feature.cuda118.dependencies]
-cuda = { version="*", channel="nvidia/label/cuda-11.8.0" }
-
 [feature.cuda121]
 channels = ["nvidia", "nvidia/label/cuda-12.1.0"]
 system-requirements = {cuda="12.1.0"}
