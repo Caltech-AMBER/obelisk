@@ -17,7 +17,7 @@ FetchContent_Declare(
   SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
 )
 
-# Lets us Get Obelisk::Core and Obelisk::Zoo
+# Lets us get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
 include_directories("$ENV{OBELISK_ROOT}/.pixi/envs/dev/include/dynamixel_sdk")
