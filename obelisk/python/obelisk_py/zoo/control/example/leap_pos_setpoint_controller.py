@@ -16,7 +16,7 @@ class LeapPositionSetpointController(ObeliskController):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
-        self.x_hat = None
+        self.joint_pos = None
         return TransitionCallbackReturn.SUCCESS
 
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
@@ -35,7 +35,9 @@ class LeapPositionSetpointController(ObeliskController):
         """
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u = [(np.sin(self.t * 3) / 5) for _ in range(16)]  # example state-independent input
+        position_setpoint_msg.u_mujoco = [
+            (np.sin(self.t * 3) / 5) for _ in range(16)
+        ]  # example state-independent input
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

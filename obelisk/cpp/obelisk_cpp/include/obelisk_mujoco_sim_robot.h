@@ -130,7 +130,7 @@ namespace obelisk {
          * We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
          * field of a mujoco model. YOU MUST CHECK THIS YOURSELF!
          */
-        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u); }
+        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u_mujoco); }
 
         // -----------------------------------------//
         // ----------- Simulation Entry ----------- //
@@ -411,7 +411,7 @@ namespace obelisk {
 
                 std::string sensor_type;
                 try {
-                    sensor_type = setting_map.at("sensor_type");
+                    sensor_type = setting_map.at("msg_type");
                 } catch (const std::exception& e) {
                     throw std::runtime_error("No sensor type provided for a sensor!");
                 }
@@ -507,6 +507,20 @@ namespace obelisk {
                             const std::vector<std::string>& mj_sensor_types,
                             std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>> publisher) {
             if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkJointEncoders>::value) {
+                // Check that joints with encoders are only hinge or slide.
+                for (size_t i = 0; i < sensor_names.size(); i++) {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                    if (sensor_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                    }
+                    int joint_id   = this->model_->sensor_objid[sensor_id];
+                    int joint_type = this->model_->jnt_type[joint_id];
+                    if (joint_type != mjJNT_HINGE && joint_type != mjJNT_SLIDE) {
+                        throw std::runtime_error("Joint encoder sensor attached to a non-hinge or non-slide joint!");
+                    }
+                }
+
                 // --------------------------------------------- //
                 // ---------- Joint encoder call back ---------- //
                 // --------------------------------------------- //

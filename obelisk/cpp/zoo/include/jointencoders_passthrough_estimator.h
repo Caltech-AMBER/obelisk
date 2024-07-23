@@ -22,7 +22,6 @@ class JointEncodersPassthroughEstimator
     obelisk_estimator_msgs::msg::EstimatedState ComputeStateEstimate() override {
         obelisk_estimator_msgs::msg::EstimatedState msg;
 
-        msg.x_hat          = joint_encoders_;
         msg.q_joints       = joint_encoders_;
         msg.joint_names    = {"joint1"};
         msg.base_link_name = "link0";

@@ -177,7 +177,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                 assert "topic" in sensor_setting_dict and isinstance(sensor_setting_dict["topic"], str)
                 assert "dt" in sensor_setting_dict and isinstance(sensor_setting_dict["dt"], str)
-                assert "sensor_type" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_type"], str)
+                assert "msg_type" in sensor_setting_dict and isinstance(sensor_setting_dict["msg_type"], str)
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
                 topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
