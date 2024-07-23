@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
-#include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
+#include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
 #include "obelisk_sim_robot.h"
 
 // TODO: Fix issue related to ENV XDG_RUNTIME_DIR=/run/user/1000  # Replace 1000 with your user ID
@@ -422,13 +422,11 @@ namespace obelisk {
                 const std::string type_delim = "$";
                 try {
                     std::string names = setting_map.at("sensor_names");
-                    RCLCPP_WARN_STREAM(this->get_logger(), "names: " << names);
                     while (!names.empty()) {
                         size_t plus_idx = names.find(name_delim);
                         if (plus_idx == std::string::npos) {
                             plus_idx = names.length();
                         }
-                        RCLCPP_WARN_STREAM(this->get_logger(), "plus_idx: " << plus_idx);
                         // now determine sensor type
                         size_t dollar_idx = names.find(type_delim);
                         if (dollar_idx == std::string::npos) {
@@ -437,7 +435,6 @@ namespace obelisk {
                         sensor_names.emplace_back(names.substr(0, dollar_idx));
                         mj_sensor_types.emplace_back(names.substr(dollar_idx + type_delim.length(),
                                                                   plus_idx - dollar_idx - type_delim.length()));
-                        RCLCPP_WARN_STREAM(this->get_logger(), mj_sensor_types.back());
                         names.erase(0, plus_idx + name_delim.length());
                     }
                 } catch (const std::exception& e) {
@@ -447,20 +444,20 @@ namespace obelisk {
                 // Create the timer and publishers with the settings
                 // Make a key
                 const std::string sensor_key = "sensor_group_" + std::to_string(num_sensors_);
-                if (sensor_type == "JointEncoders") {
+                if (sensor_type == obelisk_sensor_msgs::msg::ObkJointEncoders::MESSAGE_NAME) {
                     // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth);
+                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(topic, depth);
                     this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::JointEncoders>>(pub);
+                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>>(pub);
 
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<obelisk_sensor_msgs::msg::JointEncoders>(
+                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkJointEncoders>(
                             sensor_names, mj_sensor_types,
-                            this->template GetPublisher<obelisk_sensor_msgs::msg::JointEncoders>(sensor_key)),
+                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == "ObkImu") {
+                } else if (sensor_type == obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME) {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkImu>(topic, depth);
                     this->publishers_[sensor_key] =
@@ -473,7 +470,7 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == "ObkFramePose") {
+                } else if (sensor_type == obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME) {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkFramePose>(topic, depth);
                     this->publishers_[sensor_key] =
@@ -509,12 +506,12 @@ namespace obelisk {
         CreateTimerCallback(const std::vector<std::string>& sensor_names,
                             const std::vector<std::string>& mj_sensor_types,
                             std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>> publisher) {
-            if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::JointEncoders>::value) {
+            if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkJointEncoders>::value) {
                 // --------------------------------------------- //
                 // ---------- Joint encoder call back ---------- //
                 // --------------------------------------------- //
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
-                    obelisk_sensor_msgs::msg::JointEncoders msg;
+                    obelisk_sensor_msgs::msg::ObkJointEncoders msg;
 
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     for (size_t i = 0; i < sensor_names.size(); i++) {

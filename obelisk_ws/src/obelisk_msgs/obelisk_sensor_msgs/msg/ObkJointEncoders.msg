@@ -1,4 +1,4 @@
-string MESSAGE_NAME="JointEncoders"
+string MESSAGE_NAME="ObkJointEncoders"
 
 builtin_interfaces/Time stamp
 

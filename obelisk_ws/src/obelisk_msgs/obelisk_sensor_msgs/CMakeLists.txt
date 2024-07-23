@@ -16,7 +16,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(obelisk_std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/JointEncoders.msg"
+  "msg/ObkJointEncoders.msg"
   "msg/TrueSimState.msg"
   "msg/ObkImage.msg"
   "msg/ObkImu.msg"

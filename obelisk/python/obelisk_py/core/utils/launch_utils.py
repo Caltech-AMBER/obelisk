@@ -91,7 +91,6 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
     sim_settings_dict = {}
     for sim_settings in node_settings["sim"]:
         # convert the dictionary of simulation settings to a string, excluding 'ros_parameter'
-        print(sim_settings)
         sim_settings_strs = []
         for k, v in sim_settings.items():
             if k != "ros_parameter":
@@ -116,7 +115,6 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
         # replace commas between matching curly braces with "|"
         def _replace_commas_between_curly_braces(match: re.Match) -> str:
-            print(match)
             return match.group(0).replace(",", "|")
 
         sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
@@ -136,8 +134,6 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
         # add the formatted string to the dictionary with the ROS parameter as the key
         sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
-
-        print(sim_settings_str)
 
     return sim_settings_dict
 

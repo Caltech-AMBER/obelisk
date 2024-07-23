@@ -18,7 +18,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         std::filesystem::path file_path(obk_root);
         file_path += file_string;
 
-        RCLCPP_WARN_STREAM(this->get_logger(), "File path: " << file_path);
+        RCLCPP_INFO_STREAM(this->get_logger(), "File path: " << file_path);
 
         if (!std::filesystem::exists(file_path)) {
             throw std::runtime_error("file path provided is invalid!");
