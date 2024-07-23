@@ -91,3 +91,9 @@ onboard:
             - tip_acc_sensor: accelerometer
               tip_gyro_sensor: gyro
               tip_frame_sensor: framequat
+          - topic: /obelisk/dummy/framepose
+            dt: 0.002
+            sensor_type: ObkFramePose
+            sensor_names:
+            - tip_pos_sensor: framepos
+            - tip_orientation_sensor: framequat
