@@ -57,6 +57,7 @@ ignore = [
     "D213",  # multi-line docstring summary at second line
     "PLR0913",  # Too many arguments in function definition
     "PLR0915",  # Too many statements
+    "PLR0912",  # Too many branches
 ]
 
 [lint.isort]

@@ -147,6 +147,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     # get the sensor id and address
                     sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
                     sensor_adr = self.mj_model.sensor_adr[sensor_id]
+                    if sensor_id == -1:
+                        self.get_logger().error(f"Sensor {sensor_name} not found!")
+                        raise ValueError(f"Sensor {sensor_name} not found!")
 
                     # [NOTE] We only use the frame associated with the accelerometer. If the gyro or magnetometer is at
                     # a different frame, then it needs to be its own sensor. Be sure the gyro, magnetometer, and
@@ -195,7 +198,95 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 pub_sensor.publish(msg)
 
         elif msg_type == osm.ObkFramePose:
-            raise NotImplementedError
+
+            def timer_callback() -> None:
+                """Timer callback for ObkFramePose."""
+                msg = osm.ObkFramePose()
+
+                has_framepos = False
+                has_framequat = False
+
+                for sensor_name, obk_sensor_field in zip(mj_sensor_names, obk_sensor_fields):
+                    # get the sensor id and address
+                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+                    sensor_adr = self.mj_model.sensor_adr[sensor_id]
+                    if sensor_id == -1:
+                        self.get_logger().error(f"Sensor {sensor_name} not found!")
+                        raise ValueError(f"Sensor {sensor_name} not found!")
+
+                    if obk_sensor_field == "framepos":
+                        if not has_framepos:
+                            msg.position.x = self.mj_data.sensordata[sensor_adr + 0]
+                            msg.position.y = self.mj_data.sensordata[sensor_adr + 1]
+                            msg.position.z = self.mj_data.sensordata[sensor_adr + 2]
+
+                            # framepos sensors can be mounted onto different mujoco objects (the frame we measure)
+                            obj_type = self.mj_model.sensor_objtype[sensor_id]
+                            obj_id = self.mj_model.sensor_objid[sensor_id]
+                            if obj_type == mujoco.mjtObj.mjOBJ_SITE:
+                                msg.frame_name = self.mj_model.site(obj_id).name
+                                msg.header.frame_id = self.mj_model.site(obj_id).name
+                            elif obj_type == mujoco.mjtObj.mjOBJ_BODY:
+                                msg.frame_name = self.mj_model.body(obj_id).name
+                            elif obj_type == mujoco.mjtObj.mjOBJ_GEOM:
+                                msg.frame_name = self.mj_model.geom(obj_id).name
+                            elif obj_type == mujoco.mjtObj.mjOBJ_CAMERA:
+                                msg.frame_name = self.mj_model.cam(obj_id).name
+                            else:
+                                err_msg = (
+                                    f"Framepos sensor {sensor_name} is not associated with a supported Mujoco "
+                                    " object type! Current object type: {obj_type}"
+                                )
+                                self.get_logger().error(err_msg)
+                                raise ValueError(err_msg)
+
+                            # now we also populate the reference frame of the sensor
+                            if self.mj_model.sensor_refid[sensor_id] == -1:
+                                msg.header.frame_id = "world"  # TODO: consider not hardcoding this
+                            else:
+                                ref_type = self.mj_model.sensor_reftype[sensor_id]
+                                ref_id = self.mj_model.sensor_refid[sensor_id]
+                                if ref_type == mujoco.mjtObj.mjOBJ_SITE:
+                                    msg.header.frame_id = self.mj_model.site(ref_id).name
+                                elif ref_type == mujoco.mjtObj.mjOBJ_BODY:
+                                    msg.header.frame_id = self.mj_model.body(ref_id).name
+                                elif ref_type == mujoco.mjtObj.mjOBJ_GEOM:
+                                    msg.header.frame_id = self.mj_model.geom(ref_id).name
+                                elif ref_type == mujoco.mjtObj.mjOBJ_CAMERA:
+                                    msg.header.frame_id = self.mj_model.cam(ref_id).name
+                                else:
+                                    err_msg = (
+                                        f"Framepos sensor {sensor_name} has an unsupported reference object type! "
+                                        f"Current object type: {ref_type}"
+                                    )
+                                    self.get_logger().error(err_msg)
+                                    raise ValueError(err_msg)
+
+                            has_framepos = True
+
+                        else:
+                            self.get_logger().error(f"Multiple frameposes detected! Ignoring {sensor_name}.")
+
+                    elif obk_sensor_field == "framequat":
+                        if not has_framequat:
+                            msg.orientation.x = self.mj_data.sensordata[sensor_adr + 0]
+                            msg.orientation.y = self.mj_data.sensordata[sensor_adr + 1]
+                            msg.orientation.z = self.mj_data.sensordata[sensor_adr + 2]
+                            msg.orientation.w = self.mj_data.sensordata[sensor_adr + 3]
+                            has_framequat = True
+                        else:
+                            self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
+
+                    else:
+                        self.get_logger().error(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+                        raise ValueError(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+
+                # timestamp
+                sec, nsec = self._get_time_from_sim()
+                msg.header.stamp.sec = sec
+                msg.header.stamp.nanosec = nsec
+
+                pub_sensor.publish(msg)
 
         else:
             raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
