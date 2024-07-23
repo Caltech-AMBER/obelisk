@@ -53,8 +53,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             sec: The seconds field of the time.
             nsec: The nanoseconds field of the time.
         """
-        sec = int(np.floor(self.mj_data.time))
-        nsec = int((self.mj_data.time - sec) * 1e9)
+        sec = int(np.floor(self.shared_time.value))
+        nsec = int((self.shared_time.value - sec) * 1e9)
         return sec, nsec
 
     def _create_timer_callback_from_msg_type(
@@ -80,55 +80,51 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             The timer callback function.
         """
         if msg_type == osm.ObkJointEncoders:
-
-            def _jnt_name_from_sensor_name(sensor_name: str) -> str:
-                """Helper function to get the joint name from the sensor name."""
-                # getting name
+            # verify that all joints are hinge or slider joints
+            for sensor_name in mj_sensor_names:
                 sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+
                 joint_id = self.mj_model.sensor_objid[sensor_id]
                 joint_name = self.mj_model.joint(joint_id).name
-
-                # verifying the joint is a revolute or prismatic joint
                 joint_type = self.mj_model.jnt_type[joint_id]
+
                 if joint_type not in [mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE]:
                     self.get_logger().error(f"Joint {joint_name} should be a hinge or slide joint!")
                     raise ValueError(f"Joint {joint_name} should be a hinge or slide joint!")
 
-                return joint_name
-
-            # getting the names associated with the sensors and the joints
-            mj_joint_pos_names = []
-            mj_joint_vel_names = []
-            joint_names = []
-
-            for mj_sensor_name, obk_sensor_field in zip(mj_sensor_names, obk_sensor_fields):
-                assert self.mj_model.sensor(mj_sensor_name) is not None
-                if obk_sensor_field == "jointpos":
-                    mj_joint_pos_names.append(mj_sensor_name)
-
-                    # [NOTE] joint names are only associated with the joint_pos field! If the joint_vels are in a
-                    # different order, then they will not be associated correctly.
-                    joint_names.append(_jnt_name_from_sensor_name(mj_sensor_name))
-                elif obk_sensor_field == "jointvel":
-                    mj_joint_vel_names.append(mj_sensor_name)
-                else:
-                    self.get_logger().error(f"Unknown sensor field {obk_sensor_field} for message type {msg_type}!")
-                    raise ValueError(f"Unknown sensor field {obk_sensor_field} for message type {msg_type}!")
-
             def timer_callback() -> None:
                 """Timer callback for ObkJointEncoders."""
                 msg = osm.ObkJointEncoders()
-                msg.joint_names = joint_names  # once we know this, it doesn't change
-
-                # the actual joint positions and velocities are updated every time the timer callback is called
                 joint_pos = []
                 joint_vel = []
-                for sensor_name in mj_joint_pos_names:
-                    joint_pos.append(self.mj_data.sensor(sensor_name).data.item())
-                for sensor_name in mj_joint_vel_names:
-                    joint_vel.append(self.mj_data.sensor(sensor_name).data.item())
+                joint_names = []
+
+                for sensor_name, obk_sensor_field in zip(mj_sensor_names, obk_sensor_fields):
+                    # get the sensor id and address
+                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+                    sensor_adr = self.mj_model.sensor_adr[sensor_id]
+                    if sensor_id == -1:
+                        self.get_logger().error(f"Sensor {sensor_name} not found!")
+                        raise ValueError(f"Sensor {sensor_name} not found!")
+
+                    if obk_sensor_field == "joint_pos":
+                        joint_pos.append(self.shared_sensordata[sensor_adr])
+
+                        # getting joint name from the joint position sensor
+                        joint_id = self.mj_model.sensor_objid[sensor_id]
+                        joint_names.append(self.mj_model.joint(joint_id).name)
+
+                    elif obk_sensor_field == "joint_vel":
+                        joint_vel.append(self.shared_sensordata[sensor_adr])
+
+                    else:
+                        self.get_logger().error(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+                        raise ValueError(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+
+                # filling out fields
                 msg.joint_pos = joint_pos
                 msg.joint_vel = joint_vel
+                msg.joint_names = joint_names
 
                 # timestamp
                 sec, nsec = self._get_time_from_sim()
@@ -156,9 +152,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     # accelerometer are at the same frame.
                     if obk_sensor_field == "accelerometer":
                         if not has_acc:
-                            msg.linear_acceleration.x = self.mj_data.sensordata[sensor_adr + 0]
-                            msg.linear_acceleration.y = self.mj_data.sensordata[sensor_adr + 1]
-                            msg.linear_acceleration.z = self.mj_data.sensordata[sensor_adr + 2]
+                            msg.linear_acceleration.x = self.shared_sensordata[sensor_adr + 0]
+                            msg.linear_acceleration.y = self.shared_sensordata[sensor_adr + 1]
+                            msg.linear_acceleration.z = self.shared_sensordata[sensor_adr + 2]
 
                             # accelerometers should always be mounted to sites
                             site_id = self.mj_model.sensor_objid[sensor_id]
@@ -169,19 +165,19 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "gyro":
                         if not has_gyro:
-                            msg.angular_velocity.x = self.mj_data.sensordata[sensor_adr + 0]
-                            msg.angular_velocity.y = self.mj_data.sensordata[sensor_adr + 1]
-                            msg.angular_velocity.z = self.mj_data.sensordata[sensor_adr + 2]
+                            msg.angular_velocity.x = self.shared_sensordata[sensor_adr + 0]
+                            msg.angular_velocity.y = self.shared_sensordata[sensor_adr + 1]
+                            msg.angular_velocity.z = self.shared_sensordata[sensor_adr + 2]
                             has_gyro = True
                         else:
                             self.get_logger().error(f"Multiple gyroscopes detected! Ignoring {sensor_name}.")
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.x = self.mj_data.sensordata[sensor_adr + 0]
-                            msg.orientation.y = self.mj_data.sensordata[sensor_adr + 1]
-                            msg.orientation.z = self.mj_data.sensordata[sensor_adr + 2]
-                            msg.orientation.w = self.mj_data.sensordata[sensor_adr + 3]
+                            msg.orientation.x = self.shared_sensordata[sensor_adr + 0]
+                            msg.orientation.y = self.shared_sensordata[sensor_adr + 1]
+                            msg.orientation.z = self.shared_sensordata[sensor_adr + 2]
+                            msg.orientation.w = self.shared_sensordata[sensor_adr + 3]
                             has_framequat = True
                         else:
                             self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
@@ -216,9 +212,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     if obk_sensor_field == "framepos":
                         if not has_framepos:
-                            msg.position.x = self.mj_data.sensordata[sensor_adr + 0]
-                            msg.position.y = self.mj_data.sensordata[sensor_adr + 1]
-                            msg.position.z = self.mj_data.sensordata[sensor_adr + 2]
+                            msg.position.x = self.shared_sensordata[sensor_adr + 0]
+                            msg.position.y = self.shared_sensordata[sensor_adr + 1]
+                            msg.position.z = self.shared_sensordata[sensor_adr + 2]
 
                             # framepos sensors can be mounted onto different mujoco objects (the frame we measure)
                             obj_type = self.mj_model.sensor_objtype[sensor_id]
@@ -269,10 +265,10 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.x = self.mj_data.sensordata[sensor_adr + 0]
-                            msg.orientation.y = self.mj_data.sensordata[sensor_adr + 1]
-                            msg.orientation.z = self.mj_data.sensordata[sensor_adr + 2]
-                            msg.orientation.w = self.mj_data.sensordata[sensor_adr + 3]
+                            msg.orientation.x = self.shared_sensordata[sensor_adr + 0]
+                            msg.orientation.y = self.shared_sensordata[sensor_adr + 1]
+                            msg.orientation.z = self.shared_sensordata[sensor_adr + 2]
+                            msg.orientation.w = self.shared_sensordata[sensor_adr + 3]
                             has_framequat = True
                         else:
                             self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
@@ -337,6 +333,11 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         else:
             self.num_steps_per_viz = 5
 
+        # setting up the shared memory variables
+        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u)
+        self.shared_sensordata = multiprocessing.Array(ctypes.c_double, len(self.mj_data.sensordata))
+        self.shared_time = multiprocessing.Value(ctypes.c_double, 0.0)
+
         # set the configuration parameters for sensor fields
         if "sensor_settings" in config_dict:
             sensor_setting_dict = {}
@@ -389,9 +390,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
                 self.obk_timers[f"sensor_group_{i}"] = timer_sensor
 
-        # setting up the shared_ctrl array
-        self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u)
-
         return TransitionCallbackReturn.SUCCESS
 
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
@@ -421,5 +419,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 for _ in range(self.num_steps_per_viz):
                     self.mj_data.ctrl[:] = np.array(self.shared_ctrl)
                     mj_step(self.mj_model, self.mj_data)
+                    if hasattr(self, "lock"):
+                        with self.lock:
+                            self.shared_sensordata[:] = list(self.mj_data.sensordata)
+                            self.shared_time.value = self.mj_data.time
                 viewer.sync()
                 self.t_last.value = t
