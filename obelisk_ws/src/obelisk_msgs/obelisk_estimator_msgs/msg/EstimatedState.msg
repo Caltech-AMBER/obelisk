@@ -10,4 +10,4 @@ string[] joint_names
 
 # Velocities
 float64[] v_base
-float64 v_joints
+float64[] v_joints
