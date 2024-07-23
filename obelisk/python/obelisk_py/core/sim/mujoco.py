@@ -41,8 +41,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             The Obelisk sensor message type associated with the Mujoco sensor type.
         """
         if sensor_type == "jointpos":
-            assert is_in_bound(osm.JointEncoders, ObeliskSensorMsg)
-            return osm.JointEncoders  # type: ignore
+            assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
+            return osm.ObkJointEncoders  # type: ignore
         else:
             raise NotImplementedError(f"Sensor type {sensor_type} not supported! Check your spelling or open a PR.")
 

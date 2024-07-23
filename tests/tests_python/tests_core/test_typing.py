@@ -22,10 +22,10 @@ def test_is_in_bound() -> None:
     """
     assert is_in_bound(ocm.PositionSetpoint, ObeliskControlMsg)
     assert is_in_bound(oem.EstimatedState, ObeliskEstimatorMsg)
-    assert is_in_bound(osm.JointEncoders, ObeliskSensorMsg)
+    assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
     assert is_in_bound(ocm.PositionSetpoint, ObeliskMsg)
     assert is_in_bound(oem.EstimatedState, ObeliskMsg)
-    assert is_in_bound(osm.JointEncoders, ObeliskMsg)
+    assert is_in_bound(osm.ObkJointEncoders, ObeliskMsg)
 
     assert not is_in_bound(str, ObeliskControlMsg)
     assert not is_in_bound(int, ObeliskEstimatorMsg)

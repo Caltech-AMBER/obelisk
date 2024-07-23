@@ -1,7 +1,7 @@
 import math
 
 from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
-from obelisk_sensor_msgs.msg import JointEncoders
+from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 import obelisk_py.zoo.robot.hardware.leap_hand.dxl_motor_helper as dxl
@@ -20,7 +20,7 @@ class ObeliskLeapHand(ObeliskRobot):
         self.register_obk_publisher(
             "pub_sensor_setting",
             key="pub_sensor",
-            msg_type=JointEncoders,
+            msg_type=ObkJointEncoders,
         )
         self.register_obk_timer(
             "timer_sensor_setting",
@@ -54,15 +54,15 @@ class ObeliskLeapHand(ObeliskRobot):
         dxl.BULK_WRITER.txPacket()
         dxl.BULK_WRITER.clearParam()
 
-    def get_state(self) -> JointEncoders:
+    def get_state(self) -> ObkJointEncoders:
         """Read the joint encoders and publish a sensor message."""
-        joint_encoders = JointEncoders()
+        joint_encoders = ObkJointEncoders()
         for i in range(self.N_MOTORS):
             dxl.BULK_READER.addParam(i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION)
         dxl.BULK_READER.txRxPacket()
         for i in range(self.N_MOTORS):
             position = dxl.BULK_READER.getData(i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION)
-            joint_encoders.y.append(self._dxl_pos_to_radians(position))
+            joint_encoders.joint_pos.append(self._dxl_pos_to_radians(position))
         self.obk_publishers["pub_sensor"].publish(joint_encoders)
         return joint_encoders
 
