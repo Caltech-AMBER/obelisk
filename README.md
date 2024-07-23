@@ -64,5 +64,11 @@ obk
 ```
 You should run `obk` in any terminal where you need to run Obelisk. It will set up important environment variables to configure the Obelisk stack while also sourcing the built Obelisk packages in that shell. `obk` also runs `obk-build` if it is detected that there is no `install` directory in the Obelisk workspace, so you can use it to first-time build Obelisk. You only need to run `obk-build` if you are developing and changing Obelisk's source code.
 
+To clean Obelisk directories, run
+```
+obk-clean
+```
+This will delete cached build files associated with Obelisk. If you have tried building the Obelisk source code multiple times or from different environments/local filesystems, it may be corrupted, and cleaning the installation can help fix issues.
+
 ## Building Docs
 In the repository root, to build the docs locally, run `sphinx-build -M html docs/source/ docs/build/`.

@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# removes the build directory of the cpp obelisk project
+rm -rf $OBELISK_ROOT/obelisk/cpp/build
+
+# removes the build/install/log directories of the obelisk_ws
 if [ -z "$PIXI_ENVIRONMENT_NAME" ]; then
     if [ -z "$OBELISK_ROOT" ]; then
         echo -e "\033[1;31mOBELISK_ROOT is not set. Run dev_setup.sh first!\033[0m"
