@@ -4,6 +4,8 @@ onboard:
     - pkg: obelisk_control_py
       executable: example_position_setpoint_controller
       # callback_groups:
+      params:
+        test_param: value_configured_in_yaml
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/dummy/ctrl
