@@ -34,6 +34,6 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         """Compute the state estimate."""
         estimated_state_msg = EstimatedState()
         if self.joint_encoder_values is not None:
-            estimated_state_msg.x_hat = self.joint_encoder_values
+            estimated_state_msg.q_joints = self.joint_encoder_values
             self.obk_publishers["pub_est"].publish(estimated_state_msg)
             return estimated_state_msg
