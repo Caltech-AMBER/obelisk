@@ -1,3 +1,5 @@
+# Obelisk complient message type to hold the current pose of a frame/body.
+
 string MESSAGE_NAME="ObkFramePose"
 
 std_msgs/Header header
