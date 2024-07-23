@@ -161,6 +161,10 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
     parameters_dict = (
         {"callback_group_settings": callback_group_settings} if callback_group_settings is not None else {}
     )
+    if "params_path" in node_settings:
+        parameters_dict["params_path"] = node_settings["params_path"]
+    if "params" in node_settings:
+        parameters_dict.update(node_settings["params"])
     parameters_dict.update(pub_settings_dict)
     parameters_dict.update(sub_settings_dict)
     parameters_dict.update(timer_settings_dict)
@@ -189,10 +193,6 @@ def get_launch_actions_from_node_settings(
         package = node_settings["pkg"]
         executable = node_settings["executable"]
         parameters_dict = get_parameters_dict(node_settings)
-
-        if "params_path" in node_settings:
-            parameters_dict["params_path"] = node_settings["params_path"]
-
         launch_actions = []
         component_node = LifecycleNode(
             namespace="",
