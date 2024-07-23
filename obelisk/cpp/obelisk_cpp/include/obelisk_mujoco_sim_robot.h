@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdarg>
 #include <filesystem>
 
@@ -359,7 +360,7 @@ namespace obelisk {
             while (!mujoco_setup_) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
-            num_sensors_    = 0;
+            num_sensors_ = 0;
 
             callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
@@ -378,7 +379,7 @@ namespace obelisk {
 
                     size_t setting_idx = group.find(val_delim);
                     if (setting_idx == std::string::npos) {
-                        throw std::runtime_error("Invalid sensor setting string!");
+                        // throw std::runtime_error("Invalid sensor setting string!");
                     }
 
                     std::string setting = group.substr(0, setting_idx);
@@ -416,15 +417,27 @@ namespace obelisk {
                 }
 
                 std::vector<std::string> sensor_names;
+                std::vector<std::string> mj_sensor_types;
                 const std::string name_delim = "&";
+                const std::string type_delim = "$";
                 try {
                     std::string names = setting_map.at("sensor_names");
+                    RCLCPP_WARN_STREAM(this->get_logger(), "names: " << names);
                     while (!names.empty()) {
                         size_t plus_idx = names.find(name_delim);
                         if (plus_idx == std::string::npos) {
                             plus_idx = names.length();
                         }
-                        sensor_names.emplace_back(names.substr(0, plus_idx));
+                        RCLCPP_WARN_STREAM(this->get_logger(), "plus_idx: " << plus_idx);
+                        // now determine sensor type
+                        size_t dollar_idx = names.find(type_delim);
+                        if (dollar_idx == std::string::npos) {
+                            dollar_idx = names.length();
+                        }
+                        sensor_names.emplace_back(names.substr(0, dollar_idx));
+                        mj_sensor_types.emplace_back(names.substr(dollar_idx + type_delim.length(),
+                                                                  plus_idx - dollar_idx - type_delim.length()));
+                        RCLCPP_WARN_STREAM(this->get_logger(), mj_sensor_types.back());
                         names.erase(0, plus_idx + name_delim.length());
                     }
                 } catch (const std::exception& e) {
@@ -432,7 +445,7 @@ namespace obelisk {
                 }
 
                 // Create the timer and publishers with the settings
-                if (sensor_type == "jointpos") {
+                if (sensor_type == "JointEncoders") {
                     // Make a key
                     const std::string sensor_key = "sensor_group_" + std::to_string(num_sensors_);
 
@@ -445,7 +458,7 @@ namespace obelisk {
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
                         CreateTimerCallback<obelisk_sensor_msgs::msg::JointEncoders>(
-                            sensor_names,
+                            sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::JointEncoders>(sensor_key)),
                         callback_group_);
 
@@ -462,29 +475,67 @@ namespace obelisk {
         template <typename MessageT>
         std::function<void()>
         CreateTimerCallback(const std::vector<std::string>& sensor_names,
+                            const std::vector<std::string>& mj_sensor_types,
                             std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT>> publisher) {
+            if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::JointEncoders>::value) {
+                // ---------- Joint encoder call back ---------- //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    obelisk_sensor_msgs::msg::JointEncoders msg;
 
-            // TODO: Consider specilializing the lambda function for the specific message (i.e. packing the semantic
-            // message struct)
-            auto cb = [publisher, sensor_names, this]() {
-                obelisk_sensor_msgs::msg::JointEncoders msg;
-                msg.y.resize(sensor_names.size());
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        }
 
-                std::lock_guard<std::mutex> lock(sensor_data_mut_);
-                for (size_t i = 0; i < sensor_names.size(); i++) {
-                    int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
-                    if (sensor_id == -1) {
-                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        // *** Note *** The joint names are in the order provided by the joint_pos sensors.
+                        //  If the velocity sensor ordering does not match the position sensors, then their joint names
+                        //  will not align.
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "jointpos") {
+                            msg.joint_pos.emplace_back(this->data_->sensordata[sensor_addr]);
+                            int joint_id = this->model_->sensor_objid[sensor_id];
+                            msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
+                        } else if (mj_sensor_types.at(i) == "jointvel") {
+                            msg.joint_vel.emplace_back(this->data_->sensordata[sensor_addr]);
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        GetTimeFromSim(msg.stamp.sec, msg.stamp.nanosec);
                     }
+                    publisher->publish(msg);
+                };
 
-                    int sensor_addr = this->model_->sensor_adr[sensor_id];
-                    msg.y.at(i)     = this->data_->sensordata[sensor_addr];
-                }
-                publisher->publish(msg);
-            };
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for the joint encoders!");
+                return cb;
+            } else if (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkImu>::value) {
+                // ---------- IMU call back ---------- //
+                // TODO: Implement
+            } else if (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkFramePose>::value) {
+                // ---------- Frame Pose call back ---------- //
+                // TODO: Implement
+            }
+        }
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created");
-            return cb;
+        /**
+         * @brief Get the time from the simulation in a format that matches the ROS 2 Time message.
+         *
+         * Note that sec is relative to the start of the simulation.
+         *
+         * @warning This function does not apply a Mutex to the data and should only used inside a safe context.
+         *
+         * @param sec the seconds of the simulation
+         * @param nanosec the nanoseconds in the given second
+         */
+        void GetTimeFromSim(int& sec, uint32_t& nanosec) {
+            sec     = std::floor(this->data_->time);
+            nanosec = (this->data_->time - sec) * 1e9;
         }
 
         // -------------------------------------- //
@@ -604,7 +655,7 @@ namespace obelisk {
         double lastx       = 0;
         double lasty       = 0;
 
-        bool pause         = false;
+        bool pause = false;
 
         // Other memeber variables
         int nu_;

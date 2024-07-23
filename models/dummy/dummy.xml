@@ -35,6 +35,7 @@
 
     <!-- Sensors -->
     <sensor>
-        <jointpos name="sensor_joint1" joint="joint1"/>
+        <jointpos name="joint_pos" joint="joint1"/>
+        <jointvel name="joint_vel" joint="joint1"/>
     </sensor>
 </mujoco>

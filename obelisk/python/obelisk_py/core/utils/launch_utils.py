@@ -91,11 +91,19 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
     sim_settings_dict = {}
     for sim_settings in node_settings["sim"]:
         # convert the dictionary of simulation settings to a string, excluding 'ros_parameter'
+        print(sim_settings)
         sim_settings_strs = []
         for k, v in sim_settings.items():
             if k != "ros_parameter":
                 sim_settings_strs.append(f"{k}:{v}")
         sim_settings_str = ",".join(sim_settings_strs).replace(" ", "")
+
+        def _replace_colons_delete_curly_braces(match: re.Match) -> str:
+            dollar_str = match.group(0).replace(":", "$")
+            dollar_str = dollar_str.replace("$", ":", 1)
+            return dollar_str.replace("{", "").replace("}", "")
+
+        sim_settings_str = re.sub(r"'sensor_names':\[[^\]]*\]", _replace_colons_delete_curly_braces, sim_settings_str)
 
         # replace commas in 'sensor_names':[...] with '&', remove brackets
         def _replace_commas_delete_brackets(match: re.Match) -> str:
@@ -108,6 +116,7 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
         # replace commas between matching curly braces with "|"
         def _replace_commas_between_curly_braces(match: re.Match) -> str:
+            print(match)
             return match.group(0).replace(",", "|")
 
         sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
@@ -127,6 +136,8 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
         # add the formatted string to the dictionary with the ROS parameter as the key
         sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
+
+        print(sim_settings_str)
 
     return sim_settings_dict
 

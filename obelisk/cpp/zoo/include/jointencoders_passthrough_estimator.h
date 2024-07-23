@@ -15,7 +15,7 @@ class JointEncodersPassthroughEstimator
     }
 
   protected:
-    void JointEncoderCallback(const obelisk_sensor_msgs::msg::JointEncoders& msg) { joint_encoders_ = msg.y; }
+    void JointEncoderCallback(const obelisk_sensor_msgs::msg::JointEncoders& msg) { joint_encoders_ = msg.joint_pos; }
 
     obelisk_estimator_msgs::msg::EstimatedState ComputeStateEstimate() override {
         obelisk_estimator_msgs::msg::EstimatedState msg;

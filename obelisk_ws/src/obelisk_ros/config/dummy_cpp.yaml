@@ -80,6 +80,7 @@ onboard:
           sensor_settings:
           - topic: /obelisk/dummy/sensor
             dt: 0.001
-            sensor_type: jointpos
+            sensor_type: JointEncoders
             sensor_names:
-            - sensor_joint1
+            - joint_pos: jointpos
+              joint_vel: jointvel
