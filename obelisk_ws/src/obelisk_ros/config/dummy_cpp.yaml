@@ -96,4 +96,4 @@ onboard:
             sensor_type: ObkFramePose
             sensor_names:
             - tip_pos_sensor: framepos
-            - tip_orientation_sensor: framequat
+              tip_orientation_sensor: framequat

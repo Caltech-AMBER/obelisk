@@ -563,6 +563,10 @@ namespace obelisk {
                     // TODO: Consider adding noise here ourselves
 
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    bool has_acc       = false;
+                    bool has_gyro      = false;
+                    bool has_framequat = false;
+
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
@@ -574,23 +578,45 @@ namespace obelisk {
                         // magnetometer, and accelerometer are at the same frame.
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "accelerometer") {
-                            msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
-                            msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+                            if (!has_acc) {
+                                msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
+                                msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
 
-                            // Accelerometers are always mounted to sites
-                            int site_id = this->model_->sensor_objid[sensor_id];
-                            msg.header.frame_id =
-                                std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+                                // Accelerometers are always mounted to sites
+                                int site_id = this->model_->sensor_objid[sensor_id];
+                                msg.header.frame_id =
+                                    std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+
+                                has_acc = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two accelerometers associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
                         } else if (mj_sensor_types.at(i) == "gyro") {
-                            msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
-                            msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                            if (!has_gyro) {
+                                msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
+                                msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                                has_gyro               = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two gyros associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
                         } else if (mj_sensor_types.at(i) == "framequat") {
-                            msg.orientation.x = this->data_->sensordata[sensor_addr];
-                            msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
-                            msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                            if (!has_framequat) {
+                                msg.orientation.x = this->data_->sensordata[sensor_addr];
+                                msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                                has_framequat     = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framequats associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
                         } else {
                             RCLCPP_ERROR_STREAM(
                                 this->get_logger(),
@@ -613,6 +639,9 @@ namespace obelisk {
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
                     obelisk_sensor_msgs::msg::ObkFramePose msg;
 
+                    bool has_framepos  = false;
+                    bool has_framequat = false;
+
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
@@ -625,67 +654,86 @@ namespace obelisk {
                         // coordinates
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "framepos") {
-                            msg.position.x = this->data_->sensordata[sensor_addr];
-                            msg.position.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.position.z = this->data_->sensordata[sensor_addr + 2];
+                            if (!has_framepos) {
+                                msg.position.x = this->data_->sensordata[sensor_addr];
+                                msg.position.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.position.z = this->data_->sensordata[sensor_addr + 2];
 
-                            // Accelerometers are always mounted to sites
-                            int obj_type = this->model_->sensor_objtype[sensor_id];
-                            if (obj_type == mjOBJ_SITE) {
-                                int site_id    = this->model_->sensor_objid[sensor_id];
-                                msg.frame_name = std::string(this->model_->names + this->model_->name_siteadr[site_id]);
-                            } else if (obj_type == mjOBJ_BODY) {
-                                int body_id    = this->model_->sensor_objid[sensor_id];
-                                msg.frame_name = std::string(this->model_->names + this->model_->name_bodyadr[body_id]);
-                            } else if (obj_type == mjOBJ_GEOM) {
-                                int geom_id    = this->model_->sensor_objid[sensor_id];
-                                msg.frame_name = std::string(this->model_->names + this->model_->name_geomadr[geom_id]);
-                            } else if (obj_type == mjOBJ_CAMERA) {
-                                int cam_id     = this->model_->sensor_objid[sensor_id];
-                                msg.frame_name = std::string(this->model_->names + this->model_->name_camadr[cam_id]);
-                            } else {
-                                RCLCPP_ERROR_STREAM(this->get_logger(),
-                                                    "Framepos sensor, "
-                                                        << sensor_names.at(i)
-                                                        << ", is not associated with a supported Mujoco object type! "
-                                                           "Current object type (mjtObj): "
-                                                        << obj_type);
-                            }
-
-                            if (this->model_->sensor_refid[sensor_id] == -1) {
-                                msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
-                            } else {
-                                int obj_type = this->model_->sensor_reftype[sensor_id];
+                                // Accelerometers are always mounted to sites
+                                int obj_type = this->model_->sensor_objtype[sensor_id];
                                 if (obj_type == mjOBJ_SITE) {
-                                    int site_id = this->model_->sensor_refid[sensor_id];
-                                    msg.header.frame_id =
+                                    int site_id = this->model_->sensor_objid[sensor_id];
+                                    msg.frame_name =
                                         std::string(this->model_->names + this->model_->name_siteadr[site_id]);
                                 } else if (obj_type == mjOBJ_BODY) {
-                                    int body_id = this->model_->sensor_refid[sensor_id];
-                                    msg.header.frame_id =
+                                    int body_id = this->model_->sensor_objid[sensor_id];
+                                    msg.frame_name =
                                         std::string(this->model_->names + this->model_->name_bodyadr[body_id]);
                                 } else if (obj_type == mjOBJ_GEOM) {
-                                    int geom_id = this->model_->sensor_refid[sensor_id];
-                                    msg.header.frame_id =
+                                    int geom_id = this->model_->sensor_objid[sensor_id];
+                                    msg.frame_name =
                                         std::string(this->model_->names + this->model_->name_geomadr[geom_id]);
                                 } else if (obj_type == mjOBJ_CAMERA) {
-                                    int cam_id = this->model_->sensor_refid[sensor_id];
-                                    msg.header.frame_id =
+                                    int cam_id = this->model_->sensor_objid[sensor_id];
+                                    msg.frame_name =
                                         std::string(this->model_->names + this->model_->name_camadr[cam_id]);
                                 } else {
-                                    RCLCPP_ERROR_STREAM(this->get_logger(),
-                                                        "Framepos sensor, "
-                                                            << sensor_names.at(i)
-                                                            << ", is not associated with a supported Mujoco object "
-                                                               "type! Current object type (mjtObj): "
-                                                            << obj_type);
+                                    RCLCPP_ERROR_STREAM(
+                                        this->get_logger(),
+                                        "Framepos sensor, "
+                                            << sensor_names.at(i)
+                                            << ", is not associated with a supported Mujoco object type! "
+                                               "Current object type (mjtObj): "
+                                            << obj_type);
                                 }
+
+                                if (this->model_->sensor_refid[sensor_id] == -1) {
+                                    msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
+                                } else {
+                                    int obj_type = this->model_->sensor_reftype[sensor_id];
+                                    if (obj_type == mjOBJ_SITE) {
+                                        int site_id = this->model_->sensor_refid[sensor_id];
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+                                    } else if (obj_type == mjOBJ_BODY) {
+                                        int body_id = this->model_->sensor_refid[sensor_id];
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_bodyadr[body_id]);
+                                    } else if (obj_type == mjOBJ_GEOM) {
+                                        int geom_id = this->model_->sensor_refid[sensor_id];
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_geomadr[geom_id]);
+                                    } else if (obj_type == mjOBJ_CAMERA) {
+                                        int cam_id = this->model_->sensor_refid[sensor_id];
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_camadr[cam_id]);
+                                    } else {
+                                        RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                            "Framepos sensor, "
+                                                                << sensor_names.at(i)
+                                                                << ", is not associated with a supported Mujoco object "
+                                                                   "type! Current object type (mjtObj): "
+                                                                << obj_type);
+                                    }
+                                }
+                                has_framepos = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framepos associated with this FramePose! Ignoring "
+                                                        << sensor_names.at(i));
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
-                            msg.orientation.x = this->data_->sensordata[sensor_addr];
-                            msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
-                            msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                            if (!has_framequat) {
+                                msg.orientation.x = this->data_->sensordata[sensor_addr];
+                                msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                                has_framequat     = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framequats associated with this FramePose! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
                         } else {
                             RCLCPP_ERROR_STREAM(
                                 this->get_logger(),
