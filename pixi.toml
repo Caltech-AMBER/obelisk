@@ -7,6 +7,7 @@ name = "obelisk"
 authors = [
     "Albert Li <alberthli@caltech.edu>",
     "Zach Olkin <zolkin@caltech.edu>",
+    "Gavin Hua <ghua@caltech.edu>",
 ]
 description = "The AMBER Lab's generic robot control interface."
 channels = ["conda-forge"]
@@ -94,9 +95,6 @@ ros-humble-foxglove-bridge="*"
 # ros-humble-rqt = "*"
 # ros-humble-test-msgs = "*"
 
-ros-humble-dynamixel-sdk = "*"
-# ros-humble-dynamixel-sdk = ">=3.7.0"
-
 
 # obelisk
 [feature.obelisk.pypi-dependencies]
@@ -123,9 +121,10 @@ pytest = "<=8.0.0"
 pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
-# Dynamixel SDK for LEAP hand
-dynamixel-sdk = ">=3.7.0"
 
+[feature.leap.dependencies]
+# Dynamixel SDK for LEAP hand
+ros-humble-dynamixel-sdk = ">=3.7"
 
 # dev
 [feature.dev.pypi-dependencies]
@@ -159,8 +158,8 @@ test = { features=["cuda121", "obelisk", "ros2base", "test"], solve-group="dev" 
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build"] }
-dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
+dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build", "leap"] }
+dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
 docs = { features=["docs"] }
 
 build = { features = ["cuda121", "build"] }
