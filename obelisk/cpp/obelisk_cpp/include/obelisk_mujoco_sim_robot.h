@@ -659,7 +659,7 @@ namespace obelisk {
                                 msg.position.y = this->data_->sensordata[sensor_addr + 1];
                                 msg.position.z = this->data_->sensordata[sensor_addr + 2];
 
-                                // Accelerometers are always mounted to sites
+                                // Framepos sensors can be mounted to different objects
                                 int obj_type = this->model_->sensor_objtype[sensor_id];
                                 if (obj_type == mjOBJ_SITE) {
                                     int site_id = this->model_->sensor_objid[sensor_id];
