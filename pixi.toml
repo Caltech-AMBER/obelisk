@@ -15,7 +15,7 @@ platforms = ["linux-64"]
 
 [activation]
 scripts = ["obelisk_ws/install/setup.sh"]
-
+env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="latest", RCUTILS_COLORIZED_OUTPUT="1" }
 
 # ############ #
 # FEATURE SETS #
@@ -25,6 +25,8 @@ scripts = ["obelisk_ws/install/setup.sh"]
 [dependencies]
 python = ">=3.10"
 pip = ">=24.0"
+setuptools = "<=70.4"
+compilers = "*"
 
 [pypi-dependencies]
 matplotlib = ">=3.9.0"
@@ -32,15 +34,7 @@ numpy = ">=1.26"
 obelisk_py = { path="./obelisk/python", editable=true }
 
 
-# TODO(ahl): once obelisk is stable, check if cuda deps are needed
 # cuda
-[feature.cuda118]
-channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
-system-requirements = {cuda="11.8.0"}
-
-[feature.cuda118.dependencies]
-cuda = { version="*", channel="nvidia/label/cuda-11.8.0" }
-
 [feature.cuda121]
 channels = ["nvidia", "nvidia/label/cuda-12.1.0"]
 system-requirements = {cuda="12.1.0"}
@@ -57,9 +51,7 @@ channels = ["robostack-staging"]
 ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
-ros-humble-joint-state-publisher = "*"
-ros-humble-urdf = "*"
-ros-humble-foxglove-bridge="*"
+ros-humble-foxglove-bridge = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -127,10 +119,14 @@ typeguard = ">=4.3.0"
 ros-humble-dynamixel-sdk = ">=3.7"
 
 # dev
+[feature.dev.dependencies]
+nano = "*"
+vim = "*"
+
 [feature.dev.pypi-dependencies]
 pre-commit = ">=3.7.1"
 ruff = ">=0.4.9"
-pyright = ">=1.1.368"
+pyright = "*"
 
 
 # build
@@ -139,6 +135,7 @@ cmake = "3.16.*"
 ninja = "1.12.1"
 make = ">=4.3,<5"
 glfw = "3.4"
+mesalib = "*"
 
 # ################ #
 # ENVIRONMENT SETS #
@@ -169,10 +166,10 @@ build = { features = ["cuda121", "build"] }
 # ##### #
 
 [tasks]
-# builds in the obelisk_ws directory only if src has changes
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws" }
-source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true", GLOBAL="false" } }
-messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs", cwd="obelisk_ws" }
+# ros-related tasks
+messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs --parallel-workers $(nproc)", cwd="obelisk_ws" }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs", cwd="obelisk_ws", depends-on=["messages-build"] }
+ros-clean = { cmd="rm -r build/ install/ log/", cwd="obelisk_ws" }
 
 # run the core tests
 cpp-test-node = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = ["cpp-build"] }
@@ -181,9 +178,11 @@ cpp-test-node-debug = { cmd = "obelisk/cpp/build/tests/NodeTest", depends-on = [
 # run the viz tests
 cpp-test-viz = { cmd = "obelisk/cpp/build/tests/VizTest", depends-on = ["cpp-build"] }
 
+# run the util tests
+cpp-test-utils = { cmd = "obelisk/cpp/build/tests/UtilsTest", depends-on = ["cpp-build"] }
 
 # run ctest
-cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = "cpp-build" }
+cpp-ctest = { cmd = "ctest", cwd = "obelisk/cpp/build/tests", depends-on = ["cpp-build"] }
 
 # cmake
 cmake = { cmd = [
@@ -198,4 +197,4 @@ cpp-build = { cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cm
 cpp-build-debug = { cmd = ["cmake", "--build", "obelisk/cpp/build", "-DCMAKE_BUILD_TYPE=Debug"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
 
 # run python and c++ tests
-all-tests = { cmd = ["pytest"], depends-on = ["source-obelisk", "cpp-ctest"] }
+all-tests = { cmd = ["pytest"], depends-on = ["ros-build", "cpp-ctest"] }

@@ -13,29 +13,17 @@ ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
 ENV OBELISK_ROOT=$OBELISK_ROOT
+ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
 # set timezone
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# basic dependencies from docker_setup.sh (up until sudo and below)
+# basic dependencies that are not handled by pixi
 RUN apt-get update && apt-get install -y \
     curl \
-    build-essential \
-    cmake \
-    clang-tools-12 \
-    nano \
-    vim \
     git \
-    python3-dev \
-    python-is-python3 \
-    python3-pip \
-    python3-argcomplete \
-    mesa-utils \
-    x11-apps \
-    libyaml-dev \
     mesa-common-dev \
-    libglfw3-dev \
     locales \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
@@ -49,17 +37,14 @@ RUN groupadd --gid $GID $USER && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # add user to dialout group to enable serial port access from the container
-RUN sudo usermod -a -G dialout ${USER}
+RUN usermod -a -G dialout ${USER}
 
 # switch to new user and workdir
 USER ${UID}
 
 # run docker setup script in Dockerfile
 COPY docker_setup.sh /tmp/docker_setup.sh
-RUN source /tmp/docker_setup.sh --skip-docker && \
+RUN source /tmp/docker_setup.sh --pixi --cyclone-perf && \
     sudo rm /tmp/docker_setup.sh
 
-# add local user binary folder to PATH variable
-ENV PATH="${PATH}:/home/${USER}/.local/bin"
-ENV XDG_RUNTIME_DIR=/run/user/${UID}
 WORKDIR /home/${USER}

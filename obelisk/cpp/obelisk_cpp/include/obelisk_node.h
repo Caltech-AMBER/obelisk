@@ -3,13 +3,20 @@
 #include <chrono>
 #include <tuple>
 
-#include "obelisk_control_msgs/msg/position_setpoint.hpp"
-#include "obelisk_estimator_msgs/msg/estimated_state.hpp"
-#include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
-#include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 #include "rcl_interfaces/msg/parameter_event.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+
+#include "obelisk_control_msgs/msg/position_setpoint.hpp"
+
+#include "obelisk_estimator_msgs/msg/estimated_state.hpp"
+
+#include "obelisk_sensor_msgs/msg/joint_encoders.hpp"
+#include "obelisk_sensor_msgs/msg/obk_image.hpp"
+#include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
+
+#include "obelisk_std_msgs/msg/float_multi_array.hpp"
+#include "obelisk_std_msgs/msg/u_int8_multi_array.hpp"
 
 namespace obelisk {
     namespace internal {
@@ -120,13 +127,15 @@ namespace obelisk {
         // Allowed Obelisk message types
         using ObeliskMsgs =
             std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_estimator_msgs::msg::EstimatedState,
-                       obelisk_sensor_msgs::msg::JointEncoders, obelisk_sensor_msgs::msg::TrueSimState>;
+                       obelisk_sensor_msgs::msg::JointEncoders, obelisk_sensor_msgs::msg::TrueSimState,
+                       obelisk_sensor_msgs::msg::ObkImage, obelisk_std_msgs::msg::FloatMultiArray,
+                       obelisk_std_msgs::msg::UInt8MultiArray>;
         // Allowed non-obelisk message types
-        using ROSAllowedMsgs                                         = std::tuple<rcl_interfaces::msg::ParameterEvent>;
+        using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
-        inline const std::array<std::string, 2> sensor_message_names = {
-            obelisk_sensor_msgs::msg::JointEncoders::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME};
+        inline const std::array<std::string, 3> sensor_message_names = {
+            obelisk_sensor_msgs::msg::JointEncoders::MESSAGE_NAME, obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME};
 
         inline const std::array<std::string, 1> estimator_message_names = {
             obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};
@@ -618,10 +627,10 @@ namespace obelisk {
         std::shared_ptr<SubscriptionT> CreateSubscriptionFromConfigStr(const std::string& config,
                                                                        CallbackT&& callback) {
             // Parse the configuration string
-            const auto config_map                = ParseConfigStr(config);
-            const std::string topic              = GetTopic(config_map);
-            const int depth                      = GetHistoryDepth(config_map);
-            const bool non_obelisk               = !GetIsObeliskMsg(config_map);
+            const auto config_map   = ParseConfigStr(config);
+            const std::string topic = GetTopic(config_map);
+            const int depth         = GetHistoryDepth(config_map);
+            const bool non_obelisk  = !GetIsObeliskMsg(config_map);
 
             rclcpp::CallbackGroup::SharedPtr cbg = nullptr; // default group
             try {
@@ -669,10 +678,10 @@ namespace obelisk {
             // Finest frequency is determined by DurationT
             using namespace std::chrono_literals;
 
-            const auto config_map                = ParseConfigStr(config);
-            const double period_sec              = GetPeriod(config_map); // Period in seconds
+            const auto config_map   = ParseConfigStr(config);
+            const double period_sec = GetPeriod(config_map); // Period in seconds
 
-            rclcpp::CallbackGroup::SharedPtr cbg = nullptr;               // default group
+            rclcpp::CallbackGroup::SharedPtr cbg = nullptr;  // default group
             try {
                 // Get the callback group based on the string name
                 cbg = callback_groups_.at(GetCallbackGroupName(config_map));
@@ -712,7 +721,7 @@ namespace obelisk {
 
                 std::string config_id = config.substr(0, val_idx);
 
-                std::string val       = config.substr(val_idx + 1, type_idx - (val_idx + 1));
+                std::string val = config.substr(val_idx + 1, type_idx - (val_idx + 1));
                 config_map.emplace(config_id, val);
                 config.erase(0, type_idx + type_delim.length());
             }

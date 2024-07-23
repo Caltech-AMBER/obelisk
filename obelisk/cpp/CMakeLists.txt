@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard to use")
 add_subdirectory(obelisk_cpp)
 add_subdirectory(viz)
 add_subdirectory(zoo)
+add_subdirectory(utils)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)

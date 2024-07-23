@@ -30,23 +30,23 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Set Up Development Environment
         run: |
-          source dev_setup.sh
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml up -d
+          source setup.sh
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build ROS2 Messages
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build"
       - name: Build and Source ROS2
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu source-obelisk"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ros-build"
       - name: Run Ruff Linter
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
       - name: Run Ruff Formatter
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff"
       - name: Run Pyright
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu pyright"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu pyright"
       - name: Test with pytest and ctest
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-no-gpu.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu all-tests"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu all-tests"

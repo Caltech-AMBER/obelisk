@@ -73,7 +73,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             y = []
             for sensor_name in sensor_names:
                 y.append(self.mj_data.sensor(sensor_name).data)
-            msg.y = list(np.concatenate(y))  # like we assume all ObeliskControlMsg objs have a u field, sensors have y
+            msg.y = list(np.concatenate(y))  # assume all ObeliskSensorMsg objs have a y field
             pub_sensor.publish(msg)
 
         return timer_callback
