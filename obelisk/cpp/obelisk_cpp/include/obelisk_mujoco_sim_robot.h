@@ -7,6 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
+
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
 #include "obelisk_sim_robot.h"
 
@@ -38,14 +40,18 @@ namespace obelisk {
             auto mujoco_config_map     = this->ParseConfigStr(mujoco_setting);
 
             // Get config params
-            xml_path_ = GetXMLPath(mujoco_config_map); // Required
+            xml_path_             = GetXMLPath(mujoco_config_map);      // Required
+            std::string robot_pkg = GetRobotPackage(mujoco_config_map); // Optional
             // Search for the model
             if (!std::filesystem::exists(xml_path_)) {
-                if (const char* obelisk_root = std::getenv("OBELISK_ROOT")) {
-                    xml_path_ = "models" / xml_path_;
-                    xml_path_ = static_cast<std::string>(obelisk_root) / xml_path_;
+                if (robot_pkg != "None" && robot_pkg != "none") {
+                    std::string share_directory = ament_index_cpp::get_package_share_directory(robot_pkg);
+                    xml_path_                   = "mujoco" / xml_path_;
+                    xml_path_                   = share_directory / xml_path_;
                 } else {
-                    throw std::runtime_error("OBELISK_ROOT environment variable not set. Run the dev_setup.sh script!");
+                    RCLCPP_ERROR_STREAM(this->get_logger(),
+                                        "Provided Mujoco XML is NOT an absolute path and robot_pkg is None or not "
+                                        "specified. Please provide a valid Mujoco XML path.");
                 }
             }
 
@@ -57,12 +63,7 @@ namespace obelisk {
 
             configuration_complete_ = true;
 
-            // Setup the sensors
-            // try {
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
-            // } catch (const std::exception& e) {
-            // RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
-            // }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -300,6 +301,14 @@ namespace obelisk {
                 return std::filesystem::path(path);
             } catch (const std::exception& e) {
                 throw std::runtime_error("No model XML path was provided!");
+            }
+        }
+
+        std::string GetRobotPackage(const std::map<std::string, std::string>& config_map) {
+            try {
+                return config_map.at("robot_pkg");
+            } catch (const std::exception& e) {
+                return "None";
             }
         }
 
