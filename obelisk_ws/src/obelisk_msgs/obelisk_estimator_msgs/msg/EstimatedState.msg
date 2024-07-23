@@ -1,5 +1,4 @@
 string MESSAGE_NAME="EstimatedState"
-float64[] x_hat
 
 # Quantities required for viz
 float64[] q_base

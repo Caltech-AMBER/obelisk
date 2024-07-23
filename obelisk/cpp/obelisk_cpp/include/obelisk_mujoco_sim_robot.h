@@ -130,7 +130,7 @@ namespace obelisk {
          * We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
          * field of a mujoco model. YOU MUST CHECK THIS YOURSELF!
          */
-        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u); }
+        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u_mujoco); }
 
         // -----------------------------------------//
         // ----------- Simulation Entry ----------- //
