@@ -411,7 +411,7 @@ namespace obelisk {
 
                 std::string sensor_type;
                 try {
-                    sensor_type = setting_map.at("sensor_type");
+                    sensor_type = setting_map.at("msg_type");
                 } catch (const std::exception& e) {
                     throw std::runtime_error("No sensor type provided for a sensor!");
                 }

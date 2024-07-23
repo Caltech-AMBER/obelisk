@@ -25,7 +25,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
-    def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
+    def _get_msg_type_from_mj_msg_type(self, msg_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from the Mujoco sensor type.
 
         The supported sensor types are taken as a subset of the ones listed in the mujoco docs:
@@ -35,16 +35,16 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         simply don't support the mujoco sensor type yet.
 
         Parameters:
-            sensor_type: The Mujoco sensor type.
+            msg_type: The Mujoco sensor type.
 
         Returns:
             The Obelisk sensor message type associated with the Mujoco sensor type.
         """
-        if sensor_type == "jointpos":
+        if msg_type == "jointpos":
             assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
             return osm.ObkJointEncoders  # type: ignore
         else:
-            raise NotImplementedError(f"Sensor type {sensor_type} not supported! Check your spelling or open a PR.")
+            raise NotImplementedError(f"Sensor type {msg_type} not supported! Check your spelling or open a PR.")
 
     def _create_timer_callback_from_msg_type(
         self,
@@ -138,15 +138,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                 assert "topic" in sensor_setting_dict and isinstance(sensor_setting_dict["topic"], str)
                 assert "dt" in sensor_setting_dict and isinstance(sensor_setting_dict["dt"], str)
-                assert "sensor_type" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_type"], str)
+                assert "msg_type" in sensor_setting_dict and isinstance(sensor_setting_dict["msg_type"], str)
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
                 topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
-                sensor_type = sensor_setting_dict["sensor_type"]
+                msg_type = sensor_setting_dict["msg_type"]
                 sensor_names = sensor_setting_dict["sensor_names"].split("&")
 
                 # make sensor pub/timer pair
-                msg_type = self._get_msg_type_from_mj_sensor_type(sensor_type)
+                msg_type = self._get_msg_type_from_mj_msg_type(msg_type)
                 cbg = ReentrantCallbackGroup()
                 pub_sensor = self.create_publisher(
                     msg_type=msg_type,
