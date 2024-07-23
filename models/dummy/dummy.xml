@@ -24,6 +24,7 @@
             <body name="link1" pos="0 0 1">
                 <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>
                 <joint name="joint1" type="hinge" pos="0 0 0" axis="0 1 0" range="-1.5708 1.5708"/>
+                <site name="imu_site" pos="0 0 1" euler="0 0 0" size="0.001"/>
             </body>
         </body>
     </worldbody>
@@ -35,7 +36,13 @@
 
     <!-- Sensors -->
     <sensor>
+        <!-- Joint sensors -->
         <jointpos name="joint_pos" joint="joint1"/>
         <jointvel name="joint_vel" joint="joint1"/>
+
+        <!-- IMU -->
+        <accelerometer name="tip_acc_sensor" site="imu_site"/>
+        <gyro name="tip_gyro_sensor" site="imu_site"/>
+        <framequat name="tip_frame_sensor" objtype="site" objname="imu_site"/>
     </sensor>
 </mujoco>

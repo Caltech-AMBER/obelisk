@@ -58,11 +58,11 @@ namespace obelisk {
             configuration_complete_ = true;
 
             // Setup the sensors
-            try {
-                ParseSensorString(mujoco_config_map.at("sensor_settings"));
-            } catch (const std::exception& e) {
-                RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
-            }
+            // try {
+            ParseSensorString(mujoco_config_map.at("sensor_settings"));
+            // } catch (const std::exception& e) {
+            // RCLCPP_WARN_STREAM(this->get_logger(), "Mujoco simulation initialized without any sensors.");
+            // }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -445,10 +445,9 @@ namespace obelisk {
                 }
 
                 // Create the timer and publishers with the settings
+                // Make a key
+                const std::string sensor_key = "sensor_group_" + std::to_string(num_sensors_);
                 if (sensor_type == "JointEncoders") {
-                    // Make a key
-                    const std::string sensor_key = "sensor_group_" + std::to_string(num_sensors_);
-
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::JointEncoders>(topic, depth);
                     this->publishers_[sensor_key] =
@@ -461,13 +460,24 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::JointEncoders>(sensor_key)),
                         callback_group_);
+                } else if (sensor_type == "ObkImu") {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkImu>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkImu>>(pub);
 
-                    this->timers_[sensor_key]->cancel(); // Stop the timer
-
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkImu>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(sensor_key)),
+                        callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
 
+                this->timers_[sensor_key]->cancel(); // Stop the timer
                 num_sensors_++;
             }
         }
@@ -496,7 +506,13 @@ namespace obelisk {
                         if (mj_sensor_types.at(i) == "jointpos") {
                             msg.joint_pos.emplace_back(this->data_->sensordata[sensor_addr]);
                             int joint_id = this->model_->sensor_objid[sensor_id];
-                            msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
+                            if (joint_id == -1) {
+                                RCLCPP_ERROR_STREAM(this->get_logger(), "Joint associated with "
+                                                                            << sensor_names.at(i)
+                                                                            << " is not found in the Mujoco xml.");
+                            } else {
+                                msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
+                            }
                         } else if (mj_sensor_types.at(i) == "jointvel") {
                             msg.joint_vel.emplace_back(this->data_->sensordata[sensor_addr]);
                         } else {
@@ -512,11 +528,62 @@ namespace obelisk {
                     publisher->publish(msg);
                 };
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for the joint encoders!");
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for JointEncoders!");
                 return cb;
             } else if (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkImu>::value) {
                 // ---------- IMU call back ---------- //
-                // TODO: Implement
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    obelisk_sensor_msgs::msg::ObkImu msg;
+
+                    // TODO: For now all the covariances are 0
+                    // *** Note *** Mujoco does not support adding noise naitevly since v3.14.
+                    // TODO: Consider adding noise here ourselves
+
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        }
+
+                        // *** Note *** We only use the frame associated with the accelerometer. If the gyro or
+                        // magnetometer is at a different frame, then it needs to be its own sensor. Be sure the gyro,
+                        // magnetometer, and accelerometer are at the same frame.
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        RCLCPP_WARN_STREAM(this->get_logger(), obj_type);
+                        if (mj_sensor_types.at(i) == "accelerometer") {
+                            msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
+                            msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
+                            msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+
+                            // Accelerometers are always mounted to sites
+                            int site_id = this->model_->sensor_objid[sensor_id];
+                            msg.header.frame_id =
+                                std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+                        } else if (mj_sensor_types.at(i) == "gyro") {
+                            msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
+                            msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
+                            msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                        } else if (mj_sensor_types.at(i) == "framequat") {
+                            msg.orientation.x = this->data_->sensordata[sensor_addr];
+                            msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
+                            msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
+                            msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a IMU!");
+                return cb;
             } else if (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkFramePose>::value) {
                 // ---------- Frame Pose call back ---------- //
                 // TODO: Implement
