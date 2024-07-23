@@ -32,9 +32,9 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
 
         // example of setting other configurable params in the node
         this->declare_parameter<std::string>("test_param", "default_value");
-        std::string test_param_value_;
-        this->get_parameter("test_param", test_param_value_);
-        RCLCPP_INFO_STREAM(this->get_logger(), "test_param: " << test_param_value_);
+        std::string test_param_value;
+        this->get_parameter("test_param", test_param_value);
+        RCLCPP_INFO_STREAM(this->get_logger(), "test_param: " << test_param_value);
     }
 
   protected:
