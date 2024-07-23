@@ -13,6 +13,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
     PositionSetpointController(const std::string& name)
         : obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
                                      obelisk_estimator_msgs::msg::EstimatedState>(name) {
+        // example of params_path
         std::string file_string = this->get_parameter("params_path").as_string();
         std::string obk_root    = std::getenv("OBELISK_ROOT");
         std::filesystem::path file_path(obk_root);
@@ -28,6 +29,12 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         std::string contents;
         params_file >> contents;
         amplitude_ = std::stof(contents);
+
+        // example of setting other configurable params in the node
+        this->declare_parameter<std::string>("test_param", "default_value");
+        std::string test_param_value_;
+        this->get_parameter("test_param", test_param_value_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "test_param: " << test_param_value_);
     }
 
   protected:
