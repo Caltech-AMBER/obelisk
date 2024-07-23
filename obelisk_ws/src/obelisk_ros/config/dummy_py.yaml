@@ -38,7 +38,7 @@ onboard:
         - ros_parameter: sub_sensor_setting
           # key: sub1
           topic: /obelisk/dummy/sensor
-          msg_type: JointEncoders
+          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
           non_obelisk: False
