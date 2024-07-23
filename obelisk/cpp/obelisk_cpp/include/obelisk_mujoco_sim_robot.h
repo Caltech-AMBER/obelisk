@@ -48,6 +48,10 @@ namespace obelisk {
                     std::string share_directory = ament_index_cpp::get_package_share_directory(robot_pkg);
                     xml_path_                   = "mujoco" / xml_path_;
                     xml_path_                   = share_directory / xml_path_;
+                } else {
+                    RCLCPP_ERROR_STREAM(this->get_logger(),
+                                        "Provided Mujoco XML is NOT an absolute path and robot_pkg is None or not "
+                                        "specified. Please provide a valid Mujoco XML path.");
                 }
             }
 
