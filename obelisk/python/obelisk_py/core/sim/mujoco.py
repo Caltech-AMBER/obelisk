@@ -13,7 +13,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
 
-from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
 
@@ -24,6 +24,14 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
+
+    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+        """Apply the control message.
+
+        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
+        field of a sim model. YOU MUST CHECK THIS YOURSELF!
+        """
+        self._set_shared_ctrl(control_msg.u_mujoco)
 
     def _get_msg_type_from_string(self, msg_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from a string.
@@ -181,7 +189,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
                 topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
-                msg_type_str = sensor_setting_dict["sensor_type"]
+                msg_type_str = sensor_setting_dict["msg_type"]
 
                 # the mujoco sensor names and the correspond Obelisk message field types are delimited by "$"
                 sensor_names_and_fields = sensor_setting_dict["sensor_names"].split("&")
