@@ -50,9 +50,10 @@ namespace obelisk {
             const int KP_ADDR           = 84;
             const int KI_ADDR           = 82;
             const int KD_ADDR           = 80;
-            const int KP_VAL            = 500;
-            const int KI_VAL            = 10;
-            const int KD_VAL            = 50;
+            // TODO: expose as ros params
+            const int KP_VAL = 500;
+            const int KI_VAL = 10;
+            const int KD_VAL = 50;
 
             for (int i = 0; i < N_MOTORS; i++) {
                 int err =
@@ -124,11 +125,11 @@ namespace obelisk {
         const std::string state_timer_key_;
         const std::string state_pub_key_;
 
-        static constexpr int BAUDRATE           = 4000000;
+        static constexpr int BAUDRATE = 4000000;
 
-        static constexpr int DXL_MAX_POS        = 4095;
-        static constexpr int DXL_MIN_POS        = 0;
-        static constexpr int N_MOTORS           = 16;
+        static constexpr int DXL_MAX_POS = 4095;
+        static constexpr int DXL_MIN_POS = 0;
+        static constexpr int N_MOTORS    = 16;
 
         static constexpr int GOAL_POS_ADDR      = 116;
         static constexpr int GOAL_POS_LENGTH    = 4;
