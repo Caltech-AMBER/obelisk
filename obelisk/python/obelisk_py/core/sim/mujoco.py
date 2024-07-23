@@ -1,7 +1,7 @@
 import ctypes
 import multiprocessing
 import os
-from typing import Callable, List, Type
+from typing import Callable, List, Tuple, Type
 
 import mujoco
 import mujoco.viewer
@@ -25,14 +25,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
-        """Apply the control message.
-
-        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
-        field of a sim model. YOU MUST CHECK THIS YOURSELF!
-        """
-        self._set_shared_ctrl(control_msg.u_mujoco)
-
     def _get_msg_type_from_string(self, msg_type: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from a string.
 
@@ -45,8 +37,25 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         if msg_type == "ObkJointEncoders":
             assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
             return osm.ObkJointEncoders  # type: ignore
+        elif msg_type == "ObkImu":
+            assert is_in_bound(osm.ObkImu, ObeliskSensorMsg)
+            return osm.ObkImu
+        elif msg_type == "ObkFramePose":
+            assert is_in_bound(osm.ObkFramePose, ObeliskSensorMsg)
+            return osm.ObkFramePose
         else:
             raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
+
+    def _get_time_from_sim(self) -> Tuple[float, float]:
+        """Get the time from the simulator used to populate msg header fields.
+
+        Returns:
+            sec: The seconds field of the time.
+            nsec: The nanoseconds field of the time.
+        """
+        sec = int(np.floor(self.mj_data.time))
+        nsec = int((self.mj_data.time - sec) * 1e9)
+        return sec, nsec
 
     def _create_timer_callback_from_msg_type(
         self,
@@ -96,6 +105,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 assert self.mj_model.sensor(mj_sensor_name) is not None
                 if obk_sensor_field == "jointpos":
                     mj_joint_pos_names.append(mj_sensor_name)
+
+                    # [NOTE] joint names are only associated with the joint_pos field! If the joint_vels are in a
+                    # different order, then they will not be associated correctly.
                     joint_names.append(_jnt_name_from_sensor_name(mj_sensor_name))
                 elif obk_sensor_field == "jointvel":
                     mj_joint_vel_names.append(mj_sensor_name)
@@ -104,7 +116,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     raise ValueError(f"Unknown sensor field {obk_sensor_field} for message type {msg_type}!")
 
             def timer_callback() -> None:
-                """Timer callback for the sensor."""
+                """Timer callback for ObkJointEncoders."""
                 msg = osm.ObkJointEncoders()
                 msg.joint_names = joint_names  # once we know this, it doesn't change
 
@@ -117,7 +129,73 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     joint_vel.append(self.mj_data.sensor(sensor_name).data.item())
                 msg.joint_pos = joint_pos
                 msg.joint_vel = joint_vel
+
+                # timestamp
+                sec, nsec = self._get_time_from_sim()
+                msg.stamp.sec = sec
+                msg.stamp.nanosec = nsec
+
                 pub_sensor.publish(msg)
+
+        elif msg_type == osm.ObkImu:
+
+            def timer_callback() -> None:
+                """Timer callback for ObkImu."""
+                msg = osm.ObkImu()
+                has_acc, has_gyro, has_framequat = False, False, False
+                for sensor_name, obk_sensor_field in zip(mj_sensor_names, obk_sensor_fields):
+                    # get the sensor id and address
+                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+                    sensor_adr = self.mj_model.sensor_adr[sensor_id]
+
+                    # [NOTE] We only use the frame associated with the accelerometer. If the gyro or magnetometer is at
+                    # a different frame, then it needs to be its own sensor. Be sure the gyro, magnetometer, and
+                    # accelerometer are at the same frame.
+                    if obk_sensor_field == "accelerometer":
+                        if not has_acc:
+                            msg.linear_acceleration.x = self.mj_data.sensordata[sensor_adr + 0]
+                            msg.linear_acceleration.y = self.mj_data.sensordata[sensor_adr + 1]
+                            msg.linear_acceleration.z = self.mj_data.sensordata[sensor_adr + 2]
+
+                            # accelerometers should always be mounted to sites
+                            site_id = self.mj_model.sensor_objid[sensor_id]
+                            msg.header.frame_id = self.mj_model.site(site_id).name
+                            has_acc = True
+                        else:
+                            self.get_logger().error(f"Multiple accelerometers detected! Ignoring {sensor_name}.")
+
+                    elif obk_sensor_field == "gyro":
+                        if not has_gyro:
+                            msg.angular_velocity.x = self.mj_data.sensordata[sensor_adr + 0]
+                            msg.angular_velocity.y = self.mj_data.sensordata[sensor_adr + 1]
+                            msg.angular_velocity.z = self.mj_data.sensordata[sensor_adr + 2]
+                            has_gyro = True
+                        else:
+                            self.get_logger().error(f"Multiple gyroscopes detected! Ignoring {sensor_name}.")
+
+                    elif obk_sensor_field == "framequat":
+                        if not has_framequat:
+                            msg.orientation.x = self.mj_data.sensordata[sensor_adr + 0]
+                            msg.orientation.y = self.mj_data.sensordata[sensor_adr + 1]
+                            msg.orientation.z = self.mj_data.sensordata[sensor_adr + 2]
+                            msg.orientation.w = self.mj_data.sensordata[sensor_adr + 3]
+                            has_framequat = True
+                        else:
+                            self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
+
+                    else:
+                        self.get_logger().error(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+                        raise ValueError(f"Unknown sensor name {sensor_name} for message type {msg_type}!")
+
+                # timestamp
+                sec, nsec = self._get_time_from_sim()
+                msg.header.stamp.sec = sec
+                msg.header.stamp.nanosec = nsec
+
+                pub_sensor.publish(msg)
+
+        elif msg_type == osm.ObkFramePose:
+            raise NotImplementedError
 
         else:
             raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
@@ -224,6 +302,14 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         self.shared_ctrl = multiprocessing.Array(ctypes.c_double, self.n_u)
 
         return TransitionCallbackReturn.SUCCESS
+
+    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+        """Apply the control message.
+
+        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
+        field of a sim model. YOU MUST CHECK THIS YOURSELF!
+        """
+        self._set_shared_ctrl(control_msg.u_mujoco)
 
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the true simulator state."""
