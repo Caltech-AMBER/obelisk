@@ -7,6 +7,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
+#include "obelisk_control_msgs/msg/obk_pd_feed_forward.hpp"
 #include "obelisk_control_msgs/msg/position_setpoint.hpp"
 
 #include "obelisk_estimator_msgs/msg/estimated_state.hpp"
@@ -128,11 +129,11 @@ namespace obelisk {
         // Other internal definitions
         // Allowed Obelisk message types
         using ObeliskMsgs =
-            std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_estimator_msgs::msg::EstimatedState,
-                       obelisk_sensor_msgs::msg::ObkJointEncoders, obelisk_sensor_msgs::msg::TrueSimState,
-                       obelisk_sensor_msgs::msg::ObkImage, obelisk_sensor_msgs::msg::ObkImu,
-                       obelisk_sensor_msgs::msg::ObkFramePose, obelisk_std_msgs::msg::FloatMultiArray,
-                       obelisk_std_msgs::msg::UInt8MultiArray>;
+            std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_control_msgs::msg::ObkPDFeedForward,
+                       obelisk_estimator_msgs::msg::EstimatedState, obelisk_sensor_msgs::msg::ObkJointEncoders,
+                       obelisk_sensor_msgs::msg::TrueSimState, obelisk_sensor_msgs::msg::ObkImage,
+                       obelisk_sensor_msgs::msg::ObkImu, obelisk_sensor_msgs::msg::ObkFramePose,
+                       obelisk_std_msgs::msg::FloatMultiArray, obelisk_std_msgs::msg::UInt8MultiArray>;
         // Allowed non-obelisk message types
         using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
