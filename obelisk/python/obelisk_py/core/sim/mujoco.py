@@ -8,7 +8,7 @@ import mujoco.viewer
 import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
-from mujoco import MjData, MjModel, mj_step  # type: ignore
+from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step  # type: ignore
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
@@ -25,31 +25,26 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
-    def _get_msg_type_from_mj_sensor_type(self, sensor_type: str) -> Type[ObeliskSensorMsg]:
-        """Get the message type from the Mujoco sensor type.
-
-        The supported sensor types are taken as a subset of the ones listed in the mujoco docs:
-        https://mujoco.readthedocs.io/en/latest/XMLreference.html#sensor
-
-        Each sensor type should be associated with an already-existing Obelisk sensor message. If one doesn't exist, we
-        simply don't support the mujoco sensor type yet.
+    def _get_msg_type_from_string(self, msg_type: str) -> Type[ObeliskSensorMsg]:
+        """Get the message type from a string.
 
         Parameters:
-            sensor_type: The Mujoco sensor type.
+            msg_type_str: The name of the msg_type.
 
         Returns:
-            The Obelisk sensor message type associated with the Mujoco sensor type.
+            The Obelisk sensor message type associated with the message type.
         """
-        if sensor_type == "jointpos":
+        if msg_type == "ObkJointEncoders":
             assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
             return osm.ObkJointEncoders  # type: ignore
         else:
-            raise NotImplementedError(f"Sensor type {sensor_type} not supported! Check your spelling or open a PR.")
+            raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
 
     def _create_timer_callback_from_msg_type(
         self,
         msg_type: ObeliskSensorMsg,
-        sensor_names: List[str],
+        mj_sensor_names: List[str],
+        obk_sensor_fields: List[str],
         pub_sensor: Publisher,
     ) -> Callable:
         """Create a timer callback from the ObeliskSensorMsg type.
@@ -60,21 +55,64 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         Parameters:
             msg_type: The Obelisk sensor message type.
-            sensor_names: The names of the sensors to read from.
+            mj_sensor_names: The names of the mujoco sensors to read from, which are defined in the XML.
+            obk_sensor_fields: The names of the fields in the Obelisk sensor message matching the msg_type argument.
             pub_sensor: The publisher to publish the sensor message to.
 
         Returns:
             The timer callback function.
         """
+        if msg_type == osm.ObkJointEncoders:
 
-        def timer_callback() -> None:
-            """Timer callback for the sensor."""
-            msg = msg_type()
-            y = []
-            for sensor_name in sensor_names:
-                y.append(self.mj_data.sensor(sensor_name).data)
-            msg.y = list(np.concatenate(y))  # assume all ObeliskSensorMsg objs have a y field
-            pub_sensor.publish(msg)
+            def _jnt_name_from_sensor_name(sensor_name: str) -> str:
+                """Helper function to get the joint name from the sensor name."""
+                # getting name
+                sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+                joint_id = self.mj_model.sensor_objid[sensor_id]
+                joint_name = self.mj_model.joint(joint_id).name
+
+                # verifying the joint is a revolute or prismatic joint
+                joint_type = self.mj_model.jnt_type[joint_id]
+                if joint_type not in [mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE]:
+                    self.get_logger().error(f"Joint {joint_name} should be a hinge or slide joint!")
+                    raise ValueError(f"Joint {joint_name} should be a hinge or slide joint!")
+
+                return joint_name
+
+            # getting the names associated with the sensors and the joints
+            mj_joint_pos_names = []
+            mj_joint_vel_names = []
+            joint_names = []
+
+            for mj_sensor_name, obk_sensor_field in zip(mj_sensor_names, obk_sensor_fields):
+                assert self.mj_model.sensor(mj_sensor_name) is not None
+                if obk_sensor_field == "jointpos":
+                    mj_joint_pos_names.append(mj_sensor_name)
+                    joint_names.append(_jnt_name_from_sensor_name(mj_sensor_name))
+                elif obk_sensor_field == "jointvel":
+                    mj_joint_vel_names.append(mj_sensor_name)
+                else:
+                    self.get_logger().error(f"Unknown sensor field {obk_sensor_field} for message type {msg_type}!")
+                    raise ValueError(f"Unknown sensor field {obk_sensor_field} for message type {msg_type}!")
+
+            def timer_callback() -> None:
+                """Timer callback for the sensor."""
+                msg = osm.ObkJointEncoders()
+                msg.joint_names = joint_names  # once we know this, it doesn't change
+
+                # the actual joint positions and velocities are updated every time the timer callback is called
+                joint_pos = []
+                joint_vel = []
+                for sensor_name in mj_joint_pos_names:
+                    joint_pos.append(self.mj_data.sensor(sensor_name).data.item())
+                for sensor_name in mj_joint_vel_names:
+                    joint_vel.append(self.mj_data.sensor(sensor_name).data.item())
+                msg.joint_pos = joint_pos
+                msg.joint_vel = joint_vel
+                pub_sensor.publish(msg)
+
+        else:
+            raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
 
         return timer_callback
 
@@ -106,6 +144,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
         self.mj_model = MjModel.from_xml_path(model_xml_path)
         self.mj_data = MjData(self.mj_model)
+        mj_forward(self.mj_model, self.mj_data)
 
         # set the configuration parameters for non-sensor fields
         self.n_u = int(config_dict["n_u"])
@@ -142,11 +181,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 assert "sensor_names" in sensor_setting_dict and isinstance(sensor_setting_dict["sensor_names"], str)
                 topic = sensor_setting_dict["topic"]
                 dt = float(sensor_setting_dict["dt"])
-                sensor_type = sensor_setting_dict["sensor_type"]
-                sensor_names = sensor_setting_dict["sensor_names"].split("&")
+                msg_type_str = sensor_setting_dict["sensor_type"]
+
+                # the mujoco sensor names and the correspond Obelisk message field types are delimited by "$"
+                sensor_names_and_fields = sensor_setting_dict["sensor_names"].split("&")
+                mj_sensor_names = [name_and_type.split("$")[0] for name_and_type in sensor_names_and_fields]
+                obk_sensor_fields = [name_and_type.split("$")[1] for name_and_type in sensor_names_and_fields]
 
                 # make sensor pub/timer pair
-                msg_type = self._get_msg_type_from_mj_sensor_type(sensor_type)
+                msg_type = self._get_msg_type_from_string(msg_type_str)
                 cbg = ReentrantCallbackGroup()
                 pub_sensor = self.create_publisher(
                     msg_type=msg_type,
@@ -154,7 +197,12 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     qos_profile=10,
                     callback_group=cbg,
                 )
-                timer_callback = self._create_timer_callback_from_msg_type(msg_type, sensor_names, pub_sensor)
+                timer_callback = self._create_timer_callback_from_msg_type(
+                    msg_type,
+                    mj_sensor_names,
+                    obk_sensor_fields,
+                    pub_sensor,
+                )
                 timer_sensor = self.create_timer(
                     timer_period_sec=dt,
                     callback=timer_callback,
