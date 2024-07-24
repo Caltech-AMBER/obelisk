@@ -1,4 +1,14 @@
-<!-- <?xml version="1.0" encoding="utf-8"?> -->
+<!-- Achilles Mujoco XML. Basic humanoid robot with no hands.
+    In each leg there are:
+    - 3 hip joints: roll, pitch, yaw
+    - 1 knee joint
+    - 1 ankle joint
+    In each arm there are:
+    - 3 shoulder joints: roll, pitch, yaw
+    - 1 elbow joint
+    XML and URDF generated from CAD information.
+     -->
+<?xml version="1.0" encoding="utf-8"?>
 <mujoco model="achilles">
 
   <!-- Set the angles to be in radians -->
@@ -12,7 +22,7 @@
 
   <!-- Specify the light settings -->
   <visual>
-      <headlight  diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+      <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
       <rgba haze="0.15 0.25 0.35 1"/>
       <global elevation="-35"/>
   </visual>
@@ -22,8 +32,13 @@
 
   <!-- List the location of all meshes -->
   <asset>
+    <!-- World Textures -->
     <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="plane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="plane" texture="plane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
 
+    <!-- Robot Meshes -->
     <mesh file="torso.STL" name="torso"/>
 
     <mesh file="left_hip_yaw.STL" name="left_hip_yaw"/>
@@ -47,11 +62,6 @@
     <mesh file="right_elbow_pitch.STL" name="right_elbow_pitch"/>
 
     <mesh file="ankle_pitch.STL" name="ankle_pitch"/>
-
-
-    <texture type="2d" name="plane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
-      markrgb="0.8 0.8 0.8" width="300" height="300"/>
-    <material name="plane" texture="plane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
   </asset>
 
    <worldbody>
