@@ -326,8 +326,12 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
 
         # initialize the mujoco model and data
-        self.mj_model = MjModel.from_xml_path(model_xml_path)
-        self.mj_data = MjData(self.mj_model)
+        try:
+            self.mj_model = MjModel.from_xml_path(model_xml_path)
+            self.mj_data = MjData(self.mj_model)
+        except Exception as e:
+            self.get_logger().error(f"Could not load the Mujoco model!\n{e}")
+            return TransitionCallbackReturn.ERROR
         mj_forward(self.mj_model, self.mj_data)
 
         # set the configuration parameters for non-sensor fields
