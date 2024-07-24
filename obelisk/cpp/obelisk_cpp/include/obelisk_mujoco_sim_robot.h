@@ -551,7 +551,7 @@ namespace obelisk {
                         //  If the velocity sensor ordering does not match the position sensors, then their joint names
                         //  will not align.
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
-                        if (mj_sensor_types.at(i) == "joint_pos") {
+                        if (mj_sensor_types.at(i) == "jointpos") {
                             msg.joint_pos.emplace_back(this->data_->sensordata[sensor_addr]);
                             int joint_id = this->model_->sensor_objid[sensor_id];
                             if (joint_id == -1) {
@@ -561,7 +561,7 @@ namespace obelisk {
                             } else {
                                 msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
                             }
-                        } else if (mj_sensor_types.at(i) == "joint_vel") {
+                        } else if (mj_sensor_types.at(i) == "jointvel") {
                             msg.joint_vel.emplace_back(this->data_->sensordata[sensor_addr]);
                         } else {
                             RCLCPP_ERROR_STREAM(
