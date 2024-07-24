@@ -68,7 +68,8 @@ else
         ros-humble-rosidl-default-generators \
         ros-humble-rmw-cyclonedds-cpp \
         ros-humble-rviz-visual-tools \
-        ros-humble-foxglove-bridge
+        ros-humble-foxglove-bridge \
+        ros-humble-dynamixel-sdk
     source /opt/ros/humble/setup.bash
 
     # parse the user's response to adding the ROS source command to ~/.bashrc - specifying no source takes precedence
@@ -92,7 +93,7 @@ else
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
-        mujoco
+        mujoco \
     cd $OBELISK_ROOT/obelisk/python
     pip install -e .
     cd $OBELISK_ROOT
