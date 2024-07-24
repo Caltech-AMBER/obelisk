@@ -37,7 +37,7 @@ onboard:
         - ros_parameter: sub_sensor_setting
           # key: sub1
           topic: /obelisk/leap/sensor
-          msg_type: JointEncoders
+          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
           non_obelisk: False
@@ -59,8 +59,8 @@ onboard:
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
-          topic: /obelisk/leap/sensor
-          msg_type: JointEncoders
+          topic: /obelisk/leap/joint_encoders
+          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
           non_obelisk: False
@@ -84,7 +84,7 @@ onboard:
             dt: 0.002
             msg_type: ObkJointEncoders
             sensor_names:
-            - if_mcp_sensor: joint_pos
+              if_mcp_sensor: joint_pos
               if_rot_sensor: joint_pos
               if_pip_sensor: joint_pos
               if_dip_sensor: joint_pos

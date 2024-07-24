@@ -39,7 +39,7 @@ onboard:
       subscribers:
         - ros_parameter: sub_sensor_setting
           # key: sub1
-          topic: /obelisk/dummy/sensor
+          topic: /obelisk/dummy/joint_encoders
           msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
@@ -76,18 +76,18 @@ onboard:
             dt: 0.001
             msg_type: ObkJointEncoders
             sensor_names:
-            - joint_pos: joint_pos
+              joint_pos: joint_pos
               joint_vel: joint_vel
           - topic: /obelisk/dummy/imu
             dt: 0.002
             msg_type: ObkImu
             sensor_names:
-            - tip_acc_sensor: accelerometer
+              tip_acc_sensor: accelerometer
               tip_gyro_sensor: gyro
               tip_frame_sensor: framequat
           - topic: /obelisk/dummy/framepose
             dt: 0.002
             msg_type: ObkFramePose
             sensor_names:
-            - tip_pos_sensor: framepos
+              tip_pos_sensor: framepos
               tip_orientation_sensor: framequat

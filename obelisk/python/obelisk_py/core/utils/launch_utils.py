@@ -97,18 +97,36 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
                 sim_settings_strs.append(f"{k}:{v}")
         sim_settings_str = ",".join(sim_settings_strs).replace(" ", "")
 
-        def _replace_colons_delete_curly_braces(match: re.Match) -> str:
+        # replace colons in 'sensor_names':{...} with '$', delete curly braces only within the outermost braces
+        def _replace_colons_delete_inner_braces(match: re.Match) -> str:
             dollar_str = match.group(0).replace(":", "$")
             dollar_str = dollar_str.replace("$", ":", 1)
-            return dollar_str.replace("{", "").replace("}", "")
 
-        sim_settings_str = re.sub(r"'sensor_names':\[[^\]]*\]", _replace_colons_delete_curly_braces, sim_settings_str)
+            # find the position of the outermost braces
+            open_brace = dollar_str.find("{")
+            close_brace = dollar_str.rfind("}")
 
-        # replace commas in 'sensor_names':[...] with '&', remove brackets
-        def _replace_commas_delete_brackets(match: re.Match) -> str:
-            return match.group(0).replace(",", "&").replace("[", "").replace("]", "")
+            if open_brace != -1 and close_brace != -1 and open_brace < close_brace:
+                # keep content before the first brace and after the last brace
+                prefix = dollar_str[: open_brace + 1]
+                suffix = dollar_str[close_brace:]
 
-        sim_settings_str = re.sub(r"'sensor_names':\[[^\]]*\]", _replace_commas_delete_brackets, sim_settings_str)
+                # remove braces from the inner content
+                inner_content = dollar_str[open_brace + 1 : close_brace]
+                inner_content_no_braces = inner_content.replace("{", "").replace("}", "")
+
+                return f"{prefix}{inner_content_no_braces}{suffix}"
+            else:
+                # if we can't find matching outermost braces, return the original string (SHOULD NEVER HAPPEN)
+                return dollar_str
+
+        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_colons_delete_inner_braces, sim_settings_str)
+
+        # replace commas in 'sensor_names':{...} with '&', remove outermost braces
+        def _replace_commas_delete_outer_braces(match: re.Match) -> str:
+            return match.group(0).replace(",", "&").replace("{", "").replace("}", "")
+
+        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_commas_delete_outer_braces, sim_settings_str)
 
         # remove single quotes
         sim_settings_str = sim_settings_str.replace("'", "")
