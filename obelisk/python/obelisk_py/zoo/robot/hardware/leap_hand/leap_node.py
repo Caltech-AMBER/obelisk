@@ -9,7 +9,7 @@ from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 from obelisk_py.core.robot import ObeliskRobot
 
 
-class ObeliskLeapHand(ObeliskRobot):
+class ObeliskLeapRobot(ObeliskRobot):
     """This class represents the Obelisk Leap Hand robot."""
 
     N_MOTORS = 16
@@ -42,7 +42,7 @@ class ObeliskLeapHand(ObeliskRobot):
     def apply_control(self, control_msg: ObeliskControlMsg) -> None:
         """Apply the control message to the robot."""
         for i in range(self.N_MOTORS):
-            val = self._radians_to_dxl_pos(control_msg.u[i])
+            val = self._radians_to_dxl_pos(control_msg.q_des[i])
             arr = [
                 DXL_LOBYTE(DXL_LOWORD(val)),
                 DXL_HIBYTE(DXL_LOWORD(val)),
