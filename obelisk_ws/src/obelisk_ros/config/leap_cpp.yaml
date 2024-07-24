@@ -62,8 +62,8 @@ onboard:
       executable: obelisk_leap_robot
     # === simulation ===
     # - is_simulated: True
-    #   pkg: obelisk_sim_cpp
-    #   executable: obelisk_mujoco_robot
+      # pkg: obelisk_sim_cpp
+      # executable: obelisk_mujoco_robot
     # =================
       # callback_groups:
       publishers:

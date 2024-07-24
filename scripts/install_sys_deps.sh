@@ -93,9 +93,8 @@ else
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
-        mujoco \
-    cd $OBELISK_ROOT/obelisk/python
-    pip install -e .
+        mujoco
+    pip install -e $OBELISK_ROOT/obelisk/python
     cd $OBELISK_ROOT
 
     echo -e "\033[1;32mSystem dependencies installed successfully!\033[0m"
