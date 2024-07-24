@@ -19,6 +19,7 @@ namespace obelisk {
             this->template declare_parameter<std::string>("mujoco_setting", "");
 
             mujoco_sim_instance_    = this;
+            activation_complete_    = false;
             configuration_complete_ = false;
             mujoco_setup_           = false;
         }
@@ -77,6 +78,8 @@ namespace obelisk {
         on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
+            activation_complete_ = true;
+
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -100,6 +103,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
+            activation_complete_    = false;
             configuration_complete_ = false;
 
             // Reset data
@@ -117,6 +121,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
+            activation_complete_    = false;
             configuration_complete_ = false;
 
             // Reset data
@@ -188,6 +193,10 @@ namespace obelisk {
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
             mujoco_setup_ = true;
+
+            while (!activation_complete_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
             RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
 
             while (!this->stop_thread_) {
@@ -921,6 +930,7 @@ namespace obelisk {
         std::mutex sensor_data_mut_;
 
         std::atomic<bool> configuration_complete_;
+        std::atomic<bool> activation_complete_;
         std::atomic<bool> mujoco_setup_;
 
         rclcpp::CallbackGroup::SharedPtr callback_group_;

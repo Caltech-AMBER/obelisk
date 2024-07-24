@@ -62,6 +62,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     bag = context.launch_configurations.get("bag")
     bag = "true" if bag is None else bag.lower()
 
+    print(auto_start)
+
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
@@ -94,7 +96,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         )
     )  # when the global state node enters its shutdown state, the launch file also shuts down
     obelisk_launch_actions += [global_state_node, shutdown_event_handler]
-    if auto_start:
+    if auto_start in ("true", "activate"):
+        # Configure and activate all nodes
         configure_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
@@ -116,6 +119,19 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             )
         )  # once the node is configured, it will be activated automatically
         obelisk_launch_actions += [configure_event, activate_upon_configure_handler]
+        print("AUTO_START: " + auto_start)
+    elif auto_start == "configure":
+        # Just configure all nodes
+        configure_event = EmitEvent(
+            event=ChangeState(
+                lifecycle_node_matcher=launch.events.matches_action(global_state_node),
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+            )
+        )
+        obelisk_launch_actions += [configure_event]
+        print("AUTO_START: " + auto_start)
+
+    # if auto_start is false, then no configuration at all
 
     # generate all launch actions
     obelisk_launch_actions += get_launch_actions_from_node_settings(
