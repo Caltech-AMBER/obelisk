@@ -94,7 +94,11 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         )
     )  # when the global state node enters its shutdown state, the launch file also shuts down
     obelisk_launch_actions += [global_state_node, shutdown_event_handler]
-    if auto_start in ("true", "activate"):
+
+    # If auto_start is "true" or "activate" then configure and activate
+    # If auto_start is "configure" then only configure the nodes
+    # If auto_start is anything else, then no configuration or activation
+    if auto_start in ["true", "activate"]:
         # Configure and activate all nodes
         configure_event = EmitEvent(
             event=ChangeState(
@@ -126,8 +130,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             )
         )
         obelisk_launch_actions += [configure_event]
-
-    # if auto_start is false, then no configuration at all
 
     # generate all launch actions
     obelisk_launch_actions += get_launch_actions_from_node_settings(
