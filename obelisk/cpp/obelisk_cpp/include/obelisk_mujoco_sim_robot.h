@@ -684,22 +684,19 @@ namespace obelisk {
 
                                 // Framepos sensors can be mounted to different objects
                                 int obj_type = this->model_->sensor_objtype[sensor_id];
+                                int obj_id   = this->model_->sensor_objid[sensor_id];
                                 if (obj_type == mjOBJ_SITE) {
-                                    int site_id = this->model_->sensor_objid[sensor_id];
                                     msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+                                        std::string(this->model_->names + this->model_->name_siteadr[obj_id]);
                                 } else if (obj_type == mjOBJ_BODY) {
-                                    int body_id = this->model_->sensor_objid[sensor_id];
                                     msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_bodyadr[body_id]);
+                                        std::string(this->model_->names + this->model_->name_bodyadr[obj_id]);
                                 } else if (obj_type == mjOBJ_GEOM) {
-                                    int geom_id = this->model_->sensor_objid[sensor_id];
                                     msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_geomadr[geom_id]);
+                                        std::string(this->model_->names + this->model_->name_geomadr[obj_id]);
                                 } else if (obj_type == mjOBJ_CAMERA) {
-                                    int cam_id = this->model_->sensor_objid[sensor_id];
                                     msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_camadr[cam_id]);
+                                        std::string(this->model_->names + this->model_->name_camadr[obj_id]);
                                 } else {
                                     RCLCPP_ERROR_STREAM(
                                         this->get_logger(),
@@ -713,30 +710,27 @@ namespace obelisk {
                                 if (this->model_->sensor_refid[sensor_id] == -1) {
                                     msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
                                 } else {
-                                    int obj_type = this->model_->sensor_reftype[sensor_id];
-                                    if (obj_type == mjOBJ_SITE) {
-                                        int site_id = this->model_->sensor_refid[sensor_id];
+                                    int ref_type = this->model_->sensor_reftype[sensor_id];
+                                    int ref_id   = this->model_->sensor_refid[sensor_id];
+                                    if (ref_type == mjOBJ_SITE) {
                                         msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_siteadr[site_id]);
-                                    } else if (obj_type == mjOBJ_BODY) {
-                                        int body_id = this->model_->sensor_refid[sensor_id];
+                                            std::string(this->model_->names + this->model_->name_siteadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_BODY) {
                                         msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_bodyadr[body_id]);
-                                    } else if (obj_type == mjOBJ_GEOM) {
-                                        int geom_id = this->model_->sensor_refid[sensor_id];
+                                            std::string(this->model_->names + this->model_->name_bodyadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_GEOM) {
                                         msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_geomadr[geom_id]);
-                                    } else if (obj_type == mjOBJ_CAMERA) {
-                                        int cam_id = this->model_->sensor_refid[sensor_id];
+                                            std::string(this->model_->names + this->model_->name_geomadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_CAMERA) {
                                         msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_camadr[cam_id]);
+                                            std::string(this->model_->names + this->model_->name_camadr[ref_id]);
                                     } else {
                                         RCLCPP_ERROR_STREAM(this->get_logger(),
                                                             "Framepos sensor, "
                                                                 << sensor_names.at(i)
                                                                 << ", is not associated with a supported Mujoco object "
                                                                    "type! Current object type (mjtObj): "
-                                                                << obj_type);
+                                                                << ref_type);
                                     }
                                 }
                                 has_framepos = true;
