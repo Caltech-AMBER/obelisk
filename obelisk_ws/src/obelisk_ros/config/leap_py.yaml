@@ -53,8 +53,8 @@ onboard:
       executable: obelisk_mujoco_robot
     # === hardware ===
     # - is_simulated: False
-    #   pkg: obelisk_robot_py
-    #   executable: obelisk_leap_hand
+    #   pkg: obelisk_leap_py
+    #   executable: obelisk_leap_robot
     # ==================
       # callback_groups:
       publishers:

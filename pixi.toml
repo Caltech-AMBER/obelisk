@@ -118,6 +118,9 @@ typeguard = ">=4.3.0"
 # Dynamixel SDK for LEAP hand
 ros-humble-dynamixel-sdk = ">=3.7"
 
+[feature.leap.pypi-dependencies]
+dynamixel-sdk = ">=3.7"
+
 # dev
 [feature.dev.dependencies]
 nano = "*"

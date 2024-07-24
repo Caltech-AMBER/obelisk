@@ -35,10 +35,8 @@ class LeapPositionSetpointController(ObeliskController):
         """
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u_mujoco = [
-            (np.sin(self.t * 3) / 5) for _ in range(16)
-        ]  # example state-independent input
-        position_setpoint_msg.q_des = [(np.sin(self.t * 3) / 5) for _ in range(16)]  # example state-independent input
+        position_setpoint_msg.u_mujoco = [(0.3 * np.sin(self.t)) for _ in range(16)]  # example state-independent input
+        position_setpoint_msg.q_des = [(0.3 * np.sin(self.t)) for _ in range(16)]  # example state-independent input
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore
