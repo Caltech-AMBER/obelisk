@@ -18,6 +18,7 @@ repos:
     rev: v18.1.5
     hooks:
         - id: clang-format
+          args: ['--style=file']
           types_or: []
           types: [text]
           files: \.(cpp|cxx|c|h|hpp|hxx|txx)$
