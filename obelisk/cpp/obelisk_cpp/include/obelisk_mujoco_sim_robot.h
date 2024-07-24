@@ -53,7 +53,7 @@ namespace obelisk {
                 }
             }
 
-            RCL_CPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
+            RCLCPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
 
             nu_                = GetNumInputs(mujoco_config_map); // Required
             time_step_         = GetTimeSteps(mujoco_config_map);
