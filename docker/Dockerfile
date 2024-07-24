@@ -36,8 +36,10 @@ RUN groupadd --gid $GID $USER && \
     usermod -aG sudo ${USER} && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# add user to dialout group to enable serial port access from the container
-RUN usermod -a -G dialout ${USER}
+# dialout group allows serial port access
+# video group allows ZED camera access (also need to chown /usr/local/zed; done in script)
+RUN usermod -a -G dialout ${USER} && \
+    usermod -a -G video ${USER}
 
 # switch to new user and workdir
 USER ${UID}
