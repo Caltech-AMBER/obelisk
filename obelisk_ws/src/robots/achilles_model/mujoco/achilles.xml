@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- <?xml version="1.0" encoding="utf-8"?> -->
 <mujoco model="achilles">
 
   <!-- Set the angles to be in radians -->
-  <compiler angle="radian" autolimits="true" eulerseq="zyx"/>
+  <compiler angle="radian" autolimits="true" eulerseq="zyx" meshdir="./meshes"/>
 
   <!-- Fix simulation options -->
-  <option timestep="0.001" iterations="50" solver="Newton" gravity="0 0 -9.81"  integrator = "RK4" collision = "predefined">
-    <flag sensornoise="enable"/>
-  </option>
+  <option timestep="0.001" iterations="50" solver="Newton" gravity="0 0 -9.81"  integrator = "RK4"/>
+
+  <default> <geom contype="0" conaffinity="0"/> </default>.
 
   <size nconmax="100" njmax="500"/>
 
@@ -19,29 +19,29 @@
   <!-- List the location of all meshes -->
   <asset>
     <texture type='skybox' builtin='gradient' width='128' height='128' rgb1='0.4 0.6 0.8' rgb2='0 0 0'/>
-    <mesh file="../meshes/torso.STL" name="torso"/>
+    <mesh file="torso.STL" name="torso"/>
 
-    <mesh file="../meshes/left_hip_yaw.STL" name="left_hip_yaw"/>
-    <mesh file="../meshes/left_hip_roll.STL" name="left_hip_roll"/>
-    <mesh file="../meshes/left_hip_pitch.STL" name="left_hip_pitch"/>
-    <mesh file="../meshes/left_knee_pitch.STL" name="left_knee_pitch"/>
+    <mesh file="left_hip_yaw.STL" name="left_hip_yaw"/>
+    <mesh file="left_hip_roll.STL" name="left_hip_roll"/>
+    <mesh file="left_hip_pitch.STL" name="left_hip_pitch"/>
+    <mesh file="left_knee_pitch.STL" name="left_knee_pitch"/>
 
-    <mesh file="../meshes/left_shoulder_pitch.STL" name="left_shoulder_pitch"/>
-    <mesh file="../meshes/left_shoulder_roll.STL" name="left_shoulder_roll"/>
-    <mesh file="../meshes/left_shoulder_yaw.STL" name="left_shoulder_yaw"/>
-    <mesh file="../meshes/left_elbow_pitch.STL" name="left_elbow_pitch"/>
+    <mesh file="left_shoulder_pitch.STL" name="left_shoulder_pitch"/>
+    <mesh file="left_shoulder_roll.STL" name="left_shoulder_roll"/>
+    <mesh file="left_shoulder_yaw.STL" name="left_shoulder_yaw"/>
+    <mesh file="left_elbow_pitch.STL" name="left_elbow_pitch"/>
 
-    <mesh file="../meshes/right_hip_yaw.STL" name="right_hip_yaw"/>
-    <mesh file="../meshes/right_hip_roll.STL" name="right_hip_roll"/>
-    <mesh file="../meshes/right_hip_pitch.STL" name="right_hip_pitch"/>
-    <mesh file="../meshes/right_knee_pitch.STL" name="right_knee_pitch"/>
+    <mesh file="right_hip_yaw.STL" name="right_hip_yaw"/>
+    <mesh file="right_hip_roll.STL" name="right_hip_roll"/>
+    <mesh file="right_hip_pitch.STL" name="right_hip_pitch"/>
+    <mesh file="right_knee_pitch.STL" name="right_knee_pitch"/>
 
-    <mesh file="../meshes/right_shoulder_pitch.STL" name="right_shoulder_pitch"/>
-    <mesh file="../meshes/right_shoulder_roll.STL" name="right_shoulder_roll"/>
-    <mesh file="../meshes/right_shoulder_yaw.STL" name="right_shoulder_yaw"/>
-    <mesh file="../meshes/right_elbow_pitch.STL" name="right_elbow_pitch"/>
+    <mesh file="right_shoulder_pitch.STL" name="right_shoulder_pitch"/>
+    <mesh file="right_shoulder_roll.STL" name="right_shoulder_roll"/>
+    <mesh file="right_shoulder_yaw.STL" name="right_shoulder_yaw"/>
+    <mesh file="right_elbow_pitch.STL" name="right_elbow_pitch"/>
 
-    <mesh file="../meshes/ankle_pitch.STL" name="ankle_pitch"/>
+    <mesh file="ankle_pitch.STL" name="ankle_pitch"/>
 
     <texture builtin="checker" height="512" name="plane" rgb1="0.9 0.9 0.99"
               rgb2="0.7 0.7 0.7"
@@ -59,8 +59,8 @@
       <body name="torso" pos="0 0 1.002">
         <!-- ixx iyy izz ixy ixz iyz-->
         <inertial mass="8.300000" fullinertia=" 0.172676 0.102985 0.087971 0.000000 0.000000 0.000000" pos="0 0 -0.107903" />
-        <geom name="torso_mesh" conaffinity="0" contype="0" density="0" group="1" mesh="torso" type="mesh"/>
-        <geom name="torso_collision_box" conaffinity="0" contype="0" density="0" group="1" mesh="torso" type="mesh"/>
+        <geom name="torso_mesh" density="0" group="1" mesh="torso" type="mesh"/>
+        <geom name="torso_collision_box" density="0" group="1" mesh="torso" type="mesh"/>
         <site name="torso_imu_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
         <site name="torso_mocap_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
         <freejoint name="root"/>
@@ -68,29 +68,29 @@
         <body name="left_hip_yaw" pos="0 0.090 -0.334">
           <inertial mass="1.0" fullinertia="0.001907 0.002034 0.001175 -0.000030 0.000635 -0.000056" pos="-0.066483 -0.001451 -0.062589" />
           <joint axis="0 0 1" name="left_hip_yaw_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
-          <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_hip_yaw" type="mesh"/>
+          <geom density="0" group="1" mesh="left_hip_yaw" type="mesh"/>
 
             <body name="left_hip_roll" pos="-0.055 0 -0.083">
                 <inertial mass="0.843444" fullinertia="0.000867 0.001086 0.001082 0 0 0" pos="0.0465 0.055 0.000784" />
                 <joint axis="1 0 0" name="left_hip_roll_joint" pos="0 0 0" range="-1.0 1.0"/>
-                <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_hip_roll" type="mesh"/>
+                <geom density="0" group="1" mesh="left_hip_roll" type="mesh"/>
 
                 <body name="left_hip_pitch" pos="0.055 0.0395 0">
                     <inertial mass="2.42" fullinertia="0.0206 0.0173 0.00594 0 0 0" pos="0.0139 -0.0336 -0.076" />
                     <joint axis="0 1 0" name="left_hip_pitch_joint" pos="0 0 0" range="-1.5 0.5" damping="0.1" frictionloss="0.3" />
-                    <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_hip_pitch" type="mesh"/>
+                    <geom density="0" group="1" mesh="left_hip_pitch" type="mesh"/>
 
                     <body name="left_knee_pitch" pos="0 -0.0395 -0.275">
                       <!--inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 0.003 -0.131" /-->
                       <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 0.003 -0.131" />
                       <joint axis="0 1 0" name="left_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
-                      <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_knee_pitch" type="mesh"/>
+                      <geom density="0" group="1" mesh="left_knee_pitch" type="mesh"/>
 
                       <body name="left_ankle_pitch" pos="0 0 -0.275">
                         <!--inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" /-->
                         <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" />
                         <joint axis="0 1 0" name="left_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
-                        <geom name="left_foot" conaffinity="0" contype="0" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
+                        <geom name="left_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
 
                         <geom name="foot_front_left" pos="0.088 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
                         <geom name="foot_rear_left" pos="-0.02 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
@@ -105,22 +105,22 @@
         <body name="left_shoulder_pitch" pos="0 0.159 0">
           <inertial mass="0.796" fullinertia="0.000943 0.00056 0.000675 0 0 0" pos="0 0.05 0" />
           <joint axis="0 1 0" name="left_shoulder_pitch_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
-          <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_shoulder_pitch" type="mesh"/>
+          <geom density="0" group="1" mesh="left_shoulder_pitch" type="mesh"/>
 
           <body name="left_shoulder_roll" pos="0 0.063 0">
             <inertial mass="0.484" fullinertia="0.000498 0.000458 0.000384 0 0 0" pos="0 0 -0.0708" />
             <joint axis="1 0 0" name="left_shoulder_roll_joint" pos="0 0 0" range="0 3.14" damping="0.1" frictionloss="0.3"/>
-            <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_shoulder_roll" type="mesh"/>
+            <geom density="0" group="1" mesh="left_shoulder_roll" type="mesh"/>
 
             <body name="left_shoulder_yaw" pos="0 0 -0.0986">
               <inertial mass="0.5847" fullinertia="0.0007 0.000796 0.000348 0 0 0" pos="0 0 -0.059" />
               <joint axis="0 0 1" name="left_shoulder_yaw_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
-              <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_shoulder_yaw" type="mesh"/>
+              <geom density="0" group="1" mesh="left_shoulder_yaw" type="mesh"/>
 
               <body name="left_elbow_pitch" pos="0 0 -0.133">
                 <inertial mass="0.297" fullinertia="0.0018 0.0018 0.0001 0 0 0" pos="0 0 -0.1284" />
                 <joint axis="0 1 0" name="left_elbow_pitch_joint" pos="0 0 0" range="-1.58 0" damping="0.1" frictionloss="0.3"/>
-                <geom conaffinity="0" contype="0" density="0" group="1" mesh="left_elbow_pitch" type="mesh"/>
+                <geom density="0" group="1" mesh="left_elbow_pitch" type="mesh"/>
               </body>
             </body>
           </body>
@@ -129,30 +129,30 @@
         <body name="right_hip_yaw" pos="0 -0.090 -0.334">
           <inertial mass="1.0" fullinertia="0.001907 0.002034 0.001175 0.000030 0.000635 0.000056" pos="-0.066483 0.001451 -0.062589" />
           <joint axis="0 0 1" name="right_hip_yaw_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
-          <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_hip_yaw" type="mesh"/>
+          <geom density="0" group="1" mesh="right_hip_yaw" type="mesh"/>
 
             <body name="right_hip_roll" pos="-0.055 0 -0.083">
                 <inertial mass="0.843444" fullinertia="0.000867 0.001086 0.001082 0 0 0" pos="0.0465 -0.055 0.000784" />
                 <joint axis="1 0 0" name="right_hip_roll_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
-                <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_hip_roll" type="mesh"/>
+                <geom density="0" group="1" mesh="right_hip_roll" type="mesh"/>
 
                 <body name="right_hip_pitch" pos="0.055 -0.0395 0">
                     <inertial mass="2.42" fullinertia="0.0206 0.0173 0.00594 0 0 0" pos="0.0139 0.0336 -0.076" />
                     <joint axis="0 1 0" name="right_hip_pitch_joint" pos="0 0 0" range="-1.5 0.5" damping="0.1" frictionloss="0.3"/>
-                    <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_hip_pitch" type="mesh"/>
+                    <geom density="0" group="1" mesh="right_hip_pitch" type="mesh"/>
 
                     <body name="right_knee_pitch" pos="0 0.0395 -0.275">
                       <!--inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 -0.003 -0.131" /-->
                       <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 -0.003 -0.131" />
                       <joint axis="0 1 0" name="right_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
-                      <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_knee_pitch" type="mesh"/>
+                      <geom density="0" group="1" mesh="right_knee_pitch" type="mesh"/>
 
 
                       <body name="right_ankle_pitch" pos="0 0 -0.275">
                         <!--inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" /-->
                         <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" />
                         <joint axis="0 1 0" name="right_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3" />
-                        <geom name="right_foot" conaffinity="0" contype="0" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
+                        <geom name="right_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
 
                         <geom name="foot_front_right" pos="0.088 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
                         <geom name="foot_rear_right" pos="-0.02 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
@@ -167,22 +167,22 @@
         <body name="right_shoulder_pitch" pos="0 -0.159 0">
           <inertial mass="0.796" fullinertia="0.000943 0.00056 0.000675 0 0 0" pos="0 -0.05 0" />
           <joint axis="0 1 0" name="right_shoulder_pitch_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3" />
-          <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_shoulder_pitch" type="mesh"/>
+          <geom density="0" group="1" mesh="right_shoulder_pitch" type="mesh"/>
 
           <body name="right_shoulder_roll" pos="0 -0.063 0">
             <inertial mass="0.484" fullinertia="0.000498 0.000458 0.000384 0 0 0" pos="0 0 -0.0708" />
             <joint axis="1 0 0" name="right_shoulder_roll_joint" pos="0 0 0" range="-3.14 0" damping="0.1" frictionloss="0.3"/>
-            <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_shoulder_roll" type="mesh"/>
+            <geom density="0" group="1" mesh="right_shoulder_roll" type="mesh"/>
 
             <body name="right_shoulder_yaw" pos="0 0 -0.0986">
               <inertial mass="0.5847" fullinertia="0.0007 0.000796 0.000348 0 0 0" pos="0 0 -0.059" />
               <joint axis="0 0 1" name="right_shoulder_yaw_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
-              <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_shoulder_yaw" type="mesh"/>
+              <geom density="0" group="1" mesh="right_shoulder_yaw" type="mesh"/>
 
               <body name="right_elbow_pitch" pos="0 0 -0.133">
                 <inertial mass="0.297" fullinertia="0.0018 0.0018 0.0001 0 0 0" pos="0 0 -0.1284" />
                 <joint axis="0 1 0" name="right_elbow_pitch_joint" pos="0 0 0" range="-1.58 0" damping="0.1" frictionloss="0.3"/>
-                <geom conaffinity="0" contype="0" density="0" group="1" mesh="right_elbow_pitch" type="mesh"/>
+                <geom density="0" group="1" mesh="right_elbow_pitch" type="mesh"/>
               </body>
             </body>
           </body>
