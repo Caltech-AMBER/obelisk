@@ -22,6 +22,7 @@ add_library(Zoo INTERFACE)
 add_library(Obelisk::Zoo ALIAS Zoo)
 
 target_include_directories(Zoo INTERFACE include)
+target_include_directories(Zoo INTERFACE robot)
 
 target_link_libraries(Zoo INTERFACE Obelisk::Core)
 

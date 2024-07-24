@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(obelisk_viz_cpp)
+project(obelisk_leap_control_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -15,12 +15,11 @@ FetchContent_Declare(
   SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
 )
 
-# Lets us Get Obelisk::Core and Obelisk::Viz
+# Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-add_executable(default_robot_viz src/default_robot_viz.cpp)
-target_link_libraries(default_robot_viz PUBLIC Obelisk::Core Obelisk::Viz)
-
+add_executable(obelisk_leap_controller src/obelisk_leap_controller.cpp)
+target_link_libraries(obelisk_leap_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -30,7 +29,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-  default_robot_viz
+  obelisk_leap_controller
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

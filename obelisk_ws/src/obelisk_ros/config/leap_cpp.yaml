@@ -1,11 +1,12 @@
 config: leap
 onboard:
   control:
-    - pkg: obelisk_control_py
-      executable: leap_controller
+    - pkg: obelisk_leap_control_cpp
+      executable: obelisk_leap_controller
       # callback_groups:
       publishers:
         - ros_parameter: pub_ctrl_setting
+          # key: pub1
           topic: /obelisk/leap/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
@@ -13,21 +14,26 @@ onboard:
           non_obelisk: False
       subscribers:
         - ros_parameter: sub_est_setting
+          # key: sub1
           topic: /obelisk/leap/est
           msg_type: EstimatedState
           history_depth: 10
+          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       timers:
         - ros_parameter: timer_ctrl_setting
+          # key: timer1
           timer_period_sec: 0.001
           callback_group: None
+          # callback_key: timer_callback1
   estimation:
-    - pkg: obelisk_estimation_py
+    - pkg: obelisk_estimation_cpp
       executable: jointencoders_passthrough_estimator
       # callback_groups:
       publishers:
         - ros_parameter: pub_est_setting
+          # key: pub1
           topic: /obelisk/leap/est
           msg_type: EstimatedState
           history_depth: 10
@@ -39,23 +45,26 @@ onboard:
           topic: /obelisk/leap/sensor
           msg_type: JointEncoders
           history_depth: 10
+          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       timers:
         - ros_parameter: timer_est_setting
+          # key: timer1
           timer_period_sec: 0.001
           callback_group: None
+          # callback_key: timer_callback1
   # sensing:
   robot:
     # === hardware ===
     - is_simulated: False
-      pkg: obelisk_leap_py
-      executable: obelisk_leap_hand
+      pkg: obelisk_leap_cpp
+      executable: obelisk_leap_robot
     # === simulation ===
     # - is_simulated: True
-    #   pkg: obelisk_sim_py
-    #   executable: obelisk_mujoco_robot
-    # ==================
+      # pkg: obelisk_sim_cpp
+      # executable: obelisk_mujoco_robot
+    # =================
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
@@ -66,7 +75,6 @@ onboard:
           non_obelisk: False
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/leap/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
