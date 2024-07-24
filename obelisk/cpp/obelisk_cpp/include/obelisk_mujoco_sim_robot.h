@@ -582,7 +582,7 @@ namespace obelisk {
                     obelisk_sensor_msgs::msg::ObkImu msg;
 
                     // TODO: For now all the covariances are 0
-                    // *** Note *** Mujoco does not support adding noise naitevly since v3.14.
+                    // *** Note *** Mujoco does not support adding noise natively since v3.14.
                     // TODO: Consider adding noise here ourselves
 
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
