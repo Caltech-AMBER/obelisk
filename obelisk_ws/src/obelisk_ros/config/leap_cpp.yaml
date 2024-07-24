@@ -1,0 +1,114 @@
+config: leap
+onboard:
+  control:
+    - pkg: obelisk_leap_control_cpp
+      executable: obelisk_leap_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          # key: pub1
+          topic: /obelisk/leap/ctrl
+          msg_type: PositionSetpoint
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_est_setting
+          # key: sub1
+          topic: /obelisk/leap/est
+          msg_type: EstimatedState
+          history_depth: 10
+          # callback_key: sub_callback1
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          # key: timer1
+          timer_period_sec: 0.001
+          callback_group: None
+          # callback_key: timer_callback1
+  estimation:
+    - pkg: obelisk_estimation_cpp
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          # key: pub1
+          topic: /obelisk/leap/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          # key: sub1
+          topic: /obelisk/leap/joint_encoders
+          msg_type: ObkJointEncoders
+          history_depth: 10
+          # callback_key: sub_callback1
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_est_setting
+          # key: timer1
+          timer_period_sec: 0.001
+          callback_group: None
+          # callback_key: timer_callback1
+  # sensing:
+  robot:
+    # === simulation ===
+    - is_simulated: True
+      pkg: obelisk_sim_cpp
+      executable: obelisk_mujoco_robot
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_leap_cpp
+    #   executable: obelisk_leap_robot
+    # ==================
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/leap/joint_encoders
+          msg_type: ObkJointEncoders
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          topic: /obelisk/leap/ctrl
+          msg_type: PositionSetpoint
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      sim:
+        - ros_parameter: mujoco_setting
+          n_u: 16
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: leap_rh
+          model_xml_path: leap_palm_up.xml
+          sensor_settings:
+          - topic: /obelisk/leap/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+              if_mcp_sensor: joint_pos
+              if_rot_sensor: joint_pos
+              if_pip_sensor: joint_pos
+              if_dip_sensor: joint_pos
+              mf_mcp_sensor: joint_pos
+              mf_rot_sensor: joint_pos
+              mf_pip_sensor: joint_pos
+              mf_dip_sensor: joint_pos
+              rf_mcp_sensor: joint_pos
+              rf_rot_sensor: joint_pos
+              rf_pip_sensor: joint_pos
+              rf_dip_sensor: joint_pos
+              th_cmc_sensor: joint_pos
+              th_axl_sensor: joint_pos
+              th_mcp_sensor: joint_pos
+              th_ipl_sensor: joint_pos
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None

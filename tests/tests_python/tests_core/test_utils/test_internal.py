@@ -7,7 +7,7 @@ import obelisk_sensor_msgs.msg as osm
 import pytest
 from obelisk_control_msgs.msg import PositionSetpoint
 from obelisk_estimator_msgs.msg import EstimatedState
-from obelisk_sensor_msgs.msg import JointEncoders
+from obelisk_sensor_msgs.msg import ObkJointEncoders
 
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, ObeliskSensorMsg
 from obelisk_py.core.utils.internal import check_and_get_obelisk_msg_type, get_classes_in_module
@@ -45,7 +45,7 @@ def test_get_classes_in_module() -> None:
     [
         ("PositionSetpoint", ocm, PositionSetpoint),
         ("EstimatedState", oem, EstimatedState),
-        ("JointEncoders", osm, JointEncoders),
+        ("ObkJointEncoders", osm, ObkJointEncoders),
     ],
 )
 def test_check_and_get_obelisk_msg_type_with_module(
@@ -75,8 +75,8 @@ def test_check_and_get_obelisk_msg_type_with_typevar() -> None:
     result = check_and_get_obelisk_msg_type("EstimatedState", ObeliskEstimatorMsg)
     assert result == EstimatedState
 
-    result = check_and_get_obelisk_msg_type("JointEncoders", ObeliskSensorMsg)
-    assert result == JointEncoders
+    result = check_and_get_obelisk_msg_type("ObkJointEncoders", ObeliskSensorMsg)
+    assert result == ObkJointEncoders
 
 
 def test_check_and_get_obelisk_msg_type_with_invalid_type() -> None:

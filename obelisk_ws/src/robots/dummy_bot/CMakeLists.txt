@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(dummy_bot)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -12,6 +12,12 @@ find_package(ament_cmake REQUIRED)
 install(
   DIRECTORY urdf/
   DESTINATION share/${PROJECT_NAME}/urdf
+)
+
+# install the mujoco files
+install(
+  DIRECTORY mujoco/
+  DESTINATION share/${PROJECT_NAME}/mujoco
 )
 
 if(BUILD_TESTING)

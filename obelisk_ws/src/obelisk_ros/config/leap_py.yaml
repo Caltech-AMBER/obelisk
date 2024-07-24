@@ -36,8 +36,8 @@ onboard:
       subscribers:
         - ros_parameter: sub_sensor_setting
           # key: sub1
-          topic: /obelisk/leap/sensor
-          msg_type: JointEncoders
+          topic: /obelisk/leap/joint_encoders
+          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
           non_obelisk: False
@@ -48,19 +48,19 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    # - is_simulated: False
-    #   pkg: obelisk_leap_py
-    #   executable: obelisk_leap_hand
-    # === hardware ===
     - is_simulated: True
       pkg: obelisk_sim_py
       executable: obelisk_mujoco_robot
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_leap_py
+    #   executable: obelisk_leap_robot
     # ==================
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
-          topic: /obelisk/leap/sensor
-          msg_type: JointEncoders
+          topic: /obelisk/leap/joint_encoders
+          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
           non_obelisk: False
@@ -74,31 +74,32 @@ onboard:
           non_obelisk: False
       sim:
         - ros_parameter: mujoco_setting
-          model_xml_path: leap_rh/leap_palm_up.xml
           n_u: 16
           time_step: 0.002
           num_steps_per_viz: 5
+          robot_pkg: leap_rh
+          model_xml_path: leap_palm_up.xml
           sensor_settings:
-          - topic: /obelisk/leap/sensor
+          - topic: /obelisk/leap/joint_encoders
             dt: 0.002
-            sensor_type: jointpos
+            msg_type: ObkJointEncoders
             sensor_names:
-            - if_mcp_sensor
-            - if_rot_sensor
-            - if_pip_sensor
-            - if_dip_sensor
-            - mf_mcp_sensor
-            - mf_rot_sensor
-            - mf_pip_sensor
-            - mf_dip_sensor
-            - rf_mcp_sensor
-            - rf_rot_sensor
-            - rf_pip_sensor
-            - rf_dip_sensor
-            - th_cmc_sensor
-            - th_axl_sensor
-            - th_mcp_sensor
-            - th_ipl_sensor
+              if_mcp_sensor: joint_pos
+              if_rot_sensor: joint_pos
+              if_pip_sensor: joint_pos
+              if_dip_sensor: joint_pos
+              mf_mcp_sensor: joint_pos
+              mf_rot_sensor: joint_pos
+              mf_pip_sensor: joint_pos
+              mf_dip_sensor: joint_pos
+              rf_mcp_sensor: joint_pos
+              rf_rot_sensor: joint_pos
+              rf_pip_sensor: joint_pos
+              rf_dip_sensor: joint_pos
+              th_cmc_sensor: joint_pos
+              th_axl_sensor: joint_pos
+              th_mcp_sensor: joint_pos
+              th_ipl_sensor: joint_pos
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02

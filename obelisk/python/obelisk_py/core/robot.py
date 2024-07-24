@@ -123,14 +123,6 @@ class ObeliskSimRobot(ObeliskRobot):
             self.sim_process.join()
         return TransitionCallbackReturn.SUCCESS
 
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
-        """Apply the control message.
-
-        We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
-        field of a sim model. YOU MUST CHECK THIS YOURSELF!
-        """
-        self._set_shared_ctrl(control_msg.u)
-
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the TrueSimState of the simulator.
 

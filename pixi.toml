@@ -7,6 +7,7 @@ name = "obelisk"
 authors = [
     "Albert Li <alberthli@caltech.edu>",
     "Zach Olkin <zolkin@caltech.edu>",
+    "Gavin Hua <ghua@caltech.edu>",
 ]
 description = "The AMBER Lab's generic robot control interface."
 channels = ["conda-forge"]
@@ -14,7 +15,7 @@ platforms = ["linux-64"]
 
 [activation]
 scripts = ["obelisk_ws/install/setup.sh"]
-env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp" }
+env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="latest", RCUTILS_COLORIZED_OUTPUT="1" }
 
 # ############ #
 # FEATURE SETS #
@@ -33,15 +34,7 @@ numpy = ">=1.26"
 obelisk_py = { path="./obelisk/python", editable=true }
 
 
-# TODO(ahl): once obelisk is stable, check if cuda deps are needed
 # cuda
-[feature.cuda118]
-channels = ["nvidia", "nvidia/label/cuda-11.8.0"]
-system-requirements = {cuda="11.8.0"}
-
-[feature.cuda118.dependencies]
-cuda = { version="*", channel="nvidia/label/cuda-11.8.0" }
-
 [feature.cuda121]
 channels = ["nvidia", "nvidia/label/cuda-12.1.0"]
 system-requirements = {cuda="12.1.0"}
@@ -58,9 +51,7 @@ channels = ["robostack-staging"]
 ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
-ros-humble-joint-state-publisher = "*"
-ros-humble-urdf = "*"
-ros-humble-foxglove-bridge="*"
+ros-humble-foxglove-bridge = "*"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -122,15 +113,23 @@ pytest = "<=8.0.0"
 pytest-xdist = ">=3.6.1"
 typeguard = ">=4.3.0"
 
+
+[feature.leap.dependencies]
 # Dynamixel SDK for LEAP hand
+ros-humble-dynamixel-sdk = ">=3.7"
+
+[feature.leap.pypi-dependencies]
 dynamixel-sdk = ">=3.7"
 
-
 # dev
+[feature.dev.dependencies]
+nano = "*"
+vim = "*"
+
 [feature.dev.pypi-dependencies]
 pre-commit = ">=3.7.1"
 ruff = ">=0.4.9"
-pyright = ">=1.1.368"
+pyright = "*"
 
 
 # build
@@ -159,8 +158,8 @@ test = { features=["cuda121", "obelisk", "ros2base", "test"], solve-group="dev" 
 ros2-install = { features=["ros2base"] }
 
 # dev
-dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build"] }
-dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build"], solve-group="dev" }
+dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build", "leap"] }
+dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
 docs = { features=["docs"] }
 
 build = { features = ["cuda121", "build"] }
@@ -170,10 +169,9 @@ build = { features = ["cuda121", "build"] }
 # ##### #
 
 [tasks]
-# builds in the obelisk_ws directory only if src has changes
-ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc)", cwd="obelisk_ws", depends-on=["messages-build"] }
-source-obelisk = { cmd="bash source_obelisk.sh", cwd="scripts", depends-on=["ros-build"], env={ NOOB="true", GLOBAL="false" } }
-messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs", cwd="obelisk_ws" }
+# ros-related tasks
+messages-build = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs --parallel-workers $(nproc)", cwd="obelisk_ws" }
+ros-build = { cmd="colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs", cwd="obelisk_ws", depends-on=["messages-build"] }
 ros-clean = { cmd="rm -r build/ install/ log/", cwd="obelisk_ws" }
 
 # run the core tests
@@ -202,4 +200,4 @@ cpp-build = { cmd = ["cmake", "--build", "obelisk/cpp/build"], depends-on = ["cm
 cpp-build-debug = { cmd = ["cmake", "--build", "obelisk/cpp/build", "-DCMAKE_BUILD_TYPE=Debug"], depends-on = ["cmake"], inputs = ["CMakeLists.txt", "obelisk/cpp/*"], outputs = ["obelisk/cpp/build/"] }
 
 # run python and c++ tests
-all-tests = { cmd = ["pytest"], depends-on = ["source-obelisk", "cpp-ctest"] }
+all-tests = { cmd = ["pytest"], depends-on = ["ros-build", "cpp-ctest"] }

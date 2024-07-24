@@ -17,8 +17,4 @@
             ]
         }
     },
-    "initializeCommand": "export OBELISK_ROOT=${localWorkspaceFolder}",
-    "remoteEnv": {
-        "OBELISK_ROOT": "${localEnv: OBELISK_ROOT}"
-    }
 }

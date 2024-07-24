@@ -117,7 +117,7 @@ def test_estimator_configuration(test_estimator: TestEstimator, set_node_paramet
         {
             "timer_est_setting": "timer_period_sec:0.1",
             "pub_est_setting": "topic:/test_estimate,msg_type:EstimatedState",
-            "sub_sensor_setting": "topic:/test_sensor,msg_type:JointEncoders",
+            "sub_sensor_setting": "topic:/test_sensor,msg_type:ObkJointEncoders",
         },
     )
     result = test_estimator.on_configure(None)

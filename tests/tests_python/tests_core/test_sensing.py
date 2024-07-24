@@ -48,8 +48,8 @@ def test_sensor_configuration_with_publisher(test_sensor: ObeliskSensor, set_nod
         test_sensor: An instance of ObeliskSensor.
         set_node_parameters: A fixture to set node parameters.
     """
-    test_sensor.register_obk_publisher("test_pub_param", key="test_pub", msg_type=osm.JointEncoders)
-    set_node_parameters(test_sensor, {"test_pub_param": "topic:/test_topic,msg_type:JointEncoders,history_depth:10"})
+    test_sensor.register_obk_publisher("test_pub_param", key="test_pub", msg_type=osm.ObkJointEncoders)
+    set_node_parameters(test_sensor, {"test_pub_param": "topic:/test_topic,msg_type:ObkJointEncoders,history_depth:10"})
 
     result = test_sensor.on_configure(None)
     assert result == TransitionCallbackReturn.SUCCESS
