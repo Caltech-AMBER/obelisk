@@ -5,11 +5,10 @@
   <compiler angle="radian" autolimits="true" eulerseq="zyx" meshdir="./meshes"/>
 
   <!-- Fix simulation options -->
-  <option timestep="0.001" iterations="50" solver="Newton" gravity="0 0 -9.81"  integrator = "RK4"/>
+  <option timestep="0.002" integrator = "RK4"/>
 
-  <default> <geom contype="0" conaffinity="0"/> </default>.
-
-  <size nconmax="100" njmax="500"/>
+  <!-- Uncomment the next line to enable only select contacts. Specifically, this sets the default to no collision. -->
+  <!-- <default> <geom contype="0" conaffinity="0"/> </default> -->
 
   <!-- Specify the light settings -->
   <visual>
@@ -88,14 +87,23 @@
                     <geom density="0" group="1" mesh="left_hip_pitch" type="mesh"/>
 
                     <body name="left_knee_pitch" pos="0 -0.0395 -0.275">
-                      <!--inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 0.003 -0.131" /-->
+                      <!-- Correct inertia from CAD Model -->
+                      <!-- <inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 0.003 -0.131" /> -->
+
+                      <!-- Adjusted inertia to avoid sim artifacts -->
                       <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 0.003 -0.131" />
+
+
                       <joint axis="0 1 0" name="left_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
                       <geom density="0" group="1" mesh="left_knee_pitch" type="mesh"/>
 
                       <body name="left_ankle_pitch" pos="0 0 -0.275">
-                        <!--inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" /-->
-                        <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" />
+                        <!-- Correct inertia from CAD Model -->
+                        <inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" />
+
+                        <!-- Adjusted inertia to avoid sim artifacts -->
+                        <!-- <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" /> -->
+
                         <joint axis="0 1 0" name="left_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
                         <geom name="left_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
 
@@ -149,15 +157,23 @@
                     <geom density="0" group="1" mesh="right_hip_pitch" type="mesh"/>
 
                     <body name="right_knee_pitch" pos="0 0.0395 -0.275">
-                      <!--inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 -0.003 -0.131" /-->
+                      <!-- Correct inertia from CAD Model -->
+                      <!-- <inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 -0.003 -0.131" /> -->
+
+                      <!-- Adjusted inertia to avoid sim artifacts -->
                       <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 -0.003 -0.131" />
+
                       <joint axis="0 1 0" name="right_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
                       <geom density="0" group="1" mesh="right_knee_pitch" type="mesh"/>
 
 
                       <body name="right_ankle_pitch" pos="0 0 -0.275">
-                        <!--inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" /-->
-                        <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" />
+                        <!-- Correct inertia from CAD Model -->
+                        <inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" />
+
+                        <!-- Adjusted inertia to avoid sim artifacts -->
+                        <!-- <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" /> -->
+
                         <joint axis="0 1 0" name="right_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3" />
                         <geom name="right_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
 
@@ -224,15 +240,17 @@
   </actuator>
 
   <contact>
-    <!--pair name="left_foot_to_plane" geom1="left_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
-    <pair name="right_foot_to_plane" geom1="right_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/-->
+    <!-- Contacts using the foot mesh -->
+    <pair name="left_foot_to_plane" geom1="left_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="right_foot_to_plane" geom1="right_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
 
     <pair name="torso_to_plane" geom1="torso_collision_box" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
 
-    <pair name="foot_front_left_to_plane" geom1="foot_front_left" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <!-- Contacts using sphere approximations -->
+    <!-- <pair name="foot_front_left_to_plane" geom1="foot_front_left" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
     <pair name="foot_rear_left_to_plane" geom1="foot_rear_left" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
     <pair name="foot_front_right_to_plane" geom1="foot_front_right" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
-    <pair name="foot_rear_right_to_plane" geom1="foot_rear_right" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="foot_rear_right_to_plane" geom1="foot_rear_right" geom2="plane" friction="1 1 0.001 0.001 0.001"/> -->
   </contact>
 
   <sensor>
