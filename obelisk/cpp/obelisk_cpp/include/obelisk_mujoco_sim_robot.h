@@ -522,8 +522,9 @@ namespace obelisk {
                     int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                     if (sensor_id == -1) {
                         RCLCPP_ERROR_STREAM_ONCE(
+                            this->get_logger(),
                             "Sensor not found in Mujoco! Make sure your XML has the sensor. Sensor name: "
-                            << sensor_names.at(i))
+                                << sensor_names.at(i));
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
                     }
                     int joint_id   = this->model_->sensor_objid[sensor_id];
