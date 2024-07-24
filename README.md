@@ -12,18 +12,19 @@ Obelisk should be used as a dependency for external robot control code that is w
 ### Initial Setup
 Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. The available options are:
 ```
-source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]
+source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]
 ```
-* The `--no-skip-docker` flag installs `docker` and `nvidia-container-toolkit` on your local filesystem. You should only specify this if you want to develop in a containerized setting.
+* The `--docker` flag installs `docker` and `nvidia-container-toolkit` on your local filesystem. You should only specify this if you want to develop in a containerized setting.
 * The `--pixi` flag installs `pixi` on your local filesystem.
 * The `--cyclone-perf` flag adds [performance optimizations for Cyclone DDS](https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations) in the `/etc/sysctl.d/60-cyclonedds.conf` file on your local filesystem. You should  specify this if you plan to use Obelisk in a non-containerized environment.
-* The `--bash-aliases` flag will check if `~/.bash_aliases` is sourced in the `~/.bashrc` file (and will add it if not already in there), and will create the `~/.bash_aliases` file if it doesn't already exist. This is a very benign flag, so we recommend using it.
-* The `--obk-aliases` flag will add useful Obelisk aliases to the `~/.bash_aliases` file. **We highly recommend using this flag.**
+* The `--obk-aliases` flag will add useful Obelisk aliases to the `~/.bash_aliases` file. If `~/.bash_aliases` is not already sourced in your `~/.bashrc`, it will also add that. **We highly recommend using this flag.**
 * If you trust us, you can use the `--all` flag to just opt-in to all of these dependencies.
 If you're more cautious, we recommend running
 ```
-source setup.sh --pixi --bash-aliases --obk-aliases
+source setup.sh --recommended
 ```
+This is equivalent to using the `--pixi` and `--obk-aliases` flags.
+
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
 newgrp docker

@@ -1,26 +1,34 @@
 #!/bin/bash
 
 # script flags
-skip_docker=true
+docker=false
 cyclone_perf=false
 pixi=false
-bash_aliases=false
 obk_aliases=false
 
 for arg in "$@"; do
     case $arg in
+        # multi-settings
         --all)
-            skip_docker=false
+            docker=true
             cyclone_perf=true
             pixi=true
-            bash_aliases=true
             obk_aliases=true
             shift # Allows all system-level changes at once
             ;;
-        --no-skip-docker)
-            skip_docker=false
+        --recommended)
+            pixi=true
+            obk_aliases=true
+            shift # Allows recommended system-level changes
+            ;;
+
+        # docker setup
+        --docker)
+            docker=true
             shift # Enables Docker and nvidia-container-toolkit installation
             ;;
+
+        # recommended
         --cyclone-perf)
             cyclone_perf=true
             shift # Enables cyclone performance optimizations
@@ -29,35 +37,29 @@ for arg in "$@"; do
             pixi=true
             shift # Installs pixi
             ;;
-        --bash-aliases)
-            bash_aliases=true
-            shift # Ensures the ~/.bash_aliases file is created and sourced in ~/.bashrc
-            ;;
         --obk-aliases)
             obk_aliases=true
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
         --help)
-            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
             return
             ;;
         -h)
-            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
             return
             ;;
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]"
+            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
             exit 1
             ;;
     esac
 done
 
 # [1] installs docker and nvidia-container-toolkit
-if [ "$skip_docker" = true ]; then
-    echo -e "\033[1;33mSkipping Docker and nvidia-container-toolkit installation.\033[0m"
-else
+if [ "$docker" = true ]; then
     # docker
     # also, see https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue
     if ! command -v docker &> /dev/null; then
@@ -114,6 +116,8 @@ else
     else
         echo -e "\033[1;33mNVIDIA Container Toolkit is already installed. Skipping installation.\033[0m"
     fi
+else
+    echo -e "\033[1;33mSkipping Docker and nvidia-container-toolkit installation.\033[0m"
 fi
 
 # [2] create a .env file under the docker directory with the USER, UID, GID of the local system + OBELISK_ROOT
@@ -130,9 +134,11 @@ echo "GID=$(id -g)" >> $env_file
 echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
 echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
 
+# copy the install_sys_deps.sh script to the docker directory
+cp $OBELISK_ROOT/scripts/install_sys_deps.sh $OBELISK_ROOT/docker/install_sys_deps.sh
+
 # rest of setup commands from docker/docker_setup.sh
 source $OBELISK_ROOT/docker/docker_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
-    $([ "$bash_aliases" = true ] && echo "--bash-aliases") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")
