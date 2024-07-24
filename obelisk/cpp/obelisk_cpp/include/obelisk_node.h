@@ -126,24 +126,35 @@ namespace obelisk {
             std::function<rclcpp::TimerBase::SharedPtr(const std::string&)> creator;
         };
 
+        // clang-format off
         // Other internal definitions
         // Allowed Obelisk message types
         using ObeliskMsgs =
-            std::tuple<obelisk_control_msgs::msg::PositionSetpoint, obelisk_control_msgs::msg::PDFeedForward,
-                       obelisk_estimator_msgs::msg::EstimatedState, obelisk_sensor_msgs::msg::ObkJointEncoders,
-                       obelisk_sensor_msgs::msg::TrueSimState, obelisk_sensor_msgs::msg::ObkImage,
-                       obelisk_sensor_msgs::msg::ObkImu, obelisk_sensor_msgs::msg::ObkFramePose,
-                       obelisk_std_msgs::msg::FloatMultiArray, obelisk_std_msgs::msg::UInt8MultiArray>;
+            std::tuple<obelisk_control_msgs::msg::PositionSetpoint,
+                    obelisk_control_msgs::msg::PDFeedForward,
+                    obelisk_estimator_msgs::msg::EstimatedState,
+                    obelisk_sensor_msgs::msg::ObkJointEncoders,
+                    obelisk_sensor_msgs::msg::TrueSimState,
+                    obelisk_sensor_msgs::msg::ObkImage,
+                    obelisk_sensor_msgs::msg::ObkImu,
+                    obelisk_sensor_msgs::msg::ObkFramePose,
+                    obelisk_std_msgs::msg::FloatMultiArray,
+                    obelisk_std_msgs::msg::UInt8MultiArray>;
+
         // Allowed non-obelisk message types
         using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
         inline const std::array<std::string, 5> sensor_message_names = {
             obelisk_sensor_msgs::msg::ObkJointEncoders::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME, obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME, obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME};
+            obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME};
 
         inline const std::array<std::string, 1> estimator_message_names = {
             obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};
+
+        // clang-format on
 
     } // namespace internal
 
