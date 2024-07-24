@@ -85,8 +85,8 @@ onboard:
             dt: 0.001
             msg_type: ObkJointEncoders
             sensor_names:
-              joint_pos: joint_pos
-              joint_vel: joint_vel
+              joint_pos: jointpos
+              joint_vel: jointvel
           - topic: /obelisk/dummy/imu
             dt: 0.002
             msg_type: ObkImu

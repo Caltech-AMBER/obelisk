@@ -1,0 +1,331 @@
+<!-- Achilles Mujoco XML. Basic humanoid robot with no hands.
+    In each leg there are:
+    - 3 hip joints: roll, pitch, yaw
+    - 1 knee joint
+    - 1 ankle joint
+    In each arm there are:
+    - 3 shoulder joints: roll, pitch, yaw
+    - 1 elbow joint
+    XML and URDF generated from CAD information.
+     -->
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco model="achilles">
+
+  <!-- Set the angles to be in radians -->
+  <compiler angle="radian" autolimits="true" eulerseq="zyx" meshdir="./meshes"/>
+
+  <!-- Fix simulation options -->
+  <option timestep="0.002" integrator = "RK4"/>
+
+  <!-- Uncomment the next line to enable only select contacts. Specifically, this sets the default to no collision. -->
+  <!-- <default> <geom contype="0" conaffinity="0"/> </default> -->
+
+  <!-- Specify the light settings -->
+  <visual>
+      <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+      <rgba haze="0.15 0.25 0.35 1"/>
+      <global elevation="-35"/>
+  </visual>
+
+  <!-- Default camera location -->
+  <statistic extent="2" center="0 0 0.5"/>
+
+  <!-- List the location of all meshes -->
+  <asset>
+    <!-- World Textures -->
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="plane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="plane" texture="plane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+
+    <!-- Robot Meshes -->
+    <mesh file="torso.STL" name="torso"/>
+
+    <mesh file="left_hip_yaw.STL" name="left_hip_yaw"/>
+    <mesh file="left_hip_roll.STL" name="left_hip_roll"/>
+    <mesh file="left_hip_pitch.STL" name="left_hip_pitch"/>
+    <mesh file="left_knee_pitch.STL" name="left_knee_pitch"/>
+
+    <mesh file="left_shoulder_pitch.STL" name="left_shoulder_pitch"/>
+    <mesh file="left_shoulder_roll.STL" name="left_shoulder_roll"/>
+    <mesh file="left_shoulder_yaw.STL" name="left_shoulder_yaw"/>
+    <mesh file="left_elbow_pitch.STL" name="left_elbow_pitch"/>
+
+    <mesh file="right_hip_yaw.STL" name="right_hip_yaw"/>
+    <mesh file="right_hip_roll.STL" name="right_hip_roll"/>
+    <mesh file="right_hip_pitch.STL" name="right_hip_pitch"/>
+    <mesh file="right_knee_pitch.STL" name="right_knee_pitch"/>
+
+    <mesh file="right_shoulder_pitch.STL" name="right_shoulder_pitch"/>
+    <mesh file="right_shoulder_roll.STL" name="right_shoulder_roll"/>
+    <mesh file="right_shoulder_yaw.STL" name="right_shoulder_yaw"/>
+    <mesh file="right_elbow_pitch.STL" name="right_elbow_pitch"/>
+
+    <mesh file="ankle_pitch.STL" name="ankle_pitch"/>
+  </asset>
+
+   <worldbody>
+      <!-- Light -->
+      <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+
+      <!-- Ground -->
+      <geom material="plane" name="plane" rgba=".9 .9 .9 1" size="100 100 0.1" type="plane" euler="0 0 0"/>
+
+      <!-- Achilles -->
+      <body name="torso" pos="0 0 1.002">
+        <!-- ixx iyy izz ixy ixz iyz-->
+        <inertial mass="8.300000" fullinertia=" 0.172676 0.102985 0.087971 0.000000 0.000000 0.000000" pos="0 0 -0.107903" />
+        <geom name="torso_mesh" density="0" group="1" mesh="torso" type="mesh"/>
+        <geom name="torso_collision_box" density="0" group="1" mesh="torso" type="mesh"/>
+        <site name="torso_imu_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
+        <site name="torso_mocap_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
+        <freejoint name="root"/>
+
+        <body name="left_hip_yaw" pos="0 0.090 -0.334">
+          <inertial mass="1.0" fullinertia="0.001907 0.002034 0.001175 -0.000030 0.000635 -0.000056" pos="-0.066483 -0.001451 -0.062589" />
+          <joint axis="0 0 1" name="left_hip_yaw_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
+          <geom density="0" group="1" mesh="left_hip_yaw" type="mesh"/>
+
+            <body name="left_hip_roll" pos="-0.055 0 -0.083">
+                <inertial mass="0.843444" fullinertia="0.000867 0.001086 0.001082 0 0 0" pos="0.0465 0.055 0.000784" />
+                <joint axis="1 0 0" name="left_hip_roll_joint" pos="0 0 0" range="-1.0 1.0"/>
+                <geom density="0" group="1" mesh="left_hip_roll" type="mesh"/>
+
+                <body name="left_hip_pitch" pos="0.055 0.0395 0">
+                    <inertial mass="2.42" fullinertia="0.0206 0.0173 0.00594 0 0 0" pos="0.0139 -0.0336 -0.076" />
+                    <joint axis="0 1 0" name="left_hip_pitch_joint" pos="0 0 0" range="-1.5 0.5" damping="0.1" frictionloss="0.3" />
+                    <geom density="0" group="1" mesh="left_hip_pitch" type="mesh"/>
+
+                    <body name="left_knee_pitch" pos="0 -0.0395 -0.275">
+                      <!-- Correct inertia from CAD Model -->
+                      <!-- <inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 0.003 -0.131" /> -->
+
+                      <!-- Adjusted inertia to avoid sim artifacts -->
+                      <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 0.003 -0.131" />
+
+
+                      <joint axis="0 1 0" name="left_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
+                      <geom density="0" group="1" mesh="left_knee_pitch" type="mesh"/>
+
+                      <body name="left_ankle_pitch" pos="0 0 -0.275">
+                        <!-- Correct inertia from CAD Model -->
+                        <inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" />
+
+                        <!-- Adjusted inertia to avoid sim artifacts -->
+                        <!-- <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" /> -->
+
+                        <joint axis="0 1 0" name="left_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
+                        <geom name="left_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
+
+                        <geom name="foot_front_left" pos="0.088 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
+                        <geom name="foot_rear_left" pos="-0.02 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
+
+                        <site name="left_foot_imu_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
+                      </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <body name="left_shoulder_pitch" pos="0 0.159 0">
+          <inertial mass="0.796" fullinertia="0.000943 0.00056 0.000675 0 0 0" pos="0 0.05 0" />
+          <joint axis="0 1 0" name="left_shoulder_pitch_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
+          <geom density="0" group="1" mesh="left_shoulder_pitch" type="mesh"/>
+
+          <body name="left_shoulder_roll" pos="0 0.063 0">
+            <inertial mass="0.484" fullinertia="0.000498 0.000458 0.000384 0 0 0" pos="0 0 -0.0708" />
+            <joint axis="1 0 0" name="left_shoulder_roll_joint" pos="0 0 0" range="0 3.14" damping="0.1" frictionloss="0.3"/>
+            <geom density="0" group="1" mesh="left_shoulder_roll" type="mesh"/>
+
+            <body name="left_shoulder_yaw" pos="0 0 -0.0986">
+              <inertial mass="0.5847" fullinertia="0.0007 0.000796 0.000348 0 0 0" pos="0 0 -0.059" />
+              <joint axis="0 0 1" name="left_shoulder_yaw_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
+              <geom density="0" group="1" mesh="left_shoulder_yaw" type="mesh"/>
+
+              <body name="left_elbow_pitch" pos="0 0 -0.133">
+                <inertial mass="0.297" fullinertia="0.0018 0.0018 0.0001 0 0 0" pos="0 0 -0.1284" />
+                <joint axis="0 1 0" name="left_elbow_pitch_joint" pos="0 0 0" range="-1.58 0" damping="0.1" frictionloss="0.3"/>
+                <geom density="0" group="1" mesh="left_elbow_pitch" type="mesh"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <body name="right_hip_yaw" pos="0 -0.090 -0.334">
+          <inertial mass="1.0" fullinertia="0.001907 0.002034 0.001175 0.000030 0.000635 0.000056" pos="-0.066483 0.001451 -0.062589" />
+          <joint axis="0 0 1" name="right_hip_yaw_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
+          <geom density="0" group="1" mesh="right_hip_yaw" type="mesh"/>
+
+            <body name="right_hip_roll" pos="-0.055 0 -0.083">
+                <inertial mass="0.843444" fullinertia="0.000867 0.001086 0.001082 0 0 0" pos="0.0465 -0.055 0.000784" />
+                <joint axis="1 0 0" name="right_hip_roll_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3"/>
+                <geom density="0" group="1" mesh="right_hip_roll" type="mesh"/>
+
+                <body name="right_hip_pitch" pos="0.055 -0.0395 0">
+                    <inertial mass="2.42" fullinertia="0.0206 0.0173 0.00594 0 0 0" pos="0.0139 0.0336 -0.076" />
+                    <joint axis="0 1 0" name="right_hip_pitch_joint" pos="0 0 0" range="-1.5 0.5" damping="0.1" frictionloss="0.3"/>
+                    <geom density="0" group="1" mesh="right_hip_pitch" type="mesh"/>
+
+                    <body name="right_knee_pitch" pos="0 0.0395 -0.275">
+                      <!-- Correct inertia from CAD Model -->
+                      <!-- <inertial mass="0.510" fullinertia="0.0666 0.006613 0.000187 0 0 0" pos="0.001 -0.003 -0.131" /> -->
+
+                      <!-- Adjusted inertia to avoid sim artifacts -->
+                      <inertial mass="0.556" fullinertia="0.00666 0.006613 0.001 0 0 0" pos="0.001 -0.003 -0.131" />
+
+                      <joint axis="0 1 0" name="right_knee_pitch_joint" pos="0 0 0" range="0 2.0" damping="0.1" frictionloss="0.3" />
+                      <geom density="0" group="1" mesh="right_knee_pitch" type="mesh"/>
+
+
+                      <body name="right_ankle_pitch" pos="0 0 -0.275">
+                        <!-- Correct inertia from CAD Model -->
+                        <inertial mass="0.180" fullinertia="0.000031 0.000286 0.000272 0 0 0" pos="0.0272 0.0 -0.0156" />
+
+                        <!-- Adjusted inertia to avoid sim artifacts -->
+                        <!-- <inertial mass="0.180" fullinertia="0.001 0.001 0.001 0 0 0" pos="0 0 0" /> -->
+
+                        <joint axis="0 1 0" name="right_ankle_pitch_joint" pos="0 0 0" range="-1.0 1.0" damping="0.1" frictionloss="0.3" />
+                        <geom name="right_foot" density="0" group="1" mesh="ankle_pitch" type="mesh"/>
+
+                        <geom name="foot_front_right" pos="0.088 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
+                        <geom name="foot_rear_right" pos="-0.02 0 -0.018" type="sphere" size="0.02" condim="6" friction="1" rgba="1 0 0 0"/>
+
+                        <site name="right_foot_imu_site" pos="0 0 0" euler="0 0 0" size="0.001"/>
+                      </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <body name="right_shoulder_pitch" pos="0 -0.159 0">
+          <inertial mass="0.796" fullinertia="0.000943 0.00056 0.000675 0 0 0" pos="0 -0.05 0" />
+          <joint axis="0 1 0" name="right_shoulder_pitch_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3" />
+          <geom density="0" group="1" mesh="right_shoulder_pitch" type="mesh"/>
+
+          <body name="right_shoulder_roll" pos="0 -0.063 0">
+            <inertial mass="0.484" fullinertia="0.000498 0.000458 0.000384 0 0 0" pos="0 0 -0.0708" />
+            <joint axis="1 0 0" name="right_shoulder_roll_joint" pos="0 0 0" range="-3.14 0" damping="0.1" frictionloss="0.3"/>
+            <geom density="0" group="1" mesh="right_shoulder_roll" type="mesh"/>
+
+            <body name="right_shoulder_yaw" pos="0 0 -0.0986">
+              <inertial mass="0.5847" fullinertia="0.0007 0.000796 0.000348 0 0 0" pos="0 0 -0.059" />
+              <joint axis="0 0 1" name="right_shoulder_yaw_joint" pos="0 0 0" range="-1.58 1.58" damping="0.1" frictionloss="0.3"/>
+              <geom density="0" group="1" mesh="right_shoulder_yaw" type="mesh"/>
+
+              <body name="right_elbow_pitch" pos="0 0 -0.133">
+                <inertial mass="0.297" fullinertia="0.0018 0.0018 0.0001 0 0 0" pos="0 0 -0.1284" />
+                <joint axis="0 1 0" name="right_elbow_pitch_joint" pos="0 0 0" range="-1.58 0" damping="0.1" frictionloss="0.3"/>
+                <geom density="0" group="1" mesh="right_elbow_pitch" type="mesh"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+      </body>
+
+   </worldbody>
+
+  <actuator>
+
+    <motor name="left_hip_yaw_tor"  joint="left_hip_yaw_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="left_hip_roll_tor"  joint="left_hip_roll_joint" ctrllimited="true" ctrlrange="-70  70" />
+    <motor name="left_hip_pitch_tor"  joint="left_hip_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="left_knee_pitch_tor"  joint="left_knee_pitch_joint" ctrllimited="true" ctrlrange="-70  70" />
+    <motor name="left_ankle_pitch_tor"  joint="left_ankle_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="left_shoulder_pitch_tor"  joint="left_shoulder_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="left_shoulder_roll_tor"  joint="left_shoulder_roll_joint" ctrllimited="true" ctrlrange="-12  12" />
+    <motor name="left_shoulder_yaw_tor"  joint="left_shoulder_yaw_joint" ctrllimited="true" ctrlrange="-12  12" />
+    <motor name="left_elbow_pitch_tor"  joint="left_elbow_pitch_joint" ctrllimited="true" ctrlrange="-24  24" />
+
+    <motor name="right_hip_yaw_tor"  joint="right_hip_yaw_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="right_hip_roll_tor"  joint="right_hip_roll_joint" ctrllimited="true" ctrlrange="-70  70" />
+    <motor name="right_hip_pitch_tor"  joint="right_hip_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="right_knee_pitch_tor"  joint="right_knee_pitch_joint" ctrllimited="true" ctrlrange="-70  70" />
+    <motor name="right_ankle_pitch_tor"  joint="right_ankle_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="right_shoulder_pitch_tor"  joint="right_shoulder_pitch_joint" ctrllimited="true" ctrlrange="-35 35" />
+    <motor name="right_shoulder_roll_tor"  joint="right_shoulder_roll_joint" ctrllimited="true" ctrlrange="-12 12" />
+    <motor name="right_shoulder_yaw_tor"  joint="right_shoulder_yaw_joint" ctrllimited="true" ctrlrange="-12 12" />
+    <motor name="right_elbow_pitch_tor"  joint="right_elbow_pitch_joint" ctrllimited="true" ctrlrange="-24  24" />
+
+  </actuator>
+
+  <contact>
+    <!-- Contacts using the foot mesh -->
+    <pair name="left_foot_to_plane" geom1="left_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="right_foot_to_plane" geom1="right_foot" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+
+    <pair name="torso_to_plane" geom1="torso_collision_box" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+
+    <!-- Contacts using sphere approximations -->
+    <!-- <pair name="foot_front_left_to_plane" geom1="foot_front_left" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="foot_rear_left_to_plane" geom1="foot_rear_left" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="foot_front_right_to_plane" geom1="foot_front_right" geom2="plane" friction="1 1 0.001 0.001 0.001"/>
+    <pair name="foot_rear_right_to_plane" geom1="foot_rear_right" geom2="plane" friction="1 1 0.001 0.001 0.001"/> -->
+  </contact>
+
+  <sensor>
+    <!-- Joint position sensors -->
+    <jointpos name="left_hip_yaw_joint_pos_sensor" joint="left_hip_yaw_joint" noise="0.001"/>
+    <jointpos name="left_hip_roll_joint_pos_sensor" joint="left_hip_roll_joint" noise="0.001"/>
+    <jointpos name="left_hip_pitch_joint_pos_sensor" joint="left_hip_pitch_joint" noise="0.001"/>
+    <jointpos name="left_knee_pitch_joint_pos_sensor" joint="left_knee_pitch_joint" noise="0.001"/>
+    <jointpos name="left_ankle_pitch_joint_pos_sensor" joint="left_ankle_pitch_joint" noise="0.001"/>
+
+    <jointpos name="left_shoulder_pitch_joint_pos_sensor" joint="left_shoulder_pitch_joint" noise="0.001"/>
+    <jointpos name="left_shoulder_roll_joint_pos_sensor" joint="left_shoulder_roll_joint" noise="0.001"/>
+    <jointpos name="left_shoulder_yaw_joint_pos_sensor" joint="left_shoulder_yaw_joint" noise="0.001"/>
+    <jointpos name="left_elbow_pitch_joint_pos_sensor" joint="left_elbow_pitch_joint" noise="0.001"/>
+
+    <jointpos name="right_hip_yaw_joint_pos_sensor" joint="right_hip_yaw_joint" noise="0.001"/>
+    <jointpos name="right_hip_roll_joint_pos_sensor" joint="right_hip_roll_joint" noise="0.001"/>
+    <jointpos name="right_hip_pitch_joint_pos_sensor" joint="right_hip_pitch_joint" noise="0.001"/>
+    <jointpos name="right_knee_pitch_joint_pos_sensor" joint="right_knee_pitch_joint" noise="0.001"/>
+    <jointpos name="right_ankle_pitch_joint_pos_sensor" joint="right_ankle_pitch_joint" noise="0.001"/>
+
+    <jointpos name="right_shoulder_pitch_joint_pos_sensor" joint="right_shoulder_pitch_joint" noise="0.001"/>
+    <jointpos name="right_shoulder_roll_joint_pos_sensor" joint="right_shoulder_roll_joint" noise="0.001"/>
+    <jointpos name="right_shoulder_yaw_joint_pos_sensor" joint="right_shoulder_yaw_joint" noise="0.001"/>
+    <jointpos name="right_elbow_pitch_joint_pos_sensor" joint="right_elbow_pitch_joint" noise="0.001"/>
+
+    <!-- Joint velocity sensors -->
+    <jointvel name="left_hip_yaw_joint_vel_sensor" joint="left_hip_yaw_joint" noise="0.01"/>
+    <jointvel name="left_hip_roll_joint_vel_sensor" joint="left_hip_roll_joint" noise="0.01"/>
+    <jointvel name="left_hip_pitch_joint_vel_sensor" joint="left_hip_pitch_joint" noise="0.01"/>
+    <jointvel name="left_knee_pitch_joint_vel_sensor" joint="left_knee_pitch_joint" noise="0.01"/>
+    <jointvel name="left_ankle_pitch_joint_vel_sensor" joint="left_ankle_pitch_joint" noise="0.01"/>
+
+    <jointvel name="left_shoulder_pitch_joint_vel_sensor" joint="left_shoulder_pitch_joint" noise="0.01"/>
+    <jointvel name="left_shoulder_roll_joint_vel_sensor" joint="left_shoulder_roll_joint" noise="0.01"/>
+    <jointvel name="left_shoulder_yaw_joint_vel_sensor" joint="left_shoulder_yaw_joint" noise="0.01"/>
+    <jointvel name="left_elbow_pitch_joint_vel_sensor" joint="left_elbow_pitch_joint" noise="0.01"/>
+
+    <jointvel name="right_hip_yaw_joint_vel_sensor" joint="right_hip_yaw_joint" noise="0.01"/>
+    <jointvel name="right_hip_roll_joint_vel_sensor" joint="right_hip_roll_joint" noise="0.01"/>
+    <jointvel name="right_hip_pitch_joint_vel_sensor" joint="right_hip_pitch_joint" noise="0.01"/>
+    <jointvel name="right_knee_pitch_joint_vel_sensor" joint="right_knee_pitch_joint" noise="0.01"/>
+    <jointvel name="right_ankle_pitch_joint_vel_sensor" joint="right_ankle_pitch_joint" noise="0.01"/>
+
+    <jointvel name="right_shoulder_pitch_joint_vel_sensor" joint="right_shoulder_pitch_joint" noise="0.01"/>
+    <jointvel name="right_shoulder_roll_joint_vel_sensor" joint="right_shoulder_roll_joint" noise="0.01"/>
+    <jointvel name="right_shoulder_yaw_joint_vel_sensor" joint="right_shoulder_yaw_joint" noise="0.01"/>
+    <jointvel name="right_elbow_pitch_joint_vel_sensor" joint="right_elbow_pitch_joint" noise="0.01"/>
+
+    <!-- IMU sensors -->
+    <accelerometer name="torso_imu_acc_sensor" site="torso_imu_site" noise="0.1"/>
+    <gyro name="torso_imu_gyro_sensor" site="torso_imu_site" noise="0.01"/>
+    <framequat name="torso_imu_quat_sensor" objtype="site" objname="torso_imu_site" noise="0.01"/>
+
+    <accelerometer name="left_foot_imu_acc_sensor" site="left_foot_imu_site" noise="0.1"/>
+    <gyro name="left_foot_imu_gyro_sensor" site="left_foot_imu_site" noise="0.01"/>
+    <framequat name="left_foot_imu_quat_sensor" objtype="site" objname="left_foot_imu_site" noise="0.01"/>
+
+    <accelerometer name="right_foot_imu_acc_sensor" site="right_foot_imu_site" noise="0.1"/>
+    <gyro name="right_foot_imu_gyro_sensor" site="right_foot_imu_site" noise="0.01"/>
+    <framequat name="right_foot_imu_quat_sensor" objtype="site" objname="right_foot_imu_site" noise="0.01"/>
+
+    <!-- Mocap sensors -->
+    <framepos name="torso_mocap_pos_sensor" objtype="site" objname="torso_mocap_site" noise="0.01"/>
+    <framequat name="torso_mocap_quat_sensor" objtype="site" objname="torso_mocap_site" noise="0.01"/>
+
+  </sensor>
+</mujoco>

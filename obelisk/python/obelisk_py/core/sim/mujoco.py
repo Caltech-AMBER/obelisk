@@ -108,14 +108,14 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                         self.get_logger().error(f"Sensor {sensor_name} not found!")
                         raise ValueError(f"Sensor {sensor_name} not found!")
 
-                    if obk_sensor_field == "joint_pos":
+                    if obk_sensor_field == "jointpos":
                         joint_pos.append(self.shared_sensordata[sensor_adr])
 
                         # getting joint name from the joint position sensor
                         joint_id = self.mj_model.sensor_objid[sensor_id]
                         joint_names.append(self.mj_model.joint(joint_id).name)
 
-                    elif obk_sensor_field == "joint_vel":
+                    elif obk_sensor_field == "jointvel":
                         joint_vel.append(self.shared_sensordata[sensor_adr])
 
                     else:
