@@ -84,22 +84,22 @@ onboard:
             dt: 0.002
             msg_type: ObkJointEncoders
             sensor_names:
-              if_mcp_sensor: joint_pos
-              if_rot_sensor: joint_pos
-              if_pip_sensor: joint_pos
-              if_dip_sensor: joint_pos
-              mf_mcp_sensor: joint_pos
-              mf_rot_sensor: joint_pos
-              mf_pip_sensor: joint_pos
-              mf_dip_sensor: joint_pos
-              rf_mcp_sensor: joint_pos
-              rf_rot_sensor: joint_pos
-              rf_pip_sensor: joint_pos
-              rf_dip_sensor: joint_pos
-              th_cmc_sensor: joint_pos
-              th_axl_sensor: joint_pos
-              th_mcp_sensor: joint_pos
-              th_ipl_sensor: joint_pos
+              if_mcp_sensor: jointpos
+              if_rot_sensor: jointpos
+              if_pip_sensor: jointpos
+              if_dip_sensor: jointpos
+              mf_mcp_sensor: jointpos
+              mf_rot_sensor: jointpos
+              mf_pip_sensor: jointpos
+              mf_dip_sensor: jointpos
+              rf_mcp_sensor: jointpos
+              rf_rot_sensor: jointpos
+              rf_pip_sensor: jointpos
+              rf_dip_sensor: jointpos
+              th_cmc_sensor: jointpos
+              th_axl_sensor: jointpos
+              th_mcp_sensor: jointpos
+              th_ipl_sensor: jointpos
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02

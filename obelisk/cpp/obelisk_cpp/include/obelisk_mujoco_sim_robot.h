@@ -19,6 +19,7 @@ namespace obelisk {
             this->template declare_parameter<std::string>("mujoco_setting", "");
 
             mujoco_sim_instance_    = this;
+            activation_complete_    = false;
             configuration_complete_ = false;
             mujoco_setup_           = false;
         }
@@ -53,6 +54,8 @@ namespace obelisk {
                 }
             }
 
+            RCLCPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
+
             nu_                = GetNumInputs(mujoco_config_map); // Required
             time_step_         = GetTimeSteps(mujoco_config_map);
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
@@ -74,6 +77,8 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
+
+            activation_complete_ = true;
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -98,6 +103,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
+            activation_complete_    = false;
             configuration_complete_ = false;
 
             // Reset data
@@ -115,6 +121,7 @@ namespace obelisk {
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
             this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
+            activation_complete_    = false;
             configuration_complete_ = false;
 
             // Reset data
@@ -186,6 +193,10 @@ namespace obelisk {
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
             mujoco_setup_ = true;
+
+            while (!activation_complete_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
             RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
 
             while (!this->stop_thread_) {
@@ -519,6 +530,10 @@ namespace obelisk {
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                     if (sensor_id == -1) {
+                        RCLCPP_ERROR_STREAM_ONCE(
+                            this->get_logger(),
+                            "Sensor not found in Mujoco! Make sure your XML has the sensor. Sensor name: "
+                                << sensor_names.at(i));
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
                     }
                     int joint_id   = this->model_->sensor_objid[sensor_id];
@@ -545,7 +560,7 @@ namespace obelisk {
                         //  If the velocity sensor ordering does not match the position sensors, then their joint names
                         //  will not align.
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
-                        if (mj_sensor_types.at(i) == "joint_pos") {
+                        if (mj_sensor_types.at(i) == "jointpos") {
                             msg.joint_pos.emplace_back(this->data_->sensordata[sensor_addr]);
                             int joint_id = this->model_->sensor_objid[sensor_id];
                             if (joint_id == -1) {
@@ -555,7 +570,7 @@ namespace obelisk {
                             } else {
                                 msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
                             }
-                        } else if (mj_sensor_types.at(i) == "joint_vel") {
+                        } else if (mj_sensor_types.at(i) == "jointvel") {
                             msg.joint_vel.emplace_back(this->data_->sensordata[sensor_addr]);
                         } else {
                             RCLCPP_ERROR_STREAM(
@@ -915,6 +930,7 @@ namespace obelisk {
         std::mutex sensor_data_mut_;
 
         std::atomic<bool> configuration_complete_;
+        std::atomic<bool> activation_complete_;
         std::atomic<bool> mujoco_setup_;
 
         rclcpp::CallbackGroup::SharedPtr callback_group_;
