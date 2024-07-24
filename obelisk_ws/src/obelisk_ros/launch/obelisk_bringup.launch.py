@@ -62,8 +62,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     bag = context.launch_configurations.get("bag")
     bag = "true" if bag is None else bag.lower()
 
-    print(auto_start)
-
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
@@ -119,7 +117,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             )
         )  # once the node is configured, it will be activated automatically
         obelisk_launch_actions += [configure_event, activate_upon_configure_handler]
-        print("AUTO_START: " + auto_start)
     elif auto_start == "configure":
         # Just configure all nodes
         configure_event = EmitEvent(
@@ -129,7 +126,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             )
         )
         obelisk_launch_actions += [configure_event]
-        print("AUTO_START: " + auto_start)
 
     # if auto_start is false, then no configuration at all
 
