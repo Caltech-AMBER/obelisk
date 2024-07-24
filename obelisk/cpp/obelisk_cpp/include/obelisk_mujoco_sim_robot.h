@@ -12,8 +12,6 @@
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
 #include "obelisk_sim_robot.h"
 
-// TODO: Fix issue related to ENV XDG_RUNTIME_DIR=/run/user/1000  # Replace 1000 with your user ID
-
 namespace obelisk {
     template <typename ControlMessageT> class ObeliskMujocoRobot : public ObeliskSimRobot<ControlMessageT> {
       public:
@@ -388,7 +386,7 @@ namespace obelisk {
 
                     size_t setting_idx = group.find(val_delim);
                     if (setting_idx == std::string::npos) {
-                        // throw std::runtime_error("Invalid sensor setting string!");
+                        throw std::runtime_error("Invalid sensor setting string!");
                     }
 
                     std::string setting = group.substr(0, setting_idx);
