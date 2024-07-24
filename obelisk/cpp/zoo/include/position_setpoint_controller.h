@@ -44,10 +44,12 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         obelisk_control_msgs::msg::PositionSetpoint msg;
 
         msg.u_mujoco.clear();
+        msg.q_des.clear();
         rclcpp::Time time = this->get_clock()->now();
         double time_sec   = time.seconds();
 
         msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
+        msg.q_des.emplace_back(amplitude_ * sin(time_sec));
 
         this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_)->publish(msg);
 

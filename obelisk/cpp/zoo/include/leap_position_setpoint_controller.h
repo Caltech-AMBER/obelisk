@@ -27,10 +27,12 @@ namespace obelisk {
             leap_controller_msg msg;
 
             msg.u_mujoco.clear();
+            msg.q_des.clear();
             double time_sec = this->get_clock()->now().seconds();
 
             for (int i = 0; i < 16; i++) {
                 msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
+                msg.q_des.emplace_back(amplitude_ * sin(time_sec));
             }
 
             this->GetPublisher<leap_controller_msg>(this->ctrl_key_)->publish(msg);

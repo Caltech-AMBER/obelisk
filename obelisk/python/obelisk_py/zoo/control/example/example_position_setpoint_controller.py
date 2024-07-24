@@ -41,6 +41,7 @@ class ExamplePositionSetpointController(ObeliskController):
         # setting the message
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u_mujoco = [u]
+        position_setpoint_msg.q_des = [u]
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

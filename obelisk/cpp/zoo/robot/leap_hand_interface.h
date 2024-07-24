@@ -75,7 +75,7 @@ namespace obelisk {
          */
         void ApplyControl(const leap_control_msg& control_msg) {
             for (int i = 0; i < N_MOTORS; i++) {
-                uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.u_mujoco.at(i));
+                uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.q_des.at(i));
                 uint8_t pos_arr[4] = {
                     static_cast<uint8_t>(pos),
                     static_cast<uint8_t>(pos >> 8),
