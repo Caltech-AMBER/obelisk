@@ -26,7 +26,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
 
-    def _get_msg_type_from_string(self, msg_type: str) -> Type[ObeliskSensorMsg]:
+    def _get_msg_type_from_string(self, msg_type_str: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from a string.
 
         Parameters:
@@ -35,17 +35,17 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         Returns:
             The Obelisk sensor message type associated with the message type.
         """
-        if msg_type == "ObkJointEncoders":
+        if msg_type_str == "ObkJointEncoders":
             assert is_in_bound(osm.ObkJointEncoders, ObeliskSensorMsg)
             return osm.ObkJointEncoders  # type: ignore
-        elif msg_type == "ObkImu":
+        elif msg_type_str == "ObkImu":
             assert is_in_bound(osm.ObkImu, ObeliskSensorMsg)
             return osm.ObkImu  # type: ignore
-        elif msg_type == "ObkFramePose":
+        elif msg_type_str == "ObkFramePose":
             assert is_in_bound(osm.ObkFramePose, ObeliskSensorMsg)
             return osm.ObkFramePose  # type: ignore
         else:
-            raise NotImplementedError(f"Message type {msg_type} not supported! Check your spelling or open a PR.")
+            raise NotImplementedError(f"Message type {msg_type_str} not supported! Check your spelling or open a PR.")
 
     def _get_time_from_sim(self) -> Tuple[float, float]:
         """Get the time from the simulator used to populate msg header fields.
