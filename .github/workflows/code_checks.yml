@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12.4'
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.24.2
+          pixi-version: v0.26.1
           cache: true
       - uses: actions/cache@v4
         with:
