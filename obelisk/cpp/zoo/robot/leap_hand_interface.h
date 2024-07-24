@@ -4,11 +4,11 @@
 #include "dynamixel_sdk.h"
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
-#include "obelisk_sensor_msgs/msg/joint_encoders.h"
+#include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
 
 namespace obelisk {
     using leap_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
-    using leap_sensor_msg  = obelisk_sensor_msgs::msg::JointEncoders;
+    using leap_sensor_msg  = obelisk_sensor_msgs::msg::ObkJointEncoders;
 
     /**
      * @brief Obelisk robot interface for the Leap hand hardware
@@ -75,7 +75,7 @@ namespace obelisk {
          */
         void ApplyControl(const leap_control_msg& control_msg) {
             for (int i = 0; i < N_MOTORS; i++) {
-                uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.u.at(i));
+                uint32_t pos       = ObeliskLeapHand::RadiansToDxlPos(control_msg.q_des.at(i));
                 uint8_t pos_arr[4] = {
                     static_cast<uint8_t>(pos),
                     static_cast<uint8_t>(pos >> 8),
@@ -111,7 +111,7 @@ namespace obelisk {
             repeated_errs = 0;
             for (int i = 0; i < N_MOTORS; i++) {
                 int pos = group_reader_.getData(i, PRESENT_POS_ADDR, PRESENT_POS_LENGTH);
-                msg.y.emplace_back(ObeliskLeapHand::DxlPosToRadians(pos));
+                msg.joint_pos.emplace_back(ObeliskLeapHand::DxlPosToRadians(pos));
             }
             this->GetPublisher<leap_sensor_msg>(state_pub_key_)->publish(msg);
         }

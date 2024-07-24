@@ -57,7 +57,7 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
         // Verify that allowed messages are fine
         REQUIRE_NOTHROW(node.create_publisher<obelisk_control_msgs::msg::PositionSetpoint>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_estimator_msgs::msg::EstimatedState>("topic", 10));
-        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::JointEncoders>("topic", 10));
+        REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::TrueSimState>("topic", 10));
     }
 
@@ -71,9 +71,9 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
             "topic", 10,
             std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_estimator_msgs::msg::EstimatedState>, &node,
                       _1)));
-        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::JointEncoders>(
+        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::ObkJointEncoders>(
             "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::JointEncoders>, &node,
+            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::ObkJointEncoders>, &node,
                       _1)));
         REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::TrueSimState>(
             "topic", 10,

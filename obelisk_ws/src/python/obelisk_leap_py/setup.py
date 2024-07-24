@@ -24,7 +24,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "obelisk_leap_hand = obelisk_leap_py.obelisk_leap_hand:main",
+            "obelisk_leap_robot = obelisk_leap_py.obelisk_leap_robot:main",
         ],
     },
 )

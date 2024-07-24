@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(dummy_bot)
+project(leap_rh)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -9,10 +9,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 # install the urdf
-install(
-  DIRECTORY urdf/
-  DESTINATION share/${PROJECT_NAME}/urdf
-)
+# install(
+#   DIRECTORY urdf/
+#   DESTINATION share/${PROJECT_NAME}/urdf
+# )
 
 # install the mujoco files
 install(

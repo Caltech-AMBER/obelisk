@@ -19,7 +19,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         std::filesystem::path file_path(obk_root);
         file_path += file_string;
 
-        RCLCPP_WARN_STREAM(this->get_logger(), "File path: " << file_path);
+        RCLCPP_INFO_STREAM(this->get_logger(), "File path: " << file_path);
 
         if (!std::filesystem::exists(file_path)) {
             throw std::runtime_error("file path provided is invalid!");
@@ -43,11 +43,13 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
     obelisk_control_msgs::msg::PositionSetpoint ComputeControl() override {
         obelisk_control_msgs::msg::PositionSetpoint msg;
 
-        msg.u.clear();
+        msg.u_mujoco.clear();
+        msg.q_des.clear();
         rclcpp::Time time = this->get_clock()->now();
         double time_sec   = time.seconds();
 
-        msg.u.emplace_back(amplitude_ * sin(time_sec));
+        msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
+        msg.q_des.emplace_back(amplitude_ * sin(time_sec));
 
         this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_)->publish(msg);
 
