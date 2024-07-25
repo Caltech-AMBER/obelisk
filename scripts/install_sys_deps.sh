@@ -187,6 +187,7 @@ if [ "$zed" = true ]; then
         sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
         wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
         sudo chmod +x ubuntu22  # make installer executable
+        sudo chown $USER:$USER ubuntu22  # change ownership of installer
         sudo ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
