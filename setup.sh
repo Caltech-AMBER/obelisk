@@ -138,4 +138,6 @@ fi
 # run user-specific setup
 source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
+    $([ "$leap" = true ] && echo "--leap") \
+    $([ "$zed" = true ] && echo "--zed") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")
