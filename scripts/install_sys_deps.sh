@@ -148,6 +148,11 @@ if [ "$leap" = true ]; then
     # python deps
     pip install -U \
         dynamixel-sdk
+
+    # dialout group allows serial port access
+    sudo usermod -a -G dialout ${USER}
+
+    echo -e "\033[1;32mLEAP Hand dependencies installed successfully! Run 'newgrp dialout' if serial port access is denied.\033[0m"
 fi
 
 # [5] ZED SDK installation
@@ -185,6 +190,9 @@ if [ "$zed" = true ]; then
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
         rm ubuntu22  # remove installer
+        sudo usermod -a -G video ${USER}  # add user to video group
+
+        echo -e "\033[1;32mZED SDK installed successfully! Run 'newgrp video' if cameras not found.\033[0m"
     else
         echo -e "\033[1;33mZED SDK already installed!\033[0m"
     fi
