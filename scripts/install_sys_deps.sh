@@ -66,6 +66,7 @@ if [ "$basic" = true ]; then
         mesa-common-dev \
         python3-dev \
         python3-pip \
+        python-is-python3 \
         build-essential \
         cmake \
         libglfw3-dev \
