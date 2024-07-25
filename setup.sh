@@ -111,6 +111,7 @@ done
 export OBELISK_ROOT=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
 # docker setup
+# if you want to use the ZED camera, you always need the local deps
 if [ "$install_sys_deps_docker" = true ]; then
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
@@ -118,13 +119,13 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap") \
         $([ "$zed" = true ] && echo "--docker-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$obk_aliases" = true ] && echo "--docker-obk-aliases")
+        $([ "$pixi" = true ] && echo "--docker-pixi")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
-        $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$obk_aliases" = true ] && echo "--docker-obk-aliases")
+        $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
+        $([ "$zed" = true ] && echo "--docker-zed") \
+        $([ "$pixi" = true ] && echo "--docker-pixi")
 fi
 
 # system-level deps
