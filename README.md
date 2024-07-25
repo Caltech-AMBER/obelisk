@@ -59,20 +59,10 @@ If you're installing `docker` for the first time using this script, you also nee
 newgrp docker
 ```
 
-### Building Obelisk
+### Building Obelisk ROS Packages
 Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have to build it. You can either build it on your local filesystem or in a virtual environment that we manage using `pixi`.
 
-* If you are building it on your local filesystem, you need some minimal set of local dependencies. You can install these by running
-    ```
-    bash scripts/install_sys_deps.sh [--basic] [--cyclone-perf] [--source-ros] [--leap] [--zed]
-    ```
-    where
-    * the `--basic` flag installs basic system-level dependencies (recommended). **Warning: if this is run in the Docker container during build time, the OBELISK_ROOT directory will not exist yet, and it will install `obelisk_py` by cloning it from github (instead of installing it as an editable from the mounted repo).**
-    * The `--cyclone-perf` flag adds [performance optimizations for Cyclone DDS](https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations) in the `/etc/sysctl.d/60-cyclonedds.conf` file on your local filesystem (recommended)
-    * the `--source-ros` flag will add code that auto-sources base ROS2 to your `~/.bashrc`
-    * the `--leap` flag will install LEAP hand-related dependencies
-    * the `--zed` flag will install the ZED SDK, which can only be installed locally. It also installs the Python SDK - if you are using a virtual environment, **activate it before running this script!**
-    These settings are summarized by running `bash scripts/install_sys_deps.sh --help`.
+* If you are building it on your local filesystem, you need some minimal set of local dependencies. These should have been installed in the previous step.
 
     If you have run the initial setup script with the `--obk-aliases` flag, then running
     ```
