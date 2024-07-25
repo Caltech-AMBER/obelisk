@@ -643,10 +643,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.orientation.x = this->data_->sensordata[sensor_addr];
-                                msg.orientation.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.orientation.z = this->data_->sensordata[sensor_addr + 2];
-                                msg.orientation.w = this->data_->sensordata[sensor_addr + 3];
+                                msg.orientation.w = this->data_->sensordata[sensor_addr];
+                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
+                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
+                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
