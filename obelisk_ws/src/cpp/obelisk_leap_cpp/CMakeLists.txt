@@ -28,9 +28,9 @@ target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Core Obelisk::Zoo)
 ament_target_dependencies(obelisk_leap_robot PUBLIC rclcpp)
 ament_target_dependencies(obelisk_leap_robot PUBLIC dynamixel_sdk)
 
-# obelisk_leap_controller
-add_executable(obelisk_leap_controller src/obelisk_leap_controller.cpp)
-target_link_libraries(obelisk_leap_controller PUBLIC Obelisk::Core Obelisk::Zoo)
+# leap_example_controller
+add_executable(leap_example_controller src/leap_example_controller.cpp)
+target_link_libraries(leap_example_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -44,7 +44,7 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
   install(TARGETS
-  obelisk_leap_controller
+  leap_example_controller
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
