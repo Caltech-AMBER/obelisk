@@ -10,20 +10,49 @@ Obelisk should be used as a dependency for external robot control code that is w
 3. Use Obelisk in a project that uses `pixi`.
 
 ### Initial Setup
-Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!** The available options are:
+Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!**
+
+This script has the ability to do 3 things:
+1. configure a conditional Docker build so that the image has the right dependencies in it to run Obelisk
+2. install system dependencies **on the machine running this script**
+3. set up user-specific settings, including very useful bash aliases
+
+The options are as follows:
 ```
-source setup.sh [--docker] [--docker-basic] [--docker-cyclone-perf] [--docker-leap] [--docker-zed] [--pixi] [--obk-aliases]
+source setup.sh [OPTIONS]
+
+Options:
+  --recommended                Apply recommended system-level changes
+                               (cyclone performance optimizations, pixi, obelisk aliases)
+
+  --basic                      Enables basic dependencies necessary for Obelisk locally
+  --cyclone-perf               Enables cyclone performance optimizations
+  --leap                       Enables LEAP hand dependencies
+  --zed                        Enables ZED SDK
+
+  --docker-install             Install Docker and nvidia-container-toolkit
+  --install-sys-deps-docker    Installs system dependencies in Docker
+
+  --install-sys-deps           Installs system dependencies
+  --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
+
+  --pixi                       Install pixi
+  --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
+
+  --help                       Display this help message and exit
 ```
-* The `--docker` flag installs `docker` and `nvidia-container-toolkit` on your local filesystem. You should only specify this if you want to develop in a containerized setting.
-* The `--docker-<dep>` flags set environment variables `OBELISK_DOCKER_<DEP>=true` in the file `docker/.env`. This exposes certain system-level dependencies as build arguments for your Docker image. For example, `source setup.sh --docker-zed` will set `OBELISK_DOCKER_ZED=true`, so the ZED SDK will be built into the image. The `--docker-basic` flag will install basic dependencies required for the function of Obelisk, and is recommended if you aren't developing in `pixi`.
-* The `--pixi` flag installs `pixi` and associates it with the current user.
-* The `--obk-aliases` flag will add useful Obelisk aliases to the `~/.bash_aliases` file. If `~/.bash_aliases` is not already sourced in your `~/.bashrc`, it will also add that. **We highly recommend using this flag.**
-* If you trust us, you can use the `--all` flag to just opt-in to all of these dependencies.
-If you're more cautious, we recommend running
-```
-source setup.sh --recommended
-```
-This is equivalent to using the `--pixi`, `--obk-aliases`, and `--docker-cyclone-perf` flags.
+
+Some guidance/recommendations on choosing flags:
+* If you don't have Docker on your machine, use the `--docker-install` flag
+* If you are not using Docker, then you should use `--install-sys-deps`
+* If you are using Docker, but not pixi, you should also use `--install-sys-deps`
+* If you are using Docker, use `--install-sys-deps-docker` if and only if you are **not** using pixi within the container.
+* If you are using pixi, regardless of whether you are using Docker, you should **not** use the `--basic` flag (note: you may have to manually install `mesa-common-dev`)
+* If you are not using pixi or conda, you should probably use `--source-ros` along with `--install-sys-deps`
+* We believe using `--pixi` will make your life easier, but you don't have to use it
+* We strongly recommend using `--obk-aliases` and `--cyclone-perf`
+* If you are using the LEAP Hand, use `--leap`
+* If you are using ZED cameras, use `--zed`
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
