@@ -9,17 +9,19 @@ ARG USER=user
 ARG UID=1000
 ARG GID=1000
 ARG OBELISK_ROOT=/
-ARG OBELISK_BASIC=false
-ARG OBELISK_CYCLONE_PERF=false
-ARG OBELISK_ZED=false
+ARG OBELISK_DOCKER_BASIC=false
+ARG OBELISK_DOCKER_CYCLONE_PERF=false
+ARG OBELISK_DOCKER_LEAP=false
+ARG OBELISK_DOCKER_ZED=false
 
 ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
 ENV OBELISK_ROOT=$OBELISK_ROOT
-ENV OBELISK_BASIC=$OBELISK_BASIC
-ENV OBELISK_CYCLONE_PERF=$OBELISK_CYCLONE_PERF
-ENV OBELISK_ZED=$OBELISK_ZED
+ENV OBELISK_DOCKER_BASIC=$OBELISK_DOCKER_BASIC
+ENV OBELISK_DOCKER_CYCLONE_PERF=$OBELISK_DOCKER_CYCLONE_PERF
+ENV OBELISK_DOCKER_LEAP=$OBELISK_DOCKER_LEAP
+ENV OBELISK_DOCKER_ZED=$OBELISK_DOCKER_ZED
 
 ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
@@ -52,9 +54,10 @@ RUN usermod -a -G dialout ${USER} && \
 # conditionally install dependencies based on build args
 COPY install_sys_deps.sh /tmp/install_sys_deps.sh
 RUN FLAGS=""; \
-    [ "$OBELISK_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
-    [ "$OBELISK_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
-    [ "$OBELISK_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
+    [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
+    [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
+    [ "$OBELISK_DOCKER_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
+    [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
     sudo rm /tmp/install_sys_deps.sh
 

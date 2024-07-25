@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# script flags
+# --- script flags --- #
+# generic deps/installations
 basic=false
-python=false
 cyclone_perf=false
 source_ros=false
+
+# hardware-specific deps
+leap=false
 zed=false
 
 for arg in "$@"; do
@@ -21,6 +24,10 @@ for arg in "$@"; do
             source_ros=true
             shift # Sources base ROS in ~/.bashrc
             ;;
+        --leap)
+            leap=true
+            shift # Installs LEAP hand dependencies
+            ;;
         --zed)
             zed=true
             shift # Installs ZED SDK
@@ -32,6 +39,7 @@ Options:
   --basic              Install basic dependencies
   --cyclone-perf       Enable cyclone performance optimizations
   --source-ros         Source base ROS in ~/.bashrc
+  --leap               Install LEAP hand dependencies
   --zed                Install ZED SDK
 
   --help               Display this help message and exit
@@ -43,7 +51,7 @@ Options:
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--zed]"
+            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--leap] [--zed]"
             exit 1
             ;;
     esac
@@ -77,8 +85,7 @@ if [ "$basic" = true ]; then
         ros-humble-rosidl-default-generators \
         ros-humble-rmw-cyclonedds-cpp \
         ros-humble-rviz-visual-tools \
-        ros-humble-foxglove-bridge \
-        ros-humble-dynamixel-sdk
+        ros-humble-foxglove-bridge
     source /opt/ros/humble/setup.bash
 
     # python deps
@@ -132,7 +139,18 @@ if [ "$source_ros" = true ]; then
     fi
 fi
 
-# [4] ZED SDK installation
+# [4] LEAP Hand dependencies
+if [ "$leap" = true ]; then
+    # system-level deps
+    sudo apt-get install -y \
+        ros-humble-dynamixel-sdk
+
+    # python deps
+    pip install -U \
+        dynamixel-sdk
+fi
+
+# [5] ZED SDK installation
 if [ "$zed" = true ]; then
     # check whether the ZED SDK is already installed
     skip_zed=false
@@ -156,7 +174,7 @@ if [ "$zed" = true ]; then
             wget \
             zstd
 
-        # [July 24, 2024] installing ZED SDK (version 4.1.3)
+        # [July 24, 2024] installing ZED SDK, including python version (version 4.1.3)
         if [ ! -d /etc/udev/rules.d ]; then
             sudo mkdir -p /etc/udev/rules.d
         fi
