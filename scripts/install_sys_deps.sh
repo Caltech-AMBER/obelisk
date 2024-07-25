@@ -1,47 +1,64 @@
 #!/bin/bash
 
-# script flags
-autoaccept=false
+# --- script flags --- #
+# generic deps/installations
+basic=false
+cyclone_perf=false
 source_ros=false
-no_source_ros=true
+
+# hardware-specific deps
+leap=false
+zed=false
 
 for arg in "$@"; do
     case $arg in
-        --y)
-            autoaccept=true
-            shift # Auto-accepts installation
-            ;;
-        -y)
-            autoaccept=true
-            shift # Auto-accepts installation
-            ;;
+        --basic)
+            basic=true
+            shift
+            ;;  # Installs basic system dependencies
+        --cyclone-perf)
+            cyclone_perf=true
+            shift
+            ;;  # Enables cyclone performance optimizations
         --source-ros)
             source_ros=true
             shift # Sources base ROS in ~/.bashrc
             ;;
-        --no-source-ros)
-            no_source_ros=true
-            shift # Does not source base ROS in ~/.bashrc
+        --leap)
+            leap=true
+            shift # Installs LEAP hand dependencies
             ;;
+        --zed)
+            zed=true
+            shift # Installs ZED SDK
+            ;;
+        --help)
+            echo "Usage: $0 [OPTIONS]
+
+Options:
+  --basic              Install basic dependencies
+  --cyclone-perf       Enable cyclone performance optimizations
+  --source-ros         Source base ROS in ~/.bashrc
+  --leap               Install LEAP hand dependencies
+  --zed                Install ZED SDK
+
+  --help               Display this help message and exit
+"
+            shift
+            exit 0
+            ;;
+
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--y] [--source-ros]"
+            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--leap] [--zed]"
             exit 1
             ;;
     esac
 done
 
-if [ "$autoaccept" = true ]; then
-    REPLY='y'
-else
-    read -p $'\033[1;33mThis script will install system dependencies that modify your local filesystem! Continue? [y/n]\033[0m' -n 1 -r
-    echo
-fi
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "\033[1;33mNot installing local system dependencies!\033[0m"
-else
+# [1] basic dependencies
+if [ "$basic" = true ]; then
     # basic deps
     sudo apt-get update && sudo apt-get install -y \
         curl \
@@ -49,6 +66,7 @@ else
         mesa-common-dev \
         python3-dev \
         python3-pip \
+        python-is-python3 \
         build-essential \
         cmake \
         libglfw3-dev \
@@ -68,34 +86,120 @@ else
         ros-humble-rosidl-default-generators \
         ros-humble-rmw-cyclonedds-cpp \
         ros-humble-rviz-visual-tools \
-        ros-humble-foxglove-bridge \
-        ros-humble-dynamixel-sdk
+        ros-humble-foxglove-bridge
     source /opt/ros/humble/setup.bash
 
-    # parse the user's response to adding the ROS source command to ~/.bashrc - specifying no source takes precedence
-    if [ "$no_source_ros" = true ]; then
-        REPLY='n'
-    elif [ "$source_ros" = true ]; then
-        REPLY='y'
-    else
-        read -p $'\033[1;33mROS 2 has been installed. Would you like to add the source command to your .bashrc file? [y/n]\033[0m' -n 1 -r
-        echo
-    fi
-
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-        echo -e "\033[1;32mROS 2 source command added to .bashrc!\033[0m"
-    else
-        echo -e "\033[1;33mROS 2 source command not added to .bashrc. You will need to source it manually!\033[0m"
-    fi
-
-    # python-specific deps
+    # python deps
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
         mujoco
-    pip install -e $OBELISK_ROOT/obelisk/python
-    cd $OBELISK_ROOT
+    if [ -d $OBELISK_ROOT ]; then
+        pip install -e $OBELISK_ROOT/obelisk/python
+        echo -e "\033[1;32mOBELISK_ROOT exists, obelisk_py installed as editable!\033[0m"
+    else
+        pip install git+https://github.com/Caltech-AMBER/obelisk.git#subdirectory=obelisk/python
+        echo -e "\033[1;33mOBELISK_ROOT directory does not exist! Installing obelisk_py from GitHub...\033[0m"
+    fi
 
     echo -e "\033[1;32mSystem dependencies installed successfully!\033[0m"
+else
+    echo -e "\033[1;33mNot installing basic system dependencies!\033[0m"
+fi
+
+# [2] enables cyclone performance optimizations
+# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
+if [ "$cyclone_perf" = true ]; then
+    # check whether /etc/sysctl.d/60-cyclonedds.conf is a directory - if it is, delete it
+    if [ -d /etc/sysctl.d/60-cyclonedds.conf ]; then
+        sudo rm -rf /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    # apply performance optimizations
+    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
+else
+    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --cyclone-perf flag.\033[0m"
+fi
+
+# [3] sourcing base ROS2
+if [ "$source_ros" = true ]; then
+    # check whether /opt/ros/humble/setup.bash exists; if so, source
+    if [ -f /opt/ros/humble/setup.bash ]; then
+        source /opt/ros/humble/setup.bash
+        echo -e "\033[1;32mROS 2 sourced successfully!\033[0m"
+    else
+        echo -e "\033[1;33mROS 2 not sourced because /opt/ros/humble/setup.bash does not exist!\033[0m"
+    fi
+fi
+
+# [4] LEAP Hand dependencies
+if [ "$leap" = true ]; then
+    # system-level deps
+    sudo apt-get install -y \
+        ros-humble-dynamixel-sdk
+
+    # python deps
+    pip install -U \
+        dynamixel-sdk
+
+    # dialout group allows serial port access
+    sudo usermod -a -G dialout ${USER}
+
+    echo -e "\033[1;32mLEAP Hand dependencies installed successfully! Run 'newgrp dialout' if serial port access is denied.\033[0m"
+fi
+
+# [5] ZED SDK installation
+if [ "$zed" = true ]; then
+    # check whether the ZED SDK is already installed
+    skip_zed=false
+    temp_file=$(mktemp)
+    pip list > "$temp_file"
+    if grep -q pyzed "$temp_file"; then
+        echo -e "\033[1;33mZED SDK already installed!\033[0m"
+        rm "$temp_file"
+        skip_zed=true
+    fi
+    rm "$temp_file"
+
+    if [ "$skip_zed" = false ]; then
+        # opencv requires: libegl1, libopengl0
+        # zed sdk installation requires: lsb-release, udev, wget, zstd
+        sudo apt-get update && sudo apt-get install -y \
+            libegl1 \
+            libopengl0 \
+            lsb-release \
+            udev \
+            wget \
+            zstd
+
+        # [July 24, 2024] installing ZED SDK, including python version (version 4.1.3)
+        if [ ! -d /etc/udev/rules.d ]; then
+            sudo mkdir -p /etc/udev/rules.d
+        fi
+        sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
+        wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
+        sudo chmod +x ubuntu22  # make installer executable
+        ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
+        sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
+        sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
+        rm ubuntu22  # remove installer
+        sudo usermod -a -G video ${USER}  # add user to video group
+
+        # granting permissions for python dist-packages because zed SDK installs a bunch of these necessary for colcon
+        sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/
+
+        echo -e "\033[1;32mZED SDK installed successfully! Run 'newgrp video' if cameras not found.\033[0m"
+    else
+        echo -e "\033[1;33mZED SDK already installed!\033[0m"
+    fi
+else
+    echo -e "\033[1;33mNot installing ZED SDK!\033[0m"
 fi

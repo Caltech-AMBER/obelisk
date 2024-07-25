@@ -1,8 +1,8 @@
 config: leap
 onboard:
   control:
-    - pkg: obelisk_control_py
-      executable: leap_controller
+    - pkg: obelisk_leap_py
+      executable: leap_example_controller
       # callback_groups:
       publishers:
         - ros_parameter: pub_ctrl_setting

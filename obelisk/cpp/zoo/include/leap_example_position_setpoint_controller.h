@@ -10,14 +10,14 @@ namespace obelisk {
     /**
      * @brief Controller that generates a sinusoidal position setpoint for the Leap hand
      */
-    class LeapPositionSetpointController : public ObeliskController<leap_controller_msg, leap_estimator_msg> {
+    class LeapExamplePositionSetpointController : public ObeliskController<leap_controller_msg, leap_estimator_msg> {
       public:
         /**
          * @brief Construct a new Leap Position Setpoint Controller object
          *
          * @param name Name of the controller
          */
-        LeapPositionSetpointController(const std::string& name)
+        LeapExamplePositionSetpointController(const std::string& name)
             : ObeliskController<leap_controller_msg, leap_estimator_msg>(name) {}
 
       protected:

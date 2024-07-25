@@ -10,33 +10,74 @@ Obelisk should be used as a dependency for external robot control code that is w
 3. Use Obelisk in a project that uses `pixi`.
 
 ### Initial Setup
-Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. The available options are:
+Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!**
+
+This script has the ability to do 3 things:
+1. configure a conditional Docker build so that the image has the right dependencies in it to run Obelisk
+2. install system dependencies **on the machine running this script**
+3. set up user-specific settings, including very useful bash aliases
+
+The options are as follows:
 ```
-source setup.sh [--no-skip-docker] [--pixi] [--cyclone-perf] [--bash-aliases] [--obk-aliases]
+source setup.sh [OPTIONS]
+
+Options:
+  --recommended                Apply recommended system-level changes
+                               (cyclone performance optimizations, pixi, obelisk aliases)
+
+  --basic                      Enables basic dependencies necessary for Obelisk locally
+  --cyclone-perf               Enables cyclone performance optimizations
+  --leap                       Enables LEAP hand dependencies
+  --zed                        Enables ZED SDK
+
+  --docker-install             Install Docker and nvidia-container-toolkit
+  --install-sys-deps-docker    Installs system dependencies in Docker
+
+  --install-sys-deps           Installs system dependencies
+  --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
+
+  --pixi                       Install pixi
+  --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
+
+  --help                       Display this help message and exit
 ```
-* The `--no-skip-docker` flag installs `docker` and `nvidia-container-toolkit` on your local filesystem. You should only specify this if you want to develop in a containerized setting.
-* The `--pixi` flag installs `pixi` on your local filesystem.
-* The `--cyclone-perf` flag adds [performance optimizations for Cyclone DDS](https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations) in the `/etc/sysctl.d/60-cyclonedds.conf` file on your local filesystem. You should  specify this if you plan to use Obelisk in a non-containerized environment.
-* The `--bash-aliases` flag will check if `~/.bash_aliases` is sourced in the `~/.bashrc` file (and will add it if not already in there), and will create the `~/.bash_aliases` file if it doesn't already exist. This is a very benign flag, so we recommend using it.
-* The `--obk-aliases` flag will add useful Obelisk aliases to the `~/.bash_aliases` file. **We highly recommend using this flag.**
-* If you trust us, you can use the `--all` flag to just opt-in to all of these dependencies.
-If you're more cautious, we recommend running
-```
-source setup.sh --pixi --bash-aliases --obk-aliases
-```
+
+Some guidance/recommendations on choosing flags:
+* If you don't have Docker on your machine, use the `--docker-install` flag
+* If you are not using Docker, then you should use `--install-sys-deps`
+* If you are using Docker, but not pixi, you should also use `--install-sys-deps`
+* If you are using Docker, use `--install-sys-deps-docker` if and only if you are **not** using pixi within the container.
+* If you are using pixi, regardless of whether you are using Docker, you should **not** use the `--basic` flag (note: you may have to manually install `mesa-common-dev`)
+* If you are not using pixi or conda, you should probably use `--source-ros` along with `--install-sys-deps`
+* We believe using `--pixi` will make your life easier, but you don't have to use it
+* We strongly recommend using `--obk-aliases` and `--cyclone-perf`
+* If you are using the LEAP Hand, use `--leap`
+* If you are using ZED cameras, use `--zed`. Additionally, you will need to adjust the `udev` permissions on your host machine if you want to use the ZED cameras in a Docker container with a non-root user (if you are acting as root in your container, you probably don't need to do this next step):
+    ```
+    # grab the ZED SDK installer (version 4.1.3, this README written July 25, 2024)
+    wget -q https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O zed_installer.run
+
+    # just pull the udev rules out of the installer
+    bash ./zed_installer.run --tar -x './99-slabs.rules'  > /dev/null 2>&1
+
+    # copy the rules to the right directory, make them executable, and reload udev permissions
+    sudo mv "./99-slabs.rules" "/etc/udev/rules.d/"
+    sudo chmod 777 "/etc/udev/rules.d/99-slabs.rules"
+    sudo udevadm control --reload-rules && sudo udevadm trigger
+
+    # remove the installer
+    rm zed_installer.run
+    ```
+
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
 newgrp docker
 ```
 
-### Building Obelisk
+### Building Obelisk ROS Packages
 Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have to build it. You can either build it on your local filesystem or in a virtual environment that we manage using `pixi`.
 
-* If you are building it on your local filesystem, you need some minimal set of local dependencies. You can install these by running
-    ```
-    bash scripts/install_sys_deps.sh
-    ```
-    This will prompt you to confirm changes to your local filesystem. To auto-accept the installations, use the `-y` flag. To source the base ROS installation in the `~/.bashrc` without prompting, use the `--source-ros` flag. To not source it without prompting, use the `--no-source-ros` flag.
+* If you are building it on your local filesystem, you need some minimal set of local dependencies. These should have been installed in the previous step.
 
     If you have run the initial setup script with the `--obk-aliases` flag, then running
     ```

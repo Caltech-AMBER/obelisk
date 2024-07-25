@@ -8,6 +8,7 @@ services:
         UID: $UID
         GID: $UID
         OBELISK_ROOT: $OBELISK_ROOT
+        OBELISK_DOCKER_PIXI: true
       dockerfile: Dockerfile
     network_mode: host
     ipc: host
@@ -17,6 +18,7 @@ services:
       UID: $UID
       GID: $UID
       OBELISK_ROOT: $OBELISK_ROOT
+      OBELISK_DOCKER_PIXI: true
       QT_X11_NO_MITSHM: 1
     security_opt:
       - seccomp=unconfined

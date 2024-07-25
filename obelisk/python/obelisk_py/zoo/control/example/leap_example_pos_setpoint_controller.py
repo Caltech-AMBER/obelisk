@@ -6,10 +6,10 @@ from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
 
-class LeapPositionSetpointController(ObeliskController):
+class LeapExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
+    def __init__(self, node_name: str = "leap_example_position_setpoint_controller") -> None:
         """Initialize the example position setpoint controller."""
         super().__init__(node_name)
 
