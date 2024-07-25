@@ -6,6 +6,7 @@ docker_cyclone_perf=false
 docker_leap=false
 docker_zed=false
 docker_pixi=false
+docker_obk_aliases=false
 
 for arg in "$@"; do
     case $arg in
@@ -34,6 +35,10 @@ for arg in "$@"; do
             docker_pixi=true
             shift  # Sets OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
             ;;
+        --docker-obk-aliases)
+            docker_obk_aliases=true
+            shift  # Sets OBELISK_DOCKER_OBK_ALIASES=true for docker, which installs Obelisk aliases
+            ;;
 
         --help)
             echo "Usage: $0 [OPTIONS]
@@ -45,6 +50,7 @@ Options:
   --docker-leap          Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
   --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
+  --docker-obk-aliases   Set OBELISK_DOCKER_OBK_ALIASES=true for docker, which installs Obelisk aliases
 
   --help                 Display this help message and exit
 "
@@ -184,6 +190,16 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
     echo "OBELISK_DOCKER_PIXI=false" >> $env_file
     export OBELISK_DOCKER_PIXI=false
+fi
+
+if [ "$docker_obk_aliases" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_OBK_ALIASES=true!\033[0m"
+    echo "OBELISK_DOCKER_OBK_ALIASES=true" >> $env_file
+    export OBELISK_DOCKER_OBK_ALIASES=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_OBK_ALIASES=false!\033[0m"
+    echo "OBELISK_DOCKER_OBK_ALIASES=false" >> $env_file
+    export OBELISK_DOCKER_OBK_ALIASES=false
 fi
 
 # copy scripts to the docker directory

@@ -118,11 +118,13 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap") \
         $([ "$zed" = true ] && echo "--docker-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ "$obk_aliases" = true ] && echo "--docker-obk-aliases")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ "$obk_aliases" = true ] && echo "--docker-obk-aliases")
 fi
 
 # system-level deps
