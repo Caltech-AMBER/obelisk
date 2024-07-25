@@ -192,6 +192,12 @@ namespace obelisk {
             glfwSetMouseButtonCallback(window_, ObeliskMujocoRobot::MouseButtonCallback);
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
+            if (this->model_->nu != nu_) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                    "Mujoco number of inputs does not match the provided number of inputs! Mujoco nu: "
+                                        << this->model_->nu);
+            }
+
             mujoco_setup_ = true;
 
             while (!activation_complete_) {
