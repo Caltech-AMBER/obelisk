@@ -52,7 +52,22 @@ Some guidance/recommendations on choosing flags:
 * We believe using `--pixi` will make your life easier, but you don't have to use it
 * We strongly recommend using `--obk-aliases` and `--cyclone-perf`
 * If you are using the LEAP Hand, use `--leap`
-* If you are using ZED cameras, use `--zed`
+* If you are using ZED cameras, use `--zed`. Additionally, you will need to adjust the `udev` permissions on your host machine if you want to use the ZED cameras in a Docker container with a non-root user (if you are acting as root in your container, you probably don't need to do this next step):
+    ```
+    # grab the ZED SDK installer (version 4.1.3, this README written July 25, 2024)
+    wget -q https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O zed_installer.run
+
+    # just pull the udev rules out of the installer
+    bash ./zed_installer.run --tar -x './99-slabs.rules'  > /dev/null 2>&1
+
+    # copy the rules to the right directory, make them executable, and reload udev permissions
+    sudo mv "./99-slabs.rules" "/etc/udev/rules.d/"
+    sudo chmod 777 "/etc/udev/rules.d/99-slabs.rules"
+    sudo udevadm control --reload-rules && sudo udevadm trigger
+
+    # remove the installer
+    rm zed_installer.run
+    ```
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
