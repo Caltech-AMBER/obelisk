@@ -42,10 +42,13 @@ Options:
   --help                       Display this help message and exit
 ```
 
+We now provide some guidance on using Obelisk in your downstream project and how to choose flags. Currently, the recommended usage in your personal project is to isolate it with Docker, and clone Obelisk into the docker container.
+
 Some guidance/recommendations on choosing flags:
 * If you don't have Docker on your machine, use the `--docker-install` flag
-* If you are not using Docker, then you should use `--install-sys-deps`
-* If you are using Docker, but not pixi, you should also use `--install-sys-deps`
+* `--install-sys-deps`
+    * If you are developing on Obelisk without Docker and without pixi, use this flag. If you are using either Docker or pixi, don't use it.
+    * If you are using Obelisk in some downstream project without pixi, use this flag (this includes the case where you're isolating the project in Docker)
 * If you are using Docker, use `--install-sys-deps-docker` if and only if you are **not** using pixi within the container.
 * If you are using pixi, regardless of whether you are using Docker, you should **not** use the `--basic` flag (note: you may have to manually install `mesa-common-dev`)
 * If you are not using pixi or conda, you should probably use `--source-ros` along with `--install-sys-deps`

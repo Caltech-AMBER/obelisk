@@ -31,7 +31,7 @@ if [ "$leap" = false ]; then
     SKIP_PKGS+=" obelisk_leap_cpp obelisk_leap_py"
 fi
 if [ "$zed" = false ]; then
-    SKIP_PKGS+=""  # TODO(ahl): fill this once ZED packages are added
+    SKIP_PKGS+=""  # TODO(ahl): fill this once ZED ROS2 packages are added
 fi
 
 # building Obelisk packages
@@ -41,8 +41,7 @@ echo -e "\033[1;32mBuilding Obelisk ROS messages...\033[0m"
 curr_dir=$(pwd)
 cd $OBELISK_ROOT/obelisk_ws
 colcon build --symlink-install --parallel-workers $(nproc) \
-    --packages-select $MESSAGE_PKGS \
-    --packages-skip $SKIP_PKGS
+    --packages-select $MESSAGE_PKGS
 
 echo -e "\033[1;32mBuilding remainder of Obelisk ROS packages...\033[0m"
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
