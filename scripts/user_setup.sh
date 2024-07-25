@@ -16,7 +16,7 @@ for arg in "$@"; do
             ;;
         --obk-aliases)
             obk_aliases=true
-            shift  # Adds obelisk aliases to the ~/.bash_aliases file
+            shift  # Adds obelisk aliases to the $OBELISK_ROOT/.obk_aliases file
             ;;
 
         # alias configuration
@@ -47,23 +47,23 @@ if [ "$pixi" = true ]; then
     fi
 fi
 
-# [2] adds obelisk aliases to the ~/.bash_aliases file
+# [2] adds obelisk aliases to the $OBELISK_ROOT/.obk_aliases file
 if [ "$obk_aliases" = true ]; then
-    # check if ~/.bash_aliases is sourced in ~/.bashrc; if not, add it
-    block='if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi'
-    if ! grep -q "$block" ~/.bashrc; then
-        echo "$block" >> ~/.bashrc
-        echo -e "\033[1;32mAdded code to source ~/.bash_aliases in ~/.bashrc!\033[0m"
-    fi
+    # check if $OBELISK_ROOT/.obk_aliases is sourced in ~/.bashrc; if not, add it
+    OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
+    block="# >>> obelisk >>>
+export OBELISK_ROOT=\"$OBELISK_ROOT\"
+if [ -f \$OBELISK_ROOT/.obk_aliases ]; then
+    . \$OBELISK_ROOT/.obk_aliases
+fi
+# <<< obelisk <<<"
+    sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bashrc > ~/.bashrc.tmp && cp ~/.bashrc.tmp ~/.bashrc && rm ~/.bashrc.tmp
+    echo "$block" >> ~/.bashrc
 
-    # check whether ~/.bash_aliases exists; if not, touch it
-    if [ ! -f ~/.bash_aliases ]; then
-        touch ~/.bash_aliases
-        echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
-    else
-        echo -e "\033[1;33m~/.bash_aliases file already exists, not creating a new one...\033[0m"
+    # check whether $OBELISK_ROOT/.obk_aliases exists; if so, delete it and remake it
+    if [ -f $OBELISK_ROOT/.obk_aliases ]; then
+        rm $OBELISK_ROOT/.obk_aliases
+        touch $OBELISK_ROOT/.obk_aliases
     fi
 
     # creating obelisk aliases
@@ -77,7 +77,7 @@ fi'
     fi
 
     obk_aliases=$(cat << EOF
-# >>> obelisk >>>
+# >>> obelisk aliases >>>
 # !! Contents in this block are managed by obelisk !!
 
 # alias for setting up obelisk global settings in current shell
@@ -294,12 +294,11 @@ obk-kill:\n    Alias for obk-shutdown.\n    Usage: obk-kill <config_name>\n\n\
 obk-help:\n    Display this help message.\n\
 In all the above commands, <config_name> refers to the config field of the config file used for launching obelisk.\
 \033[0m"'
-# <<< obelisk <<<
+# <<< obelisk aliases <<<
 EOF
 )
-    sed '/# >>> obelisk >>>/,/# <<< obelisk <<</d' ~/.bash_aliases > ~/.bash_aliases.tmp && cp ~/.bash_aliases.tmp ~/.bash_aliases && rm ~/.bash_aliases.tmp
-    echo "$obk_aliases" >> ~/.bash_aliases
-    echo -e "\033[1;32mObelisk aliases added to ~/.bash_aliases!\033[0m"
+    echo "$obk_aliases" >> $OBELISK_ROOT/.obk_aliases
+    echo -e "\033[1;32mObelisk aliases added to $OBELISK_ROOT/.obk_aliases!\033[0m"
 else
-    echo -e "\033[1;33mObelisk aliases not added to ~/.bash_aliases. To add, pass the --obk-aliases flag.\033[0m"
+    echo -e "\033[1;33mObelisk aliases not added to $OBELISK_ROOT/.obk_aliases. To add, pass the --obk-aliases flag.\033[0m"
 fi
