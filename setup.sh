@@ -130,11 +130,32 @@ fi
 
 # system-level deps
 if [ "$install_sys_deps" = true ]; then
-    source $OBELISK_ROOT/scripts/install_sys_deps.sh --zed \
-        $([ "$basic" = true ] && echo "--basic") \
-        $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
-        $([ "$source_ros" = true ] && echo "--source-ros") \
-        $([ "$leap" = true ] && echo "--leap")
+    # source $OBELISK_ROOT/scripts/install_sys_deps.sh \
+    #     $([ "$basic" = true ] && echo "--basic") \
+    #     $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
+    #     $([ "$source_ros" = true ] && echo "--source-ros") \
+    #     $([ "$leap" = true ] && echo "--leap") \
+    #     $([ "$zed" = true ] && echo "--zed")
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
 fi
 
 # run user-specific setup
