@@ -175,10 +175,10 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.x = self.shared_sensordata[sensor_adr + 0]
-                            msg.orientation.y = self.shared_sensordata[sensor_adr + 1]
-                            msg.orientation.z = self.shared_sensordata[sensor_adr + 2]
-                            msg.orientation.w = self.shared_sensordata[sensor_adr + 3]
+                            msg.orientation.w = self.shared_sensordata[sensor_adr + 0]
+                            msg.orientation.x = self.shared_sensordata[sensor_adr + 1]
+                            msg.orientation.y = self.shared_sensordata[sensor_adr + 2]
+                            msg.orientation.z = self.shared_sensordata[sensor_adr + 3]
                             has_framequat = True
                         else:
                             self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
@@ -266,10 +266,10 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.x = self.shared_sensordata[sensor_adr + 0]
-                            msg.orientation.y = self.shared_sensordata[sensor_adr + 1]
-                            msg.orientation.z = self.shared_sensordata[sensor_adr + 2]
-                            msg.orientation.w = self.shared_sensordata[sensor_adr + 3]
+                            msg.orientation.w = self.shared_sensordata[sensor_adr + 0]
+                            msg.orientation.x = self.shared_sensordata[sensor_adr + 1]
+                            msg.orientation.y = self.shared_sensordata[sensor_adr + 2]
+                            msg.orientation.z = self.shared_sensordata[sensor_adr + 3]
                             has_framequat = True
                         else:
                             self.get_logger().error(f"Multiple framequats detected! Ignoring {sensor_name}.")
