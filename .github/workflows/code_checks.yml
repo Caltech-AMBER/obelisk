@@ -34,10 +34,10 @@ jobs:
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build Obelisk ROS2 messages
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs --parallel-workers $(nproc)"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs --parallel-workers $(nproc)"
       - name: Build and Source Obelisk ROS2 Packages
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs"
       - name: Run Ruff Linter
         run: |
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
