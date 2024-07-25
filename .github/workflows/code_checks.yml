@@ -30,14 +30,11 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Set Up Development Environment
         run: |
-          source setup.sh
+          source setup.sh --recommended --leap --obk-aliases
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
-      - name: Build ROS2 Messages
+      - name: Build and Source Obelisk ROS2 Packages
         run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build"
-      - name: Build and Source ROS2
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ros-build"
+          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "obk-build"
       - name: Run Ruff Linter
         run: |
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
