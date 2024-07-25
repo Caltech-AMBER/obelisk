@@ -30,6 +30,7 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Set Up Development Environment
         run: |
+          shopt -s expand_aliases
           source setup.sh --recommended --leap --obk-aliases
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build and Source Obelisk ROS2 Packages
