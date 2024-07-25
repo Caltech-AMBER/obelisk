@@ -1,7 +1,7 @@
 config: leap
 onboard:
   control:
-    - pkg: obelisk_control_py
+    - pkg: obelisk_leap_py
       executable: leap_controller
       # callback_groups:
       publishers:

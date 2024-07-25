@@ -25,6 +25,7 @@ setup(
     entry_points={
         "console_scripts": [
             "obelisk_leap_robot = obelisk_leap_py.obelisk_leap_robot:main",
+            "leap_controller = obelisk_leap_py.leap_controller:main",
         ],
     },
 )
