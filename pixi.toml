@@ -121,6 +121,9 @@ dynamixel-sdk = ">=3.7"
 
 
 # zed cameras
+[feature.zed.activation]
+scripts = ["scripts/install_pyzed.sh"]
+
 [feature.zed.dependencies]
 cython = "*"
 opencv = "*"
