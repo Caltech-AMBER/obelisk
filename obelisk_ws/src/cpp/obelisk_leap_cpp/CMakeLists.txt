@@ -22,12 +22,15 @@ FetchContent_MakeAvailable(Obelisk)
 
 include_directories("${dynamixel_sdk_INCLUDE_DIRS}/dynamixel_sdk")
 
+# obelisk_leap_robot
 add_executable(obelisk_leap_robot src/obelisk_leap_robot.cpp)
-target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Core)
-target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Zoo)
-
+target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Core Obelisk::Zoo)
 ament_target_dependencies(obelisk_leap_robot PUBLIC rclcpp)
 ament_target_dependencies(obelisk_leap_robot PUBLIC dynamixel_sdk)
+
+# obelisk_leap_controller
+add_executable(obelisk_leap_controller src/obelisk_leap_controller.cpp)
+target_link_libraries(obelisk_leap_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -38,6 +41,10 @@ endif()
 
 install(TARGETS
   obelisk_leap_robot
+  DESTINATION lib/${PROJECT_NAME})
+
+  install(TARGETS
+  obelisk_leap_controller
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
