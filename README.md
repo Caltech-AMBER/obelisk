@@ -74,6 +74,8 @@ If you're installing `docker` for the first time using this script, you also nee
 newgrp docker
 ```
 
+**[WARNING] There are some reported failing installation configurations!** We don't currently have the bandwidth to fully debug these. Please see [this issue](https://github.com/Caltech-AMBER/obelisk/issues/101) to track them.
+
 ### Building Obelisk ROS Packages
 Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have to build it. You can either build it on your local filesystem or in a virtual environment that we manage using `pixi`.
 
