@@ -122,7 +122,7 @@ dynamixel-sdk = ">=3.7"
 
 # zed cameras
 [feature.zed.activation]
-scripts = ["scripts/install_pyzed.sh"]
+env = { PIXI_ZED="true" }
 
 [feature.zed.dependencies]
 cython = "*"

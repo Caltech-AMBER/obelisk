@@ -133,6 +133,11 @@ export RCUTILS_COLORIZED_OUTPUT=1
         source \$OBELISK_ROOT/scripts/build_obelisk.sh $OBELISK_BUILD_OPTIONS
         source \$OBELISK_ROOT/obelisk_ws/install/setup.bash
     fi
+
+    # if PIXI_ZED=true, then run bash $OBELISK_ROOT/scripts/install_pyzed.sh
+    if [[ -n "\$PIXI_ZED" && "\$PIXI_ZED" == "true" ]]; then
+        bash \$OBELISK_ROOT/scripts/install_pyzed.sh
+    fi
 }
 
 # convenience aliases for building/cleaning obelisk source packages
