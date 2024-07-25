@@ -35,6 +35,7 @@ jobs:
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build and Source Obelisk ROS2 Packages
         run: |
+          source ~/.bash_aliases
           obk-build
       - name: Run Ruff Linter
         run: |
