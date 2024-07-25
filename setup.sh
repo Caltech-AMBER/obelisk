@@ -2,6 +2,9 @@
 
 # script flags
 docker=false
+docker_basic=false
+docker_zed=false
+
 cyclone_perf=false
 pixi=false
 obk_aliases=false
@@ -14,18 +17,29 @@ for arg in "$@"; do
             cyclone_perf=true
             pixi=true
             obk_aliases=true
-            shift # Allows all system-level changes at once
+            docker_basic=true
+            docker_zed=true
+            shift  # Allows all system-level changes at once
             ;;
         --recommended)
             pixi=true
             obk_aliases=true
-            shift # Allows recommended system-level changes
+            docker_basic=true
+            shift  # Allows recommended system-level changes
             ;;
 
         # docker setup
         --docker)
             docker=true
-            shift # Enables Docker and nvidia-container-toolkit installation
+            shift  # Installs Docker and nvidia-container-toolkit
+            ;;
+        --docker-basic)
+            docker_basic=true
+            shift  # Sets OBELISK_BASIC=true for docker, which installs basic dependencies
+            ;;
+        --docker-zed)
+            docker_zed=true
+            shift  # Sets OBELISK_ZED=true for docker, which installs ZED SDK
             ;;
 
         # recommended
@@ -42,18 +56,29 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
         --help)
-            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
-            return
-            ;;
-        -h)
-            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
+            echo "Usage: $0 [OPTIONS]
+
+Options:
+  --all                Apply all system-level changes at once (includes docker, cyclone_perf, pixi, obk_aliases, docker_basic, docker_zed)
+  --recommended        Apply recommended system-level changes (includes pixi, obk_aliases, docker_basic)
+
+  --docker             Install Docker and nvidia-container-toolkit
+  --docker-basic       Set OBELISK_BASIC=true for docker, which installs basic dependencies
+  --docker-zed         Set OBELISK_ZED=true for docker, which installs ZED SDK
+
+  --cyclone-perf       Enable cyclone performance optimizations
+  --pixi               Install pixi
+  --obk-aliases        Add obelisk aliases to the ~/.bash_aliases file
+
+  --help               Display this help message and exit
+"
+            shift
             return
             ;;
         *)
             # Unknown option
-            echo "Unknown option: $arg"
-            echo "Usage: source setup.sh [--docker] [--pixi] [--cyclone-perf] [--obk-aliases]"
-            exit 1
+            echo "Unknown option: $arg. Run 'source setup.sh --help' for more information."
+            return
             ;;
     esac
 done
@@ -133,6 +158,27 @@ echo "UID=$(id -u)" >> $env_file
 echo "GID=$(id -g)" >> $env_file
 echo "OBELISK_ROOT=$OBELISK_ROOT" >> $env_file
 echo -e "\033[1;32m.env file populated under $OBELISK_ROOT/docker!\033[0m"
+
+# checks additional docker environment variables
+if [ "$docker_basic" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_BASIC=true in .env file!\033[0m"
+    echo "OBELISK_BASIC=true" >> $env_file
+    export OBELISK_BASIC=true
+else
+    echo -e "\033[1;33mSetting OBELISK_BASIC=false in .env file!\033[0m"
+    echo "OBELISK_BASIC=false" >> $env_file
+    export OBELISK_BASIC=false
+fi
+
+if [ "$docker_zed" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_ZED=true in .env file!\033[0m"
+    echo "OBELISK_ZED=true" >> $env_file
+    export OBELISK_ZED=true
+else
+    echo -e "\033[1;33mSetting OBELISK_ZED=false in .env file!\033[0m"
+    echo "OBELISK_ZED=false" >> $env_file
+    export OBELISK_ZED=false
+fi
 
 # copy the install_sys_deps.sh script to the docker directory
 cp $OBELISK_ROOT/scripts/install_sys_deps.sh $OBELISK_ROOT/docker/install_sys_deps.sh
