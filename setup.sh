@@ -130,12 +130,11 @@ fi
 
 # system-level deps
 if [ "$install_sys_deps" = true ]; then
-    source $OBELISK_ROOT/scripts/install_sys_deps.sh \
+    source $OBELISK_ROOT/scripts/install_sys_deps.sh --zed \
         $([ "$basic" = true ] && echo "--basic") \
         $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
         $([ "$source_ros" = true ] && echo "--source-ros") \
-        $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$leap" = true ] && echo "--leap")
 fi
 
 # run user-specific setup
