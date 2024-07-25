@@ -192,6 +192,9 @@ if [ "$zed" = true ]; then
         rm ubuntu22  # remove installer
         sudo usermod -a -G video ${USER}  # add user to video group
 
+        # granting permissions for python dist-packages because zed SDK installs a bunch of these necessary for colcon
+        sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/
+
         echo -e "\033[1;32mZED SDK installed successfully! Run 'newgrp video' if cameras not found.\033[0m"
     else
         echo -e "\033[1;33mZED SDK already installed!\033[0m"
