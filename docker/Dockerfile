@@ -49,10 +49,12 @@ RUN groupadd --gid $GID $USER && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # conditionally install dependencies based on build args
+# source base ROS if basic deps are installed and you are not using pixi
 COPY install_sys_deps.sh /tmp/install_sys_deps.sh
 RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
     [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
+    [ "$OBELISK_DOCKER_BASIC" = "true" ] && [ "$OBELISK_DOCKER_PIXI" = "false" ] && FLAGS="$FLAGS --source-ros"; \
     [ "$OBELISK_DOCKER_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
     [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
@@ -63,6 +65,7 @@ USER ${UID}
 
 # run user setup script in Dockerfile
 # these are deps that can/should be installed without root access
+# obelisk aliases are mounted, so we don't create them here
 COPY user_setup.sh /tmp/user_setup.sh
 RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_PIXI" = "true" ] && FLAGS="$FLAGS --pixi"; \
