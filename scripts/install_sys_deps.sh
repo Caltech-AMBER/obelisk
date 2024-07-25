@@ -59,27 +59,6 @@ done
 
 # [1] basic dependencies
 if [ "$basic" = true ]; then
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
-
     # basic deps
     sudo apt-get update && sudo apt-get install -y \
         curl \
@@ -131,6 +110,27 @@ fi
 # [2] enables cyclone performance optimizations
 # see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
 if [ "$cyclone_perf" = true ]; then
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+    echo -e "\033[1;33mDEBUG ERROR DEBUG ERROR DEBUG ERROR.\033[0m"
+
     # check whether /etc/sysctl.d/60-cyclonedds.conf is a directory - if it is, delete it
     if [ -d /etc/sysctl.d/60-cyclonedds.conf ]; then
         sudo rm -rf /etc/sysctl.d/60-cyclonedds.conf
