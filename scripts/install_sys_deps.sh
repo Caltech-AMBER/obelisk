@@ -57,23 +57,6 @@ Options:
     esac
 done
 
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-echo -e "\033[1;33m$basic $cyclone_perf $leap $zed\033[0m"
-
 # [1] basic dependencies
 if [ "$basic" = true ]; then
     # basic deps
@@ -204,10 +187,10 @@ if [ "$zed" = true ]; then
         sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
         wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
         sudo chmod +x ubuntu22  # make installer executable
-        ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
+        sudo ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
-        rm ubuntu22  # remove installer
+        sudo rm ubuntu22  # remove installer
         sudo usermod -a -G video ${USER}  # add user to video group
 
         # granting permissions for python dist-packages because zed SDK installs a bunch of these necessary for colcon
