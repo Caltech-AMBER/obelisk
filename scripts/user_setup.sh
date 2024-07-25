@@ -2,7 +2,6 @@
 
 # script flags
 pixi=false
-cyclone_perf=false
 obk_aliases=false
 
 for arg in "$@"; do
@@ -10,10 +9,6 @@ for arg in "$@"; do
         --pixi)
             pixi=true
             shift # Installs pixi
-            ;;
-        --cyclone-perf)
-            cyclone_perf=true
-            shift # Enables cyclone performance optimizations
             ;;
         --obk-aliases)
             obk_aliases=true
@@ -38,28 +33,6 @@ if [ "$pixi" = true ]; then
     fi
 fi
 
-# [2] enables cyclone performance optimizations
-# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
-if [ "$cyclone_perf" = true ]; then
-    # check whether /etc/sysctl.d/60-cyclonedds.conf is a directory - if it is, delete it
-    if [ -d /etc/sysctl.d/60-cyclonedds.conf ]; then
-        sudo rm -rf /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    # apply performance optimizations
-    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
-        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
-    fi
-
-    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
-else
-    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --cyclone-perf flag.\033[0m"
-fi
-
 # [3] adds obelisk aliases to the ~/.bash_aliases file
 if [ "$obk_aliases" = true ]; then
     # check if ~/.bash_aliases is sourced in ~/.bashrc; if not, add it
@@ -76,7 +49,7 @@ fi'
         touch ~/.bash_aliases
         echo -e "\033[1;32mCreated ~/.bash_aliases file!\033[0m"
     else
-        echo -e "\033[1;33m~/.bash_aliases file already exists, skipping...\033[0m"
+        echo -e "\033[1;33m~/.bash_aliases file already exists, not creating a new one...\033[0m"
     fi
 
     OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))

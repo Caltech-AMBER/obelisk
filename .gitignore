@@ -240,5 +240,9 @@ MUJOCO_LOG.TXT
 # ###### #
 .vscode
 
-# Obelisk
+# ####### #
+# OBELISK #
+# ####### #
 obk_logs/
+docker/user_setup.sh
+docker/install_sys_deps.sh

@@ -12,19 +12,18 @@ Obelisk should be used as a dependency for external robot control code that is w
 ### Initial Setup
 Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!** The available options are:
 ```
-source setup.sh [--docker] [--docker-basic] [--docker-zed] [--pixi] [--cyclone-perf] [--obk-aliases]
+source setup.sh [--docker] [--docker-basic] [--docker-cyclone-perf] [--docker-zed] [--pixi] [--obk-aliases]
 ```
 * The `--docker` flag installs `docker` and `nvidia-container-toolkit` on your local filesystem. You should only specify this if you want to develop in a containerized setting.
-* The `--docker-<dep>` flags set environment variables `OBELISK_<DEP>=true` in the file `docker/.env`. This exposes certain system-level dependencies as build arguments for your Docker image. For example, `source setup.sh --docker-zed` will set `OBELISK_ZED=true`, so the ZED SDK will be built into the image. The `--docker-basic` flag will install basic dependencies required for the function of Obelisk, and is recommended.
-* The `--pixi` flag installs `pixi` on your local filesystem.
-* The `--cyclone-perf` flag adds [performance optimizations for Cyclone DDS](https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations) in the `/etc/sysctl.d/60-cyclonedds.conf` file on your local filesystem. You should specify this if you plan to use Obelisk in a non-containerized environment.
+* The `--docker-<dep>` flags set environment variables `OBELISK_<DEP>=true` in the file `docker/.env`. This exposes certain system-level dependencies as build arguments for your Docker image. For example, `source setup.sh --docker-zed` will set `OBELISK_ZED=true`, so the ZED SDK will be built into the image. The `--docker-basic` flag will install basic dependencies required for the function of Obelisk, and is recommended if you aren't developing in `pixi`.
+* The `--pixi` flag installs `pixi` and associates it with the current user.
 * The `--obk-aliases` flag will add useful Obelisk aliases to the `~/.bash_aliases` file. If `~/.bash_aliases` is not already sourced in your `~/.bashrc`, it will also add that. **We highly recommend using this flag.**
 * If you trust us, you can use the `--all` flag to just opt-in to all of these dependencies.
 If you're more cautious, we recommend running
 ```
 source setup.sh --recommended
 ```
-This is equivalent to using the `--pixi`, `--obk-aliases`, and `--docker-basic` flags.
+This is equivalent to using the `--pixi`, `--obk-aliases`, and `--docker-cyclone-perf` flags.
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
@@ -36,11 +35,11 @@ Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have
 
 * If you are building it on your local filesystem, you need some minimal set of local dependencies. You can install these by running
     ```
-    bash scripts/install_sys_deps.sh [--basic] [--python] [--source-ros] [--zed]
+    bash scripts/install_sys_deps.sh [--basic] [--cyclone-perf] [--source-ros] [--zed]
     ```
     where
-    * the `--basic` flag installs basic system-level dependencies (recommended)
-    * the `--python` flag installs python-specific dependencies (recommended). This only runs if the `OBELISK_ROOT` variable is set to a directory that exists, since it also installs the python Obelisk package. **These never get installed into the Docker container by default.** If you would like to do so, please run `bash scripts/install_sys_deps.sh --python` after entering the container.
+    * the `--basic` flag installs basic system-level dependencies (recommended). **Warning: if this is run in the Docker container during build time, the OBELISK_ROOT directory will not exist yet, and it will install `obelisk_py` by cloning it from github (instead of installing it as an editable from the mounted repo).**
+    * The `--cyclone-perf` flag adds [performance optimizations for Cyclone DDS](https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations) in the `/etc/sysctl.d/60-cyclonedds.conf` file on your local filesystem (recommended)
     * the `--source-ros` flag will add code that auto-sources base ROS2 to your `~/.bashrc`
     * the `--zed` flag will install the ZED SDK, which can only be installed locally. It also installs the Python SDK - if you are using a virtual environment, **activate it before running this script!**
     These settings are summarized by running `bash scripts/install_sys_deps.sh --help`.

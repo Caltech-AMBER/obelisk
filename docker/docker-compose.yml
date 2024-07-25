@@ -9,6 +9,7 @@ services:
         GID: $UID
         OBELISK_ROOT: $OBELISK_ROOT
         OBELISK_BASIC: $OBELISK_BASIC
+        OBELISK_CYCLONE_PERF: $OBELISK_CYCLONE_PERF
         OBELISK_ZED: $OBELISK_ZED
       dockerfile: Dockerfile
     network_mode: host
@@ -21,6 +22,7 @@ services:
       GID: $UID
       OBELISK_ROOT: $OBELISK_ROOT
       OBELISK_BASIC: $OBELISK_BASIC
+      OBELISK_CYCLONE_PERF: $OBELISK_CYCLONE_PERF
       OBELISK_ZED: $OBELISK_ZED
       QT_X11_NO_MITSHM: 1
     security_opt:

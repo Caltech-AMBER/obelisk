@@ -3,6 +3,7 @@
 # script flags
 basic=false
 python=false
+cyclone_perf=false
 source_ros=false
 zed=false
 
@@ -12,10 +13,10 @@ for arg in "$@"; do
             basic=true
             shift
             ;;  # Installs basic system dependencies
-        --python)
-            python=true
+        --cyclone-perf)
+            cyclone_perf=true
             shift
-            ;;  # Installs python dependencies
+            ;;  # Enables cyclone performance optimizations
         --source-ros)
             source_ros=true
             shift # Sources base ROS in ~/.bashrc
@@ -29,7 +30,7 @@ for arg in "$@"; do
 
 Options:
   --basic              Install basic dependencies
-  --python             Install python dependencies
+  --cyclone-perf       Enable cyclone performance optimizations
   --source-ros         Source base ROS in ~/.bashrc
   --zed                Install ZED SDK
 
@@ -42,7 +43,7 @@ Options:
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--y] [--source-ros]"
+            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--zed]"
             exit 1
             ;;
     esac
@@ -80,28 +81,44 @@ if [ "$basic" = true ]; then
         ros-humble-dynamixel-sdk
     source /opt/ros/humble/setup.bash
 
+    # python deps
+    pip install -U \
+        colcon-common-extensions \
+        "ruamel.yaml" \
+        mujoco
+    if [ -d $OBELISK_ROOT ]; then
+        pip install -e $OBELISK_ROOT/obelisk/python
+        echo -e "\033[1;32mOBELISK_ROOT exists, obelisk_py installed as editable!\033[0m"
+    else
+        pip install git+https://github.com/Caltech-AMBER/obelisk.git#subdirectory=obelisk/python
+        echo -e "\033[1;33mOBELISK_ROOT directory does not exist! Installing obelisk_py from GitHub...\033[0m"
+    fi
+
     echo -e "\033[1;32mSystem dependencies installed successfully!\033[0m"
 else
     echo -e "\033[1;33mNot installing basic system dependencies!\033[0m"
 fi
 
-# [2] python dependencies
-if [ "$python" = true ]; then
-    # check whether the OBELISK_ROOT directory exists
-    if [ -d $OBELISK_ROOT ]; then
-        pip install -U \
-            colcon-common-extensions \
-            "ruamel.yaml" \
-            mujoco
-        pip install -e $OBELISK_ROOT/obelisk/python
-        cd $OBELISK_ROOT
-    else
-        echo -e "\033[1;33mOBELISK_ROOT directory does not exist!\033[0m"
+# [2] enables cyclone performance optimizations
+# see: https://github.com/ros2/rmw_cyclonedds?tab=readme-ov-file#performance-recommendations
+if [ "$cyclone_perf" = true ]; then
+    # check whether /etc/sysctl.d/60-cyclonedds.conf is a directory - if it is, delete it
+    if [ -d /etc/sysctl.d/60-cyclonedds.conf ]; then
+        sudo rm -rf /etc/sysctl.d/60-cyclonedds.conf
     fi
 
-    echo -e "\033[1;32mPython dependencies installed successfully!\033[0m"
+    # apply performance optimizations
+    if ! grep -q "net.core.rmem_max=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_max=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    if ! grep -q "net.core.rmem_default=8388608" /etc/sysctl.d/60-cyclonedds.conf; then
+        echo 'net.core.rmem_default=8388608' | sudo tee -a /etc/sysctl.d/60-cyclonedds.conf
+    fi
+
+    echo -e "\033[1;32mCyclone DDS performance optimizations enabled permanently!\033[0m"
 else
-    echo -e "\033[1;33mNot installing python dependencies!\033[0m"
+    echo -e "\033[1;33mCyclone DDS performance optimizations disabled. To enable, pass the --cyclone-perf flag.\033[0m"
 fi
 
 # [3] sourcing base ROS2
