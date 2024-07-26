@@ -9,6 +9,8 @@ zed=false
 docker_install=false
 install_sys_deps_docker=false
 
+config_groups=false
+
 install_sys_deps=false
 source_ros=false
 
@@ -52,6 +54,12 @@ for arg in "$@"; do
             shift  # Installs system dependencies in Docker
             ;;
 
+        # group configuration
+        --config-groups)
+            config_groups=true
+            shift  # Configures user groups associated with hardware
+            ;;
+
         # system-level deps
         --install-sys-deps)
             install_sys_deps=true
@@ -88,6 +96,8 @@ Options:
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
 
+  --config-groups              Configures user groups associated with hardware
+
   --install-sys-deps           Installs system dependencies
   --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
 
@@ -112,20 +122,29 @@ export OBELISK_ROOT=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
 # docker setup
 # if you want to use the ZED camera, you always need the local deps
+# always set groups in docker for hardware, regardless of whether you're installing the deps
 if [ "$install_sys_deps_docker" = true ]; then
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$basic" = true ] && echo "--docker-basic") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
-        $([ "$leap" = true ] && echo "--docker-leap") \
-        $([ "$zed" = true ] && echo "--docker-zed") \
+        $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
+        $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
-        $([ "$zed" = true ] && echo "--docker-zed") \
+        $([ "$leap" = true ] && echo "--docker-group-leap") \
+        $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi")
+fi
+
+# group configuration on host
+if [ "$config_groups" = true ]; then
+    source $OBELISK_ROOT/scripts/config_groups.sh \
+        $([ "$leap" = true ] && echo "--leap") \
+        $([ "$zed" = true ] && echo "--zed")
 fi
 
 # system-level deps

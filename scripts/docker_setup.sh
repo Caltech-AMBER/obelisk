@@ -7,9 +7,12 @@ docker_leap=false
 docker_zed=false
 docker_pixi=false
 
+docker_group_leap=false
+docker_group_zed=false
+
 for arg in "$@"; do
     case $arg in
-        # docker setup
+        # docker installations
         --docker-install)
             docker_install=true
             shift  # Installs Docker and nvidia-container-toolkit
@@ -34,16 +37,31 @@ for arg in "$@"; do
             docker_pixi=true
             shift  # Sets OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
             ;;
+
+        # docker group additions
+        --docker-group-leap)
+            docker_group_leap=true
+            shift  # Adds user to the dialout group
+            ;;
+        --docker-group-zed)
+            docker_group_zed=true
+            shift  # Adds user to the video group
+            ;;
+
         --help)
             echo "Usage: $0 [OPTIONS]
 
 Options:
   --docker-install       Install Docker and nvidia-container-toolkit
+
   --docker-basic         Set OBELISK_DOCKER_BASIC=true for docker, which installs basic dependencies
   --docker-cyclone-perf  Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
   --docker-leap          Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
   --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
+
+  --docker-group-leap    Adds user to the dialout group
+  --docker-group-zed     Adds user to the video group
 
   --help                 Display this help message and exit
 "
@@ -185,6 +203,27 @@ else
     export OBELISK_DOCKER_PIXI=false
 fi
 
+if [ "$docker_group_leap" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_GROUP_LEAP=true!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_LEAP=true" >> $env_file
+    export OBELISK_DOCKER_GROUP_LEAP=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_LEAP=false!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_LEAP=false" >> $env_file
+    export OBELISK_DOCKER_GROUP_LEAP=false
+fi
+
+if [ "$docker_group_zed" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_GROUP_ZED=true!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_ZED=true" >> $env_file
+    export OBELISK_DOCKER_GROUP_ZED=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_ZED=false!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_ZED=false" >> $env_file
+    export OBELISK_DOCKER_GROUP_ZED=false
+fi
+
 # copy scripts to the docker directory
 cp $OBELISK_ROOT/scripts/install_sys_deps.sh $OBELISK_ROOT/docker/install_sys_deps.sh
+cp $OBELISK_ROOT/scripts/config_groups.sh $OBELISK_ROOT/docker/config_groups.sh
 cp $OBELISK_ROOT/scripts/user_setup.sh $OBELISK_ROOT/docker/user_setup.sh

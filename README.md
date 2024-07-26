@@ -12,10 +12,11 @@ Obelisk should be used as a dependency for external robot control code that is w
 ### Initial Setup
 Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!**
 
-This script has the ability to do 3 things:
+This script has the ability to do 4 things:
 1. configure a conditional Docker build so that the image has the right dependencies in it to run Obelisk
-2. install system dependencies **on the machine running this script**
-3. set up user-specific settings, including very useful bash aliases
+2. add the user to various groups necessary for running hardware
+3. install system dependencies **on the machine running this script**
+4. set up user-specific settings, including very useful bash aliases
 
 The options are as follows:
 ```
@@ -32,6 +33,8 @@ Options:
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
+
+  --config-groups              Configures user groups associated with hardware
 
   --install-sys-deps           Installs system dependencies
   --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
@@ -53,6 +56,7 @@ Some guidance/recommendations on choosing flags:
 * We strongly recommend using `--obk-aliases` and `--cyclone-perf`
 * If you are using the LEAP Hand, use `--leap`
 * If you are using ZED cameras, use `--zed`. Additionally, you will need to adjust the `udev` permissions on your host machine if you want to use the ZED cameras in a Docker container with a non-root user (if you are acting as root in your container, you probably don't need to do this next step):
+* You should run `--config-groups` only if your local user isn't set up to interface with hardware of interest. If you are going to develop in a Docker container, the group settings will be set for you **without** setting this flag. If you are cloning this repo in a Docker container and running the setup script, setup will **only be complete if you do set this flag**.
     ```
     # grab the ZED SDK installer (version 4.1.3, this README written July 25, 2024)
     wget -q https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O zed_installer.run
