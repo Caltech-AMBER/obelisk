@@ -9,7 +9,7 @@ import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
 from ament_index_python.packages import get_package_share_directory
-from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step  # type: ignore
+from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step, mju_copy  # type: ignore
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
@@ -428,17 +428,11 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             potential_keyframe = self.mj_model.key(i).name
             if potential_keyframe == self.get_parameter("ic_keyframe").get_parameter_value().string_value:
                 self.get_logger().info(f"Setting initial condition to keyframe: {potential_keyframe}")
-                mujoco.mju_copy(
-                    self.mj_data.qpos, self.mj_model.key_qpos[i * self.mj_model.nq : (i + 1) * self.mj_model.nq]
-                )
-                mujoco.mju_copy(
-                    self.mj_data.qvel, self.mj_model.key_qvel[i * self.mj_model.nv : (i + 1) * self.mj_model.nv]
-                )
+                mju_copy(self.mj_data.qpos, self.mj_model.key_qpos[i * self.mj_model.nq : (i + 1) * self.mj_model.nq])
+                mju_copy(self.mj_data.qvel, self.mj_model.key_qvel[i * self.mj_model.nv : (i + 1) * self.mj_model.nv])
                 self.mj_data.time = self.mj_model.key_time[i]
 
-                mujoco.mju_copy(
-                    self.mj_data.ctrl, self.mj_model.key_ctrl[i * self.mj_model.nu : (i + 1) * self.mj_model.nu]
-                )
+                mju_copy(self.mj_data.ctrl, self.mj_model.key_ctrl[i * self.mj_model.nu : (i + 1) * self.mj_model.nu])
 
         with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
             while viewer.is_running() and self.is_sim_running.value:
