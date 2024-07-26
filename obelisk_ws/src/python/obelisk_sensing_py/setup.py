@@ -19,10 +19,12 @@ setup(
     zip_safe=True,
     maintainer="alberthli",
     maintainer_email="alberthli@caltech.edu",
-    description="Python Obelisk ROS2 package for state estimation.",
+    description="Python Obelisk ROS2 package for sensing.",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "zed2_sensor = obelisk_sensing_py.zed2_sensor:main",
+        ],
     },
 )

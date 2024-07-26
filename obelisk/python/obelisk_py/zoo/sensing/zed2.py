@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 from threading import Lock
 from typing import Callable, Dict
 
 import numpy as np
 from ament_index_python.packages import get_package_share_directory
 from obelisk_sensor_msgs.msg import ObkImage
-from pyzed.sl import sl
+from pyzed import sl
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 from ruamel.yaml import YAML
@@ -89,7 +90,7 @@ class ObeliskZed2Sensors(ObeliskSensor):
         # loading the cam param dicts
         yaml = YAML(typ="safe")
         try:
-            cam_param_dicts = yaml.load(params_path)
+            cam_param_dicts = yaml.load(Path(params_path))
         except Exception as e:
             raise FileNotFoundError(f"Could not load a configuration file at {params_path}!") from e
 
@@ -112,11 +113,11 @@ class ObeliskZed2Sensors(ObeliskSensor):
                 err_msg = f"Serial number not provided for camera {cam_index} in {params_path}!"
                 self.get_logger().error(err_msg)
                 raise ValueError(err_msg)
-            elif not cam_param_dict["serial_number"].isdigit() or len(cam_param_dict["serial_number"]) != sn_len:
+            # check if the int has 8 digits
+            elif len(str(cam_param_dict["serial_number"])) != sn_len:
                 err_msg = f"Invalid serial number for camera {cam_index} in {params_path}! Must be {sn_len} digits."
                 self.get_logger().error(err_msg)
                 raise ValueError(err_msg)
-            cam_param_dict["serial_number"] = int(cam_param_dict["serial_number"])
 
             # check resolution
             if "resolution" not in cam_param_dict:
@@ -320,14 +321,16 @@ class ObeliskZed2Sensors(ObeliskSensor):
                 return callback
 
             timer_period_sec = 1.0 / self.fps
+            callback_group = MutuallyExclusiveCallbackGroup()
             timer = self.create_timer(
                 timer_period_sec,
                 callback=create_callback(),  # Create the callback with current loop variables
-                callback_group=MutuallyExclusiveCallbackGroup(),  # type: ignore
+                callback_group=callback_group,
                 # autostart=False,  # TODO: feature only available after humble
             )
             timer.cancel()  # initially, the timer should be deactivated, TODO: remove if distro upgraded
             self.obk_timers[f"timer_{cam_index}"] = timer
+            self.obk_callback_groups[f"timer_cbg_{cam_index}"] = callback_group
 
         return TransitionCallbackReturn.SUCCESS
 

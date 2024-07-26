@@ -1,0 +1,12 @@
+0:
+  serial_number: 33143189
+  resolution: "VGA"
+  fps: 100
+  depth: False
+  side: "left"
+1:
+  serial_number: 32144978
+  resolution: "VGA"
+  fps: 100
+  depth: False
+  side: "right"
