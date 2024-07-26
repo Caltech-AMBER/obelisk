@@ -4,10 +4,11 @@
 FROM ubuntu:22.04 as base
 SHELL ["/bin/bash", "-c"]
 
-# username, uid, gid, and conditional build args
+# build args
 ARG USER=user
 ARG UID=1000
 ARG GID=1000
+
 ARG OBELISK_ROOT=/
 ARG OBELISK_DOCKER_BASIC=false
 ARG OBELISK_DOCKER_CYCLONE_PERF=false
@@ -15,15 +16,23 @@ ARG OBELISK_DOCKER_LEAP=false
 ARG OBELISK_DOCKER_ZED=false
 ARG OBELISK_DOCKER_PIXI=false
 
+ARG OBELISK_DOCKER_GROUP_LEAP=false
+ARG OBELISK_DOCKER_GROUP_ZED=false
+
+# accompanying env variables
 ENV USER=$USER
 ENV UID=$UID
 ENV GID=$GID
+
 ENV OBELISK_ROOT=$OBELISK_ROOT
 ENV OBELISK_DOCKER_BASIC=$OBELISK_DOCKER_BASIC
 ENV OBELISK_DOCKER_CYCLONE_PERF=$OBELISK_DOCKER_CYCLONE_PERF
 ENV OBELISK_DOCKER_LEAP=$OBELISK_DOCKER_LEAP
 ENV OBELISK_DOCKER_ZED=$OBELISK_DOCKER_ZED
 ENV OBELISK_DOCKER_PIXI=$OBELISK_DOCKER_PIXI
+
+ENV OBELISK_DOCKER_GROUP_LEAP=$OBELISK_DOCKER_GROUP_LEAP
+ENV OBELISK_DOCKER_GROUP_ZED=$OBELISK_DOCKER_GROUP_ZED
 
 ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
@@ -59,6 +68,14 @@ RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
     sudo rm /tmp/install_sys_deps.sh
+
+# conditional configure groups based on build args
+COPY config_groups.sh /tmp/config_groups.sh
+RUN FLAGS=""; \
+    [ "$OBELISK_DOCKER_GROUP_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
+    [ "$OBELISK_DOCKER_GROUP_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
+    bash /tmp/config_groups.sh $FLAGS && \
+    sudo rm /tmp/config_groups.sh
 
 # switch to new user and workdir
 USER ${UID}
