@@ -140,8 +140,7 @@ else
         $([ "$pixi" = true ] && echo "--docker-pixi")
 fi
 
-# group configuration
-# these will also configure in our docker container
+# group configuration on host
 if [ "$config_groups" = true ]; then
     source $OBELISK_ROOT/scripts/config_groups.sh \
         $([ "$leap" = true ] && echo "--leap") \
