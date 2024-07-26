@@ -5,7 +5,7 @@ from typing import Callable, Dict
 import numpy as np
 from ament_index_python.packages import get_package_share_directory
 from obelisk_sensor_msgs.msg import ObkImage
-from pyzed import sl
+from pyzed.sl import sl
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 from ruamel.yaml import YAML
