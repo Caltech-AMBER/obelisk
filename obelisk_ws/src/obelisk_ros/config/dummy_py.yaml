@@ -54,6 +54,8 @@ onboard:
     - is_simulated: True
       pkg: obelisk_sim_py
       executable: obelisk_mujoco_robot
+      params:
+        ic_keyframe: other
       # callback_groups:
       # publishers:
       subscribers:
