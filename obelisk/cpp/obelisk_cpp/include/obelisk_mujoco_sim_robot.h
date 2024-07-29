@@ -17,6 +17,9 @@ namespace obelisk {
       public:
         explicit ObeliskMujocoRobot(const std::string& name) : ObeliskSimRobot<ControlMessageT>(name) {
             this->template declare_parameter<std::string>("mujoco_setting", "");
+            this->template declare_parameter<std::string>(
+                "ic_keyframe",
+                "ic"); // Parameter is the name of a mujoco key frame used as the initial condition. Defualts to "ic".
 
             mujoco_sim_instance_    = this;
             activation_complete_    = false;
@@ -198,6 +201,21 @@ namespace obelisk {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
             RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
+
+            // Set the initial condition based on a keyframe
+            RCLCPP_INFO_STREAM(this->get_logger(), "Found " << this->model_->nkey << " Mujoco keyframes.");
+            for (int i = 0; i < this->model_->nkey; i++) {
+                std::string potential_keyframe(this->model_->names + this->model_->name_keyadr[i]);
+                if (potential_keyframe == this->get_parameter("ic_keyframe").as_string()) {
+                    RCLCPP_INFO_STREAM(this->get_logger(),
+                                       "Setting initial condition to keyframe: " << potential_keyframe);
+                    mju_copy(this->data_->qpos, &this->model_->key_qpos[i * this->model_->nq], this->model_->nq);
+                    mju_copy(this->data_->qvel, &this->model_->key_qvel[i * this->model_->nv], this->model_->nv);
+                    this->data_->time = this->model_->key_time[i];
+
+                    mju_copy(this->data_->ctrl, &this->model_->key_ctrl[i * this->model_->nu], this->model_->nu);
+                }
+            }
 
             while (!this->stop_thread_) {
                 if (!glfwWindowShouldClose(window_)) {
