@@ -21,6 +21,8 @@ set(ZOO_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 add_library(Zoo INTERFACE)
 add_library(Obelisk::Zoo ALIAS Zoo)
 
+add_subdirectory(robot)
+
 target_include_directories(Zoo INTERFACE include)
 target_include_directories(Zoo INTERFACE robot)
 

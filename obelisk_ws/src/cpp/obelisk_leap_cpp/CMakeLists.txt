@@ -20,8 +20,6 @@ FetchContent_Declare(
 # Lets us get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-include_directories("${dynamixel_sdk_INCLUDE_DIRS}/dynamixel_sdk")
-
 # obelisk_leap_robot
 add_executable(obelisk_leap_robot src/obelisk_leap_robot.cpp)
 target_link_libraries(obelisk_leap_robot PUBLIC Obelisk::Core Obelisk::Zoo)

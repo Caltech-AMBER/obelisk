@@ -1,7 +1,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "dynamixel_sdk.h"
+#include "dynamixel_sdk/dynamixel_sdk.h"
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"

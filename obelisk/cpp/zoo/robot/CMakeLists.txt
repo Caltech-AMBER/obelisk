@@ -7,10 +7,6 @@ message(STATUS "Configuring Dynamixel Interface")
 find_package(ament_cmake REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
-include_directories("${dynamixel_sdk_INCLUDE_DIRS}/dynamixel_sdk")
-
-add_executable(dynamixel_control leap_hand_interface.h)
-
-ament_target_dependencies(dynamixel_control
-  dynamixel_sdk
-)
+add_library(dynamixel_control INTERFACE)
+target_include_directories(dynamixel_control INTERFACE .)
+target_link_libraries(dynamixel_control INTERFACE dynamixel_sdk)
