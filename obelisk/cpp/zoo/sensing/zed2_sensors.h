@@ -122,6 +122,15 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
     }
 
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+    on_shutdown(const rclcpp_lifecycle::State& prev_state) {
+        obelisk::ObeliskSensor::on_shutdown(prev_state);
+        for (auto& cam : cams_) {
+            cam.second.close();
+        }
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+    }
+
   private:
     // Private member variables
     std::string const pub_img_key_ = "pub_img";
@@ -310,10 +319,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             size_t size = cam_image.getWidth() * cam_image.getHeight() * cam_image.getChannels();
             frames_[cam_index].resize(size);
             memcpy(frames_[cam_index].data(), cam_image.getPtr<sl::uchar1>(), size);
-
             cam_polled_[cam_index] = true;
-            RCLCPP_INFO(this->get_logger(), "Polled camera %d!", cam_index);
-
             check_and_publish_images();
         } else {
             RCLCPP_ERROR(this->get_logger(), "Failed to grab image from camera %d!", cam_index);
