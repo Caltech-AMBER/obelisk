@@ -29,7 +29,7 @@ namespace obelisk {
 
             // TODO (@zolkin): find a better way to do this
             using internal::sensor_message_names;
-            for (const auto [key, reg_pub] : registered_publishers_) {
+            for (const auto& [key, reg_pub] : registered_publishers_) {
                 const std::string* name_ptr =
                     std::find(sensor_message_names.begin(), sensor_message_names.end(), reg_pub.msg_type);
                 if (name_ptr != sensor_message_names.end()) {
