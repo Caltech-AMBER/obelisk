@@ -96,7 +96,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             RCLCPP_INFO(this->get_logger(), "Camera with serial number %s initialized!",
                         cam_param_dict.at("serial_number").c_str());
 
-            cam_polled_[cam_index] = false;
             cam_images_[cam_index] = sl::Mat();
 
             // Set runtime parameters
@@ -117,6 +116,14 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             std::string timer_key = "timer_" + std::to_string(cam_index);
             timers_[timer_key]    = timer;
         }
+
+        // Create a timer for the publisher
+        auto pub_timer_callback = [this]() { this->publish_images(); };
+        double pub_timer_period = 1.0 / static_cast<double>(fps_);
+        auto pub_timer =
+            this->create_wall_timer(std::chrono::duration<double>(pub_timer_period), pub_timer_callback, cam_cbg_);
+        std::string pub_timer_key = "timer_pub";
+        timers_[pub_timer_key]    = pub_timer;
 
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
     }
@@ -140,7 +147,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     // Camera parameter maps
     std::map<int, std::map<std::string, std::string>> cam_param_dicts_;
     std::map<int, sl::Camera> cams_;
-    std::map<int, bool> cam_polled_;
     std::map<int, sl::Mat> cam_images_;
     std::map<int, sl::RuntimeParameters> cam_rt_params_;
     std::map<int, Eigen::Tensor<uint8_t, 3>> frames_;
@@ -296,8 +302,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     }
 
     void camera_callback(int cam_index) {
-        std::lock_guard<std::mutex> lock(lock_);
-
         sl::Camera& cam             = cams_[cam_index];
         sl::RuntimeParameters& rtps = cam_rt_params_[cam_index];
         sl::Mat& cam_image          = cam_images_[cam_index];
@@ -339,41 +343,36 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 }
             }
 
-            frames_[cam_index]     = std::move(tensor);
-            cam_polled_[cam_index] = true;
-            check_and_publish_images();
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to grab image from camera %d!", cam_index);
+            // populate frames_
+            {
+                std::lock_guard<std::mutex> lock(lock_);
+                frames_[cam_index] = std::move(tensor);
+            }
         }
     }
 
-    void check_and_publish_images() {
-        if (std::all_of(cam_polled_.begin(), cam_polled_.end(), [](const auto& pair) { return pair.second; })) {
-            auto msg = std::make_unique<obelisk_sensor_msgs::msg::ObkImage>();
+    void publish_images() {
+        auto msg = std::make_unique<obelisk_sensor_msgs::msg::ObkImage>();
 
-            // Calculate dimensions
-            int num_cameras = frames_.size();
-            int channels    = depth_ ? 1 : 3;
+        // Calculate dimensions
+        int num_cameras = cams_.size();
+        int channels    = depth_ ? 1 : 3;
+        Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
 
-            // Create a 4D tensor to hold all camera images
-            Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
-
+        // Read the frames_ map and populate the combined tensor
+        {
+            std::lock_guard<std::mutex> lock(lock_);
             int camera_index = 0;
             for (const auto& frame : frames_) {
                 combined_tensor.chip(camera_index, 0) = frame.second;
                 camera_index++;
             }
-
-            // Convert the 4D tensor to UInt8MultiArray
-            msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
-
-            // Publish the message
-            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
-
-            // Reset poll flags
-            for (auto& polled : cam_polled_) {
-                polled.second = false;
-            }
         }
+
+        // Convert the 4D tensor to UInt8MultiArray
+        msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
+
+        // Publish the message
+        this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
     }
 };
