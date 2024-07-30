@@ -108,13 +108,14 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         }
 
         // Create timers for each camera
+        cam_cbg_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         for (const auto& cam_param : cam_param_dicts_) {
             int cam_index = cam_param.first;
 
             auto timer_callback = [this, cam_index]() { this->camera_callback(cam_index); };
 
             double timer_period = 1.0 / static_cast<double>(fps_);
-            auto timer          = this->create_wall_timer(std::chrono::duration<double>(timer_period), timer_callback);
+            auto timer = this->create_wall_timer(std::chrono::duration<double>(timer_period), timer_callback, cam_cbg_);
             std::string timer_key = "timer_" + std::to_string(cam_index);
             timers_[timer_key]    = timer;
         }
@@ -140,6 +141,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
     int height_;
     int width_;
+
+    rclcpp::CallbackGroup::SharedPtr cam_cbg_;
 
     void set_camera_params(const std::string& params_path) {
         // Check if the file has a .yaml or .yml extension
@@ -289,7 +292,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         sl::Mat& cam_image          = cam_images_[cam_index];
         std::string side            = cam_param_dicts_[cam_index]["side"];
 
-        if (cam.grab(rtps) == sl::ERROR_CODE::SUCCESS) {
+        auto err = cam.grab(rtps);
+        if (err == sl::ERROR_CODE::SUCCESS) {
             if (depth_) {
                 if (side == "left") {
                     cam.retrieveImage(cam_image, sl::VIEW::DEPTH);
@@ -313,6 +317,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             RCLCPP_INFO(this->get_logger(), "Polled camera %d!", cam_index);
 
             check_and_publish_images();
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "Failed to grab image from camera %d!", cam_index);
         }
     }
 
