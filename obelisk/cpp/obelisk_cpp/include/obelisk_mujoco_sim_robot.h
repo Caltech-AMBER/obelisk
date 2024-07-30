@@ -31,7 +31,7 @@ namespace obelisk {
          *
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) final {
+        on_configure(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
@@ -75,7 +75,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) final {
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
             activation_complete_ = true;
@@ -89,7 +89,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_deactivate(prev_state);
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -101,7 +101,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_cleanup(prev_state);
             activation_complete_    = false;
             configuration_complete_ = false;
@@ -119,7 +119,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_shutdown(prev_state);
             activation_complete_    = false;
             configuration_complete_ = false;
