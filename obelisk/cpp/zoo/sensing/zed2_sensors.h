@@ -86,8 +86,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             }
 
             // Open camera
-            sl::Camera camera;
-            sl::ERROR_CODE err = camera.open(init_params);
+            cams_[cam_index]   = sl::Camera();
+            sl::ERROR_CODE err = cams_[cam_index].open(init_params);
             if (err != sl::ERROR_CODE::SUCCESS) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to open camera with serial number %s: %s",
                              cam_param_dict.at("serial_number").c_str(), sl::toString(err).c_str());
@@ -97,7 +97,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             RCLCPP_INFO(this->get_logger(), "Camera with serial number %s initialized!",
                         cam_param_dict.at("serial_number").c_str());
 
-            cams_[cam_index]       = std::move(camera);
             cam_polled_[cam_index] = false;
             cam_images_[cam_index] = sl::Mat();
 
@@ -292,8 +291,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         sl::Mat& cam_image          = cam_images_[cam_index];
         std::string side            = cam_param_dicts_[cam_index]["side"];
 
-        auto err = cam.grab(rtps);
-        if (err == sl::ERROR_CODE::SUCCESS) {
+        if (cam.grab(rtps) == sl::ERROR_CODE::SUCCESS) {
             if (depth_) {
                 if (side == "left") {
                     cam.retrieveImage(cam_image, sl::VIEW::DEPTH);
