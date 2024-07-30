@@ -5,6 +5,7 @@
   <version>0.0.1</version>
   <description>C++ Obelisk ROS2 package for sensing.</description>
   <maintainer email="zach.olkin@gmail.com">zolkin</maintainer>
+  <maintainer email="alberthli@caltech.edu">alberthli</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

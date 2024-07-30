@@ -21,7 +21,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     ObeliskZed2Sensors(const std::string& node_name) : obelisk::ObeliskSensor(node_name) {
         // Declare parameters
         this->declare_parameter("params_path_pkg", "");
-        this->declare_parameter("params_path", "");
 
         // Get parameter values
         std::string params_path_pkg = this->get_parameter("params_path_pkg").as_string();
@@ -42,7 +41,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         this->set_camera_params(params_path);
 
         // Register publisher for ZED2 cameras
-        pub_img_ = this->create_publisher<obelisk_sensor_msgs::msg::ObkImage>("pub_img", 10);
+        this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImage>("pub_img_setting", pub_img_key_);
     }
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -64,7 +63,27 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             init_params.camera_image_flip      = sl::FLIP_MODE::OFF;
 
             // Set serial number
-            init_params.input.setFromSerialNumber(std::stoi(cam_param_dict.at("serial_number")));
+            // wrap this in a try catch block, catch any exception
+            try {
+                // Log the serial number string being processed
+                if (cam_param_dict.find("serial_number") == cam_param_dict.end()) {
+                    RCLCPP_ERROR(this->get_logger(), "Serial number key not found for camera %d", cam_index);
+                    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+                }
+
+                std::string serial_number_str = cam_param_dict.at("serial_number");
+                RCLCPP_INFO(this->get_logger(), "Processing serial number for camera %d: %s", cam_index,
+                            serial_number_str.c_str());
+
+                // Attempt to convert the serial number to an integer
+                init_params.input.setFromSerialNumber(std::stoi(serial_number_str));
+            } catch (const std::invalid_argument& e) {
+                RCLCPP_ERROR(this->get_logger(), "Invalid serial number for camera %d: %s", cam_index, e.what());
+                return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+            } catch (const std::exception& e) {
+                RCLCPP_ERROR(this->get_logger(), "Unexpected error for camera %d: %s", cam_index, e.what());
+                return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+            }
 
             // Open camera
             sl::Camera camera;
@@ -105,6 +124,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
   private:
     // Private member variables
+    std::string const pub_img_key_ = "pub_img";
+
     std::map<int, sl::Camera> cams_;
     std::map<int, bool> cam_polled_;
     std::map<int, sl::Mat> cam_images_;
@@ -112,7 +133,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     std::map<int, std::vector<uint8_t>> frames_;
     std::mutex lock_;
 
-    rclcpp::Publisher<obelisk_sensor_msgs::msg::ObkImage>::SharedPtr pub_img_;
     sl::RESOLUTION resolution_;
     int fps_;
     bool depth_;
@@ -168,6 +188,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
+            cam_param_dicts_[cam_index]["serial_number"] = serial_number;
 
             // Check resolution
             std::string resolution =
@@ -175,18 +196,22 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             std::transform(resolution.begin(), resolution.end(), resolution.begin(), ::tolower);
             if (resolution == "vga") {
                 cam_param_dicts_[cam_index]["resolution"] = "VGA";
+                resolution_                               = sl::RESOLUTION::VGA;
                 height_                                   = 376;
                 width_                                    = 672;
             } else if (resolution == "720") {
-                cam_param_dicts_[cam_index]["resolution"] = "HD720";
+                cam_param_dicts_[cam_index]["resolution"] = "720";
+                resolution_                               = sl::RESOLUTION::HD720;
                 height_                                   = 720;
                 width_                                    = 1280;
             } else if (resolution == "1080") {
-                cam_param_dicts_[cam_index]["resolution"] = "HD1080";
+                cam_param_dicts_[cam_index]["resolution"] = "1080";
+                resolution_                               = sl::RESOLUTION::HD1080;
                 height_                                   = 1080;
                 width_                                    = 1920;
             } else if (resolution == "2k") {
-                cam_param_dicts_[cam_index]["resolution"] = "HD2K";
+                cam_param_dicts_[cam_index]["resolution"] = "2K";
+                resolution_                               = sl::RESOLUTION::HD2K;
                 height_                                   = 1242;
                 width_                                    = 2208;
             } else {
@@ -195,6 +220,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
+            cam_param_dicts_[cam_index]["resolution"] = resolution;
 
             // Check fps
             int fps = cam_param_dict["fps"] ? cam_param_dict["fps"].as<int>() : 0;
@@ -215,10 +241,12 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 throw std::runtime_error(err_msg);
             }
             cam_param_dicts_[cam_index]["fps"] = std::to_string(fps);
+            fps_                               = fps;
 
             // Check depth
             bool depth                           = cam_param_dict["depth"] ? cam_param_dict["depth"].as<bool>() : false;
             cam_param_dicts_[cam_index]["depth"] = depth ? "true" : "false";
+            depth_                               = depth;
 
             // Check side
             std::string side = cam_param_dict["side"] ? cam_param_dict["side"].as<std::string>() : "left";
@@ -249,10 +277,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         if (depths.size() > 1) {
             throw std::runtime_error("All cameras must have the same depth setting!");
         }
-
-        resolution_ = sl::RESOLUTION::HD720; // Default value, you might want to set this based on the parsed resolution
-        fps_        = std::stoi(*fpss.begin());
-        depth_      = *depths.begin() == "true";
 
         RCLCPP_INFO(this->get_logger(), "Camera parameters set successfully");
     }
@@ -326,7 +350,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             msg->y.data = std::move(combined_data);
 
             // Publish the message
-            pub_img_->publish(std::move(msg));
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
 
             // Reset poll flags
             for (auto& polled : cam_polled_) {
