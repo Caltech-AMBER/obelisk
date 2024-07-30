@@ -10,6 +10,7 @@ include(FetchContent)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # ----------- ZED ----------- #
 # [NOTE] for this to build properly, it is necessary for CMAKE_PREFIX_PATH to include the location of cuda
@@ -32,6 +33,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+# ----------- Obelisk ----------- #
+# Get the Obelisk library
+include(FetchContent)
+FetchContent_Declare(
+  Obelisk
+  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
+)
+
+# Lets us Get Obelisk::Core and Obelisk::Zoo
+FetchContent_MakeAvailable(Obelisk)
+
 # ----------- Making the executables ----------- #
 # ZED2 sensor
 add_library(zed2_sensors_node INTERFACE)
@@ -41,7 +53,9 @@ target_include_directories(zed2_sensors_node INTERFACE
 )
 target_link_libraries(zed2_sensors_node INTERFACE
     yaml-cpp
-    ${ZED_LIBS})
+    Eigen3::Eigen
+    ${ZED_LIBS}
+    Obelisk::Utils)
 
 ament_target_dependencies(zed2_sensors_node
     INTERFACE

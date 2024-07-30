@@ -2,8 +2,10 @@
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <fstream>
+#include <msg_conversions.h>
 #include <mutex>
 #include <obelisk_sensor_msgs/msg/obk_image.hpp>
+#include <obelisk_std_msgs/msg/u_int8_multi_array.hpp>
 #include <rclcpp/callback_group.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/timer.hpp>
@@ -11,6 +13,7 @@
 #include <set>
 #include <sl/Camera.hpp>
 #include <stdexcept>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <yaml-cpp/yaml.h>
 
 #include "obelisk_sensor.h"
@@ -48,12 +51,12 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     on_configure(const rclcpp_lifecycle::State& prev_state) {
         obelisk::ObeliskSensor::on_configure(prev_state);
 
-        // Initialize cameras
+        // Initialize all cameras specified in the configuration yaml
         for (const auto& cam_param : cam_param_dicts_) {
             int cam_index              = cam_param.first;
             const auto& cam_param_dict = cam_param.second;
 
-            // Initialize camera
+            // Setting up camera parameters
             sl::InitParameters init_params;
             init_params.camera_resolution      = resolution_;
             init_params.camera_fps             = fps_;
@@ -63,9 +66,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             init_params.camera_image_flip      = sl::FLIP_MODE::OFF;
 
             // Set serial number
-            // wrap this in a try catch block, catch any exception
             try {
-                // Log the serial number string being processed
                 if (cam_param_dict.find("serial_number") == cam_param_dict.end()) {
                     RCLCPP_ERROR(this->get_logger(), "Serial number key not found for camera %d", cam_index);
                     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
@@ -74,8 +75,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 std::string serial_number_str = cam_param_dict.at("serial_number");
                 RCLCPP_INFO(this->get_logger(), "Processing serial number for camera %d: %s", cam_index,
                             serial_number_str.c_str());
-
-                // Attempt to convert the serial number to an integer
                 init_params.input.setFromSerialNumber(std::stoi(serial_number_str));
             } catch (const std::invalid_argument& e) {
                 RCLCPP_ERROR(this->get_logger(), "Invalid serial number for camera %d: %s", cam_index, e.what());
@@ -132,25 +131,29 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     }
 
   private:
-    // Private member variables
+    // Key for the image publisher
     std::string const pub_img_key_ = "pub_img";
 
+    // Callback group shared by all camera callbacks
+    rclcpp::CallbackGroup::SharedPtr cam_cbg_;
+
+    // Camera parameter maps
+    std::map<int, std::map<std::string, std::string>> cam_param_dicts_;
     std::map<int, sl::Camera> cams_;
     std::map<int, bool> cam_polled_;
     std::map<int, sl::Mat> cam_images_;
     std::map<int, sl::RuntimeParameters> cam_rt_params_;
-    std::map<int, std::vector<uint8_t>> frames_;
-    std::mutex lock_;
+    std::map<int, Eigen::Tensor<uint8_t, 3>> frames_;
 
+    // Shared camera parameters
     sl::RESOLUTION resolution_;
     int fps_;
     bool depth_;
-    std::map<int, std::map<std::string, std::string>> cam_param_dicts_;
-
     int height_;
     int width_;
 
-    rclcpp::CallbackGroup::SharedPtr cam_cbg_;
+    // Mutex for camera callback
+    std::mutex lock_;
 
     void set_camera_params(const std::string& params_path) {
         // Check if the file has a .yaml or .yml extension
@@ -315,10 +318,28 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 }
             }
 
-            // Convert sl::Mat to std::vector<uint8_t>
-            size_t size = cam_image.getWidth() * cam_image.getHeight() * cam_image.getChannels();
-            frames_[cam_index].resize(size);
-            memcpy(frames_[cam_index].data(), cam_image.getPtr<sl::uchar1>(), size);
+            // Convert sl::Mat to Eigen::Tensor
+            int channels = depth_ ? 1 : 3;
+            Eigen::Tensor<uint8_t, 3> tensor(height_, width_, channels);
+
+            // Get the pointer to the BGRA data
+            const uint8_t* bgra_data = cam_image.getPtr<sl::uchar1>();
+
+            // Convert BGRA to RGB
+            // TODO(ahl): confirm this data layout
+            for (int y = 0; y < height_; ++y) {
+                for (int x = 0; x < width_; ++x) {
+                    int bgra_index = (y * width_ + x) * 4;
+                    int rgb_index  = (y * width_ + x) * 3;
+
+                    // Swap B and R, drop A
+                    tensor.data()[rgb_index]     = bgra_data[bgra_index + 2]; // R
+                    tensor.data()[rgb_index + 1] = bgra_data[bgra_index + 1]; // G
+                    tensor.data()[rgb_index + 2] = bgra_data[bgra_index];     // B
+                }
+            }
+
+            frames_[cam_index]     = std::move(tensor);
             cam_polled_[cam_index] = true;
             check_and_publish_images();
         } else {
@@ -329,35 +350,22 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     void check_and_publish_images() {
         if (std::all_of(cam_polled_.begin(), cam_polled_.end(), [](const auto& pair) { return pair.second; })) {
             auto msg = std::make_unique<obelisk_sensor_msgs::msg::ObkImage>();
-            // Prepare the UInt8MultiArray
-            msg->y.layout.data_offset = 0;
 
             // Calculate dimensions
-            int num_cameras         = frames_.size();
-            int channels            = depth_ ? 1 : 3;
-            std::array<int, 4> dims = {num_cameras, height_, width_, channels};
+            int num_cameras = frames_.size();
+            int channels    = depth_ ? 1 : 3;
 
-            // Prepare dimension information
-            msg->y.layout.dim.resize(4);
-            int stride = 1;
-            for (int i = 3; i >= 0; --i) {
-                auto& dim  = msg->y.layout.dim[i];
-                dim.label  = (i == 0) ? "cameras" : (i == 1) ? "height" : (i == 2) ? "width" : "channels";
-                dim.size   = dims[i];
-                dim.stride = stride;
-                stride *= dims[i];
-            }
+            // Create a 4D tensor to hold all camera images
+            Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
 
-            // Combine images from all cameras into a single vector
-            std::vector<uint8_t> combined_data;
-            combined_data.reserve(num_cameras * height_ * width_ * channels);
-
+            int camera_index = 0;
             for (const auto& frame : frames_) {
-                combined_data.insert(combined_data.end(), frame.second.begin(), frame.second.end());
+                combined_tensor.chip(camera_index, 0) = frame.second;
+                camera_index++;
             }
 
-            // Assign the combined data to the message
-            msg->y.data = std::move(combined_data);
+            // Convert the 4D tensor to UInt8MultiArray
+            msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
 
             // Publish the message
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
