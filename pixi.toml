@@ -38,6 +38,9 @@ obelisk_py = { path="./obelisk/python", editable=true }
 [feature.cuda121]
 system-requirements = {cuda="12.1.1"}
 
+[feature.cuda121.activation]
+scripts = ["scripts/add_cuda_cmake_prefix_path.sh"]
+
 [feature.cuda121.dependencies]
 cuda = "12.1.1"
 

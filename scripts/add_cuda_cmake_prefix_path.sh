@@ -1,0 +1,2 @@
+#!/bin/bash
+export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$PIXI_PROJECT_ROOT/.pixi/envs/$PIXI_ENVIRONMENT_NAME/targets/x86_64-linux"

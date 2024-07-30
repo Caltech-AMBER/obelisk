@@ -44,6 +44,7 @@ colcon build --symlink-install --parallel-workers $(nproc) \
     --packages-select $MESSAGE_PKGS \
     --packages-skip $SKIP_PKGS
 
+# for debugging, add `--event-handlers console_direct+` to the colcon build command
 echo -e "\033[1;32mBuilding remainder of Obelisk ROS packages...\033[0m"
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 colcon build --symlink-install --parallel-workers $(nproc) \

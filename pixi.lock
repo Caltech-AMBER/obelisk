@@ -232,7 +232,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxext-1.3.4-h0b41bf4_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxfixes-5.0.3-h7f98852_1004.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h7f98852_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h4bc722e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxinerama-1.1.5-h27087fc_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxrandr-1.5.2-h7f98852_1.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxrender-0.9.11-hd590300_0.conda
@@ -361,7 +361,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cd-0.1.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cmake-0.2.28-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/colcon-common-extensions-0.3.0-py311h38be061_1.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-defaults-0.2.8-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-devtools-0.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-library-path-0.2.1-py_0.tar.bz2
@@ -942,7 +942,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxext-1.3.4-h0b41bf4_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxfixes-5.0.3-h7f98852_1004.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h7f98852_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h4bc722e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxinerama-1.1.5-h27087fc_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxmu-1.1.3-h4ab18f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxpm-3.5.17-hd590300_0.conda
@@ -982,7 +982,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/e5/8c68ff608a4203085158cff5cc2a3c534ec384536d9438c405ed6370d080/pillow-10.4.0-cp311-cp311-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/68/13/2aa1f0e1364feb2c9ef45302f387ac0bd81484e9c9a4c5688a322fbdfd08/platformdirs-4.2.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b9/0f/d6d0b4e2f5b2933a557087fc0560371aa545a18232d4d3427eb3bb3af12e/pre_commit-3.7.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/07/92/caae8c86e94681b42c246f0bca35c059a2f0529e5b92619f6aba4cf7e7b6/pre_commit-3.8.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/99/48/00e31747821d3fc56faddd00a4725454d1e694a8b67d715cf20f531506a5/PyOpenGL-3.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/20/2dde33b6171ac7d7d1a018ac49f899c5ad10ad1d66e7127cca0beab65813/pyright-1.1.373-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl
@@ -1029,7 +1029,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cd-0.1.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cmake-0.2.28-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/colcon-common-extensions-0.3.0-py311h38be061_1.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-defaults-0.2.8-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-devtools-0.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-library-path-0.2.1-py_0.tar.bz2
@@ -1536,7 +1536,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ba/e5/8c68ff608a4203085158cff5cc2a3c534ec384536d9438c405ed6370d080/pillow-10.4.0-cp311-cp311-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/68/13/2aa1f0e1364feb2c9ef45302f387ac0bd81484e9c9a4c5688a322fbdfd08/platformdirs-4.2.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b9/0f/d6d0b4e2f5b2933a557087fc0560371aa545a18232d4d3427eb3bb3af12e/pre_commit-3.7.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/07/92/caae8c86e94681b42c246f0bca35c059a2f0529e5b92619f6aba4cf7e7b6/pre_commit-3.8.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/99/48/00e31747821d3fc56faddd00a4725454d1e694a8b67d715cf20f531506a5/PyOpenGL-3.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/20/2dde33b6171ac7d7d1a018ac49f899c5ad10ad1d66e7127cca0beab65813/pyright-1.1.373-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl
@@ -1635,13 +1635,13 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0d/ef/153f6803c5d5f8917dbb7f7fcf6d34a871ede3296fa89c2c703f5f8a6c8e/sphinx-7.4.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/9f/4ac7dbb9f23a2ff5a10903a4f9e9f43e0ff051f63a313e989c962526e305/sphinx_tabs-3.4.5-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/56/89/fea3fbf6785b388e6cb8a1beaf62f96e80b37311bdeed6e133388a732426/sphinxcontrib_applehelp-1.0.8-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a0/52/1049d918d1d1c72857d285c3f0c64c1cbe0be394ce1c93a3d2aa4f39fe3b/sphinxcontrib_devhelp-1.0.6-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a4/b4/6ebbdc57b5b216b400b355f34ef669e9b6b5c31a6ede8cf5ac36f9e8fc0c/sphinxcontrib_htmlhelp-2.0.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/cf/91/cec9416d27ebe9b8aa83f014a1ac8402c729aed791da67704e10bb2c8f33/sphinxcontrib_qthelp-1.0.8-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/38/24/228bb903ea87b9e08ab33470e6102402a644127108c7117ac9c00d849f82/sphinxcontrib_serializinghtml-1.1.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/1c/89ffc63a9605b583d5df2be791a27bc1a42b7c32bab68d3c8f2f73a98cd4/urllib3-2.2.2-py3-none-any.whl
       - pypi: ./obelisk/python
   obelisk:
@@ -1759,7 +1759,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cd-0.1.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cmake-0.2.28-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/colcon-common-extensions-0.3.0-py311h38be061_1.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-defaults-0.2.8-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-devtools-0.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-library-path-0.2.1-py_0.tar.bz2
@@ -2261,7 +2261,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cd-0.1.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-cmake-0.2.28-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/colcon-common-extensions-0.3.0-py311h38be061_1.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-defaults-0.2.8-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-devtools-0.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/colcon-library-path-0.2.1-py_0.tar.bz2
@@ -2781,7 +2781,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxext-1.3.4-h0b41bf4_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxfixes-5.0.3-h7f98852_1004.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h7f98852_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h4bc722e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxmu-1.1.3-h4ab18f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxpm-3.5.17-hd590300_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxrandr-1.5.2-h7f98852_1.tar.bz2
@@ -3399,13 +3399,13 @@ packages:
   timestamp: 1667471653940
 - kind: conda
   name: colcon-core
-  version: 0.17.0
+  version: 0.17.1
   build: pyhd8ed1ab_0
   subdir: noarch
   noarch: python
-  url: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.0-pyhd8ed1ab_0.conda
-  sha256: 93fef8f38d0d5e0688ccabf440a59d4ae945df8a71a4d201c1733fb585137257
-  md5: ca821c48593ce9a7749754e0e9549a0d
+  url: https://conda.anaconda.org/conda-forge/noarch/colcon-core-0.17.1-pyhd8ed1ab_0.conda
+  sha256: 78964749d438633cf87f5bdf86dd372a081b3ccf87e348c7b3bf55c0f883ffe3
+  md5: b955145d4a363f54c010e6e910887d94
   depends:
   - coloredlogs
   - distlib
@@ -3420,8 +3420,8 @@ packages:
   license_family: APACHE
   purls:
   - pkg:pypi/colcon-core?source=conda-forge-mapping
-  size: 85308
-  timestamp: 1719301088205
+  size: 85206
+  timestamp: 1721974373561
 - kind: conda
   name: colcon-defaults
   version: 0.2.8
@@ -9514,9 +9514,9 @@ packages:
   timestamp: 1713667175451
 - kind: pypi
   name: pre-commit
-  version: 3.7.1
-  url: https://files.pythonhosted.org/packages/b9/0f/d6d0b4e2f5b2933a557087fc0560371aa545a18232d4d3427eb3bb3af12e/pre_commit-3.7.1-py2.py3-none-any.whl
-  sha256: fae36fd1d7ad7d6a5a1c0b0d5adb2ed1a3bda5a21bf6c3e5372073d7a11cd4c5
+  version: 3.8.0
+  url: https://files.pythonhosted.org/packages/07/92/caae8c86e94681b42c246f0bca35c059a2f0529e5b92619f6aba4cf7e7b6/pre_commit-3.8.0-py2.py3-none-any.whl
+  sha256: 9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f
   requires_dist:
   - cfgv>=2.0.0
   - identify>=1.0.0
@@ -9884,6 +9884,7 @@ packages:
   constrains:
   - pytest-faulthandler >=2
   license: MIT
+  license_family: MIT
   purls:
   - pkg:pypi/pytest?source=conda-forge-mapping
   size: 257671
@@ -17089,37 +17090,37 @@ packages:
   requires_python: ~=3.7
 - kind: pypi
   name: sphinxcontrib-applehelp
-  version: 1.0.8
-  url: https://files.pythonhosted.org/packages/56/89/fea3fbf6785b388e6cb8a1beaf62f96e80b37311bdeed6e133388a732426/sphinxcontrib_applehelp-1.0.8-py3-none-any.whl
-  sha256: cb61eb0ec1b61f349e5cc36b2028e9e7ca765be05e49641c97241274753067b4
+  version: 2.0.0
+  url: https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl
+  sha256: 4cd3f0ec4ac5dd9c17ec65e9ab272c9b867ea77425228e68ecf08d6b28ddbdb5
   requires_dist:
-  - flake8 ; extra == 'lint'
+  - ruff==0.5.5 ; extra == 'lint'
   - mypy ; extra == 'lint'
-  - docutils-stubs ; extra == 'lint'
+  - types-docutils ; extra == 'lint'
   - sphinx>=5 ; extra == 'standalone'
   - pytest ; extra == 'test'
   requires_python: '>=3.9'
 - kind: pypi
   name: sphinxcontrib-devhelp
-  version: 1.0.6
-  url: https://files.pythonhosted.org/packages/a0/52/1049d918d1d1c72857d285c3f0c64c1cbe0be394ce1c93a3d2aa4f39fe3b/sphinxcontrib_devhelp-1.0.6-py3-none-any.whl
-  sha256: 6485d09629944511c893fa11355bda18b742b83a2b181f9a009f7e500595c90f
+  version: 2.0.0
+  url: https://files.pythonhosted.org/packages/35/7a/987e583882f985fe4d7323774889ec58049171828b58c2217e7f79cdf44e/sphinxcontrib_devhelp-2.0.0-py3-none-any.whl
+  sha256: aefb8b83854e4b0998877524d1029fd3e6879210422ee3780459e28a1f03a8a2
   requires_dist:
-  - flake8 ; extra == 'lint'
+  - ruff==0.5.5 ; extra == 'lint'
   - mypy ; extra == 'lint'
-  - docutils-stubs ; extra == 'lint'
+  - types-docutils ; extra == 'lint'
   - sphinx>=5 ; extra == 'standalone'
   - pytest ; extra == 'test'
   requires_python: '>=3.9'
 - kind: pypi
   name: sphinxcontrib-htmlhelp
-  version: 2.0.6
-  url: https://files.pythonhosted.org/packages/a4/b4/6ebbdc57b5b216b400b355f34ef669e9b6b5c31a6ede8cf5ac36f9e8fc0c/sphinxcontrib_htmlhelp-2.0.6-py3-none-any.whl
-  sha256: 1b9af5a2671a61410a868fce050cab7ca393c218e6205cbc7f590136f207395c
+  version: 2.1.0
+  url: https://files.pythonhosted.org/packages/0a/7b/18a8c0bcec9182c05a0b3ec2a776bba4ead82750a55ff798e8d406dae604/sphinxcontrib_htmlhelp-2.1.0-py3-none-any.whl
+  sha256: 166759820b47002d22914d64a075ce08f4c46818e17cfc9470a9786b759b19f8
   requires_dist:
-  - flake8 ; extra == 'lint'
+  - ruff==0.5.5 ; extra == 'lint'
   - mypy ; extra == 'lint'
-  - docutils-stubs ; extra == 'lint'
+  - types-docutils ; extra == 'lint'
   - sphinx>=5 ; extra == 'standalone'
   - pytest ; extra == 'test'
   - html5lib ; extra == 'test'
@@ -17144,26 +17145,26 @@ packages:
   requires_python: '>=3.5'
 - kind: pypi
   name: sphinxcontrib-qthelp
-  version: 1.0.8
-  url: https://files.pythonhosted.org/packages/cf/91/cec9416d27ebe9b8aa83f014a1ac8402c729aed791da67704e10bb2c8f33/sphinxcontrib_qthelp-1.0.8-py3-none-any.whl
-  sha256: 323d6acc4189af76dfe94edd2a27d458902319b60fcca2aeef3b2180c106a75f
+  version: 2.0.0
+  url: https://files.pythonhosted.org/packages/27/83/859ecdd180cacc13b1f7e857abf8582a64552ea7a061057a6c716e790fce/sphinxcontrib_qthelp-2.0.0-py3-none-any.whl
+  sha256: b18a828cdba941ccd6ee8445dbe72ffa3ef8cbe7505d8cd1fa0d42d3f2d5f3eb
   requires_dist:
-  - flake8 ; extra == 'lint'
+  - ruff==0.5.5 ; extra == 'lint'
   - mypy ; extra == 'lint'
-  - docutils-stubs ; extra == 'lint'
+  - types-docutils ; extra == 'lint'
   - sphinx>=5 ; extra == 'standalone'
   - pytest ; extra == 'test'
   - defusedxml>=0.7.1 ; extra == 'test'
   requires_python: '>=3.9'
 - kind: pypi
   name: sphinxcontrib-serializinghtml
-  version: 1.1.10
-  url: https://files.pythonhosted.org/packages/38/24/228bb903ea87b9e08ab33470e6102402a644127108c7117ac9c00d849f82/sphinxcontrib_serializinghtml-1.1.10-py3-none-any.whl
-  sha256: 326369b8df80a7d2d8d7f99aa5ac577f51ea51556ed974e7716cfd4fca3f6cb7
+  version: 2.0.0
+  url: https://files.pythonhosted.org/packages/52/a7/d2782e4e3f77c8450f727ba74a8f12756d5ba823d81b941f1b04da9d033a/sphinxcontrib_serializinghtml-2.0.0-py3-none-any.whl
+  sha256: 6e2cb0eef194e10c27ec0023bfeb25badbbb5868244cf5bc5bdc04e4464bf331
   requires_dist:
-  - flake8 ; extra == 'lint'
+  - ruff==0.5.5 ; extra == 'lint'
   - mypy ; extra == 'lint'
-  - docutils-stubs ; extra == 'lint'
+  - types-docutils ; extra == 'lint'
   - sphinx>=5 ; extra == 'standalone'
   - pytest ; extra == 'test'
   requires_python: '>=3.9'
@@ -17372,6 +17373,14 @@ packages:
   purls: []
   size: 746941
   timestamp: 1647071114396
+- kind: pypi
+  name: urdf-parser-py
+  version: 0.0.4
+  url: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
+  sha256: e983f637145fded67bcff6a542302069bb975b2edf1b18318c093abba1b794cc
+  requires_dist:
+  - pyyaml
+  - lxml
 - kind: pypi
   name: urdf-parser-py
   version: 0.0.4
@@ -17920,22 +17929,26 @@ packages:
 - kind: conda
   name: xorg-libxi
   version: 1.7.10
-  build: h7f98852_0
+  build: h4bc722e_1
+  build_number: 1
   subdir: linux-64
-  url: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h7f98852_0.tar.bz2
-  sha256: 745c1284a96b4282fe6fe122b2643e1e8c26a7ff40b733a8f4b61357238c4e68
-  md5: e77615e5141cad5a2acaa043d1cf0ca5
+  url: https://conda.anaconda.org/conda-forge/linux-64/xorg-libxi-1.7.10-h4bc722e_1.conda
+  sha256: e1416eb435e3d903bc658e3c637f0e87efd2dca290fe70daf29738b3a3d1f8ff
+  md5: 749baebe7e2ff3360630e069175e528b
   depends:
-  - libgcc-ng >=9.3.0
+  - __glibc >=2.17,<3.0.a0
+  - libgcc-ng >=12
   - xorg-inputproto
-  - xorg-libx11 >=1.7.0,<2.0a0
+  - xorg-libx11 >=1.8.9,<2.0a0
   - xorg-libxext 1.3.*
+  - xorg-libxext >=1.3.4,<2.0a0
   - xorg-libxfixes 5.0.*
+  - xorg-xextproto >=7.3.0,<8.0a0
   license: MIT
   license_family: MIT
   purls: []
-  size: 47287
-  timestamp: 1620070911951
+  size: 46794
+  timestamp: 1722108216651
 - kind: conda
   name: xorg-libxinerama
   version: 1.1.5
