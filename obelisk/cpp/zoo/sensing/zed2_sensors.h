@@ -330,7 +330,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             const uint8_t* bgra_data = cam_image.getPtr<sl::uchar1>();
 
             // Convert BGRA to RGB
-            // TODO(ahl): confirm this data layout
             for (int y = 0; y < height_; ++y) {
                 for (int x = 0; x < width_; ++x) {
                     int bgra_index = (y * width_ + x) * 4;
@@ -369,10 +368,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             }
         }
 
-        // Convert the 4D tensor to UInt8MultiArray
-        msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
-
         // Publish the message
+        msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
         this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
     }
 };
