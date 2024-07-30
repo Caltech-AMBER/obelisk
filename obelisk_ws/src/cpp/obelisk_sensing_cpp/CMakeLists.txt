@@ -21,26 +21,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Obelisk)
 
 # zed2_sensors
-
-# TODO(ahl): do I need all of this?
-###############################################################################
-option(LINK_SHARED_ZED "Link with the ZED SDK shared executable" ON)
-find_package(ZED 4 REQUIRED)
-find_package(CUDA ${ZED_CUDA_VERSION} REQUIRED)
-include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${ZED_INCLUDE_DIRS})
-link_directories(${ZED_LIBRARY_DIR})
-link_directories(${CUDA_LIBRARY_DIRS})
-###############################################################################
-
 add_executable(zed2_sensor src/zed2_sensor.cpp)
-
-# TODO(ahl): why do I need ZED_LIBRARIES here?
 target_link_libraries(zed2_sensor
   PUBLIC
   Obelisk::Core
   Obelisk::Zoo
-  ${ZED_LIBRARIES})
+  zed2_sensors_node)
 ament_target_dependencies(zed2_sensor
   PUBLIC
   rclcpp

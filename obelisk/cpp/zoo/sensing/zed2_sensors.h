@@ -18,7 +18,7 @@
 class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
   public:
-    ObeliskZed2Sensors(const std::string& node_name) : rclcpp_lifecycle::LifecycleNode(node_name) {
+    ObeliskZed2Sensors(const std::string& node_name) : obelisk::ObeliskSensor(node_name) {
         // Declare parameters
         this->declare_parameter("params_path_pkg", "");
         this->declare_parameter("params_path", "");
@@ -96,7 +96,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
             double timer_period = 1.0 / static_cast<double>(fps_);
             auto timer          = this->create_wall_timer(std::chrono::duration<double>(timer_period), timer_callback);
-            registered_timers_[cam_index] = timer;
+            std::string timer_key = "timer_" + std::to_string(cam_index);
+            timers_[timer_key]    = timer;
         }
 
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -116,6 +117,9 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     int fps_;
     bool depth_;
     std::map<int, std::map<std::string, std::string>> cam_param_dicts_;
+
+    int height_;
+    int width_;
 
     void set_camera_params(const std::string& params_path) {
         // Check if the file has a .yaml or .yml extension
@@ -171,12 +175,20 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             std::transform(resolution.begin(), resolution.end(), resolution.begin(), ::tolower);
             if (resolution == "vga") {
                 cam_param_dicts_[cam_index]["resolution"] = "VGA";
+                height_                                   = 376;
+                width_                                    = 672;
             } else if (resolution == "720") {
                 cam_param_dicts_[cam_index]["resolution"] = "HD720";
+                height_                                   = 720;
+                width_                                    = 1280;
             } else if (resolution == "1080") {
                 cam_param_dicts_[cam_index]["resolution"] = "HD1080";
+                height_                                   = 1080;
+                width_                                    = 1920;
             } else if (resolution == "2k") {
                 cam_param_dicts_[cam_index]["resolution"] = "HD2K";
+                height_                                   = 1242;
+                width_                                    = 2208;
             } else {
                 std::string err_msg = "Invalid resolution for camera " + std::to_string(cam_index) + " in " +
                                       params_path + "! Must be one of 'VGA', '720', '1080', '2K'.";
