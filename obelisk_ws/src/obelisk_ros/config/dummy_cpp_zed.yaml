@@ -49,7 +49,7 @@ onboard:
           timer_period_sec: 0.001
           callback_group: None
   sensing:
-    - pkg: obelisk_sensing_cpp
+    - pkg: obelisk_zed_cpp
       executable: zed2_sensor
       params:
         params_path_pkg: obelisk_ros
@@ -65,7 +65,7 @@ onboard:
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
     - is_simulated: True
-      pkg: obelisk_sim_py
+      pkg: obelisk_sim_cpp
       executable: obelisk_mujoco_robot
       # callback_groups:
       # publishers:
