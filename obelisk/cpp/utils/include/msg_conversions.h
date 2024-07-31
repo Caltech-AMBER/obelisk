@@ -46,7 +46,20 @@ namespace obelisk::utils::msgs {
             sizes.at(i) = msg.layout.dim.at(i).size;
         }
 
-        auto tensor = internal::CreateTensor<double, Size>(data, sizes, std::make_index_sequence<Size>{});
+        // Create the tensor dynamically
+        Eigen::Tensor<double, Size> tensor;
+        tensor.resize(sizes);
+
+        // Populate the tensor with data
+        std::array<int, Size> indices;
+        for (int i = 0; i < tensor.size(); ++i) {
+            int temp = i;
+            for (int j = Size - 1; j >= 0; --j) {
+                indices[j] = temp % sizes[j];
+                temp /= sizes[j];
+            }
+            tensor(indices) = data[i];
+        }
 
         return tensor;
     }
@@ -73,7 +86,20 @@ namespace obelisk::utils::msgs {
             sizes.at(i) = msg.layout.dim.at(i).size;
         }
 
-        auto tensor = internal::CreateTensor<uint8_t, Size>(data, sizes, std::make_index_sequence<Size>{});
+        // Create the tensor dynamically
+        Eigen::Tensor<uint8_t, Size> tensor;
+        tensor.resize(sizes);
+
+        // Populate the tensor with data
+        std::array<int, Size> indices;
+        for (int i = 0; i < tensor.size(); ++i) {
+            int temp = i;
+            for (int j = Size - 1; j >= 0; --j) {
+                indices[j] = temp % sizes[j];
+                temp /= sizes[j];
+            }
+            tensor(indices) = data[i];
+        }
 
         return tensor;
     }
