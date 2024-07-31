@@ -52,7 +52,7 @@ elseif(MSVC)
     target_compile_options(yaml-cpp PRIVATE /W0 /wd4100)
 endif()
 
-# ----------- Making the executables ----------- #
+# ----------- Making the Libraries ----------- #
 # ZED2 sensor
 add_library(Zed2SensorsInterface INTERFACE)
 target_include_directories(Zed2SensorsInterface INTERFACE
