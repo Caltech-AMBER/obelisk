@@ -53,7 +53,7 @@ onboard:
       executable: zed2_sensor
       params:
         params_path_pkg: obelisk_ros
-      params_path: config/dummy_py_zed_params.yaml
+      params_path: config/dummy_zed_params.yaml
       # callback_groups:
       publishers:
         - ros_parameter: pub_img_setting
