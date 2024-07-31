@@ -89,9 +89,23 @@ namespace obelisk::utils::msgs {
         obelisk_std_msgs::msg::FloatMultiArray msg;
         msg.layout.data_offset = 0;
 
-        // Get data into flat vector
+        // Compute the size of the tensor dimensions
+        std::array<int, Size> dimSizes;
+        for (int i = 0; i < Size; ++i) {
+            dimSizes[i] = tensor.dimension(i);
+        }
+
+        // Copy data into flat vector in row-major order
         msg.data.resize(tensor.size());
-        std::copy(tensor.data(), tensor.data() + tensor.size(), msg.data.begin());
+        for (int i = 0; i < tensor.size(); ++i) {
+            std::array<int, Size> indices;
+            int temp = i;
+            for (int j = Size - 1; j >= 0; --j) {
+                indices[j] = temp % dimSizes[j];
+                temp /= dimSizes[j];
+            }
+            msg.data[i] = tensor(indices);
+        }
 
         // Compute stride lengths
         std_msgs::msg::MultiArrayDimension dim;
@@ -123,9 +137,23 @@ namespace obelisk::utils::msgs {
         obelisk_std_msgs::msg::UInt8MultiArray msg;
         msg.layout.data_offset = 0;
 
-        // Get data into flat vector
+        // Compute the size of the tensor dimensions
+        std::array<int, Size> dimSizes;
+        for (int i = 0; i < Size; ++i) {
+            dimSizes[i] = tensor.dimension(i);
+        }
+
+        // Copy data into flat vector in row-major order
         msg.data.resize(tensor.size());
-        std::copy(tensor.data(), tensor.data() + tensor.size(), msg.data.begin());
+        for (int i = 0; i < tensor.size(); ++i) {
+            std::array<int, Size> indices;
+            int temp = i;
+            for (int j = Size - 1; j >= 0; --j) {
+                indices[j] = temp % dimSizes[j];
+                temp /= dimSizes[j];
+            }
+            msg.data[i] = tensor(indices);
+        }
 
         // Compute stride lengths
         std_msgs::msg::MultiArrayDimension dim;

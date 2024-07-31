@@ -332,13 +332,10 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             // Convert BGRA to RGB
             for (int y = 0; y < height_; ++y) {
                 for (int x = 0; x < width_; ++x) {
-                    int bgra_index = (y * width_ + x) * 4;
-                    int rgb_index  = (y * width_ + x) * 3;
-
-                    // Swap B and R, drop A
-                    tensor.data()[rgb_index]     = bgra_data[bgra_index + 2]; // R
-                    tensor.data()[rgb_index + 1] = bgra_data[bgra_index + 1]; // G
-                    tensor.data()[rgb_index + 2] = bgra_data[bgra_index];     // B
+                    // populate row-major values, first all red, then green, then blue
+                    for (int c = 0; c < channels; ++c) {
+                        tensor(y, x, c) = bgra_data[(y * width_ + x) * 4 + (2 - c)];
+                    }
                 }
             }
 
