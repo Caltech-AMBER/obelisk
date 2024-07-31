@@ -30,7 +30,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
- example_position_setpoint_controller
+  example_position_setpoint_controller
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
