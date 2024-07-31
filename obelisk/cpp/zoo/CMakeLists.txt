@@ -24,14 +24,14 @@ add_library(Obelisk::Zoo ALIAS Zoo)
 target_include_directories(Zoo INTERFACE include)
 
 # conditionally add leap subdirectory if OBELISK_BUILD_LEAP is set
-if(OBELISK_BUILD_LEAP)
+if(OBELISK_BUILD_LEAP OR $ENV{OBELISK_BUILD_LEAP})
   message(STATUS "Configuring Leap Hand Interface")
   add_subdirectory(hardware/robots/leap)
   target_include_directories(Zoo INTERFACE hardware/robots/leap)
 endif()
 
 # conditionally add zed subdirectory if OBELISK_BUILD_ZED is set
-if(OBELISK_BUILD_ZED)
+if(OBELISK_BUILD_ZED OR $ENV{OBELISK_BUILD_ZED})
   message(STATUS "Configuring Zed2 Sensors")
   add_subdirectory(hardware/sensing/zed)
   target_include_directories(Zoo INTERFACE hardware/sensing/zed)
