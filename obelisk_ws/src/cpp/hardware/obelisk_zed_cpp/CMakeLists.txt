@@ -21,14 +21,14 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-# zed2_sensors
-add_executable(zed2_sensor src/zed2_sensor.cpp)
-target_link_libraries(zed2_sensor
+# Zed2Sensors
+add_executable(Zed2Sensors src/zed2_sensors.cpp)
+target_link_libraries(Zed2Sensors
   PUBLIC
   Obelisk::Core
   Obelisk::Zoo
-  zed2_sensors_node)
-ament_target_dependencies(zed2_sensor
+  Zed2SensorsInterface)
+ament_target_dependencies(Zed2Sensors
   PUBLIC
   rclcpp
   rclcpp_lifecycle)
@@ -42,7 +42,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-  zed2_sensor
+  Zed2Sensors
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

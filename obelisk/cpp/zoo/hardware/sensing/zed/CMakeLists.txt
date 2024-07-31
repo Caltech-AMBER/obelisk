@@ -36,18 +36,18 @@ FetchContent_MakeAvailable(yaml-cpp)
 
 # ----------- Making the executables ----------- #
 # ZED2 sensor
-add_library(zed2_sensors_node INTERFACE)
-target_include_directories(zed2_sensors_node INTERFACE
+add_library(Zed2SensorsInterface INTERFACE)
+target_include_directories(Zed2SensorsInterface INTERFACE
     ${CUDA_INCLUDE_DIRS}
     ${ZED_INCLUDE_DIRS}
 )
-target_link_libraries(zed2_sensors_node INTERFACE
+target_link_libraries(Zed2SensorsInterface INTERFACE
     yaml-cpp
     Eigen3::Eigen
     ${ZED_LIBS}
     Obelisk::Utils)
 
-ament_target_dependencies(zed2_sensors_node
+ament_target_dependencies(Zed2SensorsInterface
     INTERFACE
     rclcpp
     rclcpp_lifecycle
