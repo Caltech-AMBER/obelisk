@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <filesystem>
 #include <fstream>
 #include <msg_conversions.h>
 #include <mutex>
@@ -39,7 +40,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         std::string params_path_pkg = this->get_parameter("params_path_pkg").as_string();
         std::string _params_path    = this->get_parameter("params_path").as_string();
 
-        std::string params_path;
+        std::filesystem::path params_path;
         if (_params_path[0] == '/') {
             params_path = _params_path;
         } else if (params_path_pkg.empty()) {
@@ -193,11 +194,10 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
      *
      * @param params_path Path to the YAML configuration file.
      */
-    void set_camera_params(const std::string& params_path) {
+    void set_camera_params(const std::filesystem::path& params_path) {
         // Check if the file has a .yaml or .yml extension
-        if (params_path.substr(params_path.find_last_of(".") + 1) != "yaml" &&
-            params_path.substr(params_path.find_last_of(".") + 1) != "yml") {
-            std::string err_msg = "Invalid parameters file: " + params_path +
+        if (params_path.extension() != ".yaml" && params_path.extension() != ".yml") {
+            std::string err_msg = "Invalid parameters file: " + params_path.string() +
                                   "! ObeliskZed2Sensors expects a YAML file with extension .yaml or .yml.";
             RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
             throw std::runtime_error(err_msg);
@@ -208,7 +208,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         try {
             config = YAML::LoadFile(params_path);
         } catch (const YAML::Exception& e) {
-            std::string err_msg = "Could not load a configuration file at " + params_path + "! Error: " + e.what();
+            std::string err_msg =
+                "Could not load a configuration file at " + params_path.string() + "! Error: " + e.what();
             RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
             throw std::runtime_error(err_msg);
         }
@@ -220,23 +221,23 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
             // Check if cam_param_dict is a map
             if (!cam_param_dict.IsMap()) {
-                std::string err_msg =
-                    "Invalid camera parameters for camera " + std::to_string(cam_index) + " in " + params_path + "!";
+                std::string err_msg = "Invalid camera parameters for camera " + std::to_string(cam_index) + " in " +
+                                      params_path.string() + "!";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
 
             // Check serial number
             if (!cam_param_dict["serial_number"]) {
-                std::string err_msg =
-                    "Serial number not provided for camera " + std::to_string(cam_index) + " in " + params_path + "!";
+                std::string err_msg = "Serial number not provided for camera " + std::to_string(cam_index) + " in " +
+                                      params_path.string() + "!";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
             std::string serial_number = cam_param_dict["serial_number"].as<std::string>();
             if (serial_number.length() != 8) {
                 std::string err_msg = "Invalid serial number for camera " + std::to_string(cam_index) + " in " +
-                                      params_path + "! Must be 8 digits.";
+                                      params_path.string() + "! Must be 8 digits.";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
@@ -268,7 +269,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 width_                                    = 2208;
             } else {
                 std::string err_msg = "Invalid resolution for camera " + std::to_string(cam_index) + " in " +
-                                      params_path + "! Must be one of 'VGA', '720', '1080', '2K'.";
+                                      params_path.string() + "! Must be one of 'VGA', '720', '1080', '2K'.";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
@@ -287,8 +288,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                     fps = 15;
             }
             if (fps != 15 && fps != 30 && fps != 60 && fps != 100) {
-                std::string err_msg = "Invalid fps for camera " + std::to_string(cam_index) + " in " + params_path +
-                                      "! Must be one of 15, 30, 60, 100.";
+                std::string err_msg = "Invalid fps for camera " + std::to_string(cam_index) + " in " +
+                                      params_path.string() + "! Must be one of 15, 30, 60, 100.";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
@@ -304,8 +305,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             std::string side = cam_param_dict["side"] ? cam_param_dict["side"].as<std::string>() : "left";
             std::transform(side.begin(), side.end(), side.begin(), ::tolower);
             if (side != "left" && side != "right") {
-                std::string err_msg = "Invalid side for camera " + std::to_string(cam_index) + " in " + params_path +
-                                      "! Must be one of 'left', 'right'.";
+                std::string err_msg = "Invalid side for camera " + std::to_string(cam_index) + " in " +
+                                      params_path.string() + "! Must be one of 'left', 'right'.";
                 RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
                 throw std::runtime_error(err_msg);
             }
