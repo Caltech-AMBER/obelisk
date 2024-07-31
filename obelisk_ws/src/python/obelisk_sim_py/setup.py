@@ -1,7 +1,10 @@
 import os
 from glob import glob
+from warnings import simplefilter
 
-from setuptools import setup
+from setuptools import SetuptoolsDeprecationWarning, setup
+
+simplefilter("ignore", category=SetuptoolsDeprecationWarning)
 
 package_name = "obelisk_sim_py"
 
