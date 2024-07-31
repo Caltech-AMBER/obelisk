@@ -33,16 +33,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
-# ----------- Obelisk ----------- #
-# Get the Obelisk library
-include(FetchContent)
-FetchContent_Declare(
-  Obelisk
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
-)
-
-# Lets us Get Obelisk::Core and Obelisk::Zoo
-FetchContent_MakeAvailable(Obelisk)
 
 # ----------- Making the executables ----------- #
 # ZED2 sensor
