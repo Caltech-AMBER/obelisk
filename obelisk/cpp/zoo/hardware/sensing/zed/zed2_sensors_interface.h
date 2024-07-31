@@ -32,8 +32,10 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     ObeliskZed2Sensors(const std::string& node_name) : obelisk::ObeliskSensor(node_name) {
         // Declare parameters
         this->declare_parameter("params_path_pkg", "");
+        this->declare_parameter("pub_period", 0.0);
 
         // Get parameter values
+        pub_period_                 = this->get_parameter("pub_period").as_double();
         std::string params_path_pkg = this->get_parameter("params_path_pkg").as_string();
         std::string _params_path    = this->get_parameter("params_path").as_string();
 
@@ -134,9 +136,11 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
         // Create a timer for the publisher
         auto pub_timer_callback = [this]() { this->publish_images(); };
-        double pub_timer_period = 1.0 / static_cast<double>(fps_);
+        if (pub_period_ == 0) {
+            pub_period_ = 1.0 / static_cast<double>(fps_);
+        }
         auto pub_timer =
-            this->create_wall_timer(std::chrono::duration<double>(pub_timer_period), pub_timer_callback, cam_cbg_);
+            this->create_wall_timer(std::chrono::duration<double>(pub_period_), pub_timer_callback, cam_cbg_);
         std::string pub_timer_key = "timer_pub";
         timers_[pub_timer_key]    = pub_timer;
 
@@ -162,6 +166,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
   private:
     // Key for the image publisher
     std::string const pub_img_key_ = "pub_img";
+    double pub_period_;
 
     // Callback group shared by all camera callbacks
     rclcpp::CallbackGroup::SharedPtr cam_cbg_;
@@ -394,14 +399,18 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         int channels    = depth_ ? 1 : 3;
         Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
 
-        // Read the frames_ map and populate the combined tensor
+        // make a local version of frames_ to avoid locking the mutex for too long
+        std::map<int, Eigen::Tensor<uint8_t, 3>> frames_local;
         {
             std::lock_guard<std::mutex> lock(lock_);
-            int camera_index = 0;
-            for (const auto& frame : frames_) {
-                combined_tensor.chip(camera_index, 0) = frame.second;
-                camera_index++;
-            }
+            frames_local = frames_;
+        }
+
+        // Read the frames_ map and populate the combined tensor
+        int camera_index = 0;
+        for (const auto& frame : frames_local) {
+            combined_tensor.chip(camera_index, 0) = frame.second;
+            camera_index++;
         }
 
         // Publish the message
