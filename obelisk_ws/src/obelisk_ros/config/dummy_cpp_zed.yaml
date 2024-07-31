@@ -53,7 +53,7 @@ onboard:
       executable: zed2_sensors
       params:
         params_path_pkg: obelisk_ros
-        pub_period: 0.005
+        pub_period: 0.01
       params_path: config/dummy_zed_params.yaml
       # callback_groups:
       publishers:
