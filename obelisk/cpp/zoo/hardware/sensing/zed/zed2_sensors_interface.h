@@ -18,9 +18,17 @@
 
 #include "obelisk_sensor.h"
 
+/**
+ * @brief Class for managing ZED2 cameras using the Obelisk framework.
+ */
 class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
   public:
+    /**
+     * @brief Construct a new ObeliskZed2Sensors object.
+     *
+     * @param node_name Name of the ROS2 node.
+     */
     ObeliskZed2Sensors(const std::string& node_name) : obelisk::ObeliskSensor(node_name) {
         // Declare parameters
         this->declare_parameter("params_path_pkg", "");
@@ -47,6 +55,13 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImage>("pub_img_setting", pub_img_key_);
     }
 
+    /**
+     * @brief Callback for configuring the node.
+     *
+     * @param prev_state Previous state of the lifecycle node.
+     * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+     * Callback return indicating success or failure.
+     */
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_configure(const rclcpp_lifecycle::State& prev_state) {
         obelisk::ObeliskSensor::on_configure(prev_state);
@@ -128,6 +143,13 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
     }
 
+    /**
+     * @brief Callback for shutting down the node.
+     *
+     * @param prev_state Previous state of the lifecycle node.
+     * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+     * Callback return indicating success or failure.
+     */
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
     on_shutdown(const rclcpp_lifecycle::State& prev_state) {
         obelisk::ObeliskSensor::on_shutdown(prev_state);
@@ -161,6 +183,11 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     // Mutex for camera callback
     std::mutex lock_;
 
+    /**
+     * @brief Set camera parameters from a YAML configuration file.
+     *
+     * @param params_path Path to the YAML configuration file.
+     */
     void set_camera_params(const std::string& params_path) {
         // Check if the file has a .yaml or .yml extension
         if (params_path.substr(params_path.find_last_of(".") + 1) != "yaml" &&
@@ -301,6 +328,11 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         RCLCPP_INFO(this->get_logger(), "Camera parameters set successfully");
     }
 
+    /**
+     * @brief Timer callback function to capture images from the camera. Gets registered for a specific camera.
+     *
+     * @param cam_index Index of the camera.
+     */
     void camera_callback(int cam_index) {
         sl::Camera& cam             = cams_[cam_index];
         sl::RuntimeParameters& rtps = cam_rt_params_[cam_index];
@@ -347,6 +379,13 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         }
     }
 
+    /**
+     * @brief Publishes combined images from all cameras as a single message.
+     *
+     * This function combines images from all connected cameras into a single 4D tensor
+     * and publishes it as a ROS message. The tensor has the shape [num_cameras, height, width, channels],
+     * where the number of channels is 1 for depth images and 3 for RGB images.
+     */
     void publish_images() {
         auto msg = std::make_unique<obelisk_sensor_msgs::msg::ObkImage>();
 
