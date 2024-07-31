@@ -31,7 +31,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-DefaultRobotViz
+  DefaultRobotViz
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
