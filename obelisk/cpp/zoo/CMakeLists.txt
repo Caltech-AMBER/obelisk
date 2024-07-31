@@ -21,12 +21,21 @@ set(ZOO_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 add_library(Zoo INTERFACE)
 add_library(Obelisk::Zoo ALIAS Zoo)
 
-add_subdirectory(robot)
-add_subdirectory(sensing)
-
 target_include_directories(Zoo INTERFACE include)
-target_include_directories(Zoo INTERFACE robot)
-target_include_directories(Zoo INTERFACE sensing)
+
+# conditionally add leap subdirectory if OBELISK_BUILD_LEAP is set
+if(OBELISK_BUILD_LEAP)
+  message(STATUS "Configuring Leap Hand Interface")
+  add_subdirectory(hardware/robots/leap)
+  target_include_directories(Zoo INTERFACE hardware/robots/leap)
+endif()
+
+# conditionally add zed subdirectory if OBELISK_BUILD_ZED is set
+if(OBELISK_BUILD_ZED)
+  message(STATUS "Configuring Zed2 Sensors")
+  add_subdirectory(hardware/sensing/zed)
+  target_include_directories(Zoo INTERFACE hardware/sensing/zed)
+endif()
 
 target_link_libraries(Zoo INTERFACE Obelisk::Core)
 

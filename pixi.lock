@@ -17382,14 +17382,6 @@ packages:
   - pyyaml
   - lxml
 - kind: pypi
-  name: urdf-parser-py
-  version: 0.0.4
-  url: https://files.pythonhosted.org/packages/a3/8b/9dd44781a4e87746a426c56c3368c3da64fd90a130f582340cbf74397f8e/urdf_parser_py-0.0.4.tar.gz
-  sha256: e983f637145fded67bcff6a542302069bb975b2edf1b18318c093abba1b794cc
-  requires_dist:
-  - pyyaml
-  - lxml
-- kind: pypi
   name: urllib3
   version: 2.2.2
   url: https://files.pythonhosted.org/packages/ca/1c/89ffc63a9605b583d5df2be791a27bc1a42b7c32bab68d3c8f2f73a98cd4/urllib3-2.2.2-py3-none-any.whl

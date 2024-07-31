@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
 # Get the Obelisk library
+set(OBELISK_BUILD_LEAP ON)
 include(FetchContent)
 FetchContent_Declare(
   Obelisk

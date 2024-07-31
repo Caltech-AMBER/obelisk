@@ -116,6 +116,9 @@ typeguard = ">=4.3.0"
 
 
 # leap hand
+[feature.leap.activation]
+env = { OBELISK_BUILD_LEAP="true" }
+
 [feature.leap.dependencies]
 ros-humble-dynamixel-sdk = ">=3.7"
 
@@ -125,7 +128,7 @@ dynamixel-sdk = ">=3.7"
 
 # zed cameras
 [feature.zed.activation]
-env = { PIXI_ZED="true" }
+env = { PIXI_ZED="true", OBELISK_BUILD_ZED="true" }
 
 [feature.zed.dependencies]
 cython = "*"

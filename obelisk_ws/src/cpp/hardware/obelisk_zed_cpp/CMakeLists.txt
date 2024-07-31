@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 
 # Get the Obelisk library
+set(OBELISK_BUILD_ZED ON)
 include(FetchContent)
 FetchContent_Declare(
   Obelisk

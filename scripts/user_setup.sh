@@ -71,9 +71,11 @@ fi'
     OBELISK_BUILD_OPTIONS=""
     if [ "$leap" = true ]; then
         OBELISK_BUILD_OPTIONS+="--leap "
+        OBELISK_BUILD_LEAP=true
     fi
     if [ "$zed" = true ]; then
         OBELISK_BUILD_OPTIONS+="--zed "
+        OBELISK_BUILD_ZED=true
     fi
 
     obk_aliases=$(cat << EOF
@@ -86,6 +88,8 @@ function obk {
 export OBELISK_ROOT=\$OBELISK_ROOT
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export RCUTILS_COLORIZED_OUTPUT=1
+export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
+export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 '
 
     # Check if the --permanent flag is passed
