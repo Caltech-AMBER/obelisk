@@ -27,9 +27,9 @@ set(ZED_LIBS
 # ----------- YAML ----------- #
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 FetchContent_Declare(
-        yaml-cpp
-        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG 0.8.0 # note all other versions are of the form yaml-cpp-x.y.z
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0 # note all other versions are of the form yaml-cpp-x.y.z
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
