@@ -52,6 +52,12 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             params_path                 = share_directory + "/" + _params_path;
         }
 
+        if (!std::filesystem::exists(params_path)) {
+            std::string err_msg = "Invalid parameters file: " + params_path.string();
+            RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
+            throw std::runtime_error(err_msg);
+        }
+
         this->set_camera_params(params_path);
 
         // Register publisher for ZED2 cameras
