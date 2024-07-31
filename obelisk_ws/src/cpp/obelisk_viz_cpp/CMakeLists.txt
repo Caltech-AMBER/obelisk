@@ -18,9 +18,9 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Viz
 FetchContent_MakeAvailable(Obelisk)
 
-# DefaultRobotViz
-add_executable(DefaultRobotViz src/default_robot_viz.cpp)
-target_link_libraries(DefaultRobotViz PUBLIC Obelisk::Core Obelisk::Viz)
+# default_robot_viz
+add_executable(default_robot_viz src/default_robot_viz.cpp)
+target_link_libraries(default_robot_viz PUBLIC Obelisk::Core Obelisk::Viz)
 
 
 if(BUILD_TESTING)
@@ -31,7 +31,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-  DefaultRobotViz
+  default_robot_viz
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

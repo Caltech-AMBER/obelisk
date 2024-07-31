@@ -50,7 +50,7 @@ onboard:
           callback_group: None
   sensing:
     - pkg: obelisk_zed_cpp
-      executable: zed2_sensor
+      executable: zed2_sensors
       params:
         params_path_pkg: obelisk_ros
       params_path: config/dummy_zed_params.yaml

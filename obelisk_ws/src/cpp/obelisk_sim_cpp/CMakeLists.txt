@@ -19,11 +19,11 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-# ObeliskMujocoRobot
-add_executable(ObeliskMujocoRobot src/obelisk_mujoco_robot.cpp)
-target_link_libraries(ObeliskMujocoRobot PUBLIC Obelisk::Core)
+# obelisk_mujoco_robot
+add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
+target_link_libraries(obelisk_mujoco_robot PUBLIC Obelisk::Core)
 
-ament_target_dependencies(ObeliskMujocoRobot PUBLIC rclcpp)
+ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -33,7 +33,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-ObeliskMujocoRobot
+  obelisk_mujoco_robot
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

@@ -18,9 +18,9 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-# ExamplePositionSetpointController
-add_executable(ExamplePositionSetpointController src/example_position_setpoint_controller.cpp)
-target_link_libraries(ExamplePositionSetpointController PUBLIC Obelisk::Core Obelisk::Zoo)
+# example_position_setpoint_controller
+add_executable(example_position_setpoint_controller src/example_position_setpoint_controller.cpp)
+target_link_libraries(example_position_setpoint_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -30,7 +30,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-ExamplePositionSetpointController
+ example_position_setpoint_controller
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
