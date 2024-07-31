@@ -1,11 +1,12 @@
 config: dummy
 onboard:
   control:
-    - pkg: obelisk_control_py
+    - pkg: obelisk_control_cpp
       executable: example_position_setpoint_controller
       # callback_groups:
       params:
         test_param: value_configured_in_yaml
+      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/dummy/ctrl
@@ -26,7 +27,7 @@ onboard:
           timer_period_sec: 0.001
           callback_group: None
   estimation:
-    - pkg: obelisk_estimation_py
+    - pkg: obelisk_estimation_cpp
       executable: jointencoders_passthrough_estimator
       # callback_groups:
       publishers:
