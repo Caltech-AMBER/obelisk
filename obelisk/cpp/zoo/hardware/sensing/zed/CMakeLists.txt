@@ -24,8 +24,20 @@ set(ZED_LIBS
     ${CUDA_LIBRARIES}
 )
 
+# Create a wrapper target for ZED libraries to disable warnings
+add_library(ZedNoWarnings INTERFACE)
+target_link_libraries(ZedNoWarnings INTERFACE ${ZED_LIBS})
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(ZedNoWarnings INTERFACE -w)
+elseif(MSVC)
+    target_compile_options(ZedNoWarnings INTERFACE /W0)
+endif()
+
 # ----------- YAML ----------- #
+# Fetch yaml-cpp; disable tests and tools, which are unnecessary and can throw warnings
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(YAML_CPP_BUILD_TESTS OFF)
+set(YAML_CPP_BUILD_TOOLS OFF)
 FetchContent_Declare(
     yaml-cpp
     GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
@@ -33,6 +45,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+# Disable warnings for yaml-cpp
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(yaml-cpp PRIVATE -w -Wno-unused-parameter)
+elseif(MSVC)
+    target_compile_options(yaml-cpp PRIVATE /W0 /wd4100)
+endif()
 
 # ----------- Making the executables ----------- #
 # ZED2 sensor
@@ -41,11 +59,13 @@ target_include_directories(Zed2SensorsInterface INTERFACE
     ${CUDA_INCLUDE_DIRS}
     ${ZED_INCLUDE_DIRS}
 )
+
 target_link_libraries(Zed2SensorsInterface INTERFACE
-    yaml-cpp
     Eigen3::Eigen
     ${ZED_LIBS}
-    Obelisk::Utils)
+    Obelisk::Utils
+    yaml-cpp
+    ZedNoWarnings)
 
 ament_target_dependencies(Zed2SensorsInterface
     INTERFACE
