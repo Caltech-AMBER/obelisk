@@ -9,7 +9,7 @@ import numpy as np
 import obelisk_sensor_msgs.msg as osm
 import rclpy
 from ament_index_python.packages import get_package_share_directory
-from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step  # type: ignore
+from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step, mju_copy  # type: ignore
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
@@ -25,6 +25,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         """Initialize the mujoco simulator."""
         super().__init__(node_name)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
+        self.declare_parameter("ic_keyframe", "ic")
 
     def _get_msg_type_from_string(self, msg_type_str: str) -> Type[ObeliskSensorMsg]:
         """Get the message type from a string.
@@ -421,6 +422,18 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
     def run_simulator(self) -> None:
         """Run the mujoco simulator."""
+        # Set the initial condition based on a keyframe
+        self.get_logger().info(f"Found {self.mj_model.nkey} Mujoco keyframes.")
+        for i in range(self.mj_model.nkey):
+            potential_keyframe = self.mj_model.key(i).name
+            if potential_keyframe == self.get_parameter("ic_keyframe").get_parameter_value().string_value:
+                self.get_logger().info(f"Setting initial condition to keyframe: {potential_keyframe}")
+                mju_copy(self.mj_data.qpos, self.mj_model.key_qpos[i * self.mj_model.nq : (i + 1) * self.mj_model.nq])
+                mju_copy(self.mj_data.qvel, self.mj_model.key_qvel[i * self.mj_model.nv : (i + 1) * self.mj_model.nv])
+                self.mj_data.time = self.mj_model.key_time[i]
+
+                mju_copy(self.mj_data.ctrl, self.mj_model.key_ctrl[i * self.mj_model.nu : (i + 1) * self.mj_model.nu])
+
         with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
             while viewer.is_running() and self.is_sim_running.value:
                 # simulate at realtime rate

@@ -50,4 +50,9 @@
         <framepos name="tip_pos_sensor" objtype="site" objname="tip"/>
         <framequat name="tip_orientation_sensor" objtype="site" objname="tip"/>
     </sensor>
+
+    <keyframe>
+        <key name="other" qpos="-1" ctrl="-1" time="1"/>
+        <key name="ic" qpos="1" ctrl="1" time="3" />
+    </keyframe>
 </mujoco>
