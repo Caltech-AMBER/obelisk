@@ -4,7 +4,7 @@ from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
 from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
-import obelisk_py.zoo.robot.hardware.leap_hand.dxl_motor_helper as dxl
+import obelisk_py.zoo.hardware.robots.leap.dxl_motor_helper as dxl
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 from obelisk_py.core.robot import ObeliskRobot
 

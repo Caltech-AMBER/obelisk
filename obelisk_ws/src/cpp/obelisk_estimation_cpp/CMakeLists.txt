@@ -18,8 +18,9 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-add_executable(jointencoders_passthrough_estimator src/jointencoders_passthrough_estimator.cpp)
-target_link_libraries(jointencoders_passthrough_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+# JointEncodersPassthroughEstimator
+add_executable(JointEncodersPassthroughEstimator src/jointencoders_passthrough_estimator.cpp)
+target_link_libraries(JointEncodersPassthroughEstimator PUBLIC Obelisk::Core Obelisk::Zoo)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -29,7 +30,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-  jointencoders_passthrough_estimator
+  JointEncodersPassthroughEstimator
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
