@@ -313,22 +313,21 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         }
 
         // Check that all cameras have the same resolution, fps, and depth setting
-        std::set<std::string> resolutions, fpss, depths;
-        for (const auto& cam : cam_param_dicts_) {
-            resolutions.insert(cam.second.at("resolution"));
-            fpss.insert(cam.second.at("fps"));
-            depths.insert(cam.second.at("depth"));
-        }
+        auto check_uniformity = [this](const std::map<int, std::map<std::string, std::string>>& cam_param_dicts,
+                                       const std::string& key, const std::string& error_message) {
+            std::set<std::string> values;
+            for (const auto& cam : cam_param_dicts) {
+                values.insert(cam.second.at(key));
+            }
+            if (values.size() > 1) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), error_message);
+                throw std::runtime_error(error_message);
+            }
+        };
 
-        if (resolutions.size() > 1) {
-            throw std::runtime_error("All cameras must have the same resolution!");
-        }
-        if (fpss.size() > 1) {
-            throw std::runtime_error("All cameras must have the same fps!");
-        }
-        if (depths.size() > 1) {
-            throw std::runtime_error("All cameras must have the same depth setting!");
-        }
+        check_uniformity(cam_param_dicts_, "resolution", "All cameras must have the same resolution!");
+        check_uniformity(cam_param_dicts_, "fps", "All cameras must have the same fps!");
+        check_uniformity(cam_param_dicts_, "depth", "All cameras must have the same depth setting!");
 
         RCLCPP_INFO(this->get_logger(), "Camera parameters set successfully");
     }
