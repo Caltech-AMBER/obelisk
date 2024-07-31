@@ -416,8 +416,5 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         // Publish the message
         msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
         this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
-
-        // [DEBUG]
-        RCLCPP_ERROR(this->get_logger(), "Published image message");
     }
 };
