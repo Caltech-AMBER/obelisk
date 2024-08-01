@@ -19,6 +19,7 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
+# obelisk_mujoco_robot
 add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
 target_link_libraries(obelisk_mujoco_robot PUBLIC Obelisk::Core)
 

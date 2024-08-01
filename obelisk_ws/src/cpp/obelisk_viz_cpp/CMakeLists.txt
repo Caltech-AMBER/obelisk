@@ -18,6 +18,7 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Viz
 FetchContent_MakeAvailable(Obelisk)
 
+# default_robot_viz
 add_executable(default_robot_viz src/default_robot_viz.cpp)
 target_link_libraries(default_robot_viz PUBLIC Obelisk::Core Obelisk::Viz)
 

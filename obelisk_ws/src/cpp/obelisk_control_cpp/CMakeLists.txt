@@ -18,6 +18,7 @@ FetchContent_Declare(
 # Lets us Get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
+# example_position_setpoint_controller
 add_executable(example_position_setpoint_controller src/example_position_setpoint_controller.cpp)
 target_link_libraries(example_position_setpoint_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 

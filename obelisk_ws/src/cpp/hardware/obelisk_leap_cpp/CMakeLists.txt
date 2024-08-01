@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
 # Get the Obelisk library
+set(OBELISK_BUILD_LEAP ON)
 include(FetchContent)
 FetchContent_Declare(
   Obelisk
@@ -19,8 +20,6 @@ FetchContent_Declare(
 
 # Lets us get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
-
-include_directories("${dynamixel_sdk_INCLUDE_DIRS}/dynamixel_sdk")
 
 # obelisk_leap_robot
 add_executable(obelisk_leap_robot src/obelisk_leap_robot.cpp)

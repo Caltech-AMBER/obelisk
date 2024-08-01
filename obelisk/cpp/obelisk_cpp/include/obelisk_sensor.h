@@ -22,14 +22,14 @@ namespace obelisk {
          * @param prev_state the previous state of the system
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_configure(const rclcpp_lifecycle::State& prev_state) final {
+        on_configure(const rclcpp_lifecycle::State& prev_state) {
             ObeliskNode::on_configure(prev_state);
 
             has_sensor_pub_ = false;
 
             // TODO (@zolkin): find a better way to do this
             using internal::sensor_message_names;
-            for (const auto [key, reg_pub] : registered_publishers_) {
+            for (const auto& [key, reg_pub] : registered_publishers_) {
                 const std::string* name_ptr =
                     std::find(sensor_message_names.begin(), sensor_message_names.end(), reg_pub.msg_type);
                 if (name_ptr != sensor_message_names.end()) {
@@ -50,7 +50,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) final {
+        on_activate(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_activate(prev_state);
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -61,7 +61,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) final {
+        on_deactivate(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_deactivate(prev_state);
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -72,7 +72,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) final {
+        on_cleanup(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_cleanup(prev_state);
 
             has_sensor_pub_ = false;
@@ -86,7 +86,7 @@ namespace obelisk {
          * @param prev_state the state of the ros node.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) final {
+        on_shutdown(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskNode::on_shutdown(prev_state);
 
             has_sensor_pub_ = false;

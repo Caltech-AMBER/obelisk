@@ -38,6 +38,9 @@ obelisk_py = { path="./obelisk/python", editable=true }
 [feature.cuda121]
 system-requirements = {cuda="12.1.1"}
 
+[feature.cuda121.activation]
+scripts = ["scripts/add_cuda_cmake_prefix_path.sh"]
+
 [feature.cuda121.dependencies]
 cuda = "12.1.1"
 
@@ -113,6 +116,9 @@ typeguard = ">=4.3.0"
 
 
 # leap hand
+[feature.leap.activation]
+env = { OBELISK_BUILD_LEAP="true" }
+
 [feature.leap.dependencies]
 ros-humble-dynamixel-sdk = ">=3.7"
 
@@ -122,7 +128,7 @@ dynamixel-sdk = ">=3.7"
 
 # zed cameras
 [feature.zed.activation]
-env = { PIXI_ZED="true" }
+env = { PIXI_ZED="true", OBELISK_BUILD_ZED="true" }
 
 [feature.zed.dependencies]
 cython = "*"
@@ -209,5 +215,7 @@ cpp-build-debug = { cmd = ["cmake", "--build", "obelisk/cpp/build", "-DCMAKE_BUI
 all-tests = { cmd = ["pytest"], depends-on = ["cpp-ctest"] }
 
 # CI
+# excluded:
+#   * zed
 messages-build-ci = { cmd="colcon build --symlink-install --packages-select obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs --parallel-workers $(nproc)", cwd="obelisk_ws" }
-ros-build-ci = { cmd="colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs", cwd="obelisk_ws", depends-on=["messages-build-ci"] }
+ros-build-ci = { cmd="colcon build --symlink-install --parallel-workers $(nproc) --packages-skip obelisk_control_msgs obelisk_estimator_msgs obelisk_sensor_msgs obelisk_std_msgs obelisk_zed_cpp", cwd="obelisk_ws", depends-on=["messages-build-ci"] }

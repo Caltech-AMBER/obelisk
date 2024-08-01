@@ -26,7 +26,7 @@ FetchContent_Declare(
   URL https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-${COMP_ARCH}.tar.gz
 )
 
-FetchContent_Populate(mujoco)
+FetchContent_MakeAvailable(mujoco)
 
 # ------- Setup the Mujoco library ------- #
 message(STATUS "mujoco source dir: ${mujoco_SOURCE_DIR}")

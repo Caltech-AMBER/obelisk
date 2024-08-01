@@ -147,7 +147,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         "robot",
         global_state_node,
     )
-    if "sensors" in obelisk_config:
+    if "sensing" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["sensing"],
             "sensing",

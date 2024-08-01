@@ -1,0 +1,108 @@
+config: dummy
+onboard:
+  control:
+    - pkg: obelisk_control_cpp
+      executable: example_position_setpoint_controller
+      # callback_groups:
+      params:
+        test_param: value_configured_in_yaml
+      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/dummy/ctrl
+          msg_type: PositionSetpoint
+          key: "asdf"
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/dummy/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_estimation_cpp
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/dummy/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          # key: sub1
+          topic: /obelisk/dummy/joint_encoders
+          msg_type: ObkJointEncoders
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  sensing:
+    - pkg: obelisk_zed_cpp
+      executable: zed2_sensors
+      params:
+        params_path_pkg: obelisk_ros
+        pub_period: 0.01
+      params_path: config/dummy_zed_params.yaml
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_img_setting
+          topic: /obelisk/dummy/zed2
+          msg_type: ObkImage
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+  robot:
+    # `is_simulated` is critical for parsing correct package in the obelisk launch file
+    - is_simulated: True
+      pkg: obelisk_sim_cpp
+      executable: obelisk_mujoco_robot
+      # callback_groups:
+      # publishers:
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          # key: sub1
+          topic: /obelisk/dummy/ctrl
+          msg_type: PositionSetpoint
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      sim:
+        - ros_parameter: mujoco_setting
+          n_u: 1
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: dummy_bot
+          model_xml_path: dummy.xml
+          sensor_settings:
+          - topic: /obelisk/dummy/joint_encoders
+            dt: 0.001
+            msg_type: ObkJointEncoders
+            sensor_names:
+              joint_pos: jointpos
+              joint_vel: jointvel
+          - topic: /obelisk/dummy/imu
+            dt: 0.002
+            msg_type: ObkImu
+            sensor_names:
+              tip_acc_sensor: accelerometer
+              tip_gyro_sensor: gyro
+              tip_frame_sensor: framequat
+          - topic: /obelisk/dummy/framepose
+            dt: 0.002
+            msg_type: ObkFramePose
+            sensor_names:
+              tip_pos_sensor: framepos
+              tip_orientation_sensor: framequat
