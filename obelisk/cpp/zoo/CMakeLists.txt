@@ -25,7 +25,7 @@ target_include_directories(Zoo INTERFACE include)
 
 # conditionally add leap subdirectory if OBELISK_BUILD_LEAP is set
 message(STATUS "OBELISK_BUILD_LEAP: ${OBELISK_BUILD_LEAP}")
-if(DEFINED OBELISK_BUILD_LEAP OR DEFINED ENV{OBELISK_BUILD_LEAP})
+if((DEFINED OBELISK_BUILD_LEAP) OR (DEFINED ENV{OBELISK_BUILD_LEAP}))
   message(STATUS "Configuring Leap Hand Interface")
   add_subdirectory(hardware/robots/leap)
   target_include_directories(Zoo INTERFACE hardware/robots/leap)
@@ -35,7 +35,7 @@ endif()
 
 # conditionally add zed subdirectory if OBELISK_BUILD_ZED is set
 message(STATUS "OBELISK_BUILD_ZED: ${OBELISK_BUILD_ZED}")
-if(DEFINED OBELISK_BUILD_ZED OR DEFINED ENV{OBELISK_BUILD_ZED})
+if((DEFINED OBELISK_BUILD_ZED) OR (DEFINED ENV{OBELISK_BUILD_ZED}))
   message(STATUS "Configuring Zed2 Sensors")
   add_subdirectory(hardware/sensing/zed)
   target_include_directories(Zoo INTERFACE hardware/sensing/zed)
