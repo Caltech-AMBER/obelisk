@@ -38,6 +38,10 @@ fi
 USE_CMAKE_ARGS=false
 CMAKE_ARGS=""
 if [ "$zed" = true ]; then
+    # [NOTE] these arguments will prevent the following error during colcon build:
+    #    /usr/bin/ld: warning: libcuda.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
+    #    /usr/bin/ld: warning: libnvcuvid.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
+    #    /usr/bin/ld: warning: libnvidia-encode.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
     CMAKE_ARGS+=" -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs"
     CMAKE_ARGS+=" -DCMAKE_CXX_FLAGS=\"-Wl,--allow-shlib-undefined\""
     CMAKE_ARGS+=" --no-warn-unused-cli"
