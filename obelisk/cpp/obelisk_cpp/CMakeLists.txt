@@ -18,7 +18,7 @@ find_package(obelisk_std_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 include(FetchContent)
-set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
+set(MUJOCO_VERSION "3.2.0" CACHE STRING "mujoco version")
 set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
 
 FetchContent_Declare(
