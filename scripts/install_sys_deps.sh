@@ -173,7 +173,6 @@ if [ "$zed" = true ]; then
             libegl1 \
             libopengl0 \
             lsb-release \
-            pciutils \
             udev \
             wget \
             zstd
@@ -185,7 +184,7 @@ if [ "$zed" = true ]; then
         sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
         wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
         sudo chmod +x ubuntu22  # make installer executable
-        ./ubuntu22 -- silent skip_od_module skip_hub skip_tools  # run installer
+        ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
         rm ubuntu22  # remove installer
