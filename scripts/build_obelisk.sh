@@ -34,6 +34,15 @@ if [ "$zed" = false ]; then
     SKIP_PKGS+=" obelisk_zed_cpp"
 fi
 
+# configuring cmake args
+USE_CMAKE_ARGS=false
+CMAKE_ARGS=""
+if [ "$zed" = true ]; then
+    CMAKE_ARGS+=" -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs"
+    CMAKE_ARGS+=" -DCMAKE_CXX_FLAGS=\"-Wl,--allow-shlib-undefined\""
+    CMAKE_ARGS+=" --no-warn-unused-cli"
+fi
+
 # building Obelisk packages
 OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
 
@@ -43,11 +52,13 @@ cd $OBELISK_ROOT/obelisk_ws
 colcon build --symlink-install --parallel-workers $(nproc) \
     --packages-select $MESSAGE_PKGS
 
-# for debugging, add `--event-handlers console_direct+` to the colcon build command
+# [NOTE] for debugging, add `--event-handlers console_direct+` to the colcon build command before --cmake-args
 echo -e "\033[1;32mBuilding remainder of Obelisk ROS packages...\033[0m"
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 colcon build --symlink-install --parallel-workers $(nproc) \
-    --packages-skip $MESSAGE_PKGS $SKIP_PKGS
+    --packages-skip $MESSAGE_PKGS $SKIP_PKGS \
+    ${CMAKE_ARGS:+--cmake-args $CMAKE_ARGS}
+
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 cd $curr_dir
 
