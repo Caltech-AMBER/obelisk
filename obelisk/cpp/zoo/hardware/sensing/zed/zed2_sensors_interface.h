@@ -76,9 +76,9 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         obelisk::ObeliskSensor::on_configure(prev_state);
 
         // Initialize all cameras specified in the configuration yaml
+        int cam_index = 0;
         for (const auto& cam_param : cam_param_dicts_) {
-            int cam_index              = cam_param.first;
-            const auto& cam_param_dict = cam_param.second;
+            const auto& cam_param_dict = cam_param;
 
             // Setting up camera parameters
             sl::InitParameters init_params;
@@ -109,8 +109,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             }
 
             // Open camera
-            cams_[cam_index]   = sl::Camera();
-            sl::ERROR_CODE err = cams_[cam_index].open(init_params);
+            cams_[cam_index]   = std::make_unique<sl::Camera>();
+            sl::ERROR_CODE err = cams_[cam_index]->open(init_params);
             if (err != sl::ERROR_CODE::SUCCESS) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to open camera with serial number %s: %s",
                              cam_param_dict.at("serial_number").c_str(), sl::toString(err).c_str());
@@ -126,19 +126,22 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             sl::RuntimeParameters rtp;
             rtp.enable_depth          = depth_;
             cam_rt_params_[cam_index] = rtp;
+
+            cam_index++;
         }
 
         // Create timers for each camera
-        cam_cbg_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+        cam_cbg_  = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+        cam_index = 0;
         for (const auto& cam_param : cam_param_dicts_) {
-            int cam_index = cam_param.first;
-
             auto timer_callback = [this, cam_index]() { this->camera_callback(cam_index); };
 
             double timer_period = 1.0 / static_cast<double>(fps_);
             auto timer = this->create_wall_timer(std::chrono::duration<double>(timer_period), timer_callback, cam_cbg_);
             std::string timer_key = "timer_" + std::to_string(cam_index);
             timers_[timer_key]    = timer;
+
+            cam_index++;
         }
 
         // Create a timer for the publisher
@@ -165,7 +168,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     on_shutdown(const rclcpp_lifecycle::State& prev_state) {
         obelisk::ObeliskSensor::on_shutdown(prev_state);
         for (auto& cam : cams_) {
-            cam.second.close();
+            cam->close();
         }
         return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
     }
@@ -178,12 +181,12 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     // Callback group shared by all camera callbacks
     rclcpp::CallbackGroup::SharedPtr cam_cbg_;
 
-    // Camera parameter maps
-    std::map<int, std::map<std::string, std::string>> cam_param_dicts_;
-    std::map<int, sl::Camera> cams_;
-    std::map<int, sl::Mat> cam_images_;
-    std::map<int, sl::RuntimeParameters> cam_rt_params_;
-    std::map<int, Eigen::Tensor<uint8_t, 3>> frames_;
+    // Camera-related vectors
+    std::vector<std::map<std::string, std::string>> cam_param_dicts_;
+    std::vector<std::unique_ptr<sl::Camera>> cams_;
+    std::vector<sl::Mat> cam_images_;
+    std::vector<sl::RuntimeParameters> cam_rt_params_;
+    std::vector<Eigen::Tensor<uint8_t, 3>> frames_;
 
     // Shared camera parameters
     sl::RESOLUTION resolution_;
@@ -220,10 +223,16 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             throw std::runtime_error(err_msg);
         }
 
+        // resize the vectors based on the size of config
+        cam_param_dicts_.resize(config.size());
+        cams_.resize(config.size());
+        cam_images_.resize(config.size());
+        cam_rt_params_.resize(config.size());
+        frames_.resize(config.size());
+
         // Parse the camera parameters
-        for (const auto& cam : config) {
-            int cam_index              = cam.first.as<int>();
-            const auto& cam_param_dict = cam.second;
+        int cam_index = 0;
+        for (const auto& cam_param_dict : config) {
 
             // Check if cam_param_dict is a map
             if (!cam_param_dict.IsMap()) {
@@ -317,14 +326,16 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
                 throw std::runtime_error(err_msg);
             }
             cam_param_dicts_[cam_index]["side"] = side;
+
+            cam_index++;
         }
 
         // Check that all cameras have the same resolution, fps, and depth setting
-        auto check_uniformity = [this](const std::map<int, std::map<std::string, std::string>>& cam_param_dicts,
+        auto check_uniformity = [this](const std::vector<std::map<std::string, std::string>>& cam_param_dicts,
                                        const std::string& key, const std::string& error_message) {
             std::set<std::string> values;
-            for (const auto& cam : cam_param_dicts) {
-                values.insert(cam.second.at(key));
+            for (const auto& cam_param_dict : cam_param_dicts) {
+                values.insert(cam_param_dict.at(key));
             }
             if (values.size() > 1) {
                 RCLCPP_ERROR_STREAM(this->get_logger(), error_message);
@@ -345,7 +356,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
      * @param cam_index Index of the camera.
      */
     void camera_callback(int cam_index) {
-        sl::Camera& cam             = cams_[cam_index];
+        sl::Camera& cam             = *cams_[cam_index];
         sl::RuntimeParameters& rtps = cam_rt_params_[cam_index];
         sl::Mat& cam_image          = cam_images_[cam_index];
         std::string side            = cam_param_dicts_[cam_index]["side"];
@@ -398,6 +409,24 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
      * where the number of channels is 1 for depth images and 3 for RGB images.
      */
     void publish_images() {
+        // make a local version of frames_ to avoid locking the mutex for too long
+        std::vector<Eigen::Tensor<uint8_t, 3>> frames_local;
+        {
+            std::lock_guard<std::mutex> lock(lock_);
+            frames_local = frames_;
+        }
+
+        // no camera callbacks have completed, so frames_ is not populated
+        if (frames_local.size() == 0) {
+            return;
+        } else {
+            for (const auto& frame : frames_local) {
+                if (frame.size() != height_ * width_ * (depth_ ? 1 : 3)) {
+                    return;
+                }
+            }
+        }
+
         auto msg = std::make_unique<obelisk_sensor_msgs::msg::ObkImage>();
 
         // Calculate dimensions
@@ -405,17 +434,10 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         int channels    = depth_ ? 1 : 3;
         Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
 
-        // make a local version of frames_ to avoid locking the mutex for too long
-        std::map<int, Eigen::Tensor<uint8_t, 3>> frames_local;
-        {
-            std::lock_guard<std::mutex> lock(lock_);
-            frames_local = frames_;
-        }
-
         // Read the frames_ map and populate the combined tensor
         int camera_index = 0;
         for (const auto& frame : frames_local) {
-            combined_tensor.chip(camera_index, 0) = frame.second;
+            combined_tensor.chip(camera_index, 0) = frame;
             camera_index++;
         }
 
