@@ -1,6 +1,7 @@
 import math
 
 from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
+from obelisk_control_msgs.msg import PositionSetpoint
 from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
@@ -17,6 +18,13 @@ class ObeliskLeapRobot(ObeliskRobot):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk Leap Hand robot."""
         super().__init__(node_name)
+
+        # exposing gains as ros params
+        self.declare_parameter("KP", 150)
+        self.declare_parameter("KI", 0)
+        self.declare_parameter("KD", 50)
+
+        # timer/pub pair for the leap hand state
         self.register_obk_publisher(
             "pub_sensor_setting",
             key="pub_sensor",
@@ -27,9 +35,26 @@ class ObeliskLeapRobot(ObeliskRobot):
             self.get_state,
             key="timer_sensor",
         )
+
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Configure the LEAP Hand."""
+        super().on_configure(state)
+
+        # read gains from ros params
+        kp = self.get_parameter("KP").get_parameter_value().integer_value
+        ki = self.get_parameter("KI").get_parameter_value().integer_value
+        kd = self.get_parameter("KD").get_parameter_value().integer_value
+
+        # set up motors
         dxl.setup(self.N_MOTORS)
-        dxl.sync_pid(range(self.N_MOTORS))
-        self.yhat = [0] * self.N_MOTORS
+        dxl.sync_pid(range(self.N_MOTORS), kp=kp, ki=ki, kd=kd)
+
+        # home the hand
+        msg = PositionSetpoint()
+        msg.q_des = [0.5, -0.75, 0.75, 0.25, 0.5, 0.0, 0.75, 0.25, 0.5, 0.75, 0.75, 0.25, 0.65, 0.9, 0.75, 0.6]
+        self.apply_control(msg)
+
+        return TransitionCallbackReturn.SUCCESS
 
     @staticmethod
     def _radians_to_dxl_pos(radians: float) -> int:

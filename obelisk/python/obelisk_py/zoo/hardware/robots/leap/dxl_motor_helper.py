@@ -77,7 +77,7 @@ def toggle_motor_torque(id: int, mode: int) -> None:
     print(f"Motor {id} enabled")
 
 
-def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> None:
+def sync_pid(motors: Iterable, kp: int = 150, ki: int = 0, kd: int = 50) -> None:
     """Write PID values to multiple motors.
 
     Args:

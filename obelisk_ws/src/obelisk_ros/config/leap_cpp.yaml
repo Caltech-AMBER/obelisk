@@ -66,6 +66,10 @@ onboard:
     #   executable: obelisk_leap_robot
     # ==================
       # callback_groups:
+      params:
+        KP: 150.0
+        KI: 0.0
+        KD: 50.0
       publishers:
         - ros_parameter: pub_sensor_setting
           topic: /obelisk/leap/joint_encoders
