@@ -251,7 +251,7 @@ function obk-launch {
     local config_file_path=""
     local device_name=""
     local auto_start="True"
-    local bag="True"
+    local bag="False"
 
     while [[ \$# -gt 0 ]]; do
         key="\$1"
@@ -304,7 +304,7 @@ Builds Obelisk nodes after you have activated a pixi environment.\n\n\
 obk-launch:\n\
 Launches the obelisk_bringup.launch.py with specified arguments.\n\
 Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False> bag=<True|False>\n\
-Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True bag=True\n\n\
+Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True bag=False\n\n\
 State Transitions:\n\
 obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
 obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\
