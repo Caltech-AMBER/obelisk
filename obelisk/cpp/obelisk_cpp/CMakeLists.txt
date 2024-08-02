@@ -21,7 +21,7 @@ find_package(obelisk_std_msgs REQUIRED)
 message(STATUS "OBELISK_MUJOCO_SOURCE_DIR: $ENV{OBELISK_MUJOCO_SOURCE_DIR}")
 
 # Check if the environment variable is defined
-if (NOT DEFINED ENV{OBELISK_MUJOCO_SOURCE_DIR})
+if ((NOT DEFINED ENV{OBELISK_MUJOCO_SOURCE_DIR}) OR ("$ENV{OBELISK_MUJOCO_SOURCE_DIR}" STREQUAL ""))
   message(STATUS "OBELISK_MUJOCO_SOURCE_DIR not defined, fetching mujoco")
   include(FetchContent)
   set(MUJOCO_VERSION "3.2.0" CACHE STRING "mujoco version")
