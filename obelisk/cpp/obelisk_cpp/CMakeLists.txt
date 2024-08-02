@@ -17,9 +17,11 @@ find_package(obelisk_estimator_msgs REQUIRED)
 find_package(obelisk_std_msgs REQUIRED)
 
 # ------- Mujoco ------- #
-# print a message indicating what the value of OBELISK_MUJOCO_SOURCE_DIR is
-message(STATUS "OBELISK_MUJOCO_SOURCE_DIR: ${OBELISK_MUJOCO_SOURCE_DIR}")
-if (NOT DEFINED OBELISK_MUJOCO_SOURCE_DIR)
+# Print a message indicating what the value of OBELISK_MUJOCO_SOURCE_DIR is
+message(STATUS "OBELISK_MUJOCO_SOURCE_DIR: $ENV{OBELISK_MUJOCO_SOURCE_DIR}")
+
+# Check if the environment variable is defined
+if (NOT DEFINED ENV{OBELISK_MUJOCO_SOURCE_DIR})
   message(STATUS "OBELISK_MUJOCO_SOURCE_DIR not defined, fetching mujoco")
   include(FetchContent)
   set(MUJOCO_VERSION "3.2.0" CACHE STRING "mujoco version")
@@ -32,7 +34,7 @@ if (NOT DEFINED OBELISK_MUJOCO_SOURCE_DIR)
 
   FetchContent_MakeAvailable(mujoco)
 else()
-  message(STATUS "OBELISK_MUJOCO_SOURCE_DIR defined, setting mujoco_SOURCE_DIR=${OBELISK_MUJOCO_SOURCE_DIR}")
+  message(STATUS "OBELISK_MUJOCO_SOURCE_DIR defined, setting mujoco_SOURCE_DIR=$ENV{OBELISK_MUJOCO_SOURCE_DIR}")
   set(mujoco_SOURCE_DIR $ENV{OBELISK_MUJOCO_SOURCE_DIR})
 endif()
 
