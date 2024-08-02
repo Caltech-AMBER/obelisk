@@ -12,8 +12,8 @@ docker_group_zed=false
 
 docker_mj_source_dir=""
 
-for arg in "$@"; do
-    case $arg in
+while [ $# -gt 0 ]; do
+    case $1 in
         # docker installations
         --docker-install)
             docker_install=true
@@ -57,7 +57,7 @@ for arg in "$@"; do
                 shift 2
             else
                 echo "Error: --docker-mj-source-dir requires a directory path as an argument."
-                return 1
+                exit 1
             fi
             ;;
 
@@ -81,12 +81,12 @@ Options:
   --help                             Display this help message and exit
 "
             shift
-            return
+            exit
             ;;
         *)
             # Unknown option
             echo "Unknown option: $arg. Run 'source setup.sh --help' for more information."
-            return
+            exit
             ;;
     esac
 done

@@ -20,8 +20,8 @@ obk_aliases=false
 # Variable for mj-source-dir
 mj_source_dir=""
 
-for arg in "$@"; do
-    case $arg in
+while [ $# -gt 0 ]; do
+    case "$1" in
         --recommended)
             cyclone_perf=true
             pixi=true
@@ -83,14 +83,14 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
 
-        # mujoco source directory
+        # mj-source-dir
         --mj-source-dir)
             if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
                 mj_source_dir="$2"
                 shift 2
             else
                 echo "Error: --mj-source-dir requires a directory path as an argument."
-                return 1
+                exit 1
             fi
             ;;
 
@@ -118,17 +118,17 @@ Options:
   --pixi                       Install pixi
   --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
 
-  --mj-source-dir <path>       Specify the source directory for pre-built MuJoCo binaries
+  --mj-source-dir <path>       Specify the source directory for MuJoCo
 
   --help                       Display this help message and exit
 "
             shift
-            return
+            exit
             ;;
         *)
             # Unknown option
-            echo "Unknown option: $arg. Run 'source setup.sh --help' for more information."
-            return
+            echo "Unknown option: $1. Run 'source setup.sh --help' for more information."
+            exit 1
             ;;
     esac
 done

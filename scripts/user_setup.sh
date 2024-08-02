@@ -9,8 +9,8 @@ zed=false
 
 mj_source_dir=""
 
-for arg in "$@"; do
-    case $arg in
+while [ $# -gt 0 ]; do
+    case $1 in
         # general user setup
         --pixi)
             pixi=true
@@ -38,7 +38,7 @@ for arg in "$@"; do
                 shift 2
             else
                 echo "Error: --mj-source-dir requires a directory path as an argument."
-                return 1
+                exit 1
             fi
             ;;
 
