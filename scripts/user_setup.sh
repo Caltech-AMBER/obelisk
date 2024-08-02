@@ -7,6 +7,8 @@ obk_aliases=false
 leap=false
 zed=false
 
+mj_source_dir=""
+
 for arg in "$@"; do
     case $arg in
         # general user setup
@@ -28,6 +30,18 @@ for arg in "$@"; do
             zed=true
             shift  # Adds ZED ROS packages to colcon build command
             ;;
+
+        # mujoco source dir
+        --mj-source-dir)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                mj_source_dir="$2"
+                shift 2
+            else
+                echo "Error: --mj-source-dir requires a directory path as an argument."
+                return 1
+            fi
+            ;;
+
         *)
             # Unknown option
             echo "Unknown option: $arg"
@@ -90,6 +104,7 @@ export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
+export OBELISK_MUJOCO_SOURCE_DIR=$mj_source_dir
 '
 
     # Check if the --permanent flag is passed

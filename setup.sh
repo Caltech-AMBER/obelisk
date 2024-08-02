@@ -17,6 +17,9 @@ source_ros=false
 pixi=false
 obk_aliases=false
 
+# Variable for mj-source-dir
+mj_source_dir=""
+
 for arg in "$@"; do
     case $arg in
         --recommended)
@@ -80,6 +83,17 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
 
+        # mujoco source directory
+        --mj-source-dir)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                mj_source_dir="$2"
+                shift 2
+            else
+                echo "Error: --mj-source-dir requires a directory path as an argument."
+                return 1
+            fi
+            ;;
+
         # help
         --help)
             echo "Usage: source setup.sh [OPTIONS]
@@ -103,6 +117,8 @@ Options:
 
   --pixi                       Install pixi
   --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
+
+  --mj-source-dir <path>       Specify the source directory for pre-built MuJoCo binaries
 
   --help                       Display this help message and exit
 "
@@ -130,14 +146,16 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 fi
 
 # group configuration on host
@@ -162,4 +180,5 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
-    $([ "$obk_aliases" = true ] && echo "--obk-aliases")
+    $([ "$obk_aliases" = true ] && echo "--obk-aliases") \
+    $([ -n "$mj_source_dir" ] && echo "--mj-source-dir $mj_source_dir")
