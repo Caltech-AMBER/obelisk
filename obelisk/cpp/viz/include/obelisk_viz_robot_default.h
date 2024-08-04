@@ -5,24 +5,46 @@
 namespace obelisk::viz {
     template <typename EstimatorMessageT> class ObeliskVizRobotDefault : public ObeliskVizRobot<EstimatorMessageT> {
       public:
-        explicit ObeliskVizRobotDefault(const std::string& name) : ObeliskVizRobot<EstimatorMessageT>(name) {}
+        explicit ObeliskVizRobotDefault(const std::string& name) : ObeliskVizRobot<EstimatorMessageT>(name) {
+            this->declare_parameter("quat_order", "xyzw");
+        }
 
       protected:
-        void ParseEstimatedState(const EstimatorMessageT& msg) override {
-            /*
-             * Assuming the message has the following fields:
-             * base_link_name: name of the base link
-             * q_base: vector of (x, y, z, quat_x, quat_y, quat_z, quat_w), if length is zero then assume fixed base and
-             * set default value
-             * joint_names: names of all the joints
-             * q_joints: vector of joint positions
-             *
-             * The length of "joint_names" must match the length of q_joints
-             *
-             * TODO: may want to consider also having a stamp field so we can get the time the information was
-             * generated, not the time it was parsed for viz
-             */
+        /**
+         * @brief Configures the node.
+         *
+         * @param prev_state the state of the ros node.
+         * @return success if everything completes.
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_configure(const rclcpp_lifecycle::State& prev_state) override {
+            ObeliskVizRobot::on_configure(prev_state);
 
+            // get the quat order string
+            quat_order_ = this->get_parameter("quat_order").as_string();
+            if (quat_order != "xyzw" && quat_order != "wxyz") {
+                throw std::runtime_error("Invalid quat_order parameter! Must be either 'xyzw' or 'wxyz'");
+            }
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Parses the estimated state message and creates joint state and base link transform messages.
+         *
+         * Assuming the message has the following fields:
+         * base_link_name: name of the base link
+         * q_base: vector of (x, y, z, quat_x, quat_y, quat_z, quat_w), if length is zero then assume fixed base and
+         * set default value
+         * joint_names: names of all the joints
+         * q_joints: vector of joint positions
+         *
+         * The length of "joint_names" must match the length of q_joints
+         *
+         * TODO: may want to consider also having a stamp field so we can get the time the information was
+         * generated, not the time it was parsed for viz
+         */
+        void ParseEstimatedState(const EstimatorMessageT& msg) override {
             // ----------- Create the transform ----------- //
             this->base_tf_.header.stamp =
                 this->get_clock()->now(); // Gets the current time. Change to get the time from the message
@@ -45,7 +67,11 @@ namespace obelisk::viz {
                 this->base_tf_.transform.translation.y = msg.q_base.at(1);
                 this->base_tf_.transform.translation.z = msg.q_base.at(2);
 
-                tf2::Quaternion q(msg.q_base.at(3), msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6));
+                if (quat_order_ == "xyzw") {
+                    tf2::Quaternion q(msg.q_base.at(3), msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6));
+                } else {
+                    tf2::Quaternion q(msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6), msg.q_base.at(3));
+                }
 
                 q.normalize(); // normalize the quaternion
 
@@ -97,5 +123,6 @@ namespace obelisk::viz {
         }
 
       private:
+        std::string quat_order_;
     };
 } // namespace obelisk::viz
