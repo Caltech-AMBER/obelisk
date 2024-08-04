@@ -18,11 +18,11 @@ namespace obelisk::viz {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) override {
-            ObeliskVizRobot::on_configure(prev_state);
+            ObeliskVizRobot<EstimatorMessageT>::on_configure(prev_state);
 
             // get the quat order string
             quat_order_ = this->get_parameter("quat_order").as_string();
-            if (quat_order != "xyzw" && quat_order != "wxyz") {
+            if (quat_order_ != "xyzw" && quat_order_ != "wxyz") {
                 throw std::runtime_error("Invalid quat_order parameter! Must be either 'xyzw' or 'wxyz'");
             }
 
@@ -67,10 +67,11 @@ namespace obelisk::viz {
                 this->base_tf_.transform.translation.y = msg.q_base.at(1);
                 this->base_tf_.transform.translation.z = msg.q_base.at(2);
 
+                tf2::Quaternion q;
                 if (quat_order_ == "xyzw") {
-                    tf2::Quaternion q(msg.q_base.at(3), msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6));
+                    q = tf2::Quaternion(msg.q_base.at(3), msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6));
                 } else {
-                    tf2::Quaternion q(msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6), msg.q_base.at(3));
+                    q = tf2::Quaternion(msg.q_base.at(4), msg.q_base.at(5), msg.q_base.at(6), msg.q_base.at(3));
                 }
 
                 q.normalize(); // normalize the quaternion
