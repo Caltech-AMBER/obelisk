@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="leap_rh">
+
+  <!-- palm -->
+  <link name="palm">
+    <visual>
+      <origin xyz="-0.020095249652862544332 0.025757756134899473244 -0.034722403578460216134" rpy="0 -0 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/palm.obj"/>
+      </geometry>
+      <material name="palm_mtl">
+        <color rgba="0.60392156862745094426 0.14901960784313725283 0.14901960784313725283 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.020095249652862544332 0.025757756134899473244 -0.034722403578460216134" rpy="0 -0 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/palm.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.04148 -0.03625 -0.011348"/>
+      <mass value="0.237"/>
+      <inertia ixx="0.00036131" ixy="-1.1769e-05" ixz="-3.278e-07" iyy="0.00027072" iyz="-1.1582e-06" izz="0.00053497"/>
+    </inertial>
+  </link>
+
+  <!-- index finger -->
+
+  <joint name="if_mcp" type="revolute">
+    <origin xyz="-0.0070952496528625457958 0.023057756134899472233 -0.01872240357846021927" rpy="1.5707963267948950037 1.5707963267948945596 0" />
+    <parent link="palm" />
+    <child link="if_bs" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.314" upper = "2.23"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="if_bs">
+    <visual>
+      <origin xyz="0.0084069022611744960438 0.0077662438597169954416 0.014657354985032912051" rpy="1.6375789613220999807e-15 -1.0210473302491019535e-30 1.7177968783327987474e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+      <material name="base_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0084069022611744960438 0.0077662438597169954416 0.014657354985032912051" rpy="1.6375789613220999807e-15 -1.0210473302491019535e-30 1.7177968783327987474e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.022065 0.034366 0.015473"/>
+      <mass value="0.044"/>
+      <inertia ixx="1.2702e-05" ixy="3.843e-06" ixz="2.3639e-07" iyy="9.497e-06" iyz="1.9739e-08" izz="1.682e-05"/>
+    </inertial>
+  </link>
+
+  <joint name="if_rot" type="revolute">
+    <origin xyz="-0.012200000000000007713 0.038099999999999994982 0.014500000000000000736" rpy="-1.570796326794896558 -1.0065212660796336576e-15 1.5707963267948943376" />
+    <parent link="if_bs" />
+    <child link="if_px" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-1.047" upper = "1.047"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="if_px">
+    <visual>
+      <origin xyz="0.0096433630922713280131 0.00029999999999998951117 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+      <material name="proximal_mtl">
+        <color rgba="0.74901960784313725839 0.74901960784313725839 0.74901960784313725839 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0096433630922713280131 0.00029999999999998951117 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0079797 0.00022536 -0.011846"/>
+      <mass value="0.032"/>
+      <inertia ixx="2.9947e-06" ixy="1.283e-08" ixz="1.8513e-08" iyy="4.3277e-06" iyz="7.6573e-09" izz="4.811e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="if_pip" type="revolute">
+    <origin xyz="0.01499999999999996822 0.014299999999999904801 -0.012999999999999824196" rpy="1.5707963267948958919 -1.570796326794896336 0" />
+    <parent link="if_px" />
+    <child link="if_md" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.506" upper = "1.885"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="if_md">
+    <visual>
+      <origin xyz="0.021133352895225002849 -0.0084321191467048792201 0.0097850881620952408213" rpy="-3.141592653589793116 4.5075111242164408299e-32 4.4395481053923607589e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+      <material name="medial_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.021133352895225002849 -0.0084321191467048792201 0.0097850881620952408213" rpy="-3.141592653589793116 4.5075111242164408299e-32 4.4395481053923607589e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0055443 -0.030707 0.014322"/>
+      <mass value="0.037"/>
+      <inertia ixx="6.5713e-06" ixy="8.5554e-07" ixz="2.1427e-08" iyy="5.8366e-06" iyz="-3.6076e-08" izz="7.3985e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="if_dip" type="revolute">
+    <origin xyz="-4.0880582495572692636e-09 -0.036100004210367367397 0.00020000000000007858714" rpy="4.5935029425113685044e-17 -2.8730071914463794583e-16 4.4395481053923607589e-32" />
+    <parent link="if_md" />
+    <child link="if_ds" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.366" upper = "2.042"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="if_ds">
+    <visual>
+      <origin xyz="0.013286424108533503169 -0.0061142383865419869249 0.014499999999999497666" rpy="3.141592653589793116 1.1993117970061734707e-33 4.4395481053923607589e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+      <material name="distal_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.013286424108533503169 -0.0061142383865419869249 0.014499999999999497666" rpy="3.141592653589793116 1.1993117970061734707e-33 4.4395481053923607589e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0010544 -0.028781 0.014501"/>
+      <mass value="0.016"/>
+      <inertia ixx="3.3284e-06" ixy="-1.1403e-07" ixz="8.395e-11" iyy="1.5387e-06" iyz="8.6398e-11" izz="2.8283e-06"/>
+    </inertial>
+  </link>
+
+  <!-- middle finger -->
+
+  <joint name="mf_mcp" type="revolute">
+    <origin xyz="-0.0070952496528625388569 -0.022392243865100525113 -0.018722403578460229678" rpy="1.570796326794896558 1.570796326794896558 0" />
+    <parent link="palm" />
+    <child link="mf_bs" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.314" upper = "2.23"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="mf_bs">
+    <visual>
+      <origin xyz="0.0084069022611744960438 0.0077662438597169954416 0.014657354985032913786" rpy="1.6375789613220999807e-15 -1.0076465469034000467e-30 2.1209300131419907151e-61" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+      <material name="base_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0084069022611744960438 0.0077662438597169954416 0.014657354985032913786" rpy="1.6375789613220999807e-15 -1.0076465469034000467e-30 2.1209300131419907151e-61" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.022065 0.034366 0.015473"/>
+      <mass value="0.044"/>
+      <inertia ixx="1.2702e-05" ixy="3.843e-06" ixz="2.3639e-07" iyy="9.497e-06" iyz="1.9739e-08" izz="1.682e-05"/>
+    </inertial>
+  </link>
+
+  <joint name="mf_rot" type="revolute">
+    <origin xyz="-0.012200000000000019856 0.038099999999999981104 0.01450000000000000594" rpy="-1.570796326794896558 -1.0065212760057939085e-15 1.5707963267948943376" />
+    <parent link="mf_bs" />
+    <child link="mf_px" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-1.047" upper = "1.047"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="mf_px">
+    <visual>
+      <origin xyz="0.0096433630922713280131 0.00029999999999999471534 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+      <material name="proximal_mtl">
+        <color rgba="0.74901960784313725839 0.74901960784313725839 0.74901960784313725839 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0096433630922713280131 0.00029999999999999471534 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0079797 0.00022536 -0.011846"/>
+      <mass value="0.032"/>
+      <inertia ixx="2.9947e-06" ixy="1.283e-08" ixz="1.8513e-08" iyy="4.3277e-06" iyz="7.6573e-09" izz="4.811e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="mf_pip" type="revolute">
+    <origin xyz="0.014999999999999975159 0.014300000000000000211 -0.013000000000000018485" rpy="1.5707963267948958919 -1.570796326794896336 0" />
+    <parent link="mf_px" />
+    <child link="mf_md" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.506" upper = "1.885"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="mf_md">
+    <visual>
+      <origin xyz="0.021133352895225002849 -0.0084321191467048653423 0.0097850881620952373519" rpy="-3.141592653589793116 2.1146933785271955805e-32 1.4408183216511868558e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+      <material name="medial_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.021133352895225002849 -0.0084321191467048653423 0.0097850881620952373519" rpy="-3.141592653589793116 2.1146933785271955805e-32 1.4408183216511868558e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0055443 -0.030707 0.014322"/>
+      <mass value="0.037"/>
+      <inertia ixx="6.5713e-06" ixy="8.5554e-07" ixz="2.1427e-08" iyy="5.8366e-06" iyz="-3.6076e-08" izz="7.3985e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="mf_dip" type="revolute">
+    <origin xyz="1.0061396160665481148e-16 -0.036099999999999854428 0.00020000000000007858714" rpy="4.5935029425113654229e-17 -2.8730071914463794583e-16 1.4408183216511868558e-31" />
+    <parent link="mf_md" />
+    <child link="mf_ds" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.366" upper = "2.042"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="mf_ds">
+    <visual>
+      <origin xyz="0.01328642410853349623 -0.0061142383865420008027 0.014499999999999495931" rpy="3.141592653589793116 -4.3179597882835943107e-33 1.4408183216511868558e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+      <material name="distal_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.01328642410853349623 -0.0061142383865420008027 0.014499999999999495931" rpy="3.141592653589793116 -4.3179597882835943107e-33 1.4408183216511868558e-31" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0010544 -0.028781 0.014501"/>
+      <mass value="0.016"/>
+      <inertia ixx="3.3284e-06" ixy="-1.1403e-07" ixz="8.395e-11" iyy="1.5387e-06" iyz="8.6398e-11" izz="2.8283e-06"/>
+    </inertial>
+  </link>
+
+  <!-- ring finger -->
+
+  <joint name="rf_mcp" type="revolute">
+    <origin xyz="-0.0070952454426398371343 -0.067842243865100515521 -0.018722407666402932774" rpy="1.5707963267948950037 1.5707963267948945596 0" />
+    <parent link="palm" />
+    <child link="rf_bs" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.314" upper = "2.23"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="rf_bs">
+    <visual>
+      <origin xyz="0.0084069022611744995133 0.0077662438597169963089 0.014657354985032913786" rpy="1.6375789613220999807e-15 -1.0059504988632626953e-30 5.729641584552035421e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+      <material name="base_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0084069022611744995133 0.0077662438597169963089 0.014657354985032913786" rpy="1.6375789613220999807e-15 -1.0059504988632626953e-30 5.729641584552035421e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/base.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.022065 0.034366 0.015473"/>
+      <mass value="0.044"/>
+      <inertia ixx="1.2702e-05" ixy="3.843e-06" ixz="2.3639e-07" iyy="9.497e-06" iyz="1.9739e-08" izz="1.682e-05"/>
+    </inertial>
+  </link>
+
+  <joint name="rf_rot" type="revolute">
+    <origin xyz="-0.012200000000000004244 0.038100000000000001921 0.014499999999999999001" rpy="-1.570796326794896558 -1.0065212660796360242e-15 1.5707963267948943376" />
+    <parent link="rf_bs" />
+    <child link="rf_px" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-1.047" upper = "1.047"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="rf_px">
+    <visual>
+      <origin xyz="0.0096433630922713314826 0.00029999999999998083755 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+      <material name="proximal_mtl">
+        <color rgba="0.74901960784313725839 0.74901960784313725839 0.74901960784313725839 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0096433630922713314826 0.00029999999999998083755 0.00078403401041737645627" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0079797 0.00022536 -0.011846"/>
+      <mass value="0.032"/>
+      <inertia ixx="2.9947e-06" ixy="1.283e-08" ixz="1.8513e-08" iyy="4.3277e-06" iyz="7.6573e-09" izz="4.811e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="rf_pip" type="revolute">
+    <origin xyz="0.014999999999999971689 0.014299999999999951639 -0.012999999999999959505" rpy="1.5707963267948958919 -1.570796326794896336 0" />
+    <parent link="rf_px" />
+    <child link="rf_md" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.506" upper = "1.885"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="rf_md">
+    <visual>
+      <origin xyz="0.021133352895225006318 -0.0084321191467048653423 0.0097850881620952373519" rpy="-3.141592653589793116 -1.4095651113919093005e-33 1.5565411607615035382e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+      <material name="medial_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.021133352895225006318 -0.0084321191467048653423 0.0097850881620952373519" rpy="-3.141592653589793116 -1.4095651113919093005e-33 1.5565411607615035382e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/medial.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.0055443 -0.030707 0.014322"/>
+      <mass value="0.037"/>
+      <inertia ixx="6.5713e-06" ixy="8.5554e-07" ixz="2.1427e-08" iyy="5.8366e-06" iyz="-3.6076e-08" izz="7.3985e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="rf_dip" type="revolute">
+    <origin xyz="9.7144514654701197287e-17 -0.036099999999999868305 0.00020000000000007511769" rpy="4.5935029425113685044e-17 -2.8730071914463799514e-16 1.5565411607615035382e-32" />
+    <parent link="rf_md" />
+    <child link="rf_ds" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.366" upper = "2.042"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="rf_ds">
+    <visual>
+      <origin xyz="0.013286424108533501434 -0.0061142383865419869249 0.0144999999999994994" rpy="3.141592653589793116 8.6170716950575402125e-33 1.5565411607615035382e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+      <material name="distal_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.013286424108533501434 -0.0061142383865419869249 0.0144999999999994994" rpy="3.141592653589793116 8.6170716950575402125e-33 1.5565411607615035382e-32" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/distal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0010544 -0.028781 0.014501"/>
+      <mass value="0.016"/>
+      <inertia ixx="3.3284e-06" ixy="-1.1403e-07" ixz="8.395e-11" iyy="1.5387e-06" iyz="8.6398e-11" izz="2.8283e-06"/>
+    </inertial>
+  </link>
+
+  <!-- thumb -->
+  <joint name="th_cmc" type="revolute">
+    <origin xyz="-0.069395249652862533996 -0.0012422438651005258004 -0.021622403578460215601" rpy="-8.2381766464939424156e-17 1.5707963267948956698 0" />
+    <parent link="palm" />
+    <child link="th_mp" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.349" upper = "2.094"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="th_mp">
+    <visual>
+      <origin xyz="-0.0053566369077286714317 0.00029999999999999991951 0.00078403401041737819099" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+      <material name="proximal_mtl">
+        <color rgba="0.74901960784313725839 0.74901960784313725839 0.74901960784313725839 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.0053566369077286714317 0.00029999999999999991951 0.00078403401041737819099" rpy="-1.570796326794896558 -1.570796326794896336 0" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/proximal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0070203 0.00022536 -0.011846"/>
+      <mass value="0.032"/>
+      <inertia ixx="2.9947e-06" ixy="1.283e-08" ixz="1.8513e-08" iyy="4.3277e-06" iyz="7.6573e-09" izz="4.811e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="th_axl" type="revolute">
+    <origin xyz="-2.7755575615628913511e-17 0.014300000000000005415 -0.013000000000000011546" rpy="1.5707963267948958919 -1.570796326794896336 0" />
+    <parent link="th_mp" />
+    <child link="th_bs" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-0.47" upper = "2.443"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="th_bs">
+    <visual>
+      <origin xyz="0.011961920770611186859 -5.3082538364890297089e-16 -0.015852648956664199681" rpy="1.570796326794896558 1.6050198443300152637e-46 -3.9204996250525192755e-59" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_base.obj"/>
+      </geometry>
+      <material name="thumb_base_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.011961920770611186859 -5.3082538364890297089e-16 -0.015852648956664199681" rpy="1.570796326794896558 1.6050198443300152637e-46 -3.9204996250525192755e-59" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_base.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="2.808e-07 -3.6178e-07 -0.0069039"/>
+      <mass value="0.003"/>
+      <inertia ixx="6.796e-07" ixy="-2.721e-13" ixz="9.8335e-12" iyy="2.5672e-07" iyz="-1.3086e-11" izz="6.3016e-07"/>
+    </inertial>
+  </link>
+
+  <joint name="th_mcp" type="revolute">
+    <origin xyz="0 0.014499999999999966041 -0.017000000000000053263" rpy="-1.570796326794896558 1.6050198443300131245e-46 -1.9721522630516624601e-31" />
+    <parent link="th_bs" />
+    <child link="th_px" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-1.20" upper = "1.90"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="th_px">
+    <visual>
+      <origin xyz="0.043968715707239175439 0.057952952973709198625 -0.0086286764493694757122" rpy="1.9428902930940098942e-16 3.2751579226442200773e-15 1.1123758529657360012e-46" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_proximal.obj"/>
+      </geometry>
+      <material name="thumb_proximal_mtl">
+        <color rgba="0.86666666666666669627 0.86666666666666669627 0.050980392156862744391 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.043968715707239175439 0.057952952973709198625 -0.0086286764493694757122" rpy="1.9428902930940098942e-16 3.2751579226442200773e-15 1.1123758529657360012e-46" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_proximal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.0012304 0.013385 -0.014031"/>
+      <mass value="0.038"/>
+      <inertia ixx="9.716e-06" ixy="2.7311e-07" ixz="3.957e-08" iyy="4.3014e-06" iyz="5.2144e-08" izz="8.8889e-06"/>
+    </inertial>
+  </link>
+
+  <joint name="th_ipl" type="revolute">
+    <origin xyz="-1.249000902703301108e-16 0.046599999999999863753 0.00019999999999997710581" rpy="1.5063958491491781023e-44 5.4234187233935260503e-31 3.141592653589793116" />
+    <parent link="th_px" />
+    <child link="th_ds" />
+    <axis xyz="0 0 -1"/>
+    <limit effort="0.95" velocity="8.48" lower = "-1.34" upper = "1.88"/>
+    <joint_properties friction="0.0"/>
+  </joint>
+
+  <link name="th_ds">
+    <visual>
+      <origin xyz="0.062559538462667388381 0.078459682911396988469 0.048992911807332215068" rpy="4.3790577010156367543e-47 -3.3306690738754701143e-16 1.2042408677791935383e-46" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_distal.obj"/>
+      </geometry>
+      <material name="thumb_distal_mtl">
+        <color rgba="0.60392156862745094426 0.14901960784313725283 0.14901960784313725283 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.062559538462667388381 0.078459682911396988469 0.048992911807332215068" rpy="4.3790577010156367543e-47 -3.3306690738754701143e-16 1.2042408677791935383e-46" />
+      <geometry>
+        <mesh filename="package://leap_rh/meshes/thumb_distal.obj"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.00035055 -0.023993 -0.014115"/>
+      <mass value="0.049"/>
+      <inertia ixx="2.1755e-05" ixy="-7.7866e-07" ixz="-4.2709e-08" iyy="4.5116e-06" iyz="-1.4147e-07" izz="2.1423e-05"/>
+    </inertial>
+  </link>
+
+</robot>
