@@ -90,7 +90,7 @@ onboard:
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: leap_rh
-          model_xml_path: leap_palm_up.xml
+          model_xml_path: leap_rh_mounted.xml
           sensor_settings:
           - topic: /obelisk/leap/joint_encoders
             dt: 0.002
@@ -122,11 +122,11 @@ onboard:
     viz_tool: foxglove
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
-    params:
-      quat_order: wxyz
     viz_nodes:
       - pkg: obelisk_viz_cpp
         executable: default_robot_viz
+        params:
+          quat_order: wxyz
         robot_pkg: leap_rh
         urdf: leap_rh.urdf
         robot_topic: robot_description
