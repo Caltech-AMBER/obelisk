@@ -24,6 +24,10 @@ add_library(Obelisk::Zoo ALIAS Zoo)
 target_include_directories(Zoo INTERFACE include)
 
 # conditionally add leap subdirectory if OBELISK_BUILD_LEAP is set
+message(STATUS "OBELISK_BUILD_LEAP cmake variable: ${OBELISK_BUILD_LEAP}")
+message(STATUS "OBELISK_BUILD_LEAP env variable: $ENV{OBELISK_BUILD_LEAP}")
+message(STATUS "If either variable is true, the Leap Hand interface will be built.")
+
 if((DEFINED OBELISK_BUILD_LEAP AND OBELISK_BUILD_LEAP STREQUAL "true") OR
     ($ENV{OBELISK_BUILD_LEAP} STREQUAL "true"))
   message(STATUS "Configuring Leap Hand Interface")
@@ -35,6 +39,9 @@ endif()
 
 # conditionally add zed subdirectory if OBELISK_BUILD_ZED is set
 message(STATUS "OBELISK_BUILD_ZED: ${OBELISK_BUILD_ZED}")
+message(STATUS "OBELISK_BUILD_ZED env variable: $ENV{OBELISK_BUILD_ZED}")
+message(STATUS "If either variable is true, the Zed interface will be built.")
+
 if((DEFINED OBELISK_BUILD_ZED AND OBELISK_BUILD_ZED STREQUAL "true") OR
    ($ENV{OBELISK_BUILD_ZED} STREQUAL "true"))
   message(STATUS "Configuring Zed2 Sensors")

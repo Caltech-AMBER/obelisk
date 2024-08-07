@@ -317,4 +317,7 @@ else
     echo -e "\033[1;33mObelisk aliases not added to ~/.bash_aliases. To add, pass the --obk-aliases flag.\033[0m"
 fi
 
-source ${OBELISK_ROOT}/scripts/_source_bash_rc.bash
+# Only source if the file exists. In the docker build this file does not exists and does not need to be run, so we can skip it.
+if test -f ${OBELISK_ROOT}/scripts/_source_bash_rc.bash; then
+    source ${OBELISK_ROOT}/scripts/_source_bash_rc.bash
+fi

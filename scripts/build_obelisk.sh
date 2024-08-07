@@ -37,6 +37,10 @@ fi
 if [ "$zed" = false ]; then
     SKIP_PKGS+=" obelisk_zed_cpp"
 fi
+VERBOSE_STR=""
+if [ "$verbose" = true ]; then
+    VERBOSE_STR="--event-handlers console_direct+"
+fi
 
 # building Obelisk packages
 OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
@@ -44,26 +48,16 @@ OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
 echo -e "\033[1;32mBuilding Obelisk ROS messages...\033[0m"
 curr_dir=$(pwd)
 cd $OBELISK_ROOT/obelisk_ws
-if [ "$verbose" = true ]; then
+
 colcon build --symlink-install --parallel-workers $(nproc) \
-    --packages-select $MESSAGE_PKGS \
-    --event-handlers console_direct+
-else
-    colcon build --symlink-install --parallel-workers $(nproc) \
-        --packages-select $MESSAGE_PKGS
-fi
+    $VERBOSE_STR --packages-select $MESSAGE_PKGS
 
 # for debugging, add `--event-handlers console_direct+` to the colcon build command
 echo -e "\033[1;32mBuilding remainder of Obelisk ROS packages...\033[0m"
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
-if [ "$verbose" = true ]; then
 colcon build --symlink-install --parallel-workers $(nproc) \
-    --packages-skip $MESSAGE_PKGS $SKIP_PKGS \
-    --event-handlers console_direct+
-else
-    colcon build --symlink-install --parallel-workers $(nproc) \
-        --packages-skip $MESSAGE_PKGS $SKIP_PKGS
-fi
+    $VERBOSE_STR --packages-skip $MESSAGE_PKGS $SKIP_PKGS
+
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 cd $curr_dir
 
