@@ -28,7 +28,7 @@ message(STATUS "OBELISK_BUILD_LEAP cmake variable: ${OBELISK_BUILD_LEAP}")
 message(STATUS "OBELISK_BUILD_LEAP env variable: $ENV{OBELISK_BUILD_LEAP}")
 message(STATUS "If either variable is true, the Leap Hand interface will be built.")
 
-if(((DEFINED OBELISK_BUILD_LEAP) AND (OBELISK_BUILD_LEAP STREQUAL "true")) OR
+if((DEFINED OBELISK_BUILD_LEAP AND OBELISK_BUILD_LEAP STREQUAL "true") OR
     (DEFINED ENV{OBELISK_BUILD_LEAP} AND $ENV{OBELISK_BUILD_LEAP} STREQUAL "true"))
   message(STATUS "Configuring Leap Hand Interface")
   add_subdirectory(hardware/robots/leap)
