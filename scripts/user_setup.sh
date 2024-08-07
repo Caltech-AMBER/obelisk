@@ -72,10 +72,14 @@ fi'
     if [ "$leap" = true ]; then
         OBELISK_BUILD_OPTIONS+="--leap "
         OBELISK_BUILD_LEAP=true
+    else
+        OBELISK_BUILD_LEAP=false
     fi
     if [ "$zed" = true ]; then
         OBELISK_BUILD_OPTIONS+="--zed "
         OBELISK_BUILD_ZED=true
+    else
+        OBELISK_BUILD_ZED=false
     fi
 
     obk_aliases=$(cat << EOF
@@ -311,4 +315,9 @@ EOF
     echo -e "\033[1;32mObelisk aliases added to ~/.bash_aliases!\033[0m"
 else
     echo -e "\033[1;33mObelisk aliases not added to ~/.bash_aliases. To add, pass the --obk-aliases flag.\033[0m"
+fi
+
+# Only source if the file exists. In the docker build this file does not exists and does not need to be run, so we can skip it.
+if test -f ${OBELISK_ROOT}/scripts/_source_bash_rc.bash; then
+    source ${OBELISK_ROOT}/scripts/_source_bash_rc.bash
 fi
