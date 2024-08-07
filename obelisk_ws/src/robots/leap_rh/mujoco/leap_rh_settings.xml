@@ -4,7 +4,7 @@ This file contains all the settings for simulating the LEAP hand described in _l
 To use it, compose it in another xml file with _leap_hand.xml. For an example, see leap_rh.xml.
 -->
 <mujoco model="leap_rh_settings">
-  <compiler angle="radian" meshdir="./meshes"/>
+  <compiler angle="radian" meshdir="../meshes/"/>
   <option integrator="implicitfast" cone="elliptic" impratio="100"/>
 
   <!-- mesh assets -->

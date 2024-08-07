@@ -10,8 +10,10 @@ docker_pixi=false
 docker_group_leap=false
 docker_group_zed=false
 
-for arg in "$@"; do
-    case $arg in
+docker_mj_source_dir=""
+
+while [ $# -gt 0 ]; do
+    case $1 in
         # docker installations
         --docker-install)
             docker_install=true
@@ -48,30 +50,43 @@ for arg in "$@"; do
             shift  # Adds user to the video group
             ;;
 
+        # mujoco source dir
+        --docker-mj-source-dir)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                docker_mj_source_dir="$2"
+                shift 2
+            else
+                echo "Error: --docker-mj-source-dir requires a directory path as an argument."
+                exit 1
+            fi
+            ;;
+
         --help)
             echo "Usage: $0 [OPTIONS]
 
 Options:
-  --docker-install       Install Docker and nvidia-container-toolkit
+  --docker-install                   Install Docker and nvidia-container-toolkit
 
-  --docker-basic         Set OBELISK_DOCKER_BASIC=true for docker, which installs basic dependencies
-  --docker-cyclone-perf  Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
-  --docker-leap          Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
-  --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
-  --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
+  --docker-basic                     Set OBELISK_DOCKER_BASIC=true for docker, which installs basic dependencies
+  --docker-cyclone-perf              Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
+  --docker-leap                      Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
+  --docker-zed                       Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
+  --docker-pixi                      Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
 
-  --docker-group-leap    Adds user to the dialout group
-  --docker-group-zed     Adds user to the video group
+  --docker-group-leap                Adds user to the dialout group
+  --docker-group-zed                 Adds user to the video group
 
-  --help                 Display this help message and exit
+  --docker-mj-source-dir <path>      Specify the MuJoCo source directory
+
+  --help                             Display this help message and exit
 "
             shift
-            return
+            exit
             ;;
         *)
             # Unknown option
             echo "Unknown option: $arg. Run 'source setup.sh --help' for more information."
-            return
+            exit
             ;;
     esac
 done
@@ -221,6 +236,16 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_ZED=false!\033[0m"
     echo "OBELISK_DOCKER_GROUP_ZED=false" >> $env_file
     export OBELISK_DOCKER_GROUP_ZED=false
+fi
+
+if [ -n "$docker_mj_source_dir" ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_MUJOCO_SOURCE_DIR=$docker_mj_source_dir!\033[0m"
+    echo "OBELISK_DOCKER_MUJOCO_SOURCE_DIR=$docker_mj_source_dir" >> $env_file
+    export OBELISK_DOCKER_MUJOCO_SOURCE_DIR=$docker_mj_source_dir
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_MUJOCO_SOURCE_DIR=\"\"!\033[0m"
+    echo "OBELISK_DOCKER_MUJOCO_SOURCE_DIR=\"\"" >> $env_file
+    export OBELISK_DOCKER_MUJOCO_SOURCE_DIR=""
 fi
 
 # copy scripts to the docker directory

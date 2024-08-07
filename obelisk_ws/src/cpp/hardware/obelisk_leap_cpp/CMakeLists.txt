@@ -31,6 +31,10 @@ ament_target_dependencies(obelisk_leap_robot PUBLIC dynamixel_sdk)
 add_executable(leap_example_controller src/leap_example_controller.cpp)
 target_link_libraries(leap_example_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
+# leap_example_state_estimator
+add_executable(leap_example_state_estimator src/leap_example_state_estimator.cpp)
+target_link_libraries(leap_example_state_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
@@ -42,8 +46,12 @@ install(TARGETS
   obelisk_leap_robot
   DESTINATION lib/${PROJECT_NAME})
 
-  install(TARGETS
+install(TARGETS
   leap_example_controller
+  DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+  leap_example_state_estimator
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

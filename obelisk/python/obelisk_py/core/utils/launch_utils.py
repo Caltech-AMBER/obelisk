@@ -217,10 +217,11 @@ def get_launch_actions_from_node_settings(
     def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
         package = node_settings["pkg"]
         executable = node_settings["executable"]
+        namespace = node_settings["namespace"] if "namespace" in node_settings else ""
         parameters_dict = get_parameters_dict(node_settings)
         launch_actions = []
         component_node = LifecycleNode(
-            namespace="",
+            namespace=namespace,
             name=f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}",
             package=package,
             executable=executable,
@@ -245,6 +246,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
         def _single_viz_node_launch_actions(settings: Dict, suffix: Optional[int] = None) -> List:
             package = settings["pkg"]
             executable = settings["executable"]
+            namespace = settings["namespace"] if "namespace" in settings else ""
             parameters_dict = get_parameters_dict(settings)
 
             # Get the other viz specific params
@@ -259,7 +261,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
             parameters_dict["tf_prefix"] = tf_prefix
             launch_actions = []
             component_node = LifecycleNode(
-                namespace="",
+                namespace=namespace,
                 name="obelisk_viz" if suffix is None else f"obelisk_viz_{suffix}",
                 package=package,
                 executable=executable,

@@ -3,7 +3,7 @@
 This file contains the LEAP Hand mounted palm up description.
 
 -->
-<mujoco model="leap_palm_up">
+<mujoco model="leap_rh_mounted">
   <compiler angle="radian" meshdir="./meshes"/>
   <include file="common.xml" />
   <include file="leap_rh_settings.xml"/>
