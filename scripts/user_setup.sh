@@ -316,3 +316,5 @@ EOF
 else
     echo -e "\033[1;33mObelisk aliases not added to ~/.bash_aliases. To add, pass the --obk-aliases flag.\033[0m"
 fi
+
+source ${OBELISK_ROOT}/scripts/_source_bash_rc.bash
