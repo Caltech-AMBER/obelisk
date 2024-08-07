@@ -72,10 +72,14 @@ fi'
     if [ "$leap" = true ]; then
         OBELISK_BUILD_OPTIONS+="--leap "
         OBELISK_BUILD_LEAP=true
+    else
+        OBELISK_BUILD_LEAP=false
     fi
     if [ "$zed" = true ]; then
         OBELISK_BUILD_OPTIONS+="--zed "
         OBELISK_BUILD_ZED=true
+    else
+        OBELISK_BUILD_ZED=false
     fi
 
     obk_aliases=$(cat << EOF
