@@ -83,7 +83,7 @@ def sync_pid(motors: Iterable, kp: int = 150, ki: int = 0, kd: int = 50) -> None
     Args:
         motors: The motor IDs to write to.
         kp: The proportional gain.
-        ki: The integral gain.Kd
+        ki: The integral gain.
         kd: The derivative gain.
     """
     for motor in motors:
