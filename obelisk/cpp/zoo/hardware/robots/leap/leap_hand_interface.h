@@ -123,11 +123,12 @@ namespace obelisk {
         static constexpr int PRESENT_POS_ADDR   = 132;
         static constexpr int PRESENT_POS_LENGTH = 4;
 
-        static constexpr int TORQUE_ADDR       = 64;
-        static constexpr int TORQUE_ENABLE_VAL = 1;
-        static constexpr int KP_ADDR           = 84;
-        static constexpr int KI_ADDR           = 82;
-        static constexpr int KD_ADDR           = 80;
+        static constexpr int TORQUE_ADDR        = 64;
+        static constexpr int TORQUE_DISABLE_VAL = 0;
+        static constexpr int TORQUE_ENABLE_VAL  = 1;
+        static constexpr int KP_ADDR            = 84;
+        static constexpr int KI_ADDR            = 82;
+        static constexpr int KD_ADDR            = 80;
 
         double KP_;
         double KI_;
@@ -162,6 +163,26 @@ namespace obelisk {
             ApplyControl(home_msg);
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Configured Leap Hand!");
+            return CallbackReturn::SUCCESS;
+        }
+
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_cleanup(const rclcpp_lifecycle::State& state) {
+            ObeliskRobot::on_cleanup(state);
+            for (int i = 0; i < N_MOTORS; i++) {
+                int err = packet_handler_->write1ByteTxRx(port_handler_, i, TORQUE_ADDR, TORQUE_DISABLE_VAL);
+                if (err != 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to disable motor " << i);
+                }
+            }
+            port_handler_->closePort();
+            return CallbackReturn::SUCCESS;
+        }
+
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_shutdown(const rclcpp_lifecycle::State& state) {
+            ObeliskRobot::on_shutdown(state);
+            on_cleanup(state);
             return CallbackReturn::SUCCESS;
         }
 
