@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="leap_rh">
   <!-- xacro -->
-  <xacro:macro name="leap_rh">
+  <xacro:macro name="leap_rh" params="collision:=true alpha:=1.0">
 
     <!-- palm -->
     <link name="palm">
@@ -11,69 +11,71 @@
           <mesh filename="package://leap_rh/meshes/palm.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="palm_collision_1">
-        <origin xyz="-0.009 0.008 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.022 0.026 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_2">
-        <origin xyz="-0.009 -0.037 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.022 0.026 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_3">
-        <origin xyz="-0.009 -0.082 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.022 0.026 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_4">
-        <origin xyz="-0.066 -0.078 -0.0115" rpy="0 0 -0.2967"/>
-        <geometry>
-          <box size="0.058 0.02 0.046"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_5">
-        <origin xyz="-0.03 -0.035 -0.003" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.12 0.03"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_6">
-        <origin xyz="-0.032 -0.035 -0.024" rpy="0 0.785 0"/>
-        <geometry>
-          <box size="0.01 0.12 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_7">
-        <origin xyz="-0.048 -0.033 -0.0115" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.024 0.116 0.046"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_8">
-        <origin xyz="-0.078 -0.053 -0.0115" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.044 0.052 0.046"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_9">
-        <origin xyz="-0.098 -0.009 -0.006" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.004 0.036 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="palm_collision_10">
-        <origin xyz="-0.078 -0.003 0.01" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.044 0.056 0.004"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="palm_collision_1">
+          <origin xyz="-0.009 0.008 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.022 0.026 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_2">
+          <origin xyz="-0.009 -0.037 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.022 0.026 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_3">
+          <origin xyz="-0.009 -0.082 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.022 0.026 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_4">
+          <origin xyz="-0.066 -0.078 -0.0115" rpy="0 0 -0.2967"/>
+          <geometry>
+            <box size="0.058 0.02 0.046"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_5">
+          <origin xyz="-0.03 -0.035 -0.003" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.12 0.03"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_6">
+          <origin xyz="-0.032 -0.035 -0.024" rpy="0 0.785 0"/>
+          <geometry>
+            <box size="0.01 0.12 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_7">
+          <origin xyz="-0.048 -0.033 -0.0115" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.024 0.116 0.046"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_8">
+          <origin xyz="-0.078 -0.053 -0.0115" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.044 0.052 0.046"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_9">
+          <origin xyz="-0.098 -0.009 -0.006" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.004 0.036 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="palm_collision_10">
+          <origin xyz="-0.078 -0.003 0.01" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.044 0.056 0.004"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.049542 -0.042914 -0.010227"/>
         <mass value="0.237"/>
@@ -98,45 +100,47 @@
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="if_bs_collision_1">
-        <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="if_bs_collision_2">
-        <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.028 0.04 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="if_bs_collision_3">
-        <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.006 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="if_bs_collision_4">
-        <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.024 0.008"/>
-        </geometry>
-      </collision>
-      <collision name="if_bs_collision_5">
-        <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="if_bs_collision_6">
-        <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="if_bs_collision_1">
+          <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="if_bs_collision_2">
+          <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.028 0.04 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="if_bs_collision_3">
+          <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.006 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="if_bs_collision_4">
+          <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.024 0.008"/>
+          </geometry>
+        </collision>
+        <collision name="if_bs_collision_5">
+          <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="if_bs_collision_6">
+          <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.022516 0.033882 0.016359"/>
         <mass value="0.044"/>
@@ -160,15 +164,17 @@
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="if_px_collision_1">
-        <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.026 0.022"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="if_px_collision_1">
+          <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.026 0.022"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0075 -0.0002 -0.011"/>
         <mass value="0.032"/>
@@ -192,39 +198,41 @@
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="if_md_collision_1">
-        <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.016 0.006 0.026"/>
-        </geometry>
-      </collision>
-      <collision name="if_md_collision_2">
-        <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.004 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="if_md_collision_3">
-        <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="if_md_collision_4">
-        <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="if_md_collision_5">
-        <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.022 0.026"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="if_md_collision_1">
+          <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.016 0.006 0.026"/>
+          </geometry>
+        </collision>
+        <collision name="if_md_collision_2">
+          <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.004 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="if_md_collision_3">
+          <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="if_md_collision_4">
+          <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="if_md_collision_5">
+          <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.022 0.026"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0054215 -0.029148 0.015"/>
         <mass value="0.037"/>
@@ -248,33 +256,35 @@
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="if_ds_collision_1">
-        <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.03"/>
-        </geometry>
-      </collision>
-      <collision name="if_ds_collision_2">
-        <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="if_ds_collision_3">
-        <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="if_ds_collision_4">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="package://leap_rh/meshes/tip.obj"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="if_ds_collision_1">
+          <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.03"/>
+          </geometry>
+        </collision>
+        <collision name="if_ds_collision_2">
+          <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="if_ds_collision_3">
+          <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="if_ds_collision_4">
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="package://leap_rh/meshes/tip.obj"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.0008794 -0.027019 0.014594"/>
         <mass value="0.016"/>
@@ -299,45 +309,47 @@
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="mf_bs_collision_1">
-        <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="mf_bs_collision_2">
-        <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.028 0.04 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="mf_bs_collision_3">
-        <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.006 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="mf_bs_collision_4">
-        <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.024 0.008"/>
-        </geometry>
-      </collision>
-      <collision name="mf_bs_collision_5">
-        <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="mf_bs_collision_6">
-        <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="mf_bs_collision_1">
+          <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="mf_bs_collision_2">
+          <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.028 0.04 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="mf_bs_collision_3">
+          <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.006 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="mf_bs_collision_4">
+          <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.024 0.008"/>
+          </geometry>
+        </collision>
+        <collision name="mf_bs_collision_5">
+          <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="mf_bs_collision_6">
+          <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.022516 0.033882 0.016359"/>
         <mass value="0.044"/>
@@ -361,15 +373,17 @@
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="mf_px_collision_1">
-        <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.026 0.022"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="mf_px_collision_1">
+          <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.026 0.022"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0075 -0.0002 -0.011"/>
         <mass value="0.032"/>
@@ -393,39 +407,41 @@
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="mf_md_collision_1">
-        <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.016 0.006 0.026"/>
-        </geometry>
-      </collision>
-      <collision name="mf_md_collision_2">
-        <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.004 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="mf_md_collision_3">
-        <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="mf_md_collision_4">
-        <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="mf_md_collision_5">
-        <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.022 0.026"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="mf_md_collision_1">
+          <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.016 0.006 0.026"/>
+          </geometry>
+        </collision>
+        <collision name="mf_md_collision_2">
+          <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.004 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="mf_md_collision_3">
+          <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="mf_md_collision_4">
+          <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="mf_md_collision_5">
+          <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.022 0.026"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0054215 -0.029148 0.015"/>
         <mass value="0.037"/>
@@ -449,33 +465,35 @@
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="mf_ds_collision_1">
-        <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.03"/>
-        </geometry>
-      </collision>
-      <collision name="mf_ds_collision_2">
-        <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="mf_ds_collision_3">
-        <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="mf_ds_collision_4">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="package://leap_rh/meshes/tip.obj"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="mf_ds_collision_1">
+          <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.03"/>
+          </geometry>
+        </collision>
+        <collision name="mf_ds_collision_2">
+          <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="mf_ds_collision_3">
+          <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="mf_ds_collision_4">
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="package://leap_rh/meshes/tip.obj"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.0008794 -0.027019 0.014594"/>
         <mass value="0.016"/>
@@ -501,45 +519,47 @@
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="rf_bs_collision_1">
-        <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="rf_bs_collision_2">
-        <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.028 0.04 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="rf_bs_collision_3">
-        <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.006 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="rf_bs_collision_4">
-        <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.024 0.008"/>
-        </geometry>
-      </collision>
-      <collision name="rf_bs_collision_5">
-        <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="rf_bs_collision_6">
-        <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="rf_bs_collision_1">
+          <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="rf_bs_collision_2">
+          <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.028 0.04 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="rf_bs_collision_3">
+          <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.006 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="rf_bs_collision_4">
+          <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.024 0.008"/>
+          </geometry>
+        </collision>
+        <collision name="rf_bs_collision_5">
+          <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="rf_bs_collision_6">
+          <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.022516 0.033882 0.016359"/>
         <mass value="0.044"/>
@@ -563,15 +583,17 @@
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="rf_px_collision_1">
-        <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.026 0.022"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="rf_px_collision_1">
+          <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.026 0.022"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0075 -0.0002 -0.011"/>
         <mass value="0.032"/>
@@ -595,39 +617,41 @@
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="rf_md_collision_1">
-        <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.016 0.006 0.026"/>
-        </geometry>
-      </collision>
-      <collision>
-        <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.004 0.034"/>
-        </geometry>
-      </collision>
-      <collision name="rf_md_collision_3">
-        <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="rf_md_collision_4">
-        <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="rf_md_collision_5">
-        <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.022 0.026"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="rf_md_collision_1">
+          <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.016 0.006 0.026"/>
+          </geometry>
+        </collision>
+        <collision>
+          <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.004 0.034"/>
+          </geometry>
+        </collision>
+        <collision name="rf_md_collision_3">
+          <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="rf_md_collision_4">
+          <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="rf_md_collision_5">
+          <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.022 0.026"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0054215 -0.029148 0.015"/>
         <mass value="0.037"/>
@@ -651,33 +675,35 @@
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="rf_ds_collision_1">
-        <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.006 0.03"/>
-        </geometry>
-      </collision>
-      <collision name="rf_ds_collision_2">
-        <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="rf_ds_collision_3">
-        <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.022 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="rf_ds_collision_4">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="package://leap_rh/meshes/tip.obj"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="rf_ds_collision_1">
+          <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.006 0.03"/>
+          </geometry>
+        </collision>
+        <collision name="rf_ds_collision_2">
+          <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="rf_ds_collision_3">
+          <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.022 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="rf_ds_collision_4">
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="package://leap_rh/meshes/tip.obj"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.0008794 -0.027019 0.014594"/>
         <mass value="0.016"/>
@@ -703,15 +729,17 @@
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="th_mp_collision_1">
-        <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.034 0.026 0.022"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="th_mp_collision_1">
+          <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.034 0.026 0.022"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.0075 -0.0002 -0.011"/>
         <mass value="0.032"/>
@@ -735,27 +763,29 @@
           <mesh filename="package://leap_rh/meshes/thumb_base.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="th_bs_collision_1">
-        <origin xyz="0 0 -0.0015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.018 0.033 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="th_bs_collision_2">
-        <origin xyz="0 -0.015 -0.013" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.004 0.02"/>
-        </geometry>
-      </collision>
-      <collision name="th_bs_collision_3">
-        <origin xyz="0 0.015 -0.013" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.004 0.02"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="th_bs_collision_1">
+          <origin xyz="0 0 -0.0015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.018 0.033 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="th_bs_collision_2">
+          <origin xyz="0 -0.015 -0.013" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.004 0.02"/>
+          </geometry>
+        </collision>
+        <collision name="th_bs_collision_3">
+          <origin xyz="0 0.015 -0.013" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.004 0.02"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0 0 -0.0070806"/>
         <mass value="0.003"/>
@@ -779,39 +809,41 @@
           <mesh filename="package://leap_rh/meshes/thumb_proximal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="th_px_collision_1">
-        <origin xyz="0 0.0105 -0.014" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.04 0.024"/>
-        </geometry>
-      </collision>
-      <collision name="th_px_collision_2">
-        <origin xyz="0 0.031 -0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.004 0.032"/>
-        </geometry>
-      </collision>
-      <collision name="th_px_collision_3">
-        <origin xyz="0 0.042 0.001" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="th_px_collision_4">
-        <origin xyz="0 0.042 -0.029" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.014 0.02 0.004"/>
-        </geometry>
-      </collision>
-      <collision name="th_px_collision_5">
-        <origin xyz="-0.0135 0.0175 -0.011656" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.01 0.024 0.018"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="th_px_collision_1">
+          <origin xyz="0 0.0105 -0.014" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.04 0.024"/>
+          </geometry>
+        </collision>
+        <collision name="th_px_collision_2">
+          <origin xyz="0 0.031 -0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.004 0.032"/>
+          </geometry>
+        </collision>
+        <collision name="th_px_collision_3">
+          <origin xyz="0 0.042 0.001" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="th_px_collision_4">
+          <origin xyz="0 0.042 -0.029" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.014 0.02 0.004"/>
+          </geometry>
+        </collision>
+        <collision name="th_px_collision_5">
+          <origin xyz="-0.0135 0.0175 -0.011656" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.01 0.024 0.018"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="-0.0020593 0.015912 -0.013733"/>
         <mass value="0.038"/>
@@ -835,33 +867,35 @@
           <mesh filename="package://leap_rh/meshes/thumb_distal.obj"/>
         </geometry>
         <material name="black">
-          <color rgba="0.2 0.2 0.2 1"/>
+          <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
-      <collision name="th_ds_collision_1">
-        <origin xyz="0 -0.0085 -0.015" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.036 0.024"/>
-        </geometry>
-      </collision>
-      <collision name="th_ds_collision_2">
-        <origin xyz="0 -0.029 -0.014" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.02 0.004 0.03"/>
-        </geometry>
-      </collision>
-      <collision name="th_ds_collision_3">
-        <origin xyz="0.015 -0.0175 -0.0115" rpy="0 0 0"/>
-        <geometry>
-          <box size="0.008 0.024 0.018"/>
-        </geometry>
-      </collision>
-      <collision name="th_ds_collision_4">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="package://leap_rh/meshes/thumb_tip.obj"/>
-        </geometry>
-      </collision>
+      <xacro:if value="${collision == 'true'}">
+        <collision name="th_ds_collision_1">
+          <origin xyz="0 -0.0085 -0.015" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.036 0.024"/>
+          </geometry>
+        </collision>
+        <collision name="th_ds_collision_2">
+          <origin xyz="0 -0.029 -0.014" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.02 0.004 0.03"/>
+          </geometry>
+        </collision>
+        <collision name="th_ds_collision_3">
+          <origin xyz="0.015 -0.0175 -0.0115" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.008 0.024 0.018"/>
+          </geometry>
+        </collision>
+        <collision name="th_ds_collision_4">
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="package://leap_rh/meshes/thumb_tip.obj"/>
+          </geometry>
+        </collision>
+      </xacro:if>
       <inertial>
         <origin rpy="0 0 0" xyz="0.00096191 -0.024203 -0.014419"/>
         <mass value="0.049"/>
