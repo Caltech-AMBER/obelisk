@@ -56,6 +56,18 @@ class ObeliskLeapRobot(ObeliskRobot):
 
         return TransitionCallbackReturn.SUCCESS
 
+    def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Cleanup the LEAP Hand."""
+        super().on_cleanup(state)
+        dxl.shutdown(self.N_MOTORS)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Shutdown the LEAP Hand."""
+        super().on_shutdown(state)
+        self.on_cleanup(state)
+        return TransitionCallbackReturn.SUCCESS
+
     @staticmethod
     def _radians_to_dxl_pos(radians: float) -> int:
         return int((radians + math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS))
@@ -90,9 +102,3 @@ class ObeliskLeapRobot(ObeliskRobot):
             joint_encoders.joint_pos.append(self._dxl_pos_to_radians(position))
         self.obk_publishers["pub_sensor"].publish(joint_encoders)
         return joint_encoders
-
-    def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Shutdown the LEAP Hand."""
-        super().on_shutdown(state)
-        dxl.shutdown(self.N_MOTORS)
-        return TransitionCallbackReturn.SUCCESS
