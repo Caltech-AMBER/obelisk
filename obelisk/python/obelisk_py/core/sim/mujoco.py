@@ -414,7 +414,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
         field of a sim model. YOU MUST CHECK THIS YOURSELF!
         """
-        self._set_shared_ctrl(control_msg.u_mujoco)
+        if self.shared_ctrl is not None:
+            self._set_shared_ctrl(control_msg.u_mujoco)
 
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the true simulator state."""

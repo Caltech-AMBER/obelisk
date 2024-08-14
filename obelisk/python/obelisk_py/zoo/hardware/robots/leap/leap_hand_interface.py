@@ -24,6 +24,11 @@ class ObeliskLeapRobot(ObeliskRobot):
         self.declare_parameter("KI", 0)
         self.declare_parameter("KD", 50)
 
+        # exposing q_home as ros param
+        self.declare_parameter(
+            "q_home", [0.5, -0.75, 0.75, 0.25, 0.5, 0.0, 0.75, 0.25, 0.5, 0.75, 0.75, 0.25, 0.65, 0.9, 0.75, 0.6]
+        )
+
         # timer/pub pair for the leap hand state
         self.register_obk_publisher(
             "pub_sensor_setting",
@@ -45,15 +50,30 @@ class ObeliskLeapRobot(ObeliskRobot):
         ki = self.get_parameter("KI").get_parameter_value().integer_value
         kd = self.get_parameter("KD").get_parameter_value().integer_value
 
+        # q_home
+        self.q_home = self.get_parameter("q_home").get_parameter_value().double_array_value
+
         # set up motors
         dxl.setup(self.N_MOTORS)
         dxl.sync_pid(range(self.N_MOTORS), kp=kp, ki=ki, kd=kd)
 
         # home the hand
         msg = PositionSetpoint()
-        msg.q_des = [0.5, -0.75, 0.75, 0.25, 0.5, 0.0, 0.75, 0.25, 0.5, 0.75, 0.75, 0.25, 0.65, 0.9, 0.75, 0.6]
+        msg.q_des = self.q_home
         self.apply_control(msg)
 
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        """Deactivate the LEAP Hand."""
+        super().on_deactivate(state)
+        msg = PositionSetpoint()
+        msg.q_des = self.q_home
+
+        # redundantly send the home message to flush the serial buffer
+        # TODO(ahl): for some reason, this doesn't work here though it works in the cpp node
+        for _ in range(100):
+            self.apply_control(msg)
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:

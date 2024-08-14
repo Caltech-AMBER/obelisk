@@ -6,6 +6,11 @@
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
 
+// set the latency timer to be 0 - see link below
+// https://github.com/ROBOTIS-GIT/DynamixelSDK/blob/886225ccaa9087c607a165b78c485a11ee0300f2/c%2B%2B/src/dynamixel_sdk/port_handler_linux.cpp#L33C1-L33C26
+#undef LATENCY_TIMER
+#define LATENCY_TIMER 0
+
 namespace obelisk {
     using leap_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
     using leap_sensor_msg  = obelisk_sensor_msgs::msg::ObkJointEncoders;
@@ -35,6 +40,10 @@ namespace obelisk {
             this->declare_parameter("KP", 150);
             this->declare_parameter("KI", 0);
             this->declare_parameter("KD", 50);
+
+            // exposing q_home as ros param
+            this->declare_parameter("q_home", std::vector<double>{0.5, -0.75, 0.75, 0.25, 0.5, 0.0, 0.75, 0.25, 0.5,
+                                                                  0.75, 0.75, 0.25, 0.65, 0.9, 0.75, 0.6});
 
             // timer/pub pair for the leap hand state
             this->RegisterObkTimer("timer_sensor_setting", state_timer_key_,
@@ -112,6 +121,8 @@ namespace obelisk {
         const std::string state_timer_key_;
         const std::string state_pub_key_;
 
+        std::vector<double> q_home_;
+
         static constexpr int BAUDRATE = 4000000;
 
         static constexpr int DXL_MAX_POS = 4095;
@@ -134,6 +145,12 @@ namespace obelisk {
         double KI_;
         double KD_;
 
+        /**
+         * @brief Callback for configuring the node
+         *
+         * @param state the state of the node
+         * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& state) {
             ObeliskRobot::on_configure(state);
@@ -156,16 +173,43 @@ namespace obelisk {
             RCLCPP_INFO_STREAM(this->get_logger(), "Initialized motors!");
 
             // homing the LEAP hand
-            leap_control_msg home_msg  = leap_control_msg();
-            std::vector<double> q_home = {0.5, -0.75, 0.75, 0.25, 0.5,  0.0, 0.75, 0.25,
-                                          0.5, 0.75,  0.75, 0.25, 0.65, 0.9, 0.75, 0.6};
-            home_msg.q_des             = q_home;
+            leap_control_msg home_msg = leap_control_msg();
+            q_home_                   = this->get_parameter("q_home").as_double_array();
+            home_msg.q_des            = q_home_;
             ApplyControl(home_msg);
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Configured Leap Hand!");
             return CallbackReturn::SUCCESS;
         }
 
+        /**
+         * @brief Callback for activating the node
+         *
+         * @param state the state of the node
+         * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+         */
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+        on_deactivate(const rclcpp_lifecycle::State& state) {
+            ObeliskRobot::on_deactivate(state);
+
+            // home the LEAP hand upon deactivation
+            leap_control_msg home_msg = leap_control_msg();
+            home_msg.q_des            = q_home_;
+
+            // redundantly send the home message to flush the serial buffer
+            for (int i = 0; i < 1000; i++) {
+                ApplyControl(home_msg);
+            }
+
+            return CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Callback for cleaning up the node
+         *
+         * @param state the state of the node
+         * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_cleanup(const rclcpp_lifecycle::State& state) {
             ObeliskRobot::on_cleanup(state);
@@ -179,6 +223,12 @@ namespace obelisk {
             return CallbackReturn::SUCCESS;
         }
 
+        /**
+         * @brief Callback for shutting down the node
+         *
+         * @param state the state of the node
+         * @return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+         */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_shutdown(const rclcpp_lifecycle::State& state) {
             ObeliskRobot::on_shutdown(state);
