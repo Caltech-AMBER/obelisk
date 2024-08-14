@@ -1,75 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="leap_rh">
   <!-- xacro -->
-  <xacro:macro name="leap_rh" params="collision:=True alpha:=1.0 suffix">
+  <xacro:macro name="leap_rh" params="collision:=True alpha:=1.0 suffix:=''">
+    <xacro:property name="optional_suffix" value="${'_' + suffix if suffix != '' else ''}" />
 
     <!-- palm -->
-    <link name="palm_${suffix}">
-      <visual name="palm_visual_${suffix}">
+    <link name="palm${optional_suffix}">
+      <visual name="palm_visual${optional_suffix}">
         <origin xyz="-0.0200 0.02575 -0.0347" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/palm.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="palm_collision_1_${suffix}">
+        <collision name="palm_collision_1${optional_suffix}">
           <origin xyz="-0.009 0.008 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.022 0.026 0.034"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_2_${suffix}">
+        <collision name="palm_collision_2${optional_suffix}">
           <origin xyz="-0.009 -0.037 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.022 0.026 0.034"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_3_${suffix}">
+        <collision name="palm_collision_3${optional_suffix}">
           <origin xyz="-0.009 -0.082 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.022 0.026 0.034"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_4_${suffix}">
+        <collision name="palm_collision_4${optional_suffix}">
           <origin xyz="-0.066 -0.078 -0.0115" rpy="0 0 -0.2967"/>
           <geometry>
             <box size="0.058 0.02 0.046"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_5_${suffix}">
+        <collision name="palm_collision_5${optional_suffix}">
           <origin xyz="-0.03 -0.035 -0.003" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.12 0.03"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_6_${suffix}">
+        <collision name="palm_collision_6${optional_suffix}">
           <origin xyz="-0.032 -0.035 -0.024" rpy="0 0.785 0"/>
           <geometry>
             <box size="0.01 0.12 0.02"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_7_${suffix}">
+        <collision name="palm_collision_7${optional_suffix}">
           <origin xyz="-0.048 -0.033 -0.0115" rpy="0 0 0"/>
           <geometry>
             <box size="0.024 0.116 0.046"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_8_${suffix}">
+        <collision name="palm_collision_8${optional_suffix}">
           <origin xyz="-0.078 -0.053 -0.0115" rpy="0 0 0"/>
           <geometry>
             <box size="0.044 0.052 0.046"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_9_${suffix}">
+        <collision name="palm_collision_9${optional_suffix}">
           <origin xyz="-0.098 -0.009 -0.006" rpy="0 0 0"/>
           <geometry>
             <box size="0.004 0.036 0.034"/>
           </geometry>
         </collision>
-        <collision name="palm_collision_10_${suffix}">
+        <collision name="palm_collision_10${optional_suffix}">
           <origin xyz="-0.078 -0.003 0.01" rpy="0 0 0"/>
           <geometry>
             <box size="0.044 0.056 0.004"/>
@@ -84,57 +85,57 @@
     </link>
 
     <!-- index finger -->
-    <joint name="if_mcp_${suffix}" type="revolute">
+    <joint name="if_mcp${optional_suffix}" type="revolute">
       <origin xyz="-0.0070 0.0230 -0.0187" rpy="1.57079 1.57079 0"/>
-      <parent link="palm"/>
-      <child link="if_bs"/>
+      <parent link="palm${optional_suffix}"/>
+      <child link="if_bs${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.314" upper="2.23"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="if_bs_${suffix}">
-      <visual name="if_bs_visual_${suffix}">
+    <link name="if_bs${optional_suffix}">
+      <visual name="if_bs_visual${optional_suffix}">
         <origin xyz="0.0084 0.0077 0.01465" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="if_bs_collision_1_${suffix}">
+        <collision name="if_bs_collision_1${optional_suffix}">
           <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.034"/>
           </geometry>
         </collision>
-        <collision name="if_bs_collision_2_${suffix}">
+        <collision name="if_bs_collision_2${optional_suffix}">
           <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.028 0.04 0.02"/>
           </geometry>
         </collision>
-        <collision name="if_bs_collision_3_${suffix}">
+        <collision name="if_bs_collision_3${optional_suffix}">
           <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.006 0.02"/>
           </geometry>
         </collision>
-        <collision name="if_bs_collision_4_${suffix}">
+        <collision name="if_bs_collision_4${optional_suffix}">
           <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.024 0.008"/>
           </geometry>
         </collision>
-        <collision name="if_bs_collision_5_${suffix}">
+        <collision name="if_bs_collision_5${optional_suffix}">
           <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="if_bs_collision_6_${suffix}">
+        <collision name="if_bs_collision_6${optional_suffix}">
           <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
@@ -148,27 +149,27 @@
       </inertial>
     </link>
 
-    <joint name="if_rot_${suffix}" type="revolute">
+    <joint name="if_rot${optional_suffix}" type="revolute">
       <origin xyz="-0.0122 0.03810 0.01450" rpy="-1.57079 0 1.57079"/>
-      <parent link="if_bs"/>
-      <child link="if_px"/>
+      <parent link="if_bs${optional_suffix}"/>
+      <child link="if_px${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-1.047" upper="1.047"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="if_px_${suffix}">
-      <visual name="if_px_visual_${suffix}">
+    <link name="if_px${optional_suffix}">
+      <visual name="if_px_visual${optional_suffix}">
         <origin xyz="0.0096 0.0002 0.0007" rpy="-1.57079 -1.57079 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="if_px_collision_1_${suffix}">
+        <collision name="if_px_collision_1${optional_suffix}">
           <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.026 0.022"/>
@@ -182,51 +183,51 @@
       </inertial>
     </link>
 
-    <joint name="if_pip_${suffix}" type="revolute">
+    <joint name="if_pip${optional_suffix}" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
-      <parent link="if_px"/>
-      <child link="if_md"/>
+      <parent link="if_px${optional_suffix}"/>
+      <child link="if_md${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.506" upper="1.885"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="if_md_${suffix}">
-      <visual name="if_md_visual_${suffix}">
+    <link name="if_md${optional_suffix}">
+      <visual name="if_md_visual${optional_suffix}">
         <origin xyz="0.0211 -0.0084 0.0097" rpy="-3.1415926 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="if_md_collision_1_${suffix}">
+        <collision name="if_md_collision_1${optional_suffix}">
           <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.016 0.006 0.026"/>
           </geometry>
         </collision>
-        <collision name="if_md_collision_2_${suffix}">
+        <collision name="if_md_collision_2${optional_suffix}">
           <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.004 0.034"/>
           </geometry>
         </collision>
-        <collision name="if_md_collision_3_${suffix}">
+        <collision name="if_md_collision_3${optional_suffix}">
           <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="if_md_collision_4_${suffix}">
+        <collision name="if_md_collision_4${optional_suffix}">
           <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="if_md_collision_5_${suffix}">
+        <collision name="if_md_collision_5${optional_suffix}">
           <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.022 0.026"/>
@@ -240,45 +241,45 @@
       </inertial>
     </link>
 
-    <joint name="if_dip_${suffix}" type="revolute">
+    <joint name="if_dip${optional_suffix}" type="revolute">
       <origin xyz="0 -0.0361 0.0002" rpy="0 0 0"/>
-      <parent link="if_md"/>
-      <child link="if_ds"/>
+      <parent link="if_md${optional_suffix}"/>
+      <child link="if_ds${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.366" upper="2.042"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="if_ds_${suffix}">
-      <visual name="if_ds_visual_${suffix}">
+    <link name="if_ds${optional_suffix}">
+      <visual name="if_ds_visual${optional_suffix}">
         <origin xyz="0.0132 -0.0061 0.0144" rpy="3.1415926 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="if_ds_collision_1_${suffix}">
+        <collision name="if_ds_collision_1${optional_suffix}">
           <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.03"/>
           </geometry>
         </collision>
-        <collision name="if_ds_collision_2_${suffix}">
+        <collision name="if_ds_collision_2${optional_suffix}">
           <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="if_ds_collision_3_${suffix}">
+        <collision name="if_ds_collision_3${optional_suffix}">
           <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="if_ds_collision_4_${suffix}">
+        <collision name="if_ds_collision_4${optional_suffix}">
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
             <mesh filename="package://leap_rh/meshes/tip.obj"/>
@@ -293,57 +294,57 @@
     </link>
 
     <!-- middle finger -->
-    <joint name="mf_mcp_${suffix}" type="revolute">
+    <joint name="mf_mcp${optional_suffix}" type="revolute">
       <origin xyz="-0.0071 -0.0224 -0.0187" rpy="1.57079 1.57079 0"/>
-      <parent link="palm"/>
-      <child link="mf_bs"/>
+      <parent link="palm${optional_suffix}"/>
+      <child link="mf_bs${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.314" upper="2.23"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="mf_bs_${suffix}">
-      <visual name="mf_bs_visual_${suffix}">
+    <link name="mf_bs${optional_suffix}">
+      <visual name="mf_bs_visual${optional_suffix}">
         <origin xyz="0.0084 0.0077 0.01465" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="mf_bs_collision_1_${suffix}">
+        <collision name="mf_bs_collision_1${optional_suffix}">
           <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.034"/>
           </geometry>
         </collision>
-        <collision name="mf_bs_collision_2_${suffix}">
+        <collision name="mf_bs_collision_2${optional_suffix}">
           <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.028 0.04 0.02"/>
           </geometry>
         </collision>
-        <collision name="mf_bs_collision_3_${suffix}">
+        <collision name="mf_bs_collision_3${optional_suffix}">
           <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.006 0.02"/>
           </geometry>
         </collision>
-        <collision name="mf_bs_collision_4_${suffix}">
+        <collision name="mf_bs_collision_4${optional_suffix}">
           <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.024 0.008"/>
           </geometry>
         </collision>
-        <collision name="mf_bs_collision_5_${suffix}">
+        <collision name="mf_bs_collision_5${optional_suffix}">
           <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="mf_bs_collision_6_${suffix}">
+        <collision name="mf_bs_collision_6${optional_suffix}">
           <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
@@ -357,27 +358,27 @@
       </inertial>
     </link>
 
-    <joint name="mf_rot_${suffix}" type="revolute">
+    <joint name="mf_rot${optional_suffix}" type="revolute">
       <origin xyz="-0.0122 0.0381 0.0145" rpy="-1.57079 0 1.57079"/>
-      <parent link="mf_bs"/>
-      <child link="mf_px"/>
+      <parent link="mf_bs${optional_suffix}"/>
+      <child link="mf_px${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-1.047" upper="1.047"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="mf_px_${suffix}">
-      <visual name="mf_px_visual_${suffix}">
+    <link name="mf_px${optional_suffix}">
+      <visual name="mf_px_visual${optional_suffix}">
         <origin xyz="0.0096 0.0003 0.0007" rpy="-1.57079 -1.57079 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="mf_px_collision_1_${suffix}">
+        <collision name="mf_px_collision_1${optional_suffix}">
           <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.026 0.022"/>
@@ -391,51 +392,51 @@
       </inertial>
     </link>
 
-    <joint name="mf_pip_${suffix}" type="revolute">
+    <joint name="mf_pip${optional_suffix}" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
-      <parent link="mf_px"/>
-      <child link="mf_md"/>
+      <parent link="mf_px${optional_suffix}"/>
+      <child link="mf_md${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.506" upper="1.885"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="mf_md_${suffix}">
-      <visual name="mf_md_visual_${suffix}">
+    <link name="mf_md${optional_suffix}">
+      <visual name="mf_md_visual${optional_suffix}">
         <origin xyz="0.0211 -0.0084 0.0097" rpy="-3.14159 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="mf_md_collision_1_${suffix}">
+        <collision name="mf_md_collision_1${optional_suffix}">
           <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.016 0.006 0.026"/>
           </geometry>
         </collision>
-        <collision name="mf_md_collision_2_${suffix}">
+        <collision name="mf_md_collision_2${optional_suffix}">
           <origin xyz="0 -0.016 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.004 0.034"/>
           </geometry>
         </collision>
-        <collision name="mf_md_collision_3_${suffix}">
+        <collision name="mf_md_collision_3${optional_suffix}">
           <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="mf_md_collision_4_${suffix}">
+        <collision name="mf_md_collision_4${optional_suffix}">
           <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="mf_md_collision_5_${suffix}">
+        <collision name="mf_md_collision_5${optional_suffix}">
           <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.022 0.026"/>
@@ -449,45 +450,45 @@
       </inertial>
     </link>
 
-    <joint name="mf_dip_${suffix}" type="revolute">
+    <joint name="mf_dip${optional_suffix}" type="revolute">
       <origin xyz="0 -0.0361 0.0002" rpy="0 0 0"/>
-      <parent link="mf_md"/>
-      <child link="mf_ds"/>
+      <parent link="mf_md${optional_suffix}"/>
+      <child link="mf_ds${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.366" upper="2.042"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="mf_ds_${suffix}">
-      <visual name="mf_ds_visual_${suffix}">
+    <link name="mf_ds${optional_suffix}">
+      <visual name="mf_ds_visual${optional_suffix}">
         <origin xyz="0.0132 -0.0061 0.01450" rpy="3.14159 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="mf_ds_collision_1_${suffix}">
+        <collision name="mf_ds_collision_1${optional_suffix}">
           <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.03"/>
           </geometry>
         </collision>
-        <collision name="mf_ds_collision_2_${suffix}">
+        <collision name="mf_ds_collision_2${optional_suffix}">
           <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="mf_ds_collision_3_${suffix}">
+        <collision name="mf_ds_collision_3${optional_suffix}">
           <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="mf_ds_collision_4_${suffix}">
+        <collision name="mf_ds_collision_4${optional_suffix}">
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
             <mesh filename="package://leap_rh/meshes/tip.obj"/>
@@ -503,57 +504,57 @@
 
     <!-- ring finger -->
 
-    <joint name="rf_mcp_${suffix}" type="revolute">
+    <joint name="rf_mcp${optional_suffix}" type="revolute">
       <origin xyz="-0.00709 -0.0678 -0.0187" rpy="1.57079 1.57079 0"/>
-      <parent link="palm"/>
-      <child link="rf_bs"/>
+      <parent link="palm${optional_suffix}"/>
+      <child link="rf_bs${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.314" upper="2.23"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="rf_bs_${suffix}">
-      <visual name="rf_bs_visual_${suffix}">
+    <link name="rf_bs${optional_suffix}">
+      <visual name="rf_bs_visual${optional_suffix}">
         <origin xyz="0.0084 0.0077 0.01465" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="rf_bs_collision_1_${suffix}">
+        <collision name="rf_bs_collision_1${optional_suffix}">
           <origin xyz="0 0.018 0.0147" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.034"/>
           </geometry>
         </collision>
-        <collision name="rf_bs_collision_2_${suffix}">
+        <collision name="rf_bs_collision_2${optional_suffix}">
           <origin xyz="-0.027 0.042 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.028 0.04 0.02"/>
           </geometry>
         </collision>
-        <collision name="rf_bs_collision_3_${suffix}">
+        <collision name="rf_bs_collision_3${optional_suffix}">
           <origin xyz="-0.0262 0.02 0.0146" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.006 0.02"/>
           </geometry>
         </collision>
-        <collision name="rf_bs_collision_4_${suffix}">
+        <collision name="rf_bs_collision_4${optional_suffix}">
           <origin xyz="-0.0295 0.035 0.029" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.024 0.008"/>
           </geometry>
         </collision>
-        <collision name="rf_bs_collision_5_${suffix}">
+        <collision name="rf_bs_collision_5${optional_suffix}">
           <origin xyz="0 0.005 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="rf_bs_collision_6_${suffix}">
+        <collision name="rf_bs_collision_6${optional_suffix}">
           <origin xyz="0 0.005 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
@@ -567,27 +568,27 @@
       </inertial>
     </link>
 
-    <joint name="rf_rot_${suffix}" type="revolute">
+    <joint name="rf_rot${optional_suffix}" type="revolute">
       <origin xyz="-0.0122 0.0381 0.0145" rpy="-1.57079 0 1.57079"/>
-      <parent link="rf_bs"/>
-      <child link="rf_px"/>
+      <parent link="rf_bs${optional_suffix}"/>
+      <child link="rf_px${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-1.047" upper="1.047"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="rf_px_${suffix}">
-      <visual name="rf_px_visual_${suffix}">
+    <link name="rf_px${optional_suffix}">
+      <visual name="rf_px_visual${optional_suffix}">
         <origin xyz="0.0096 0.0003 0.0007" rpy="-1.57079 -1.57079 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="rf_px_collision_1_${suffix}">
+        <collision name="rf_px_collision_1${optional_suffix}">
           <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.026 0.022"/>
@@ -601,27 +602,27 @@
       </inertial>
     </link>
 
-    <joint name="rf_pip_${suffix}" type="revolute">
+    <joint name="rf_pip${optional_suffix}" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
-      <parent link="rf_px"/>
-      <child link="rf_md"/>
+      <parent link="rf_px${optional_suffix}"/>
+      <child link="rf_md${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.506" upper="1.885"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="rf_md_${suffix}">
-      <visual name="rf_md_visual_${suffix}">
+    <link name="rf_md${optional_suffix}">
+      <visual name="rf_md_visual${optional_suffix}">
         <origin xyz="0.0211 -0.0084 0.0097" rpy="-3.14159 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="rf_md_collision_1_${suffix}">
+        <collision name="rf_md_collision_1${optional_suffix}">
           <origin xyz="0 -0.02 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.016 0.006 0.026"/>
@@ -633,19 +634,19 @@
             <box size="0.02 0.004 0.034"/>
           </geometry>
         </collision>
-        <collision name="rf_md_collision_3_${suffix}">
+        <collision name="rf_md_collision_3${optional_suffix}">
           <origin xyz="0 -0.0045 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="rf_md_collision_4_${suffix}">
+        <collision name="rf_md_collision_4${optional_suffix}">
           <origin xyz="0 -0.0045 0" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="rf_md_collision_5_${suffix}">
+        <collision name="rf_md_collision_5${optional_suffix}">
           <origin xyz="0.0075 -0.035 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.022 0.026"/>
@@ -659,45 +660,45 @@
       </inertial>
     </link>
 
-    <joint name="rf_dip_${suffix}" type="revolute">
+    <joint name="rf_dip${optional_suffix}" type="revolute">
       <origin xyz="0 -0.03609 0.0002" rpy="0 0 0"/>
-      <parent link="rf_md"/>
-      <child link="rf_ds"/>
+      <parent link="rf_md${optional_suffix}"/>
+      <child link="rf_ds${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.366" upper="2.042"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="rf_ds_${suffix}">
-      <visual name="rf_ds_visual_${suffix}">
+    <link name="rf_ds${optional_suffix}">
+      <visual name="rf_ds_visual${optional_suffix}">
         <origin xyz="0.0132 -0.0061 0.0145" rpy="3.14159 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="rf_ds_collision_1_${suffix}">
+        <collision name="rf_ds_collision_1${optional_suffix}">
           <origin xyz="0 -0.017 0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.006 0.03"/>
           </geometry>
         </collision>
-        <collision name="rf_ds_collision_2_${suffix}">
+        <collision name="rf_ds_collision_2${optional_suffix}">
           <origin xyz="0 -0.006 0.03" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="rf_ds_collision_3_${suffix}">
+        <collision name="rf_ds_collision_3${optional_suffix}">
           <origin xyz="0 -0.006 -0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.022 0.004"/>
           </geometry>
         </collision>
-        <collision name="rf_ds_collision_4_${suffix}">
+        <collision name="rf_ds_collision_4${optional_suffix}">
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
             <mesh filename="package://leap_rh/meshes/tip.obj"/>
@@ -713,27 +714,27 @@
 
     <!-- thumb -->
 
-    <joint name="th_cmc_${suffix}" type="revolute">
+    <joint name="th_cmc${optional_suffix}" type="revolute">
       <origin xyz="-0.0693 -0.0012 -0.0216" rpy="0 1.57079 0"/>
-      <parent link="palm"/>
-      <child link="th_mp"/>
+      <parent link="palm${optional_suffix}"/>
+      <child link="th_mp${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.349" upper="2.094"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="th_mp_${suffix}">
-      <visual name="th_mp_visual_${suffix}">
+    <link name="th_mp${optional_suffix}">
+      <visual name="th_mp_visual${optional_suffix}">
         <origin xyz="-0.0053 0.0003 0.00078" rpy="-1.57079 -1.57079 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="th_mp_collision_1_${suffix}">
+        <collision name="th_mp_collision_1${optional_suffix}">
           <origin xyz="0.0075 -0.0002 -0.011" rpy="0 0 0"/>
           <geometry>
             <box size="0.034 0.026 0.022"/>
@@ -747,39 +748,39 @@
       </inertial>
     </link>
 
-    <joint name="th_axl_${suffix}" type="revolute">
+    <joint name="th_axl${optional_suffix}" type="revolute">
       <origin xyz="0 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
-      <parent link="th_mp"/>
-      <child link="th_bs"/>
+      <parent link="th_mp${optional_suffix}"/>
+      <child link="th_bs${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-0.47" upper="2.443"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="th_bs_${suffix}">
-      <visual name="th_bs_visual_${suffix}">
+    <link name="th_bs${optional_suffix}">
+      <visual name="th_bs_visual${optional_suffix}">
         <origin xyz="0.01196 0 -0.0158" rpy="1.57079 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_base.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="th_bs_collision_1_${suffix}">
+        <collision name="th_bs_collision_1${optional_suffix}">
           <origin xyz="0 0 -0.0015" rpy="0 0 0"/>
           <geometry>
             <box size="0.018 0.033 0.004"/>
           </geometry>
         </collision>
-        <collision name="th_bs_collision_2_${suffix}">
+        <collision name="th_bs_collision_2${optional_suffix}">
           <origin xyz="0 -0.015 -0.013" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.004 0.02"/>
           </geometry>
         </collision>
-        <collision name="th_bs_collision_3_${suffix}">
+        <collision name="th_bs_collision_3${optional_suffix}">
           <origin xyz="0 0.015 -0.013" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.004 0.02"/>
@@ -793,51 +794,51 @@
       </inertial>
     </link>
 
-    <joint name="th_mcp_${suffix}" type="revolute">
+    <joint name="th_mcp${optional_suffix}" type="revolute">
       <origin xyz="0 0.0145 -0.017" rpy="-1.57079 0 0"/>
-      <parent link="th_bs"/>
-      <child link="th_px"/>
+      <parent link="th_bs${optional_suffix}"/>
+      <child link="th_px${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-1.20" upper="1.90"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="th_px_${suffix}">
-      <visual name="th_px_visual_${suffix}">
+    <link name="th_px${optional_suffix}">
+      <visual name="th_px_visual${optional_suffix}">
         <origin xyz="0.0439 0.0579 -0.0086" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_proximal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="th_px_collision_1_${suffix}">
+        <collision name="th_px_collision_1${optional_suffix}">
           <origin xyz="0 0.0105 -0.014" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.04 0.024"/>
           </geometry>
         </collision>
-        <collision name="th_px_collision_2_${suffix}">
+        <collision name="th_px_collision_2${optional_suffix}">
           <origin xyz="0 0.031 -0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.004 0.032"/>
           </geometry>
         </collision>
-        <collision name="th_px_collision_3_${suffix}">
+        <collision name="th_px_collision_3${optional_suffix}">
           <origin xyz="0 0.042 0.001" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="th_px_collision_4_${suffix}">
+        <collision name="th_px_collision_4${optional_suffix}">
           <origin xyz="0 0.042 -0.029" rpy="0 0 0"/>
           <geometry>
             <box size="0.014 0.02 0.004"/>
           </geometry>
         </collision>
-        <collision name="th_px_collision_5_${suffix}">
+        <collision name="th_px_collision_5${optional_suffix}">
           <origin xyz="-0.0135 0.0175 -0.011656" rpy="0 0 0"/>
           <geometry>
             <box size="0.01 0.024 0.018"/>
@@ -851,45 +852,45 @@
       </inertial>
     </link>
 
-    <joint name="th_ipl_${suffix}" type="revolute">
+    <joint name="th_ipl${optional_suffix}" type="revolute">
       <origin xyz="0 0.0466 0.0002" rpy="0 0 3.14159"/>
-      <parent link="th_px"/>
-      <child link="th_ds"/>
+      <parent link="th_px${optional_suffix}"/>
+      <child link="th_ds${optional_suffix}"/>
       <axis xyz="0 0 -1"/>
       <limit effort="0.95" velocity="8.48" lower="-1.34" upper="1.88"/>
       <joint_properties friction="0.0"/>
     </joint>
 
-    <link name="th_ds_${suffix}">
-      <visual name="th_ds_visual_${suffix}">
+    <link name="th_ds${optional_suffix}">
+      <visual name="th_ds_visual${optional_suffix}">
         <origin xyz="0.0625 0.0784 0.0489" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_distal.obj"/>
         </geometry>
-        <material name="black_${suffix}">
+        <material name="black${optional_suffix}">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
       <xacro:if value="${collision}">
-        <collision name="th_ds_collision_1_${suffix}">
+        <collision name="th_ds_collision_1${optional_suffix}">
           <origin xyz="0 -0.0085 -0.015" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.036 0.024"/>
           </geometry>
         </collision>
-        <collision name="th_ds_collision_2_${suffix}">
+        <collision name="th_ds_collision_2${optional_suffix}">
           <origin xyz="0 -0.029 -0.014" rpy="0 0 0"/>
           <geometry>
             <box size="0.02 0.004 0.03"/>
           </geometry>
         </collision>
-        <collision name="th_ds_collision_3_${suffix}">
+        <collision name="th_ds_collision_3${optional_suffix}">
           <origin xyz="0.015 -0.0175 -0.0115" rpy="0 0 0"/>
           <geometry>
             <box size="0.008 0.024 0.018"/>
           </geometry>
         </collision>
-        <collision name="th_ds_collision_4_${suffix}">
+        <collision name="th_ds_collision_4${optional_suffix}">
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
             <mesh filename="package://leap_rh/meshes/thumb_tip.obj"/>
