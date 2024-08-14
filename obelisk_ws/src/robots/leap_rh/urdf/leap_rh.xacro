@@ -11,7 +11,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/palm.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -85,7 +85,7 @@
     </link>
 
     <!-- index finger -->
-    <joint name="if_mcp${optional_suffix}" type="revolute">
+    <joint name="if_mcp" type="revolute">
       <origin xyz="-0.0070 0.0230 -0.0187" rpy="1.57079 1.57079 0"/>
       <parent link="palm${optional_suffix}"/>
       <child link="if_bs${optional_suffix}"/>
@@ -100,7 +100,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -149,7 +149,7 @@
       </inertial>
     </link>
 
-    <joint name="if_rot${optional_suffix}" type="revolute">
+    <joint name="if_rot" type="revolute">
       <origin xyz="-0.0122 0.03810 0.01450" rpy="-1.57079 0 1.57079"/>
       <parent link="if_bs${optional_suffix}"/>
       <child link="if_px${optional_suffix}"/>
@@ -164,7 +164,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -183,7 +183,7 @@
       </inertial>
     </link>
 
-    <joint name="if_pip${optional_suffix}" type="revolute">
+    <joint name="if_pip" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
       <parent link="if_px${optional_suffix}"/>
       <child link="if_md${optional_suffix}"/>
@@ -198,7 +198,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -241,7 +241,7 @@
       </inertial>
     </link>
 
-    <joint name="if_dip${optional_suffix}" type="revolute">
+    <joint name="if_dip" type="revolute">
       <origin xyz="0 -0.0361 0.0002" rpy="0 0 0"/>
       <parent link="if_md${optional_suffix}"/>
       <child link="if_ds${optional_suffix}"/>
@@ -256,7 +256,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -294,7 +294,7 @@
     </link>
 
     <!-- middle finger -->
-    <joint name="mf_mcp${optional_suffix}" type="revolute">
+    <joint name="mf_mcp" type="revolute">
       <origin xyz="-0.0071 -0.0224 -0.0187" rpy="1.57079 1.57079 0"/>
       <parent link="palm${optional_suffix}"/>
       <child link="mf_bs${optional_suffix}"/>
@@ -309,7 +309,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -358,7 +358,7 @@
       </inertial>
     </link>
 
-    <joint name="mf_rot${optional_suffix}" type="revolute">
+    <joint name="mf_rot" type="revolute">
       <origin xyz="-0.0122 0.0381 0.0145" rpy="-1.57079 0 1.57079"/>
       <parent link="mf_bs${optional_suffix}"/>
       <child link="mf_px${optional_suffix}"/>
@@ -373,7 +373,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -392,7 +392,7 @@
       </inertial>
     </link>
 
-    <joint name="mf_pip${optional_suffix}" type="revolute">
+    <joint name="mf_pip" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
       <parent link="mf_px${optional_suffix}"/>
       <child link="mf_md${optional_suffix}"/>
@@ -407,7 +407,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -450,7 +450,7 @@
       </inertial>
     </link>
 
-    <joint name="mf_dip${optional_suffix}" type="revolute">
+    <joint name="mf_dip" type="revolute">
       <origin xyz="0 -0.0361 0.0002" rpy="0 0 0"/>
       <parent link="mf_md${optional_suffix}"/>
       <child link="mf_ds${optional_suffix}"/>
@@ -465,7 +465,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -504,7 +504,7 @@
 
     <!-- ring finger -->
 
-    <joint name="rf_mcp${optional_suffix}" type="revolute">
+    <joint name="rf_mcp" type="revolute">
       <origin xyz="-0.00709 -0.0678 -0.0187" rpy="1.57079 1.57079 0"/>
       <parent link="palm${optional_suffix}"/>
       <child link="rf_bs${optional_suffix}"/>
@@ -519,7 +519,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/base.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -568,7 +568,7 @@
       </inertial>
     </link>
 
-    <joint name="rf_rot${optional_suffix}" type="revolute">
+    <joint name="rf_rot" type="revolute">
       <origin xyz="-0.0122 0.0381 0.0145" rpy="-1.57079 0 1.57079"/>
       <parent link="rf_bs${optional_suffix}"/>
       <child link="rf_px${optional_suffix}"/>
@@ -583,7 +583,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -602,7 +602,7 @@
       </inertial>
     </link>
 
-    <joint name="rf_pip${optional_suffix}" type="revolute">
+    <joint name="rf_pip" type="revolute">
       <origin xyz="0.015 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
       <parent link="rf_px${optional_suffix}"/>
       <child link="rf_md${optional_suffix}"/>
@@ -617,7 +617,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/medial.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -660,7 +660,7 @@
       </inertial>
     </link>
 
-    <joint name="rf_dip${optional_suffix}" type="revolute">
+    <joint name="rf_dip" type="revolute">
       <origin xyz="0 -0.03609 0.0002" rpy="0 0 0"/>
       <parent link="rf_md${optional_suffix}"/>
       <child link="rf_ds${optional_suffix}"/>
@@ -675,7 +675,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/distal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -714,7 +714,7 @@
 
     <!-- thumb -->
 
-    <joint name="th_cmc${optional_suffix}" type="revolute">
+    <joint name="th_cmc" type="revolute">
       <origin xyz="-0.0693 -0.0012 -0.0216" rpy="0 1.57079 0"/>
       <parent link="palm${optional_suffix}"/>
       <child link="th_mp${optional_suffix}"/>
@@ -729,7 +729,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/proximal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -748,7 +748,7 @@
       </inertial>
     </link>
 
-    <joint name="th_axl${optional_suffix}" type="revolute">
+    <joint name="th_axl" type="revolute">
       <origin xyz="0 0.0143 -0.013" rpy="1.57079 -1.57079 0"/>
       <parent link="th_mp${optional_suffix}"/>
       <child link="th_bs${optional_suffix}"/>
@@ -763,7 +763,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_base.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -794,7 +794,7 @@
       </inertial>
     </link>
 
-    <joint name="th_mcp${optional_suffix}" type="revolute">
+    <joint name="th_mcp" type="revolute">
       <origin xyz="0 0.0145 -0.017" rpy="-1.57079 0 0"/>
       <parent link="th_bs${optional_suffix}"/>
       <child link="th_px${optional_suffix}"/>
@@ -809,7 +809,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_proximal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
@@ -852,7 +852,7 @@
       </inertial>
     </link>
 
-    <joint name="th_ipl${optional_suffix}" type="revolute">
+    <joint name="th_ipl" type="revolute">
       <origin xyz="0 0.0466 0.0002" rpy="0 0 3.14159"/>
       <parent link="th_px${optional_suffix}"/>
       <child link="th_ds${optional_suffix}"/>
@@ -867,7 +867,7 @@
         <geometry>
           <mesh filename="package://leap_rh/meshes/thumb_distal.obj"/>
         </geometry>
-        <material name="black${optional_suffix}">
+        <material name="black">
           <color rgba="0.2 0.2 0.2 ${alpha}"/>
         </material>
       </visual>
