@@ -6,7 +6,7 @@ namespace obelisk {
     class ObeliskSensorTester : public ObeliskSensor {
       public:
         ObeliskSensorTester() : ObeliskSensor("obelisk_sensor_tester") {
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
         }
 
         void Configure() {

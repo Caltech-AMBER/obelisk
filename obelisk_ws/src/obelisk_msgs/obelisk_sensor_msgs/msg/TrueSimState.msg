@@ -13,8 +13,3 @@ string[] joint_names
 # Velocities
 float64[] v_base
 float64[] v_joints
-
-# Contact forces
-# Vector3[] contact_forces
-
-# Applied control

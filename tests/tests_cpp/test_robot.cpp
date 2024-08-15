@@ -6,7 +6,7 @@ namespace obelisk {
     class ObeliskRobotTester : public ObeliskRobot<obelisk_control_msgs::msg::PositionSetpoint> {
       public:
         ObeliskRobotTester() : ObeliskRobot("obelisk_sensor_tester") {
-            this->set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic4"));
+            this->set_parameter(rclcpp::Parameter("sub_ctrl_settings", "topic:topic4"));
             this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
         }
 

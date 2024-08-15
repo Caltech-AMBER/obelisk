@@ -277,8 +277,10 @@ namespace obelisk {
 
       protected:
         obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() override {
-            static constexpr int FLOATING_BASE = 7;
-            static constexpr int FLOATING_VEL  = 6;
+            RCLCPP_WARN_STREAM_ONCE(this->get_logger(),
+                                    "The true sim state currently only works for floating base robots!");
+            static constexpr int DIM_FLOATING_BASE = 7;
+            static constexpr int DIM_FLOATING_VEL  = 6;
 
             obelisk_sensor_msgs::msg::TrueSimState msg;
 
@@ -292,20 +294,20 @@ namespace obelisk {
             // TODO: Handle both floating and fixed base
 
             // Configuration
-            for (int i = 0; i < FLOATING_BASE; i++) {
+            for (int i = 0; i < DIM_FLOATING_BASE; i++) {
                 msg.q_base.emplace_back(this->data_->qpos[i]);
             }
 
-            for (int i = FLOATING_BASE; i < this->model_->nq; i++) {
+            for (int i = DIM_FLOATING_BASE; i < this->model_->nq; i++) {
                 msg.q_joints.emplace_back(this->data_->qpos[i]);
             }
 
             // Velocity
-            for (int i = 0; i < FLOATING_VEL; i++) {
+            for (int i = 0; i < DIM_FLOATING_VEL; i++) {
                 msg.v_base.emplace_back(this->data_->qvel[i]);
             }
 
-            for (int i = FLOATING_VEL; i < this->model_->nv; i++) {
+            for (int i = DIM_FLOATING_VEL; i < this->model_->nv; i++) {
                 msg.v_joints.emplace_back(this->data_->qvel[i]);
             }
 
@@ -631,7 +633,6 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        // GetTimeFromSim(msg.stamp.sec, msg.stamp.nanosec);
                         msg.header.stamp = this->now();
                     }
                     publisher->publish(msg);
@@ -714,7 +715,6 @@ namespace obelisk {
                         }
 
                         msg.header.stamp = this->now();
-                        // GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
                     }
                     publisher->publish(msg);
                 };
@@ -825,9 +825,7 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        // Note that this might cause weird issues with finite differencing - more testing is needed
                         msg.header.stamp = this->now();
-                        // GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
                     }
                     publisher->publish(msg);
                 };
