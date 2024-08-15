@@ -789,7 +789,7 @@ namespace obelisk {
          */
         bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
             try {
-                if (config_map.at("non_obelisk") == "true") {
+                if (config_map.at("non_obelisk") == "True") {
                     return false;
                 } else {
                     return true;
