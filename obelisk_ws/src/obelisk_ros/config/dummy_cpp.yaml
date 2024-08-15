@@ -65,7 +65,16 @@ onboard:
       params:
         ic_keyframe: ic
       # callback_groups:
-      # publishers:
+      publishers:
+        - ros_parameter: pub_true_sim_state_setting
+          topic: /obelisk/dummy/true_sim_state
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_true_sim_state_setting
+          history_depth: 10
+          timer_period_sec: 0.01
+          callback_group: None
       subscribers:
         - ros_parameter: sub_ctrl_setting
           # key: sub1
