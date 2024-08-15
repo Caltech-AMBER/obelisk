@@ -203,7 +203,7 @@ namespace obelisk {
                              bool enable_communication_interface = true)
             : LifecycleNode(node_name, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-            this->declare_parameter<std::string>("callback_group_setting", "");
+            this->declare_parameter<std::string>("callback_group_settings", "");
 
             // ROS parameter designed to let the user feed a file path for their own code
             this->declare_parameter<std::string>("params_path", "");
@@ -216,7 +216,7 @@ namespace obelisk {
                     bool enable_communication_interface = true)
             : LifecycleNode(node_name, namespace_, options, enable_communication_interface), CB_GROUP_NONE("None"),
               CB_GROUP_MUTUALLY_EXEC("MutuallyExclusiveCallbackGroup"), CB_GROUP_REENTRANT("ReentrantCallbackGroup") {
-            this->declare_parameter<std::string>("callback_group_setting", "");
+            this->declare_parameter<std::string>("callback_group_settings", "");
 
             // ROS parameter designed to let the user feed a file path for their own code
             this->declare_parameter<std::string>("params_path", "");
@@ -367,7 +367,7 @@ namespace obelisk {
             rclcpp_lifecycle::LifecycleNode::on_configure(prev_state);
 
             // Parse the configuration groups for this node
-            ParseCallbackGroupConfig(this->get_parameter("callback_group_setting").as_string());
+            ParseCallbackGroupConfig(this->get_parameter("callback_group_settings").as_string());
 
             CreatePublishers();
             CreateSubscriptions();
@@ -702,6 +702,10 @@ namespace obelisk {
                 // Get the callback group based on the string name
                 cbg = callback_groups_.at(GetCallbackGroupName(config_map));
             } catch (const std::exception& e) {
+                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                    "Callback group "
+                                        << GetCallbackGroupName(config_map)
+                                        << " not found as a callback group. Initializing with the default group.");
             }
 
             // Create the timer
@@ -864,12 +868,17 @@ namespace obelisk {
                 if (cbg.second == CB_GROUP_MUTUALLY_EXEC) {
                     callback_groups_.emplace(cbg.first,
                                              this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive));
+                    RCLCPP_INFO_STREAM(this->get_logger(),
+                                       "Creating a mutually exclusive callback group with name " << cbg.first);
                 } else if (cbg.second == CB_GROUP_REENTRANT) {
                     callback_groups_.emplace(cbg.first,
                                              this->create_callback_group(rclcpp::CallbackGroupType::Reentrant));
+                    RCLCPP_INFO_STREAM(this->get_logger(),
+                                       "Creating a reentrant callback group with name " << cbg.first);
                 } else {
                     // Node's default callback group
                     callback_groups_.emplace(cbg.first, nullptr);
+                    RCLCPP_WARN_STREAM(this->get_logger(), "Creating a default callback group with name " << cbg.first);
                 }
             }
 

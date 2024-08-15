@@ -4,7 +4,8 @@ onboard:
     - pkg: obelisk_control_cpp
       executable: example_position_setpoint_controller
       params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
-      # callback_groups:
+      callback_groups:
+        test_cbg: MutuallyExclusiveCallbackGroup
       params:
         test_param: value_configured_in_yaml
       publishers:
@@ -28,7 +29,7 @@ onboard:
         - ros_parameter: timer_ctrl_setting
           # key: timer1
           timer_period_sec: 0.001
-          callback_group: None
+          callback_group: test_cbg
           # callback_key: timer_callback1
   estimation:
     - pkg: obelisk_estimation_cpp
