@@ -598,7 +598,8 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        GetTimeFromSim(msg.stamp.sec, msg.stamp.nanosec);
+                        // GetTimeFromSim(msg.stamp.sec, msg.stamp.nanosec);
+                        msg.header.stamp = this->now();
                     }
                     publisher->publish(msg);
                 };
@@ -679,7 +680,8 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
+                        msg.header.stamp = this->now();
+                        // GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
                     }
                     publisher->publish(msg);
                 };
@@ -790,7 +792,9 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
+                        // Note that this might cause weird issues with finite differencing - more testing is needed
+                        msg.header.stamp = this->now();
+                        // GetTimeFromSim(msg.header.stamp.sec, msg.header.stamp.nanosec);
                     }
                     publisher->publish(msg);
                 };
