@@ -1,5 +1,7 @@
 string MESSAGE_NAME="EstimatedState"
 
+std_msgs/Header header
+
 # Quantities required for viz
 float64[] q_base
 string base_link_name
