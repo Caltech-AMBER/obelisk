@@ -68,7 +68,7 @@ TEST_CASE("GetIsObeliskMsg", "[ObeliskNode]") {
     rclcpp::init(0, nullptr);
 
     TestObeliskNode node;
-    std::map<std::string, std::string> config_map{{"non_obelisk", "true"}};
+    std::map<std::string, std::string> config_map{{"non_obelisk", "True"}};
 
     CHECK(node.GetIsObeliskMsg(config_map) == false);
 
