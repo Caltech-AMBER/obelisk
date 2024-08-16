@@ -8,7 +8,7 @@ namespace obelisk {
         ObeliskMujocoTester() : ObeliskMujocoRobot("obelisk_mujoco_tester") {
             this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "topic:topic1,timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", "topic:topic2"));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", "topic:topic2"));
             this->set_parameter(rclcpp::Parameter(
                 "mujoco_setting", "model_xml_path:dummy/"
                                   "dummy.xml,n_u:1,sensor_settings:[{group_name=group1|dt=0.01|topic=topic1|sensor_"
