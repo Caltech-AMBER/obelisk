@@ -8,7 +8,7 @@ namespace obelisk {
         ObeliskEstimatorTester() : ObeliskEstimator("obelisk_estimator_tester") {
             this->set_parameter(rclcpp::Parameter("timer_est_setting", "timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_est_setting", "topic:topic1"));
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
         }
 
         void Configure() {

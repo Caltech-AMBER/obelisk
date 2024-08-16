@@ -9,7 +9,7 @@ namespace obelisk {
             this->set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:1"));
             this->set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:topic1"));
             this->set_parameter(rclcpp::Parameter("sub_est_setting", "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
         }
 
         void Configure() {

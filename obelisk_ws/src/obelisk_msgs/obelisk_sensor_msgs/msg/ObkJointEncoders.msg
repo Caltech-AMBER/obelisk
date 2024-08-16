@@ -2,6 +2,8 @@
 
 string MESSAGE_NAME="ObkJointEncoders"
 
+std_msgs/Header header
+
 builtin_interfaces/Time stamp
 
 float64[] joint_pos

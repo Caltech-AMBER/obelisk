@@ -17,7 +17,7 @@ namespace obelisk::viz {
             this->set_parameter(rclcpp::Parameter("pub_viz_joint_setting", "topic:topic1"));
             this->set_parameter(rclcpp::Parameter("sub_viz_est_setting", "topic:topic2"));
             this->set_parameter(rclcpp::Parameter("timer_viz_joint_setting", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("callback_group_setting", ""));
+            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
         }
 
         void Configure() {
