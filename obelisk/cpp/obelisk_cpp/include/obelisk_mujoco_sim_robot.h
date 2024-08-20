@@ -164,6 +164,62 @@ namespace obelisk {
 
             data_ = mj_makeData(model_);
 
+            // Create the rendering thread
+            std::thread rendering_thread(std::bind(&ObeliskMujocoRobot::SimRender, this));
+
+            mujoco_setup_ = true;
+
+            while (!activation_complete_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
+            }
+            RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
+
+            // Set the initial condition based on a keyframe
+            RCLCPP_INFO_STREAM(this->get_logger(), "Found " << this->model_->nkey << " Mujoco keyframes.");
+            for (int i = 0; i < this->model_->nkey; i++) {
+                std::string potential_keyframe(this->model_->names + this->model_->name_keyadr[i]);
+                if (potential_keyframe == this->get_parameter("ic_keyframe").as_string()) {
+                    RCLCPP_INFO_STREAM(this->get_logger(),
+                                       "Setting initial condition to keyframe: " << potential_keyframe);
+                    mju_copy(this->data_->qpos, &this->model_->key_qpos[i * this->model_->nq], this->model_->nq);
+                    mju_copy(this->data_->qvel, &this->model_->key_qvel[i * this->model_->nv], this->model_->nv);
+                    this->data_->time = this->model_->key_time[i];
+
+                    mju_copy(this->data_->ctrl, &this->model_->key_ctrl[i * this->model_->nu], this->model_->nu);
+                }
+            }
+
+            while (!this->stop_thread_) {
+                auto start_time = this->now();
+                {
+                    // Get the data from the shared vector safely
+                    std::lock_guard<std::mutex> lock(shared_data_mut_);
+                    for (int i = 0; i < nu_; i++) {
+                        data_->ctrl[i] = shared_data_.at(i);
+                    }
+                }
+
+                {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    mj_step(model_, data_);
+                }
+
+                // Thread sleeping won't be precise enough for this, so instead we will spin lock the thread. This is
+                // inefficient, but accurate.
+                while ((this->now() - start_time).nanoseconds() < time_step_ * 1e9) {
+                }
+            }
+
+            RCLCPP_WARN_STREAM(this->get_logger(), "Cleaning up simulation data and model...");
+            // free MuJoCo model and data
+            mj_deleteData(data_);
+            mj_deleteModel(model_);
+
+            // rendering_thread.join();
+        }
+
+      protected:
+        void SimRender() {
             // Create the window
             if (!glfwInit()) {
                 throw std::runtime_error("Could not initialize GLFW");
@@ -195,57 +251,25 @@ namespace obelisk {
             glfwSetMouseButtonCallback(window_, ObeliskMujocoRobot::MouseButtonCallback);
             glfwSetScrollCallback(window_, ObeliskMujocoRobot::ScrollCallback);
 
-            mujoco_setup_ = true;
-
-            while (!activation_complete_) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            }
-            RCLCPP_INFO_STREAM(this->get_logger(), "Starting Mujoco simulation loop.");
-
-            // Set the initial condition based on a keyframe
-            RCLCPP_INFO_STREAM(this->get_logger(), "Found " << this->model_->nkey << " Mujoco keyframes.");
-            for (int i = 0; i < this->model_->nkey; i++) {
-                std::string potential_keyframe(this->model_->names + this->model_->name_keyadr[i]);
-                if (potential_keyframe == this->get_parameter("ic_keyframe").as_string()) {
-                    RCLCPP_INFO_STREAM(this->get_logger(),
-                                       "Setting initial condition to keyframe: " << potential_keyframe);
-                    mju_copy(this->data_->qpos, &this->model_->key_qpos[i * this->model_->nq], this->model_->nq);
-                    mju_copy(this->data_->qvel, &this->model_->key_qvel[i * this->model_->nv], this->model_->nv);
-                    this->data_->time = this->model_->key_time[i];
-
-                    mju_copy(this->data_->ctrl, &this->model_->key_ctrl[i * this->model_->nu], this->model_->nu);
-                }
-            }
-
             while (!this->stop_thread_) {
                 if (!glfwWindowShouldClose(window_)) {
-                    auto start_time = std::chrono::steady_clock::now();
-
-                    mjtNum simstart = data_->time;
-                    while (data_->time - simstart < num_steps_per_viz_ * time_step_) {
-                        {
-                            // Get the data from the shared vector safely
-                            std::lock_guard<std::mutex> lock(shared_data_mut_);
-                            for (int i = 0; i < nu_; i++) {
-                                data_->ctrl[i] = shared_data_.at(i);
-                            }
-                        }
-
-                        std::lock_guard<std::mutex> lock(sensor_data_mut_);
-                        mj_step(model_, data_);
-                    }
-
                     // get framebuffer viewport
                     mjrRect viewport = {0, 0, 0, 0};
                     glfwGetFramebufferSize(window_, &viewport.width, &viewport.height);
 
+                    float time = 0;
+
                     // update scene and render
-                    mjv_updateScene(model_, data_, &opt, NULL, &cam, mjCAT_ALL, &scn);
+                    {
+                        std::scoped_lock lock(sensor_data_mut_, shared_data_mut_);
+                        time = data_->time;
+                        mjv_updateScene(model_, data_, &opt, NULL, &cam, mjCAT_ALL, &scn);
+                    }
                     mjr_render(viewport, &scn, &con);
 
                     // add time stamp in upper-left corner
                     char stamp[50];
-                    sprintf_arr(stamp, "Time = %.3f", data_->time);
+                    sprintf_arr(stamp, "Time = %.3f", time);
                     mjr_overlay(mjFONT_NORMAL, mjGRID_TOPLEFT, viewport, stamp, NULL, &con);
 
                     // TODO (@zolkin): Add option to save the simulation render
@@ -256,26 +280,15 @@ namespace obelisk {
                     // process pending GUI events, call GLFW callbacks
                     glfwPollEvents();
 
-                    auto end_time   = std::chrono::steady_clock::now();
-                    auto total_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-                    const int des_time_us = static_cast<int>((num_steps_per_viz_ * time_step_) * 1e6);
-                    if (total_time.count() < des_time_us) {
-                        const int time_diff_us = des_time_us - total_time.count();
-                        std::this_thread::sleep_for(std::chrono::microseconds(time_diff_us));
-                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(17)); // 58Hz render rate at most
                 }
             }
-
+            RCLCPP_WARN_STREAM(this->get_logger(), "Cleaning up simulation rendering...");
             // free visualization storage
             mjv_freeScene(&scn);
             mjr_freeContext(&con);
-
-            // free MuJoCo model and data
-            mj_deleteData(data_);
-            mj_deleteModel(model_);
         }
 
-      protected:
         obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() override {
             RCLCPP_WARN_STREAM_ONCE(this->get_logger(),
                                     "The true sim state currently only works for floating base robots!");

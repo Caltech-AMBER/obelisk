@@ -65,7 +65,8 @@ onboard:
       executable: obelisk_mujoco_robot
       params:
         ic_keyframe: ic
-      # callback_groups:
+      callback_groups:
+        rendering_cbg: MutuallyExclusiveCallbackGroup
       publishers:
         - ros_parameter: pub_true_sim_state_setting
           topic: /obelisk/dummy/true_sim_state

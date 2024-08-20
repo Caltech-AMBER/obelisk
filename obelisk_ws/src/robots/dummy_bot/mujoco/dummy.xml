@@ -2,7 +2,7 @@
     <include file="common.xml" />
 
     <compiler angle="radian" coordinate="local"/>
-    <option timestep="0.001" gravity="0 0 -9.81"/>
+    <option timestep="0.002" gravity="0 0 -9.81"/>
 
     <visual>
         <map znear="0.01" zfar="50"/>
@@ -53,6 +53,6 @@
 
     <keyframe>
         <key name="other" qpos="-1" ctrl="-1" time="1"/>
-        <key name="ic" qpos="1" ctrl="1" time="3" />
+        <key name="ic" qpos="1" ctrl="1" time="0" />
     </keyframe>
 </mujoco>
