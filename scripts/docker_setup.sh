@@ -5,6 +5,7 @@ docker_basic=false
 docker_cyclone_perf=false
 docker_leap=false
 docker_zed=false
+docker_zed_ai=false
 docker_pixi=false
 
 docker_group_leap=false
@@ -34,6 +35,11 @@ while [ $# -gt 0 ]; do
         --docker-zed)
             docker_zed=true
             shift  # Sets OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
+            ;;
+        --docker-zed-ai)
+            docker_zed=true
+            docker_zed_ai=true
+            shift  # Sets OBELISK_DOCKER_ZED_AI=true for docker, which installs ZED AI SDK
             ;;
         --docker-pixi)
             docker_pixi=true
@@ -71,6 +77,7 @@ Options:
   --docker-cyclone-perf              Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
   --docker-leap                      Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
   --docker-zed                       Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
+  --docker-zed-ai                    Set OBELISK_DOCKER_ZED_AI=true for docker, which installs ZED AI SDK
   --docker-pixi                      Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
 
   --docker-group-leap                Adds user to the dialout group
@@ -206,6 +213,16 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_ZED=false!\033[0m"
     echo "OBELISK_DOCKER_ZED=false" >> $env_file
     export OBELISK_DOCKER_ZED=false
+fi
+
+if [ "$docker_zed_ai" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_ZED_AI=true!\033[0m"
+    echo "OBELISK_DOCKER_ZED_AI=true" >> $env_file
+    export OBELISK_DOCKER_ZED_AI=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_ZED_AI=false!\033[0m"
+    echo "OBELISK_DOCKER_ZED_AI=false" >> $env_file
+    export OBELISK_DOCKER_ZED_AI=false
 fi
 
 if [ "$docker_pixi" = true ]; then

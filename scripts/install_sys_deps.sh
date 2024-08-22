@@ -9,6 +9,7 @@ source_ros=false
 # hardware-specific deps
 leap=false
 zed=false
+zed_ai=false
 
 for arg in "$@"; do
     case $arg in
@@ -32,6 +33,11 @@ for arg in "$@"; do
             zed=true
             shift # Installs ZED SDK
             ;;
+        --zed-ai)
+            zed=true
+            zed_ai=true
+            shift # Installs ZED AI SDK
+            ;;
         --help)
             echo "Usage: $0 [OPTIONS]
 
@@ -41,6 +47,7 @@ Options:
   --source-ros         Source base ROS in ~/.bashrc
   --leap               Install LEAP hand dependencies
   --zed                Install ZED SDK
+  --zed-ai             Install ZED SDK with AI Module
 
   --help               Display this help message and exit
 "
@@ -185,7 +192,13 @@ if [ "$zed" = true ]; then
         sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
         wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
         sudo chmod +x ubuntu22  # make installer executable
-        ./ubuntu22 -- silent skip_cuda skip_od_module skip_hub skip_tools  # run installer
+        echo 'keyboard-configuration keyboard-configuration/layoutcode string us' | \
+            sudo debconf-set-selections  # set keyboard layout, prevents user prompt in installer
+        if [ "$zed_ai" = true ]; then
+            ./ubuntu22 -- silent skip_cuda skip_hub  # run installer w/ ai modules + tools
+        else
+            ./ubuntu22 -- silent skip_cuda skip_hub skip_od_module skip_tools  # run installer
+        fi
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
         rm ubuntu22  # remove installer

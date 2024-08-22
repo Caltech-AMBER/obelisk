@@ -12,11 +12,12 @@ services:
         OBELISK_DOCKER_CYCLONE_PERF: $OBELISK_DOCKER_CYCLONE_PERF
         OBELISK_DOCKER_LEAP: $OBELISK_DOCKER_LEAP
         OBELISK_DOCKER_ZED: $OBELISK_DOCKER_ZED
+        OBELISK_DOCKER_ZED_AI: $OBELISK_DOCKER_ZED_AI
         OBELISK_DOCKER_PIXI: $OBELISK_DOCKER_PIXI
         OBELISK_DOCKER_GROUP_LEAP: $OBELISK_DOCKER_GROUP_LEAP
         OBELISK_DOCKER_GROUP_ZED: $OBELISK_DOCKER_GROUP_ZED
         OBELISK_DOCKER_MUJOCO_SOURCE_DIR: $OBELISK_DOCKER_MUJOCO_SOURCE_DIR
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.gpu
     network_mode: host
     ipc: host
     environment:
@@ -30,6 +31,7 @@ services:
       OBELISK_DOCKER_CYCLONE_PERF: $OBELISK_DOCKER_CYCLONE_PERF
       OBELISK_DOCKER_LEAP: $OBELISK_DOCKER_LEAP
       OBELISK_DOCKER_ZED: $OBELISK_DOCKER_ZED
+      OBELISK_DOCKER_ZED_AI: $OBELISK_DOCKER_ZED_AI
       OBELISK_DOCKER_PIXI: $OBELISK_DOCKER_PIXI
       OBELISK_DOCKER_GROUP_LEAP: $OBELISK_DOCKER_GROUP_LEAP
       OBELISK_DOCKER_GROUP_ZED: $OBELISK_DOCKER_GROUP_ZED
@@ -47,6 +49,7 @@ services:
       - $HOME/.bash_aliases:$HOME/.bash_aliases
       - $HOME/.gitconfig:$HOME/.gitconfig
       - $HOME/.ssh:$HOME/.ssh
+      - zed:/usr/local/zed
     ports:
       - 7007:7007
     privileged: true
@@ -62,3 +65,6 @@ services:
     stdin_open: true
     tty: true
     command: /bin/bash
+volumes:
+  zed:
+    driver: local

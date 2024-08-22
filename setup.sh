@@ -5,6 +5,7 @@ basic=false
 cyclone_perf=false
 leap=false
 zed=false
+zed_ai=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -45,6 +46,11 @@ while [ $# -gt 0 ]; do
         --zed)
             zed=true
             shift  # Enables ZED SDK
+            ;;
+        --zed-ai)
+            zed=true
+            zed_ai=true
+            shift  # Enables ZED AI SDK
             ;;
 
         # docker setup
@@ -106,6 +112,7 @@ Options:
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
+  --zed-ai                     Enables ZED SDK with AI Module
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -146,6 +153,7 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
+        $([ "$zed_ai" = true ] && echo "--docker-zed --docker-zed-ai --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 else
@@ -154,6 +162,7 @@ else
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
+        $([ "$zed_ai" = true ] && echo "--docker-zed-ai --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 fi
@@ -172,7 +181,8 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$zed" = true ] && echo "--zed") \
+        $([ "$zed_ai" = true ] && echo "--zed-ai")
 fi
 
 # run user-specific setup
@@ -182,3 +192,9 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$zed" = true ] && echo "--zed") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases") \
     $([ -n "$mj_source_dir" ] && echo "--mj-source-dir $mj_source_dir")
+
+# if using the zed flag, create a persistent named docker volume for the zed folder if docker is installed
+if command -v docker > /dev/null 2>&1 && [ "$zed_ai" = true ] && [ ! "$(docker volume ls -q -f name=zed)" ]; then
+    echo -e "\033[1;32mCreating persistent named volume for ZED AI SDK!\033[0m"
+    docker volume create zed
+fi
