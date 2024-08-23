@@ -55,12 +55,19 @@ onboard:
       params:
         params_path_pkg: obelisk_ros
         pub_period: 0.01
-      params_path: config/dummy_zed_params.yaml
+      # params_path: config/dummy_zed_params.yaml
+      params_path: config/dummy_zed_mini_params.yaml
       # callback_groups:
       publishers:
         - ros_parameter: pub_img_setting
-          topic: /obelisk/dummy/zed2
+          topic: /obelisk/dummy/zedmini/rgb
           msg_type: ObkImage
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+        - ros_parameter: pub_depth_setting
+          topic: /obelisk/dummy/zedmini/depth
+          msg_type: ObkDepthImage
           history_depth: 10
           callback_group: None
           non_obelisk: False

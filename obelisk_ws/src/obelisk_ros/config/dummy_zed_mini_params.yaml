@@ -1,0 +1,6 @@
+- serial_number: 19798856
+  resolution: "VGA"
+  fps: 100
+  depth: True
+  type: "zedmini"
+  side: "left"
