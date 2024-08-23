@@ -2,9 +2,9 @@
 
 #include "obelisk_ros_utils.h"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "zed2_sensors_interface.h"
+#include "zed_sensors_interface.h"
 
 int main(int argc, char* argv[]) {
     obelisk::utils::SpinObelisk<ObeliskZed2Sensors, rclcpp::executors::MultiThreadedExecutor>(argc, argv,
-                                                                                              "zed2_sensors");
+                                                                                              "zed_sensors");
 }
