@@ -4,7 +4,7 @@
 # We follow the striding convention discussed in the above issue:
 # multiarray(i,j,k) = data[data_offset + dim_stride[0]*i + dim_stride[1]*j + dim_stride[2]*k]
 
-string MESSAGE_NAME="FloatMultiArray"
+string MESSAGE_NAME="Float64MultiArray"
 
 std_msgs/MultiArrayLayout layout
 float64[] data

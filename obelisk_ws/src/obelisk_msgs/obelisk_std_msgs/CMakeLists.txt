@@ -14,7 +14,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/FloatMultiArray.msg"
+  "msg/Float64MultiArray.msg"
   "msg/Float32MultiArray.msg"
   "msg/UInt8MultiArray.msg"
   DEPENDENCIES

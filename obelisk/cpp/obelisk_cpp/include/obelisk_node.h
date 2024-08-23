@@ -20,7 +20,7 @@
 #include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 
 #include "obelisk_std_msgs/msg/float32_multi_array.hpp"
-#include "obelisk_std_msgs/msg/float_multi_array.hpp"
+#include "obelisk_std_msgs/msg/float64_multi_array.hpp"
 #include "obelisk_std_msgs/msg/u_int8_multi_array.hpp"
 
 namespace obelisk {
@@ -141,7 +141,7 @@ namespace obelisk {
                     obelisk_sensor_msgs::msg::ObkDepthImage,
                     obelisk_sensor_msgs::msg::ObkImu,
                     obelisk_sensor_msgs::msg::ObkFramePose,
-                    obelisk_std_msgs::msg::FloatMultiArray,
+                    obelisk_std_msgs::msg::Float64MultiArray,
                     obelisk_std_msgs::msg::Float32MultiArray,
                     obelisk_std_msgs::msg::UInt8MultiArray>;
 

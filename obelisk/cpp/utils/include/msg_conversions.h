@@ -1,5 +1,5 @@
 #include "obelisk_std_msgs/msg/float32_multi_array.hpp"
-#include "obelisk_std_msgs/msg/float_multi_array.hpp"
+#include "obelisk_std_msgs/msg/float64_multi_array.hpp"
 #include "obelisk_std_msgs/msg/u_int8_multi_array.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -110,23 +110,16 @@ namespace obelisk::utils::msgs {
     // ********** MULTIARRAY TO TENSOR ********** //
     // ****************************************** //
 
-    /**
-     * @brief Convert MultiArray message to Eigen Tensor array.
-     *
-     * @param msg the message to convert
-     * @return the Eigen Tensor
-     */
     template <int Size>
-    Eigen::Tensor<double, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::FloatMultiArray& msg) {
+    Eigen::Tensor<double, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::Float64MultiArray& msg) {
         return internal::MultiArrayToTensorImpl<double, Size>(msg.data, msg.layout.dim, msg.layout.data_offset);
     }
 
-    /**
-     * @brief Convert MultiArray message to Eigen Tensor array.
-     *
-     * @param msg the message to convert
-     * @return the Eigen Tensor
-     */
+    template <int Size>
+    Eigen::Tensor<float, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::Float32MultiArray& msg) {
+        return internal::MultiArrayToTensorImpl<float, Size>(msg.data, msg.layout.dim, msg.layout.data_offset);
+    }
+
     template <int Size>
     Eigen::Tensor<uint8_t, Size> MultiArrayToTensor(const obelisk_std_msgs::msg::UInt8MultiArray& msg) {
         return internal::MultiArrayToTensorImpl<uint8_t, Size>(msg.data, msg.layout.dim, msg.layout.data_offset);
@@ -136,15 +129,9 @@ namespace obelisk::utils::msgs {
     // ********** TENSOR TO MULTIARRAY ********** //
     // ****************************************** //
 
-    /**
-     * @brief Convert an Eigen Tensor into a multiarray message.
-     *
-     * @param tensor the tensor to convert
-     * @return the multiarray message
-     */
     template <int Size>
-    obelisk_std_msgs::msg::FloatMultiArray TensorToMultiArray(const Eigen::Tensor<double, Size>& tensor) {
-        obelisk_std_msgs::msg::FloatMultiArray msg;
+    obelisk_std_msgs::msg::Float64MultiArray TensorToMultiArray(const Eigen::Tensor<double, Size>& tensor) {
+        obelisk_std_msgs::msg::Float64MultiArray msg;
         msg.layout.data_offset = 0;
 
         msg.data       = internal::TensorToMultiArrayData<double, Size>(tensor);
@@ -153,12 +140,6 @@ namespace obelisk::utils::msgs {
         return msg;
     }
 
-    /**
-     * @brief Convert an Eigen Tensor into a multiarray message.
-     *
-     * @param tensor the tensor to convert
-     * @return the multiarray message
-     */
     template <int Size>
     obelisk_std_msgs::msg::Float32MultiArray TensorToMultiArray(const Eigen::Tensor<float, Size>& tensor) {
         obelisk_std_msgs::msg::Float32MultiArray msg;
@@ -170,12 +151,6 @@ namespace obelisk::utils::msgs {
         return msg;
     }
 
-    /**
-     * @brief Convert an Eigen Tensor into a multiarray message.
-     *
-     * @param tensor the tensor to convert
-     * @return the multiarray message
-     */
     template <int Size>
     obelisk_std_msgs::msg::UInt8MultiArray TensorToMultiArray(const Eigen::Tensor<uint8_t, Size>& tensor) {
         obelisk_std_msgs::msg::UInt8MultiArray msg;
