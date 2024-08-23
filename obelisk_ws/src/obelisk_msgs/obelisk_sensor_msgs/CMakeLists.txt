@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObkJointEncoders.msg"
   "msg/TrueSimState.msg"
   "msg/ObkImage.msg"
+  "msg/ObkDepthImage.msg"
   "msg/ObkImu.msg"
   "msg/ObkFramePose.msg"
   DEPENDENCIES
