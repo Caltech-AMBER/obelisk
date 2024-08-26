@@ -5,7 +5,6 @@
 #include <fstream>
 #include <msg_conversions.h>
 #include <mutex>
-#include <obelisk_sensor_msgs/msg/obk_depth_image.hpp>
 #include <obelisk_sensor_msgs/msg/obk_image.hpp>
 #include <rclcpp/callback_group.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -62,7 +61,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
         // Register publisher for ZED2 cameras
         this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImage>("pub_img_setting", pub_img_key_);
-        this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkDepthImage>("pub_depth_setting", pub_depth_key_);
     }
 
     /**
@@ -492,8 +490,6 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
         // if using depth sensing, also combine depth images
         if (depth_) {
-            auto depth_msg = std::make_unique<obelisk_sensor_msgs::msg::ObkDepthImage>();
-
             // make a local version of depth_frames_ to avoid locking the mutex for too long
             std::vector<Eigen::Tensor<float, 2>> depth_frames_local;
             {
@@ -523,12 +519,11 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             }
 
             // Publish the depth message
-            depth_msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_depth_tensor);
-            this->GetPublisher<obelisk_sensor_msgs::msg::ObkDepthImage>(pub_depth_key_)->publish(std::move(depth_msg));
+            msg->depth = obelisk::utils::msgs::TensorToMultiArray(combined_depth_tensor);
         }
 
         // Publish the rgb message
-        msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
+        msg->rgb = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
         this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
     }
 };

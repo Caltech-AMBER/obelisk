@@ -65,12 +65,6 @@ onboard:
           history_depth: 10
           callback_group: None
           non_obelisk: False
-        - ros_parameter: pub_depth_setting
-          topic: /obelisk/dummy/zedmini/depth
-          msg_type: ObkDepthImage
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
   robot:
     # `is_simulated` is critical for parsing correct package in the obelisk launch file
     - is_simulated: True

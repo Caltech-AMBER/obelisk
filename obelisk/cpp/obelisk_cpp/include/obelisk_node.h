@@ -12,7 +12,6 @@
 
 #include "obelisk_estimator_msgs/msg/estimated_state.hpp"
 
-#include "obelisk_sensor_msgs/msg/obk_depth_image.hpp"
 #include "obelisk_sensor_msgs/msg/obk_frame_pose.hpp"
 #include "obelisk_sensor_msgs/msg/obk_image.hpp"
 #include "obelisk_sensor_msgs/msg/obk_imu.hpp"
@@ -138,7 +137,6 @@ namespace obelisk {
                     obelisk_sensor_msgs::msg::ObkJointEncoders,
                     obelisk_sensor_msgs::msg::TrueSimState,
                     obelisk_sensor_msgs::msg::ObkImage,
-                    obelisk_sensor_msgs::msg::ObkDepthImage,
                     obelisk_sensor_msgs::msg::ObkImu,
                     obelisk_sensor_msgs::msg::ObkFramePose,
                     obelisk_std_msgs::msg::Float64MultiArray,
@@ -152,7 +150,6 @@ namespace obelisk {
             obelisk_sensor_msgs::msg::ObkJointEncoders::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkDepthImage::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME};
 
