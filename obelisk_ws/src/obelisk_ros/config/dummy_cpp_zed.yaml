@@ -60,7 +60,7 @@ onboard:
       # callback_groups:
       publishers:
         - ros_parameter: pub_img_setting
-          topic: /obelisk/dummy/zedmini/rgb
+          topic: /obelisk/dummy/zedmini/img
           msg_type: ObkImage
           history_depth: 10
           callback_group: None
