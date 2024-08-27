@@ -43,8 +43,7 @@ if [ "$verbose" = true ]; then
 fi
 
 # configuring cmake args
-USE_CMAKE_ARGS=false
-CMAKE_ARGS=""
+CMAKE_ARGS=" -DCMAKE_BUILD_TYPE=Release"
 if [ "$zed" = true ]; then
     # [NOTE] these arguments will prevent the following error during colcon build:
     #    /usr/bin/ld: warning: libcuda.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
