@@ -74,7 +74,7 @@ if(ZED_VAR_CMAKE OR ZED_VAR_ENV)
   add_subdirectory(hardware/sensing/zed)
   target_include_directories(Zoo INTERFACE hardware/sensing/zed)
 else()
-  message(STATUS "Zed2 Sensors not configured")
+  message(STATUS "Zed Sensors not configured")
 endif()
 
 target_link_libraries(Zoo INTERFACE Obelisk::Core)

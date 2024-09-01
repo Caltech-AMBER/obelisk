@@ -5,6 +5,7 @@ basic=false
 cyclone_perf=false
 leap=false
 zed=false
+zed_ai=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -17,8 +18,11 @@ source_ros=false
 pixi=false
 obk_aliases=false
 
-for arg in "$@"; do
-    case $arg in
+# Variable for mj-source-dir
+mj_source_dir=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
         --recommended)
             cyclone_perf=true
             pixi=true
@@ -42,6 +46,11 @@ for arg in "$@"; do
         --zed)
             zed=true
             shift  # Enables ZED SDK
+            ;;
+        --zed-ai)
+            zed=true
+            zed_ai=true
+            shift  # Enables ZED AI SDK
             ;;
 
         # docker setup
@@ -80,6 +89,17 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
 
+        # mj-source-dir
+        --mj-source-dir)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                mj_source_dir="$2"
+                shift 2
+            else
+                echo "Error: --mj-source-dir requires a directory path as an argument."
+                exit 1
+            fi
+            ;;
+
         # help
         --help)
             echo "Usage: source setup.sh [OPTIONS]
@@ -92,6 +112,7 @@ Options:
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
+  --zed-ai                     Enables ZED SDK with AI Module
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -104,15 +125,17 @@ Options:
   --pixi                       Install pixi
   --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
 
+  --mj-source-dir <path>       Specify the source directory for MuJoCo
+
   --help                       Display this help message and exit
 "
             shift
-            return
+            exit
             ;;
         *)
             # Unknown option
-            echo "Unknown option: $arg. Run 'source setup.sh --help' for more information."
-            return
+            echo "Unknown option: $1. Run 'source setup.sh --help' for more information."
+            exit 1
             ;;
     esac
 done
@@ -130,14 +153,18 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$zed_ai" = true ] && echo "--docker-zed --docker-zed-ai --docker-group-zed") \
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$zed_ai" = true ] && echo "--docker-zed-ai --docker-group-zed") \
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ -n "$mj_source_dir" ] && echo "--docker-mj-source-dir $mj_source_dir")
 fi
 
 # group configuration on host
@@ -154,7 +181,8 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$zed" = true ] && echo "--zed") \
+        $([ "$zed_ai" = true ] && echo "--zed-ai")
 fi
 
 # run user-specific setup
@@ -162,4 +190,11 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
-    $([ "$obk_aliases" = true ] && echo "--obk-aliases")
+    $([ "$obk_aliases" = true ] && echo "--obk-aliases") \
+    $([ -n "$mj_source_dir" ] && echo "--mj-source-dir $mj_source_dir")
+
+# if using the zed flag, create a persistent named docker volume for the zed folder if docker is installed
+if command -v docker > /dev/null 2>&1 && [ "$zed_ai" = true ] && [ ! "$(docker volume ls -q -f name=zed)" ]; then
+    echo -e "\033[1;32mCreating persistent named volume for ZED AI SDK!\033[0m"
+    docker volume create zed
+fi

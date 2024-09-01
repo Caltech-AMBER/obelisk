@@ -28,8 +28,8 @@ onboard:
           callback_group: None
           # callback_key: timer_callback1
   estimation:
-    - pkg: obelisk_estimation_cpp
-      executable: jointencoders_passthrough_estimator
+    - pkg: obelisk_leap_cpp
+      executable: leap_example_state_estimator
       # callback_groups:
       publishers:
         - ros_parameter: pub_est_setting
@@ -66,6 +66,10 @@ onboard:
     #   executable: obelisk_leap_robot
     # ==================
       # callback_groups:
+      params:
+        KP: 150
+        KI: 0
+        KD: 50
       publishers:
         - ros_parameter: pub_sensor_setting
           topic: /obelisk/leap/joint_encoders
@@ -86,7 +90,7 @@ onboard:
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: leap_rh
-          model_xml_path: leap_palm_up.xml
+          model_xml_path: leap_rh_mounted.xml
           sensor_settings:
           - topic: /obelisk/leap/joint_encoders
             dt: 0.002
@@ -112,3 +116,32 @@ onboard:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
           callback_group: None
+
+  viz:
+    on: True
+    viz_tool: foxglove
+    rviz_pkg: obelisk_ros
+    rviz_config: basic_obk_config.rviz
+    viz_nodes:
+      - pkg: obelisk_viz_cpp
+        executable: default_robot_viz
+        params:
+          quat_order: wxyz
+        robot_pkg: leap_rh
+        urdf: leap_rh.urdf
+        robot_topic: robot_description
+        subscribers:
+          - ros_parameter: sub_viz_est_setting
+            topic: /obelisk/leap/est
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        publishers:
+          - ros_parameter: pub_viz_joint_setting
+            topic: /obelisk/viz/joint_states
+            history_depth: 10
+            callback_group: None
+        timers:
+          - ros_parameter: timer_viz_joint_setting
+            timer_period_sec: 0.05
+            callback_group: None

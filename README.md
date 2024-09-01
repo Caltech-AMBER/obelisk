@@ -20,7 +20,7 @@ This script has the ability to do 4 things:
 
 The options are as follows:
 ```
-source setup.sh [OPTIONS]
+Usage: source setup.sh [OPTIONS]
 
 Options:
   --recommended                Apply recommended system-level changes
@@ -30,6 +30,7 @@ Options:
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
+  --zed-ai                     Enables ZED SDK with AI Module
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -41,6 +42,8 @@ Options:
 
   --pixi                       Install pixi
   --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
+
+  --mj-source-dir <path>       Specify the source directory for MuJoCo
 
   --help                       Display this help message and exit
 ```
@@ -54,9 +57,20 @@ Some guidance/recommendations on choosing flags:
 * If you are not using pixi or conda, you should probably use `--source-ros` along with `--install-sys-deps`
 * We believe using `--pixi` will make your life easier, but you don't have to use it
 * We strongly recommend using `--obk-aliases` and `--cyclone-perf`
-* If you are using the LEAP Hand, use `--leap`
-* If you are using ZED cameras, use `--zed`. Additionally, you will need to adjust the `udev` permissions on your host machine if you want to use the ZED cameras in a Docker container with a non-root user (if you are acting as root in your container, you probably don't need to do this next step):
 * You should run `--config-groups` only if your local user isn't set up to interface with hardware of interest. If you are going to develop in a Docker container, the group settings will be set for you **without** setting this flag. If you are cloning this repo in a Docker container and running the setup script, setup will **only be complete if you do set this flag**.
+* You should only specify a path with `--mj-source-dir <path>` if there are build conflicts involving `mujoco` with some other downstream dependency - 99% of the time, you won't need to touch this. If you do use this flag, you should download a Mujoco release from their releases page and extract it. The directory that is extracted out should be where you point `--mj-source-dir`. For example:
+    ```
+    export MUJOCO_VERSION=3.2.0
+    export MUJOCO_SOURCE_DIR=/home/${USER}/mujoco_source_dir
+    wget -P /home/${USER} https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-x86_64.tar.gz && \
+    tar -xzf /home/${USER}/mujoco-${MUJOCO_VERSION}-linux-x86_64.tar.gz -C /home/${USER} && \
+    rm /home/${USER}/mujoco-${MUJOCO_VERSION}-linux-x86_64.tar.gz && \
+    mv /home/${USER}/mujoco-${MUJOCO_VERSION}/ ${MUJOCO_SOURCE_DIR}
+
+    # invoke --mj-source-dir with the path ${MUJOCO_SOURCE_DIR}
+    ```
+* If you are using the LEAP Hand, use `--leap`
+* If you are using ZED cameras, use `--zed`. If you want to use any `NEURAL` modules, you must use the flag `--zed-ai`. Additionally, you will need to adjust the `udev` permissions on your host machine if you want to use the ZED cameras in a Docker container with a non-root user (if you are acting as root in your container, you probably don't need to do this next step):
     ```
     # grab the ZED SDK installer (version 4.1.3, this README written July 25, 2024)
     wget -q https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O zed_installer.run
@@ -71,6 +85,15 @@ Some guidance/recommendations on choosing flags:
 
     # remove the installer
     rm zed_installer.run
+    ```
+    If it's your first time using an AI module, it will spend a few minutes optimizing the module for your hardware. However, we also create a Docker volume mount on the host so that these optimized modules persist across container sessions. One way to forcibly optimize a model before booting up the stack is like so (after entering `pixi` or if you have the ZED SDK available in the REPL):
+    ```
+    # example - this will optimize the neural depth module and save it
+    import pyzed.sl as sl
+    init_parameters = sl.InitParameters()
+    init_parameters.depth_mode = sl.DEPTH_MODE.NEURAL
+    cam = sl.Camera()
+    cam.open(init_parameters)
     ```
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards

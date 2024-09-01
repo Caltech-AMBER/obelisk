@@ -6,7 +6,6 @@
 #include <msg_conversions.h>
 #include <mutex>
 #include <obelisk_sensor_msgs/msg/obk_image.hpp>
-#include <obelisk_std_msgs/msg/u_int8_multi_array.hpp>
 #include <rclcpp/callback_group.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/timer.hpp>
@@ -82,12 +81,20 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
             // Setting up camera parameters
             sl::InitParameters init_params;
-            init_params.camera_resolution      = resolution_;
-            init_params.camera_fps             = fps_;
-            init_params.depth_mode             = depth_ ? sl::DEPTH_MODE::ULTRA : sl::DEPTH_MODE::NONE;
-            init_params.coordinate_units       = sl::UNIT::METER;
-            init_params.depth_minimum_distance = 0.3;
-            init_params.camera_image_flip      = sl::FLIP_MODE::OFF;
+            init_params.camera_resolution   = resolution_;
+            init_params.camera_fps          = fps_;
+            init_params.depth_mode          = depth_ ? sl::DEPTH_MODE::NEURAL : sl::DEPTH_MODE::NONE;
+            init_params.depth_stabilization = 100;                // stabilize depth images with extra filtering
+            init_params.coordinate_units    = sl::UNIT::METER;
+            init_params.camera_image_flip   = sl::FLIP_MODE::OFF; // don't automatically flip cam based on IMU
+
+            if (type_ == "zedmini") {
+                init_params.depth_minimum_distance = 0.1;
+                init_params.depth_maximum_distance = 0.5;
+            } else if (type_ == "zed2i") {
+                init_params.depth_minimum_distance = 0.3;
+                init_params.depth_maximum_distance = 1.0;
+            }
 
             // Set serial number
             try {
@@ -124,7 +131,11 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
             // Set runtime parameters
             sl::RuntimeParameters rtp;
-            rtp.enable_depth          = depth_;
+            rtp.enable_depth = depth_;
+            if (depth_) {
+                rtp.enable_fill_mode     = true; // fill all pixels
+                depth_images_[cam_index] = sl::Mat();
+            }
             cam_rt_params_[cam_index] = rtp;
 
             cam_index++;
@@ -175,7 +186,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
   private:
     // Key for the image publisher
-    std::string const pub_img_key_ = "pub_img";
+    std::string const pub_img_key_   = "pub_img";
+    std::string const pub_depth_key_ = "pub_depth";
     double pub_period_;
 
     // Callback group shared by all camera callbacks
@@ -185,13 +197,16 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
     std::vector<std::map<std::string, std::string>> cam_param_dicts_;
     std::vector<std::unique_ptr<sl::Camera>> cams_;
     std::vector<sl::Mat> cam_images_;
+    std::vector<sl::Mat> depth_images_;
     std::vector<sl::RuntimeParameters> cam_rt_params_;
     std::vector<Eigen::Tensor<uint8_t, 3>> frames_;
+    std::vector<Eigen::Tensor<float, 2>> depth_frames_;
 
     // Shared camera parameters
     sl::RESOLUTION resolution_;
     int fps_;
     bool depth_;
+    std::string type_;
     int height_;
     int width_;
 
@@ -227,8 +242,10 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         cam_param_dicts_.resize(config.size());
         cams_.resize(config.size());
         cam_images_.resize(config.size());
+        depth_images_.resize(config.size());
         cam_rt_params_.resize(config.size());
         frames_.resize(config.size());
+        depth_frames_.resize(config.size());
 
         // Parse the camera parameters
         int cam_index = 0;
@@ -316,6 +333,18 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             cam_param_dicts_[cam_index]["depth"] = depth ? "true" : "false";
             depth_                               = depth;
 
+            // Check type - must be one of "zed2i" or "zedmini"
+            std::string type = cam_param_dict["type"] ? cam_param_dict["type"].as<std::string>() : "zed2i";
+            std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+            if (type != "zed2i" && type != "zedmini") {
+                std::string err_msg = "Invalid type for camera " + std::to_string(cam_index) + " in " +
+                                      params_path.string() + "! Must be one of 'zed2i', 'zedmini'.";
+                RCLCPP_ERROR(this->get_logger(), err_msg.c_str());
+                throw std::runtime_error(err_msg);
+            }
+            cam_param_dicts_[cam_index]["type"] = type;
+            type_                               = type;
+
             // Check side
             std::string side = cam_param_dict["side"] ? cam_param_dict["side"].as<std::string>() : "left";
             std::transform(side.begin(), side.end(), side.begin(), ::tolower);
@@ -330,7 +359,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             cam_index++;
         }
 
-        // Check that all cameras have the same resolution, fps, and depth setting
+        // Check that all cameras have the same resolution, fps, type_, and depth setting
         auto check_uniformity = [this](const std::vector<std::map<std::string, std::string>>& cam_param_dicts,
                                        const std::string& key, const std::string& error_message) {
             std::set<std::string> values;
@@ -346,6 +375,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         check_uniformity(cam_param_dicts_, "resolution", "All cameras must have the same resolution!");
         check_uniformity(cam_param_dicts_, "fps", "All cameras must have the same fps!");
         check_uniformity(cam_param_dicts_, "depth", "All cameras must have the same depth setting!");
+        check_uniformity(cam_param_dicts_, "type", "All cameras must have the same type!");
 
         RCLCPP_INFO(this->get_logger(), "Camera parameters set successfully");
     }
@@ -362,23 +392,15 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         std::string side            = cam_param_dicts_[cam_index]["side"];
 
         if (cam.grab(rtps) == sl::ERROR_CODE::SUCCESS) {
-            if (depth_) {
-                if (side == "left") {
-                    cam.retrieveImage(cam_image, sl::VIEW::DEPTH);
-                } else {
-                    cam.retrieveImage(cam_image, sl::VIEW::DEPTH_RIGHT);
-                }
+            // always retrieve the RGB image
+            if (side == "left") {
+                cam.retrieveImage(cam_image, sl::VIEW::LEFT);
             } else {
-                if (side == "left") {
-                    cam.retrieveImage(cam_image, sl::VIEW::LEFT);
-                } else {
-                    cam.retrieveImage(cam_image, sl::VIEW::RIGHT);
-                }
+                cam.retrieveImage(cam_image, sl::VIEW::RIGHT);
             }
 
             // Convert sl::Mat to Eigen::Tensor
-            int channels = depth_ ? 1 : 3;
-            Eigen::Tensor<uint8_t, 3> tensor(height_, width_, channels);
+            Eigen::Tensor<uint8_t, 3> tensor(height_, width_, 3); // RGB image container
 
             // Get the pointer to the BGRA data
             const uint8_t* bgra_data = cam_image.getPtr<sl::uchar1>();
@@ -387,8 +409,8 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             for (int y = 0; y < height_; ++y) {
                 for (int x = 0; x < width_; ++x) {
                     // populate row-major values, first all red, then green, then blue
-                    for (int c = 0; c < channels; ++c) {
-                        tensor(y, x, c) = bgra_data[(y * width_ + x) * 4 + (2 - c)];
+                    for (int c = 0; c < 3; ++c) {                                    // first three value are always RGB
+                        tensor(y, x, c) = bgra_data[(y * width_ + x) * 4 + (2 - c)]; // skip the 4th alpha value
                     }
                 }
             }
@@ -397,6 +419,32 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             {
                 std::lock_guard<std::mutex> lock(lock_);
                 frames_[cam_index] = std::move(tensor);
+            }
+
+            // if using depth sensing, also compute a depth image
+            if (depth_) {
+                Eigen::Tensor<float, 2> depth_tensor(height_, width_); // depth image container
+                sl::Mat& depth_image = depth_images_[cam_index];
+                if (side == "left") {
+                    cam.retrieveMeasure(depth_image, sl::MEASURE::DEPTH);
+                } else {
+                    cam.retrieveMeasure(depth_image, sl::MEASURE::DEPTH_RIGHT);
+                }
+
+                // Convert sl::Mat to Eigen::Tensor
+                for (int y = 0; y < height_; ++y) {
+                    for (int x = 0; x < width_; ++x) {
+                        float depth_value;
+                        depth_image.getValue(x, y, &depth_value);
+                        depth_tensor(y, x) = depth_value;
+                    }
+                }
+
+                // populate depth_frames_
+                {
+                    std::lock_guard<std::mutex> lock(lock_);
+                    depth_frames_[cam_index] = std::move(depth_tensor);
+                }
             }
         }
     }
@@ -421,7 +469,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             return;
         } else {
             for (const auto& frame : frames_local) {
-                if (frame.size() != height_ * width_ * (depth_ ? 1 : 3)) {
+                if (frame.size() != height_ * width_ * 3) {
                     return;
                 }
             }
@@ -431,8 +479,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
 
         // Calculate dimensions
         int num_cameras = cams_.size();
-        int channels    = depth_ ? 1 : 3;
-        Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, channels);
+        Eigen::Tensor<uint8_t, 4> combined_tensor(num_cameras, height_, width_, 3);
 
         // Read the frames_ map and populate the combined tensor
         int camera_index = 0;
@@ -441,8 +488,42 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
             camera_index++;
         }
 
-        // Publish the message
-        msg->y = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
+        // if using depth sensing, also combine depth images
+        if (depth_) {
+            // make a local version of depth_frames_ to avoid locking the mutex for too long
+            std::vector<Eigen::Tensor<float, 2>> depth_frames_local;
+            {
+                std::lock_guard<std::mutex> lock(lock_);
+                depth_frames_local = depth_frames_;
+            }
+
+            // no camera callbacks have completed, so depth_frames_ is not populated
+            if (depth_frames_local.size() == 0) {
+                return;
+            } else {
+                for (const auto& depth_frame : depth_frames_local) {
+                    if (depth_frame.size() != height_ * width_) {
+                        return;
+                    }
+                }
+            }
+
+            // Calculate dimensions
+            Eigen::Tensor<float, 3> combined_depth_tensor(num_cameras, height_, width_);
+
+            // Read the depth_frames_ map and populate the combined tensor
+            camera_index = 0;
+            for (const auto& depth_frame : depth_frames_local) {
+                combined_depth_tensor.chip(camera_index, 0) = depth_frame;
+                camera_index++;
+            }
+
+            // Publish the depth message
+            msg->depth = obelisk::utils::msgs::TensorToMultiArray(combined_depth_tensor);
+        }
+
+        // Publish the rgb message
+        msg->rgb = obelisk::utils::msgs::TensorToMultiArray(combined_tensor);
         this->GetPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_)->publish(std::move(msg));
     }
 };

@@ -1,5 +1,7 @@
 # We expect the shape of the image tensor to be (..., H, W, C), where "..." denotes batch dimensions of the user's
-# choice, and C is ordered RGB. If there are alpha channels, they are a fourth channel, and if there are depth channels,
-# they follow all colors and alpha. Note that this is only a convention that we declare - this is not enforced!
+# choice, and C is 3 for RGB, 1 for depth maps, and 1 for segmentation. Note that this is only a convention that we
+# declare - this is not enforced!
 string MESSAGE_NAME="ObkImage"
-obelisk_std_msgs/UInt8MultiArray y
+obelisk_std_msgs/UInt8MultiArray rgb
+obelisk_std_msgs/Float32MultiArray depth
+obelisk_std_msgs/UInt8MultiArray segmentation

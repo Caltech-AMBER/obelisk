@@ -17,16 +17,26 @@ find_package(obelisk_estimator_msgs REQUIRED)
 find_package(obelisk_std_msgs REQUIRED)
 
 # ------- Mujoco ------- #
-include(FetchContent)
-set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
-set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
+# Print a message indicating what the value of OBELISK_MUJOCO_SOURCE_DIR is
+message(STATUS "OBELISK_MUJOCO_SOURCE_DIR: $ENV{OBELISK_MUJOCO_SOURCE_DIR}")
 
-FetchContent_Declare(
-  mujoco
-  URL https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-${COMP_ARCH}.tar.gz
-)
+# Check if the environment variable is defined
+if ((NOT DEFINED ENV{OBELISK_MUJOCO_SOURCE_DIR}) OR ("$ENV{OBELISK_MUJOCO_SOURCE_DIR}" STREQUAL ""))
+  message(STATUS "OBELISK_MUJOCO_SOURCE_DIR not defined, fetching mujoco")
+  include(FetchContent)
+  set(MUJOCO_VERSION "3.2.0" CACHE STRING "mujoco version")
+  set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
 
-FetchContent_MakeAvailable(mujoco)
+  FetchContent_Declare(
+    mujoco
+    URL https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-${COMP_ARCH}.tar.gz
+  )
+
+  FetchContent_MakeAvailable(mujoco)
+else()
+  message(STATUS "OBELISK_MUJOCO_SOURCE_DIR defined, setting mujoco_SOURCE_DIR=$ENV{OBELISK_MUJOCO_SOURCE_DIR}")
+  set(mujoco_SOURCE_DIR $ENV{OBELISK_MUJOCO_SOURCE_DIR})
+endif()
 
 # ------- Setup the Mujoco library ------- #
 message(STATUS "mujoco source dir: ${mujoco_SOURCE_DIR}")

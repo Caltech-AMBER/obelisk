@@ -42,6 +42,18 @@ if [ "$verbose" = true ]; then
     VERBOSE_STR="--event-handlers console_direct+"
 fi
 
+# configuring cmake args
+CMAKE_ARGS=" -DCMAKE_BUILD_TYPE=Release"
+if [ "$zed" = true ]; then
+    # [NOTE] these arguments will prevent the following error during colcon build:
+    #    /usr/bin/ld: warning: libcuda.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
+    #    /usr/bin/ld: warning: libnvcuvid.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
+    #    /usr/bin/ld: warning: libnvidia-encode.so.1, needed by /usr/local/zed/lib/libsl_zed.so, not found (try using -rpath or -rpath-link)
+    CMAKE_ARGS+=" -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs"
+    CMAKE_ARGS+=" -DCMAKE_CXX_FLAGS=\"-Wl,--allow-shlib-undefined\""
+    CMAKE_ARGS+=" --no-warn-unused-cli"
+fi
+
 # building Obelisk packages
 OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
 
@@ -52,11 +64,11 @@ cd $OBELISK_ROOT/obelisk_ws
 colcon build --symlink-install --parallel-workers $(nproc) \
     $VERBOSE_STR --packages-select $MESSAGE_PKGS
 
-# for debugging, add `--event-handlers console_direct+` to the colcon build command
 echo -e "\033[1;32mBuilding remainder of Obelisk ROS packages...\033[0m"
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 colcon build --symlink-install --parallel-workers $(nproc) \
-    $VERBOSE_STR --packages-skip $MESSAGE_PKGS $SKIP_PKGS
+    --packages-skip $MESSAGE_PKGS $SKIP_PKGS \
+    $VERBOSE_STR ${CMAKE_ARGS:+--cmake-args $CMAKE_ARGS}
 
 source $OBELISK_ROOT/obelisk_ws/install/setup.bash
 cd $curr_dir

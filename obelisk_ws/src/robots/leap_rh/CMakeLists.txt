@@ -9,15 +9,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 # install the urdf
-# install(
-#   DIRECTORY urdf/
-#   DESTINATION share/${PROJECT_NAME}/urdf
-# )
+install(
+  DIRECTORY urdf/
+  DESTINATION share/${PROJECT_NAME}/urdf
+)
 
 # install the mujoco files
 install(
   DIRECTORY mujoco/
   DESTINATION share/${PROJECT_NAME}/mujoco
+)
+
+# install all the mesh files
+install(
+  DIRECTORY meshes/
+  DESTINATION share/${PROJECT_NAME}/meshes
 )
 
 if(BUILD_TESTING)

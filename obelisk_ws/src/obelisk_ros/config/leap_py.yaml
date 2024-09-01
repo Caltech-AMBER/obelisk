@@ -56,6 +56,10 @@ onboard:
     #   pkg: obelisk_leap_py
     #   executable: obelisk_leap_robot
     # ==================
+      params:
+        KP: 150
+        KI: 0
+        KD: 50
       # callback_groups:
       publishers:
         - ros_parameter: pub_sensor_setting
@@ -78,7 +82,7 @@ onboard:
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: leap_rh
-          model_xml_path: leap_palm_up.xml
+          model_xml_path: leap_rh_mounted.xml
           sensor_settings:
           - topic: /obelisk/leap/joint_encoders
             dt: 0.002

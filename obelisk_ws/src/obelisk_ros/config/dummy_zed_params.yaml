@@ -2,9 +2,11 @@
   resolution: "VGA"
   fps: 100
   depth: False
+  type: "zed2i"
   side: "left"
 - serial_number: 32144978
   resolution: "VGA"
   fps: 100
   depth: False
+  type: "zed2i"
   side: "right"

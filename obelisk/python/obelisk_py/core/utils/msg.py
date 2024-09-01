@@ -1,10 +1,10 @@
 from typing import Union
 
 import numpy as np
-from obelisk_std_msgs.msg import FloatMultiArray, UInt8MultiArray
+from obelisk_std_msgs.msg import Float32MultiArray, Float64MultiArray, UInt8MultiArray
 from std_msgs.msg import MultiArrayDimension, MultiArrayLayout
 
-MultiArray = Union[FloatMultiArray, UInt8MultiArray]
+MultiArray = Union[Float32MultiArray, Float64MultiArray, UInt8MultiArray]
 
 
 def multiarray_to_np(msg: MultiArray) -> np.ndarray:
@@ -23,8 +23,10 @@ def multiarray_to_np(msg: MultiArray) -> np.ndarray:
     """
     if isinstance(msg, UInt8MultiArray):
         dtype = np.uint8
-    elif isinstance(msg, FloatMultiArray):
+    elif isinstance(msg, Float64MultiArray):
         dtype = np.float64
+    elif isinstance(msg, Float32MultiArray):
+        dtype = np.float32
     else:
         raise ValueError(f"Unsupported message type: {type(msg)}")
 
@@ -54,7 +56,9 @@ def np_to_multiarray(arr: np.ndarray) -> MultiArray:
     if arr.dtype == np.uint8:
         msg = UInt8MultiArray()
     elif arr.dtype == np.float64:
-        msg = FloatMultiArray()
+        msg = Float64MultiArray()
+    elif arr.dtype == np.float32:
+        msg = Float32MultiArray()
     else:
         raise ValueError(f"Unsupported dtype: {arr.dtype}")
 

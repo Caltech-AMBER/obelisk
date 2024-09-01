@@ -1,7 +1,6 @@
 # Blender 4.0.0
 # www.blender.org
-mtllib palm_lower.mtl
-o palm_lower
+o palm
 v -0.044000 -0.025057 0.014942
 v -0.043000 -0.025077 0.014961
 v -0.043000 -0.024657 0.014465

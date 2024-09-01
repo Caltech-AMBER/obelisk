@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # base image
-# TODO(ahl): see if we can use a hack to use conditional base images to avoid the need for Dockerfile.gpu.
-#            for now, leave in the gpu-specific stuff in here and maintain both files identically sans base image.
-FROM ubuntu:22.04 AS ubuntu_base
+# use the cuda base image so certain installers (like ZED's) can find CUDA libs necessary for installation
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS base
 SHELL ["/bin/bash", "-c"]
 
 # build args

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(zed2_sensors LANGUAGES CXX)
+project(zed_sensors LANGUAGES CXX)
 
-message(STATUS "Configuring Zed2 Sensors")
+message(STATUS "Configuring Zed Sensors")
 
 # ----------- FetchContent ----------- #
 include(FetchContent)
@@ -53,21 +53,21 @@ elseif(MSVC)
 endif()
 
 # ----------- Making the Libraries ----------- #
-# ZED2 sensor
-add_library(Zed2SensorsInterface INTERFACE)
-target_include_directories(Zed2SensorsInterface INTERFACE
+# ZED sensor
+add_library(ZedSensorsInterface INTERFACE)
+target_include_directories(ZedSensorsInterface INTERFACE
     ${CUDA_INCLUDE_DIRS}
     ${ZED_INCLUDE_DIRS}
 )
 
-target_link_libraries(Zed2SensorsInterface INTERFACE
+target_link_libraries(ZedSensorsInterface INTERFACE
     Eigen3::Eigen
     ${ZED_LIBS}
     Obelisk::Utils
     yaml-cpp
     ZedNoWarnings)
 
-ament_target_dependencies(Zed2SensorsInterface
+ament_target_dependencies(ZedSensorsInterface
     INTERFACE
     rclcpp
     rclcpp_lifecycle
