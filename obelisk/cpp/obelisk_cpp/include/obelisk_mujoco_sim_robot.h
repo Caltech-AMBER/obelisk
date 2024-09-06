@@ -165,7 +165,7 @@ namespace obelisk {
             data_ = mj_makeData(model_);
 
             // Create the rendering thread
-            std::thread rendering_thread(std::bind(&ObeliskMujocoRobot::SimRender, this));
+            rendering_thread_ = std::thread(std::bind(&ObeliskMujocoRobot::SimRender, this));
 
             mujoco_setup_ = true;
 
@@ -215,7 +215,7 @@ namespace obelisk {
             mj_deleteData(data_);
             mj_deleteModel(model_);
 
-            // rendering_thread.join();
+            rendering_thread_.join();
         }
 
       protected:
@@ -1000,6 +1000,8 @@ namespace obelisk {
         std::atomic<bool> mujoco_setup_;
 
         rclcpp::CallbackGroup::SharedPtr callback_group_;
+
+        std::thread rendering_thread_;
 
         int num_sensors_;
 
