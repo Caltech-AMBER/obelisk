@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <cmath>
 #include <cstdarg>
 #include <filesystem>
@@ -871,15 +872,29 @@ namespace obelisk {
 
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "force") {
+                            int obj_id = this->model_->sensor_objid[sensor_id];
+
+                            // Rotate into the world frame
+
+                            // int site_id = mj_name2id(this->model_, mjOBJ_SITE, this->model_->names +
+                            // this->model_->name_siteadr[obj_id]);
+                            Eigen::Matrix3d R;
+                            mju_copy(R.data(), this->data_->site_xmat + 9 * obj_id, 9);
+
                             geometry_msgs::msg::Vector3 force;
-                            force.x = this->data_->sensordata[sensor_addr];
-                            force.y = this->data_->sensordata[sensor_addr + 1];
-                            force.z = this->data_->sensordata[sensor_addr + 2];
+                            force.x = this->data_->sensordata[sensor_addr] * R(0, 0) +
+                                      this->data_->sensordata[sensor_addr + 1] * R(0, 1) +
+                                      this->data_->sensordata[sensor_addr + 2] * R(0, 2);
+                            force.y = this->data_->sensordata[sensor_addr] * R(1, 0) +
+                                      this->data_->sensordata[sensor_addr + 1] * R(1, 1) +
+                                      this->data_->sensordata[sensor_addr + 2] * R(1, 2);
+                            force.z = this->data_->sensordata[sensor_addr] * R(2, 0) +
+                                      this->data_->sensordata[sensor_addr + 1] * R(2, 1) +
+                                      this->data_->sensordata[sensor_addr + 2] * R(2, 2);
 
                             msg.forces.emplace_back(force);
 
                             // Force sensors must be on sites
-                            int obj_id = this->model_->sensor_objid[sensor_id];
                             msg.frames.emplace_back(this->model_->names + this->model_->name_siteadr[obj_id]);
                         } else {
                             RCLCPP_ERROR_STREAM(

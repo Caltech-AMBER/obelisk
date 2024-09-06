@@ -10,6 +10,9 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcl REQUIRED)
 
+# ------- Eigen ------- #
+find_package(Eigen3 REQUIRED)
+
 # ------- Obelisk Messages ------- #
 find_package(obelisk_control_msgs REQUIRED)
 find_package(obelisk_sensor_msgs REQUIRED)
@@ -59,7 +62,7 @@ add_library(ObkCore INTERFACE)
 add_library(Obelisk::Core ALIAS ObkCore)   # Namespaced alias
 target_include_directories(ObkCore INTERFACE ${CORE_INC} ${mujoco_SOURCE_DIR}/include)
 
-target_link_libraries(ObkCore INTERFACE mujoco-lib glfw)
+target_link_libraries(ObkCore INTERFACE mujoco-lib glfw Eigen3::Eigen)
 
 ament_target_dependencies(ObkCore INTERFACE
   rclcpp
