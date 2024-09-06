@@ -863,10 +863,6 @@ namespace obelisk {
                     obelisk_sensor_msgs::msg::ObkForceSensor msg;
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
 
-                    if (sensor_names.size() != 1) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "ObkForceSensor can only work with on force sensor!");
-                    }
-
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
@@ -875,13 +871,16 @@ namespace obelisk {
 
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "force") {
-                            msg.force.x = this->data_->sensordata[sensor_addr];
-                            msg.force.y = this->data_->sensordata[sensor_addr + 1];
-                            msg.force.z = this->data_->sensordata[sensor_addr + 2];
+                            geometry_msgs::msg::Vector3 force;
+                            force.x = this->data_->sensordata[sensor_addr];
+                            force.y = this->data_->sensordata[sensor_addr + 1];
+                            force.z = this->data_->sensordata[sensor_addr + 2];
+
+                            msg.forces.emplace_back(force);
 
                             // Force sensors must be on sites
                             int obj_id = this->model_->sensor_objid[sensor_id];
-                            msg.frame  = std::string(this->model_->names + this->model_->name_siteadr[obj_id]);
+                            msg.frames.emplace_back(this->model_->names + this->model_->name_siteadr[obj_id]);
                         } else {
                             RCLCPP_ERROR_STREAM(
                                 this->get_logger(),
