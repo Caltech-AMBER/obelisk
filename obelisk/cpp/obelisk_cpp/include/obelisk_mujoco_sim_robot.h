@@ -880,6 +880,7 @@ namespace obelisk {
                             // this->model_->name_siteadr[obj_id]);
                             Eigen::Matrix3d R;
                             mju_copy(R.data(), this->data_->site_xmat + 9 * obj_id, 9);
+                            R.transposeInPlace();
 
                             geometry_msgs::msg::Vector3 force;
                             force.x = this->data_->sensordata[sensor_addr] * R(0, 0) +
