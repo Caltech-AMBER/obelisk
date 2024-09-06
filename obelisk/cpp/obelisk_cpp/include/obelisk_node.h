@@ -12,6 +12,7 @@
 
 #include "obelisk_estimator_msgs/msg/estimated_state.hpp"
 
+#include "obelisk_sensor_msgs/msg/obk_force_sensor.hpp"
 #include "obelisk_sensor_msgs/msg/obk_frame_pose.hpp"
 #include "obelisk_sensor_msgs/msg/obk_image.hpp"
 #include "obelisk_sensor_msgs/msg/obk_imu.hpp"
@@ -138,18 +139,20 @@ namespace obelisk {
                     obelisk_sensor_msgs::msg::ObkImage,
                     obelisk_sensor_msgs::msg::ObkImu,
                     obelisk_sensor_msgs::msg::ObkFramePose,
+                    obelisk_sensor_msgs::msg::ObkForceSensor,
                     obelisk_std_msgs::msg::FloatMultiArray,
                     obelisk_std_msgs::msg::UInt8MultiArray>;
 
         // Allowed non-obelisk message types
         using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
 
-        inline const std::array<std::string, 5> sensor_message_names = {
+        inline const std::array<std::string, 6> sensor_message_names = {
             obelisk_sensor_msgs::msg::ObkJointEncoders::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME,
             obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME};
+            obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME,
+            obelisk_sensor_msgs::msg::ObkForceSensor::MESSAGE_NAME};
 
         inline const std::array<std::string, 1> estimator_message_names = {
             obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};

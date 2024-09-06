@@ -49,6 +49,9 @@
         <!-- FramePose -->
         <framepos name="tip_pos_sensor" objtype="site" objname="tip"/>
         <framequat name="tip_orientation_sensor" objtype="site" objname="tip"/>
+
+        <!-- Force -->
+        <force name="tip_force_sensor" site="tip"/>
     </sensor>
 
     <keyframe>

@@ -111,3 +111,8 @@ onboard:
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
+          - topic: /obelisk/dummy/force
+            dt: 0.002
+            msg_type: ObkForceSensor
+            sensor_names:
+              tip_force_sensor: force

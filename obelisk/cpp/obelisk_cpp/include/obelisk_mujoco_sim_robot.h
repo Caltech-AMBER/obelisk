@@ -567,6 +567,19 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkFramePose>(sensor_key)),
                         callback_group_);
+                } else if (sensor_type == obelisk_sensor_msgs::msg::ObkForceSensor::MESSAGE_NAME) {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkForceSensor>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkForceSensor>>(pub);
+
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkForceSensor>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkForceSensor>(sensor_key)),
+                        callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
@@ -844,6 +857,45 @@ namespace obelisk {
                 };
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a FramePose!");
+                return cb;
+            } else if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkForceSensor>::value) {
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    obelisk_sensor_msgs::msg::ObkForceSensor msg;
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                    if (sensor_names.size() != 1) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "ObkForceSensor can only work with on force sensor!");
+                    }
+
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        }
+
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "force") {
+                            msg.force.x = this->data_->sensordata[sensor_addr];
+                            msg.force.y = this->data_->sensordata[sensor_addr + 1];
+                            msg.force.z = this->data_->sensordata[sensor_addr + 2];
+
+                            // Force sensors must be on sites
+                            int obj_id = this->model_->sensor_objid[sensor_id];
+                            msg.frame  = std::string(this->model_->names + this->model_->name_siteadr[obj_id]);
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        msg.header.stamp = this->now();
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a ForceSensor!");
                 return cb;
             }
         }
