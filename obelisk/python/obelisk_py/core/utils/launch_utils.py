@@ -340,6 +340,62 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
     return launch_actions
 
 
+def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
+    """Gets and configures all the launch actions related to joystick given the settings from the yaml."""
+    launch_actions = []
+    if settings["on"]:
+        if "device_id" in settings:
+            device_id = settings["device_id"]
+        else:
+            device_id = 0
+
+        if "device_name" in settings:
+            device_name = settings["device_name"]
+        else:
+            device_name = ""
+
+        if "deadzone" in settings:
+            deadzone = settings["deadzone"]
+        else:
+            deadzone = 0.05
+
+        if "autorepeat_rate" in settings:
+            autorepeat_rate = settings["autorepeat_rate"]
+        else:
+            autorepeat_rate = 20.0
+
+        if "sticky_buttons" in settings:
+            sticky_buttons = settings["sticky_buttons"]
+        else:
+            sticky_buttons = False
+
+        if "coalesce_interval_ms" in settings:
+            coalesce_interval_ms = settings["coalesce_interval_ms"]
+        else:
+            coalesce_interval_ms = 1
+
+        launch_actions += [
+            Node(
+                package="joy",
+                executable="joy_node",
+                name="joy",
+                output="screen",
+                parameters=[
+                    {
+                        "device_id": device_id,
+                        "device_name": device_name,
+                        "deadzone": deadzone,
+                        "autorepeat_rate": autorepeat_rate,
+                        "sticky_buttons": sticky_buttons,
+                        "coalesce_interval_ms": coalesce_interval_ms,
+                    }
+                ],
+            )
+        ]
+
+    return launch_actions
+
+
 def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode) -> List:
     """Gets all the handlers for the Lifecycle node."""
     # transition events to match the global state node

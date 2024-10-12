@@ -117,3 +117,32 @@ This will delete cached build files associated with Obelisk. If you have tried b
 
 ## Building Docs
 In the repository root, to build the docs locally, run `sphinx-build -M html docs/source/ docs/build/`.
+
+## Controllers
+Connecting the xbox remote.
+
+### Bluetooth
+STILL WIP.
+
+Might need to disable ERTM:
+```
+echo 1 > /sys/module/bluetooth/parameters/disable_ertm
+```
+
+We have had some issues with the controller connecting and automatically disconnecting. Still TBD on how to solve this issue. Updating the software on the xbox remote did NOT seem to solve the problem.
+
+### USB
+Can verify that the the controller connects via
+```
+sudo apt-get update
+sudo apt-get install evtest
+sudo evtest /dev/input/eventX
+```
+where you replace eventX with the correct number. You can see these by looking at `/dev/input/`.
+
+Then you may need to change the permissions for the joystick:
+```
+sudo chmod 666 /dev/input/eventX
+```
+
+Can run `ros2 run joy joy_enumerate_devices` to see what devices are found.
