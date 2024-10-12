@@ -344,6 +344,8 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
     """Gets and configures all the launch actions related to joystick given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
+        # TODO: I think there is a better way to handle these defaults, i.e., not even passing the parameter if nothing
+        # is supplied.
         if "device_id" in settings:
             device_id = settings["device_id"]
         else:
