@@ -10,21 +10,18 @@ onboard:
         test_param: value_configured_in_yaml
       publishers:
         - ros_parameter: pub_ctrl_setting
-          # key: pub1
           topic: /obelisk/dummy/ctrl
-          msg_type: PositionSetpoint
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       subscribers:
         - ros_parameter: sub_est_setting
-          # key: sub1
           topic: /obelisk/dummy/est
-          msg_type: EstimatedState
           history_depth: 10
           # callback_key: sub_callback1
           callback_group: None
-          non_obelisk: False
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: joystick_sub_setting
+          topic: /joy
       timers:
         - ros_parameter: timer_ctrl_setting
           # key: timer1
@@ -42,7 +39,6 @@ onboard:
           msg_type: EstimatedState
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       subscribers:
         - ros_parameter: sub_sensor_setting
           # key: sub1
@@ -51,7 +47,6 @@ onboard:
           history_depth: 10
           # callback_key: sub_callback1
           callback_group: None
-          non_obelisk: False
       timers:
         - ros_parameter: timer_est_setting
           # key: timer1

@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcl REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 set(ZOO_INC "${obelisk_cpp_SOURCE_DIR}/obelisk_cpp/include")
 
@@ -81,4 +82,5 @@ target_link_libraries(Zoo INTERFACE Obelisk::Core)
 
 ament_target_dependencies(Zoo INTERFACE
   rclcpp
-  rclcpp_lifecycle)
+  rclcpp_lifecycle
+  sensor_msgs)

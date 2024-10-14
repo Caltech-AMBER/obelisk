@@ -69,20 +69,6 @@ namespace obelisk::viz {
             RCLCPP_INFO_STREAM(this->get_logger(), "Successfully parsed URDF file.");
             RCLCPP_INFO_STREAM(this->get_logger(), "Robot name: " << model_.getName());
 
-            // Verify that a subscriber has a estimator message type
-            // TODO (@zolkin): find a better way to do this
-            bool has_estimator_sub = false;
-            using internal::estimator_message_names;
-            const std::string* name_ptr = std::find(estimator_message_names.begin(), estimator_message_names.end(),
-                                                    this->registered_subscriptions_[est_key_].msg_type);
-            if (name_ptr != estimator_message_names.end()) {
-                has_estimator_sub = true;
-            }
-
-            if (!has_estimator_sub) {
-                throw std::runtime_error("Subscription message must be of type ObeliskEstimatorMsg!");
-            }
-
             // Use the original lifecycle create function to avoid the warning, as we know we need non-obelisk here.
             // The user can only configure the topic name and history depth.
             // *** Note: The launch file must re-map the corresponding `robot_state_publisher`

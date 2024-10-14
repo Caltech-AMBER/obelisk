@@ -1,6 +1,8 @@
 #pragma once
 #include <any>
 #include <chrono>
+#include <functional>
+#include <string>
 #include <tuple>
 
 #include "rcl_interfaces/msg/parameter_event.hpp"
@@ -68,7 +70,6 @@ namespace obelisk {
          */
         struct ObeliskPublisherInfo {
             std::string ros_param;
-            std::string msg_type;
             std::function<std::shared_ptr<ObeliskPublisherBase>(const std::string& config_str)> creator;
         };
 
@@ -111,7 +112,6 @@ namespace obelisk {
          */
         struct ObeliskSubscriptionInfo {
             std::string ros_param;
-            std::string msg_type;
             std::function<std::shared_ptr<ObeliskSubscriptionBase>(const std::string& config_str)> creator;
         };
 
@@ -125,36 +125,6 @@ namespace obelisk {
             std::string ros_param;
             std::function<rclcpp::TimerBase::SharedPtr(const std::string&)> creator;
         };
-
-        // clang-format off
-        // Other internal definitions
-        // Allowed Obelisk message types
-        using ObeliskMsgs =
-            std::tuple<obelisk_control_msgs::msg::PositionSetpoint,
-                    obelisk_control_msgs::msg::PDFeedForward,
-                    obelisk_estimator_msgs::msg::EstimatedState,
-                    obelisk_sensor_msgs::msg::ObkJointEncoders,
-                    obelisk_sensor_msgs::msg::TrueSimState,
-                    obelisk_sensor_msgs::msg::ObkImage,
-                    obelisk_sensor_msgs::msg::ObkImu,
-                    obelisk_sensor_msgs::msg::ObkFramePose,
-                    obelisk_std_msgs::msg::FloatMultiArray,
-                    obelisk_std_msgs::msg::UInt8MultiArray>;
-
-        // Allowed non-obelisk message types
-        using ROSAllowedMsgs = std::tuple<rcl_interfaces::msg::ParameterEvent>;
-
-        inline const std::array<std::string, 5> sensor_message_names = {
-            obelisk_sensor_msgs::msg::ObkJointEncoders::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::TrueSimState::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkImage::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME,
-            obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME};
-
-        inline const std::array<std::string, 1> estimator_message_names = {
-            obelisk_estimator_msgs::msg::EstimatedState::MESSAGE_NAME};
-
-        // clang-format on
 
     } // namespace internal
 
@@ -241,7 +211,6 @@ namespace obelisk {
 
             internal::ObeliskPublisherInfo info;
             info.ros_param = ros_param;
-            info.msg_type  = MessageT::MESSAGE_NAME;
             info.creator   = [this](const std::string& config_str) {
                 auto publisher = this->CreatePublisherFromConfigStr<MessageT>(config_str);
                 return std::make_shared<internal::ObeliskPublisher<MessageT>>(publisher);
@@ -288,7 +257,6 @@ namespace obelisk {
 
             internal::ObeliskSubscriptionInfo info;
             info.ros_param = ros_param;
-            info.msg_type  = MessageT::MESSAGE_NAME;
             info.creator   = [this, callback](const std::string& config_str) {
                 auto subscription = this->CreateSubscriptionFromConfigStr<MessageT>(config_str, std::move(callback));
                 return std::make_shared<internal::ObeliskSubscription<MessageT>>(subscription);
@@ -512,39 +480,26 @@ namespace obelisk {
             }
             timers_.clear();
             registered_timers_.clear();
-
             RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " shutdown.");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
       protected:
+        // TODO: Are these two wrappers even needed  anymore?
         /**
          * @brief Creates a publisher, but first verifies if it is a Obelisk
          * allowed message type.
          *
          * @param topic_name the topic
          * @param qos
-         * @param non_obelisk determines if we are allowed to publish non-obelisk
-         * messages
          * @param options
          * @return the publisher
          */
         template <typename MessageT, typename AllocatorT = std::allocator<void>>
         std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
-        create_publisher(const std::string& topic_name, const rclcpp::QoS& qos, bool non_obelisk = false,
+        create_publisher(const std::string& topic_name, const rclcpp::QoS& qos,
                          const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
                              (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>())) {
-            // Check if the message type is valid
-            if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
-                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
-                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
-                }
-            } else {
-                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a publisher that can publish non-Obelisk messages. "
-                                                       "This may cause certain API incompatibilities.");
-            }
-
             return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT, AllocatorT>(topic_name, qos, options);
         }
 
@@ -555,8 +510,6 @@ namespace obelisk {
          * @param topic_name the topic
          * @param qos
          * @param callback the callback function
-         * @param non_obelisk determines if we are allowed to subscribe to
-         * non-obelisk messages. Logs warning if true.
          * @param options
          * @return the subscription
          */
@@ -564,21 +517,10 @@ namespace obelisk {
                   typename SubscriptionT          = rclcpp::Subscription<MessageT, AllocatorT>,
                   typename MessageMemoryStrategyT = typename SubscriptionT::MessageMemoryStrategyType>
         std::shared_ptr<SubscriptionT> create_subscription(
-            const std::string& topic_name, const rclcpp::QoS& qos, CallbackT&& callback, bool non_obelisk = false,
+            const std::string& topic_name, const rclcpp::QoS& qos, CallbackT&& callback,
             const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>& options =
                 rclcpp_lifecycle::create_default_subscription_options<AllocatorT>(),
             typename MessageMemoryStrategyT::SharedPtr msg_mem_strat = (MessageMemoryStrategyT::create_default())) {
-            // Check if the message type is valid
-            if (!non_obelisk) {
-                if (!(ValidMessage<MessageT, internal::ObeliskMsgs>::value ||
-                      ValidMessage<MessageT, internal::ROSAllowedMsgs>::value)) {
-                    throw std::runtime_error("Provided message type is not a valid Obelisk message!");
-                }
-            } else {
-                RCLCPP_WARN_STREAM(this->get_logger(), "Creating a subscriber that can publish non-Obelisk messages. "
-                                                       "This may cause certain API incompatibilities.");
-            }
-
             return rclcpp_lifecycle::LifecycleNode::create_subscription<MessageT, CallbackT, AllocatorT, SubscriptionT,
                                                                         MessageMemoryStrategyT>(
                 topic_name, qos, std::move(callback), options, msg_mem_strat);
@@ -592,7 +534,8 @@ namespace obelisk {
                 const std::string param = this->get_parameter(info.ros_param).as_string();
                 if (param == "") {
                     RCLCPP_WARN_STREAM(this->get_logger(),
-                                       "Registered publisher was not provided a config string! Skipping creation.");
+                                       "The registered publisher <"
+                                           << key << "> was not provided a config string! Skipping creation.");
                 } else {
                     publishers_[key] = info.creator(param);
                 }
@@ -607,7 +550,8 @@ namespace obelisk {
                 const std::string param = this->get_parameter(info.ros_param).as_string();
                 if (param == "") {
                     RCLCPP_WARN_STREAM(this->get_logger(),
-                                       "Registered subscription was not provided a config string! Skipping creation.");
+                                       "The registered subscription <"
+                                           << key << "> was not provided a config string! Skipping creation.");
                 } else {
                     subscriptions_[key] = info.creator(param);
                 }
@@ -646,7 +590,6 @@ namespace obelisk {
             const auto config_map   = ParseConfigStr(config);
             const std::string topic = GetTopic(config_map);
             const int depth         = GetHistoryDepth(config_map);
-            const bool non_obelisk  = !GetIsObeliskMsg(config_map);
 
             rclcpp::CallbackGroup::SharedPtr cbg = nullptr; // default group
             try {
@@ -659,7 +602,7 @@ namespace obelisk {
             options.callback_group = cbg;
 
             // Create the subscriber
-            return create_subscription<MessageT>(topic, depth, std::move(callback), non_obelisk, options);
+            return create_subscription<MessageT>(topic, depth, std::move(callback), options);
         }
 
         /**
@@ -675,9 +618,8 @@ namespace obelisk {
             const auto config_map   = ParseConfigStr(config);
             const std::string topic = GetTopic(config_map);
             const int depth         = GetHistoryDepth(config_map);
-            const bool non_obelisk  = !GetIsObeliskMsg(config_map);
 
-            return create_publisher<MessageT>(topic, depth, non_obelisk);
+            return create_publisher<MessageT>(topic, depth);
         }
 
         /**
@@ -777,25 +719,6 @@ namespace obelisk {
                 return std::stoi(config_map.at("history_depth"));
             } catch (const std::exception& e) {
                 return DEFAULT_DEPTH;
-            }
-        }
-
-        /**
-         * @brief Parses the configuration string map to see if this is restricted
-         * to only obelisk messages.
-         *
-         * @param config_map the map created by ParseConfigStr.
-         * @return use obelisk messages or not.
-         */
-        bool GetIsObeliskMsg(const std::map<std::string, std::string>& config_map) {
-            try {
-                if (config_map.at("non_obelisk") == "True") {
-                    return false;
-                } else {
-                    return true;
-                }
-            } catch (const std::exception& e) {
-                return DEFAULT_IS_OBK_MSG;
             }
         }
 
