@@ -376,6 +376,16 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
         else:
             coalesce_interval_ms = 1
 
+        if "pub_topic" in settings:
+            pub_topic = settings["pub_topic"]
+        else:
+            pub_topic = "/joy"
+
+        if "sub_topic" in settings:
+            sub_topic = settings["sub_topic"]
+        else:
+            sub_topic = "/joy/set_feedback"
+
         launch_actions += [
             Node(
                 package="joy",
@@ -391,6 +401,16 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
                         "sticky_buttons": sticky_buttons,
                         "coalesce_interval_ms": coalesce_interval_ms,
                     }
+                ],
+                remappings=[
+                    (
+                        "/joy",
+                        pub_topic,
+                    ),  # remap the topic that the joystick publishes to
+                    (
+                        "/joy/set_feedback",
+                        sub_topic,
+                    ),  # remap the topic where the joystick listens
                 ],
             )
         ]

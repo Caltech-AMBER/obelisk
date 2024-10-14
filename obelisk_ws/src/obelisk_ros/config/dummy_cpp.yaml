@@ -13,6 +13,9 @@ onboard:
           topic: /obelisk/dummy/ctrl
           history_depth: 10
           callback_group: None
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: joystick_feedback_setting
+          topic: /obelisk/dummy/joy_feedback
       subscribers:
         - ros_parameter: sub_est_setting
           topic: /obelisk/dummy/est
@@ -21,7 +24,7 @@ onboard:
           callback_group: None
       # ----- Joystick subscriber ----- #
         - ros_parameter: joystick_sub_setting
-          topic: /joy
+          topic: /obelisk/dummy/joy
       timers:
         - ros_parameter: timer_ctrl_setting
           # key: timer1
@@ -108,3 +111,5 @@ onboard:
               tip_orientation_sensor: framequat
   joystick:
     on: True
+    pub_topic: /obelisk/dummy/joy
+    sub_topic: /obelisk/dummy/joy_feedback

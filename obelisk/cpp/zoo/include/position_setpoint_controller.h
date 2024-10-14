@@ -5,6 +5,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "sensor_msgs/msg/joy.hpp"
+#include "sensor_msgs/msg/joy_feedback.hpp"
 
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
@@ -39,9 +40,13 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         RCLCPP_INFO_STREAM(this->get_logger(), "test_param: " << test_param_value);
 
         // Joystick example
+        // ----- Joystick Subscriber ----- //
         this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
-            "joystick_sub_setting", "joystick",
+            "joystick_sub_setting", "joystick_sub",
             std::bind(&PositionSetpointController::JoystickCallback, this, std::placeholders::_1));
+
+        // ----- Joystick Publisher ----- //
+        this->RegisterObkPublisher<sensor_msgs::msg::JoyFeedback>("joystick_feedback_setting", "joystick_pub");
     }
 
   protected:
@@ -80,6 +85,15 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
                                                        "the d-pad to adjust the amplitude. Current amplitude: "
                                                            << amplitude_);
             }
+        }
+
+        // Rumble the joystick if the ampliture is too large
+        if (amplitude_ > 1.1) {
+            sensor_msgs::msg::JoyFeedback joy_feedback;
+            joy_feedback.type      = sensor_msgs::msg::JoyFeedback::TYPE_RUMBLE;
+            joy_feedback.id        = 0;
+            joy_feedback.intensity = 0.75;
+            this->GetPublisher<sensor_msgs::msg::JoyFeedback>("joystick_pub")->publish(joy_feedback);
         }
     }
 
