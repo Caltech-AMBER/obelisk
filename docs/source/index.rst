@@ -18,6 +18,7 @@ Documentation for ``obelisk``
    using_obelisk.rst
    visualization.md
    logging.md
+   joystick.rst
    obelisk_terminal_aliases.md
    faq.md
 

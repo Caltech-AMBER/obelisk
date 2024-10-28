@@ -20,17 +20,14 @@ onboard:
         - ros_parameter: sub_est_setting
           topic: /obelisk/dummy/est
           history_depth: 10
-          # callback_key: sub_callback1\
           callback_group: None
       # ----- Joystick subscriber ----- #
         - ros_parameter: joystick_sub_setting
           topic: /obelisk/dummy/joy
       timers:
         - ros_parameter: timer_ctrl_setting
-          # key: timer1
           timer_period_sec: 0.001
           callback_group: test_cbg
-          # callback_key: timer_callback1
   estimation:
     - pkg: obelisk_estimation_cpp
       executable: jointencoders_passthrough_estimator
