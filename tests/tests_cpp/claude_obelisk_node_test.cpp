@@ -10,7 +10,6 @@ class TestObeliskNode : public obelisk::ObeliskNode {
     // Expose protected methods for testing
     using ObeliskNode::GetCallbackGroupName;
     using ObeliskNode::GetHistoryDepth;
-    using ObeliskNode::GetIsObeliskMsg;
     using ObeliskNode::GetMessageName;
     using ObeliskNode::GetPeriod;
     using ObeliskNode::GetTopic;
@@ -60,23 +59,6 @@ TEST_CASE("GetHistoryDepth", "[ObeliskNode]") {
 
     config_map.clear();
     CHECK(node.GetHistoryDepth(config_map) == 10); // Default value
-
-    rclcpp::shutdown();
-}
-
-TEST_CASE("GetIsObeliskMsg", "[ObeliskNode]") {
-    rclcpp::init(0, nullptr);
-
-    TestObeliskNode node;
-    std::map<std::string, std::string> config_map{{"non_obelisk", "True"}};
-
-    CHECK(node.GetIsObeliskMsg(config_map) == false);
-
-    config_map["non_obelisk"] = "false";
-    CHECK(node.GetIsObeliskMsg(config_map) == true);
-
-    config_map.clear();
-    CHECK(node.GetIsObeliskMsg(config_map) == true); // Default value
 
     rclcpp::shutdown();
 }
