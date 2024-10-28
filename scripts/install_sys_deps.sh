@@ -86,7 +86,8 @@ if [ "$basic" = true ]; then
         ros-humble-rosidl-default-generators \
         ros-humble-rmw-cyclonedds-cpp \
         ros-humble-rviz-visual-tools \
-        ros-humble-foxglove-bridge
+        ros-humble-foxglove-bridge \
+        ros-humble-joy              # Need to make sure this is version 3.3.0
     source /opt/ros/humble/setup.bash
 
     # python deps

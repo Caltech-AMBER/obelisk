@@ -140,6 +140,8 @@ sudo evtest /dev/input/eventX
 ```
 where you replace eventX with the correct number. You can see these by looking at `/dev/input/`.
 
+The joystick must be plugged in when the docker container is entered so the input is mounted.
+
 Then you may need to change the permissions for the joystick:
 ```
 sudo chmod 666 /dev/input/eventX

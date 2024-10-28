@@ -13,14 +13,14 @@ onboard:
           topic: /obelisk/dummy/ctrl
           history_depth: 10
           callback_group: None
-      # ----- Joystick subscriber ----- #
+      # ----- Joystick publisher ----- #
         - ros_parameter: joystick_feedback_setting
           topic: /obelisk/dummy/joy_feedback
       subscribers:
         - ros_parameter: sub_est_setting
           topic: /obelisk/dummy/est
           history_depth: 10
-          # callback_key: sub_callback1
+          # callback_key: sub_callback1\
           callback_group: None
       # ----- Joystick subscriber ----- #
         - ros_parameter: joystick_sub_setting
