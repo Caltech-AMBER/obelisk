@@ -11,6 +11,7 @@ from launch_ros.events.lifecycle import ChangeState
 from rclpy.impl import rcutils_logger
 
 from obelisk_py.core.utils.launch_utils import (
+    get_launch_actions_from_joystick_settings,
     get_launch_actions_from_node_settings,
     get_launch_actions_from_viz_settings,
     load_config_file,
@@ -156,6 +157,12 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     if "viz" in obelisk_config:
         logger.info("Viz present in config file.")
         obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)
+
+    if "joystick" in obelisk_config:
+        logger.info("joystick present in config file.")
+        obelisk_launch_actions += get_launch_actions_from_joystick_settings(
+            obelisk_config["joystick"], global_state_node
+        )
 
     return obelisk_launch_actions
 

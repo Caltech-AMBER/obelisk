@@ -4,6 +4,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "sensor_msgs/msg/joy.hpp"
+#include "sensor_msgs/msg/joy_feedback.hpp"
+
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
 
@@ -13,7 +16,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
     PositionSetpointController(const std::string& name)
         : obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
                                      obelisk_estimator_msgs::msg::EstimatedState>(name) {
-        // example of params_path
+        // Example of params_path
         std::string file_string = this->get_parameter("params_path").as_string();
         std::string obk_root    = std::getenv("OBELISK_ROOT");
         std::filesystem::path file_path(obk_root);
@@ -35,6 +38,15 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         std::string test_param_value;
         this->get_parameter("test_param", test_param_value);
         RCLCPP_INFO_STREAM(this->get_logger(), "test_param: " << test_param_value);
+
+        // Joystick example
+        // ----- Joystick Subscriber ----- //
+        this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
+            "joystick_sub_setting", "joystick_sub",
+            std::bind(&PositionSetpointController::JoystickCallback, this, std::placeholders::_1));
+
+        // ----- Joystick Publisher ----- //
+        this->RegisterObkPublisher<sensor_msgs::msg::JoyFeedback>("joystick_feedback_setting", "joystick_pub");
     }
 
   protected:
@@ -55,6 +67,35 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
 
         return msg;
     };
+
+    void JoystickCallback(const sensor_msgs::msg::Joy& msg) {
+        RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Joystick message received!");
+        if (msg.axes.size() != 8) {
+            RCLCPP_ERROR_STREAM_ONCE(this->get_logger(),
+                                     "The only supported joy stick for this demo is a xbox remote with 8 axis!");
+        } else {
+            if (msg.axes[7] == 1) {
+                amplitude_ += 0.1;
+            } else if (msg.axes[7] == -1) {
+                amplitude_ -= 0.1;
+            }
+
+            if (msg.buttons[0] == 1) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Press (A) to print this help message. Press the up and down on "
+                                                       "the d-pad to adjust the amplitude. Current amplitude: "
+                                                           << amplitude_);
+            }
+        }
+
+        // Rumble the joystick if the amplitude is too large
+        if (amplitude_ > 1.1) {
+            sensor_msgs::msg::JoyFeedback joy_feedback;
+            joy_feedback.type      = sensor_msgs::msg::JoyFeedback::TYPE_RUMBLE;
+            joy_feedback.id        = 0;
+            joy_feedback.intensity = 0.75;
+            this->GetPublisher<sensor_msgs::msg::JoyFeedback>("joystick_pub")->publish(joy_feedback);
+        }
+    }
 
     float amplitude_;
 };

@@ -53,6 +53,7 @@ ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
 ros-humble-foxglove-bridge = "*"
+ros-humble-joy = "3.3.0"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -173,7 +174,11 @@ ros2-install = { features=["ros2base"] }
 
 # dev
 dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build", "leap"] }
-dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
+
+dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
+
+dev-zed = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
+
 docs = { features=["docs"] }
 
 build = { features = ["cuda121", "build"] }

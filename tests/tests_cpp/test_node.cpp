@@ -48,11 +48,7 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
     obelisk::ObeliskNodeTester node;
 
     SECTION("Publishers") {
-        // Verify that a dissalowed message throws an error
-        REQUIRE_THROWS(node.create_publisher<std_msgs::msg::String>("topic", 10));
-
-        // Try with the override flag
-        REQUIRE_NOTHROW(node.create_publisher<std_msgs::msg::String>("topic", 10, true));
+        REQUIRE_NOTHROW(node.create_publisher<std_msgs::msg::String>("topic", 10));
 
         // Verify that allowed messages are fine
         REQUIRE_NOTHROW(node.create_publisher<obelisk_control_msgs::msg::PositionSetpoint>("topic", 10));
@@ -83,14 +79,9 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
             "topic", 10,
             std::bind(&obelisk::ObeliskNodeTester::GenericCallback<rcl_interfaces::msg::ParameterEvent>, &node, _1)));
 
-        // Verify that a dissalowed message throws an error
-        REQUIRE_THROWS(node.create_subscription<std_msgs::msg::String>(
-            "topic", 10, std::bind(&obelisk::ObeliskNodeTester::GenericCallback<std_msgs::msg::String>, &node, _1)));
-
         // Try with the override flag
         REQUIRE_NOTHROW(node.create_subscription<std_msgs::msg::String>(
-            "topic", 10, std::bind(&obelisk::ObeliskNodeTester::GenericCallback<std_msgs::msg::String>, &node, _1),
-            true));
+            "topic", 10, std::bind(&obelisk::ObeliskNodeTester::GenericCallback<std_msgs::msg::String>, &node, _1)));
     }
 
     rclcpp::shutdown();
