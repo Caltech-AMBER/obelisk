@@ -485,47 +485,6 @@ namespace obelisk {
         }
 
       protected:
-        // TODO: Are these two wrappers even needed  anymore?
-        /**
-         * @brief Creates a publisher, but first verifies if it is a Obelisk
-         * allowed message type.
-         *
-         * @param topic_name the topic
-         * @param qos
-         * @param options
-         * @return the publisher
-         */
-        template <typename MessageT, typename AllocatorT = std::allocator<void>>
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageT, AllocatorT>>
-        create_publisher(const std::string& topic_name, const rclcpp::QoS& qos,
-                         const rclcpp::PublisherOptionsWithAllocator<AllocatorT>& options =
-                             (rclcpp_lifecycle::create_default_publisher_options<AllocatorT>())) {
-            return rclcpp_lifecycle::LifecycleNode::create_publisher<MessageT, AllocatorT>(topic_name, qos, options);
-        }
-
-        /**
-         * @brief Creates a subscriber, but first verifies if it is a Obelisk
-         * allowed message type.
-         *
-         * @param topic_name the topic
-         * @param qos
-         * @param callback the callback function
-         * @param options
-         * @return the subscription
-         */
-        template <typename MessageT, typename CallbackT, typename AllocatorT = std::allocator<void>,
-                  typename SubscriptionT          = rclcpp::Subscription<MessageT, AllocatorT>,
-                  typename MessageMemoryStrategyT = typename SubscriptionT::MessageMemoryStrategyType>
-        std::shared_ptr<SubscriptionT> create_subscription(
-            const std::string& topic_name, const rclcpp::QoS& qos, CallbackT&& callback,
-            const rclcpp::SubscriptionOptionsWithAllocator<AllocatorT>& options =
-                rclcpp_lifecycle::create_default_subscription_options<AllocatorT>(),
-            typename MessageMemoryStrategyT::SharedPtr msg_mem_strat = (MessageMemoryStrategyT::create_default())) {
-            return rclcpp_lifecycle::LifecycleNode::create_subscription<MessageT, CallbackT, AllocatorT, SubscriptionT,
-                                                                        MessageMemoryStrategyT>(
-                topic_name, qos, std::move(callback), options, msg_mem_strat);
-        }
-
         /**
          * @brief Creates all the registered publishers.
          */

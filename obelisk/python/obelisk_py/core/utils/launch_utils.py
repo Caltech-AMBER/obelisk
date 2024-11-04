@@ -346,45 +346,21 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
     if settings["on"]:
         # TODO: I think there is a better way to handle these defaults, i.e., not even passing the parameter if nothing
         # is supplied.
-        if "device_id" in settings:
-            device_id = settings["device_id"]
-        else:
-            device_id = 0
+        device_id = settings["device_id"] if "device_id" in settings else 0
 
-        if "device_name" in settings:
-            device_name = settings["device_name"]
-        else:
-            device_name = ""
+        device_name = settings["device_name"] if "device_name" in settings else ""
 
-        if "deadzone" in settings:
-            deadzone = settings["deadzone"]
-        else:
-            deadzone = 0.05
+        deadzone = settings["deadzone"] if "deadzone" in settings else 0.05
 
-        if "autorepeat_rate" in settings:
-            autorepeat_rate = settings["autorepeat_rate"]
-        else:
-            autorepeat_rate = 20.0
+        autorepeat_rate = settings["autorepeat_rate"] if "autorepeat_rate" in settings else 20.0
 
-        if "sticky_buttons" in settings:
-            sticky_buttons = settings["sticky_buttons"]
-        else:
-            sticky_buttons = False
+        sticky_buttons = settings["sticky_buttons"] if "sticky_buttons" in settings else False
 
-        if "coalesce_interval_ms" in settings:
-            coalesce_interval_ms = settings["coalesce_interval_ms"]
-        else:
-            coalesce_interval_ms = 1
+        coalesce_interval_ms = settings["coalesce_interval_ms"] if "coalesce_interval_ms" in settings else 1
 
-        if "pub_topic" in settings:
-            pub_topic = settings["pub_topic"]
-        else:
-            pub_topic = "/joy"
+        pub_topic = settings["pub_topic"] if "pub_topic" in settings else "/joy"
 
-        if "sub_topic" in settings:
-            sub_topic = settings["sub_topic"]
-        else:
-            sub_topic = "/joy/set_feedback"
+        sub_topic = settings["sub_topic"] if "sub_topic" in settings else "/joy/set_feedback"
 
         launch_actions += [
             Node(

@@ -69,7 +69,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
     };
 
     void JoystickCallback(const sensor_msgs::msg::Joy& msg) {
-        RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Joystick message recieved!");
+        RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Joystick message received!");
         if (msg.axes.size() != 8) {
             RCLCPP_ERROR_STREAM_ONCE(this->get_logger(),
                                      "The only supported joy stick for this demo is a xbox remote with 8 axis!");
@@ -87,7 +87,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
             }
         }
 
-        // Rumble the joystick if the ampliture is too large
+        // Rumble the joystick if the amplitude is too large
         if (amplitude_ > 1.1) {
             sensor_msgs::msg::JoyFeedback joy_feedback;
             joy_feedback.type      = sensor_msgs::msg::JoyFeedback::TYPE_RUMBLE;

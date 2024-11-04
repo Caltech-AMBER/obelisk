@@ -175,9 +175,9 @@ ros2-install = { features=["ros2base"] }
 # dev
 dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build", "leap"] }
 
-#dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
-# removing zed from dev
 dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
+
+dev-zed = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
 
 docs = { features=["docs"] }
 
