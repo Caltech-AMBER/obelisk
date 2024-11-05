@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Union
 
 import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.node import ObeliskNode
-from obelisk_py.core.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
 from obelisk_py.core.utils.internal import get_classes_in_module
 
 
@@ -65,7 +63,7 @@ class ObeliskEstimator(ABC, ObeliskNode):
         return TransitionCallbackReturn.SUCCESS
 
     @abstractmethod
-    def compute_state_estimate(self) -> Union[ObeliskEstimatorMsg, ObeliskSensorMsg]:
+    def compute_state_estimate(self):
         """Compute the state estimate.
 
         This is the state estimate timer callback and is expected to call 'publisher_est' internally. Note that the
