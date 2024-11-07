@@ -59,11 +59,7 @@ namespace obelisk {
 
             RCLCPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
 
-            nu_                = GetNumInputs(mujoco_config_map); // Required
-            time_step_         = GetTimeSteps(mujoco_config_map);
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
-
-            shared_data_.resize(nu_);
 
             configuration_complete_ = true;
 
@@ -158,6 +154,13 @@ namespace obelisk {
             char error[1000] = "Could not load binary model";
             model_           = mj_loadXML(xml_path_.c_str(), 0, error, 1000);
 
+            time_step_ = model_->opt.timestep;
+            RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << time_step_ << " timestep.");
+
+            nu_ = model_->nu;
+            RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << nu_ << " inputs.");
+            shared_data_.resize(nu_);
+
             if (!model_) {
                 throw std::runtime_error("Could not load Mujoco model from the XML!");
             }
@@ -181,11 +184,7 @@ namespace obelisk {
                 if (potential_keyframe == this->get_parameter("ic_keyframe").as_string()) {
                     RCLCPP_INFO_STREAM(this->get_logger(),
                                        "Setting initial condition to keyframe: " << potential_keyframe);
-                    mju_copy(this->data_->qpos, &this->model_->key_qpos[i * this->model_->nq], this->model_->nq);
-                    mju_copy(this->data_->qvel, &this->model_->key_qvel[i * this->model_->nv], this->model_->nv);
-                    this->data_->time = this->model_->key_time[i];
-
-                    mju_copy(this->data_->ctrl, &this->model_->key_ctrl[i * this->model_->nu], this->model_->nu);
+                    mj_resetDataKeyframe(model_, data_, i);
                 }
             }
 
@@ -384,27 +383,6 @@ namespace obelisk {
                 return config_map.at("robot_pkg");
             } catch (const std::exception& e) {
                 return "None";
-            }
-        }
-
-        int GetNumInputs(const std::map<std::string, std::string>& config_map) {
-            try {
-                int nu = std::stoi(config_map.at("n_u"));
-                if (nu <= 0) {
-                    throw std::runtime_error("Invalid control input dimension - must be greater 0!");
-                }
-                return nu;
-            } catch (const std::exception& e) {
-                throw std::runtime_error("No n_u (number of inputs) was provided!");
-            }
-        }
-
-        float GetTimeSteps(const std::map<std::string, std::string>& config_map) {
-            try {
-                float time_step = std::stof(config_map.at("time_step"));
-                return time_step;
-            } catch (const std::exception& e) {
-                return TIME_STEP_DEFAULT;
             }
         }
 

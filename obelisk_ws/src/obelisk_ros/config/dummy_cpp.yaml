@@ -81,8 +81,6 @@ onboard:
           non_obelisk: False
       sim:
         - ros_parameter: mujoco_setting
-          n_u: 1
-          time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: dummy_bot
           model_xml_path: dummy.xml

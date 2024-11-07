@@ -53,6 +53,6 @@
 
     <keyframe>
         <key name="other" qpos="-1" ctrl="-1" time="1"/>
-        <key name="ic" qpos="1" ctrl="1" time="0" />
+        <key name="ic" qpos="1" ctrl="1" time="2000" />
     </keyframe>
 </mujoco>
