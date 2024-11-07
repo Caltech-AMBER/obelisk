@@ -52,16 +52,11 @@ While in the `pixi` shell and/or Docker container, all changes made in the repos
 ## Building and Running the ROS Stack
 All of the following commands should be run from within the `devcontainer` and within the `dev` pixi virtual environment (which can be entered by running `pixi shell -e dev`).
 
-Build all the messages:
+You can build eveerything with the terminal command:
 ```
-pixi run messages-build
+obk-build
 ```
-
-Build all the ROS packages (including the messages):
-```
-pixi run ros-build
-```
-***Note (as of 9/10/2024): if you have never built the workspace before, you will be required to build the messages first before running `ros-build`. This is because the messages are a dependency for the `ObeliskCpp` library and thus must be built first so they can be used. After you have built the ros workspace once, all future updates only require a `ros-build` command.***
+this will also be sure to build everything in the correct order.
 
 In a seperate terminal, we can run a ROS stack with:
 ```
