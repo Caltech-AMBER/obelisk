@@ -68,7 +68,11 @@ namespace obelisk {
 
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
 
-            ParseVizString(mujoco_config_map.at("viz_geoms"));
+            try {
+                ParseVizString(mujoco_config_map.at("viz_geoms"));
+            } catch (const std::exception& e) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "No geoms to visualize in the simulator.");
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -563,8 +567,6 @@ namespace obelisk {
          * @brief Parse the settings for visualizing geometries from the mujoco scene.
          */
         void ParseVizString(std::string viz_settings) {
-            RCLCPP_ERROR_STREAM(this->get_logger(), "viz string:\n" << viz_settings);
-
             // TODO: We should probably make the yaml entry a normal list, but with the way config strings are done that
             // will be a huge pain So in the future we should adjust this. This is because I don't actually need the
             // user to provide the geom type.
@@ -600,7 +602,6 @@ namespace obelisk {
 
                 std::string setting = viz_settings.substr(0, setting_idx);
                 std::string val     = viz_settings.substr(setting_idx + 1, val_idx - (setting_idx + 1));
-                RCLCPP_WARN_STREAM(this->get_logger(), "setting: " << setting << " val: " << val);
                 setting_map.emplace(setting, val);
                 viz_settings.erase(0, val_idx + val_delim.length());
             }
