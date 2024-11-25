@@ -331,7 +331,7 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
         # callback_groups:
         publishers:
           - ros_parameter: pub_est_setting
-            # key: pub1
+            topic: /obelisk/dummy/est
             msg_type: EstimatedState
             history_depth: 10
             callback_group: None
