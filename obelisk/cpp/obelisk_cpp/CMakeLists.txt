@@ -16,6 +16,9 @@ find_package(obelisk_sensor_msgs REQUIRED)
 find_package(obelisk_estimator_msgs REQUIRED)
 find_package(obelisk_std_msgs REQUIRED)
 
+# --------- Viz Messages --------- #
+find_package(visualization_msgs REQUIRED)
+
 # ------- Mujoco ------- #
 include(FetchContent)
 set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
@@ -67,4 +70,5 @@ ament_target_dependencies(ObkCore INTERFACE
   obelisk_control_msgs
   obelisk_estimator_msgs
   obelisk_sensor_msgs
+  visualization_msgs
   std_msgs)

@@ -384,6 +384,12 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
               sensor_names:
                 tip_pos_sensor: framepos
                 tip_orientation_sensor: framequat
+            viz_geoms:
+              dt: 1.0
+              dummy_box: box
+              dummy_box_2: box
+              dummy_sphere: sphere
+
 
 
 Breaking down the configuration file
@@ -505,7 +511,11 @@ Lastly, we need to configure the ``robot`` (aka, the system).
           sensor_names:
             tip_pos_sensor: framepos
             tip_orientation_sensor: framequat
-
+          viz_geoms:
+            dt: 1.0
+            dummy_box: box
+            dummy_box_2: box
+            dummy_sphere: sphere
 
 ``is_simulated`` marks if we are running on hardware or in simulation. ``pkg`` and ``executable`` are as before.
 ``ic_keyframe`` (optional) in the params section tells the simulation which keyframe to use for an initial condition.
@@ -531,5 +541,7 @@ Mujoco sensor type                              Obelisk Message Type
 =============================================== ====================
 
 You may have multiple of the same type of sensor in the yaml.
+
+- ``viz_geoms`` (optional) gives a list of visualization geometries that you want the simulation node to publish. The node will read the state of these geoms from the simulator and publish them so an external visualizer can see them. This is designed mostly for visualizing the environment, not the robot.
 
 Thats it! Now we have configured our Obelisk nodes.

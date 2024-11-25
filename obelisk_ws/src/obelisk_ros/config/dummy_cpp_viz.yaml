@@ -96,6 +96,12 @@ onboard:
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
+          viz_geoms:
+            dt: 1.0
+            dummy_box: box
+            dummy_box_2: box
+            dummy_sphere: sphere
+
   viz:
     on: True
     viz_tool: rviz
