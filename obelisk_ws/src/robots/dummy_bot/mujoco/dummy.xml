@@ -19,7 +19,7 @@
         <light name="light" pos="0 0 3" dir="0 0 -1" diffuse="1 1 1" specular="0.3 0.3 0.3"/>
 
         <!-- Robot -->
-        <body name="link0" pos="0 0 0">
+        <body name="link0" pos="0 0 0" quat="-0.707 0 0 0.707">
             <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>
             <body name="link1" pos="0 0 1">
                 <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>
@@ -27,6 +27,13 @@
                 <site name="imu_site" pos="0 0 1" euler="0 0 0" size="0.001"/>
                 <site name="tip" pos="0 0 1" euler="0 0 0" size="0.001"/>
             </body>
+        </body>
+
+        <!-- Other Objects -->
+        <body>
+            <geom name="dummy_box_2" type="box" pos="2 1 0.5" quat="0.577 0.577 0 0.577" size="0.5 0.25 0.25"/>
+            <geom name="dummy_box" type="box" pos="-1 1 0.5" size="0.5 0.25 0.25"/>
+            <geom name="dummy_sphere" type="sphere" pos="-2 2 2.5" size="0.25"/>
         </body>
     </worldbody>
 
@@ -53,6 +60,6 @@
 
     <keyframe>
         <key name="other" qpos="-1" ctrl="-1" time="1"/>
-        <key name="ic" qpos="1" ctrl="1" time="0" />
+        <key name="ic" qpos="1" ctrl="1" time="2000" />
     </keyframe>
 </mujoco>

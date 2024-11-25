@@ -7,6 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
+#include <visualization_msgs/msg/marker_array.hpp>
+
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
@@ -15,7 +17,8 @@
 namespace obelisk {
     template <typename ControlMessageT> class ObeliskMujocoRobot : public ObeliskSimRobot<ControlMessageT> {
       public:
-        explicit ObeliskMujocoRobot(const std::string& name) : ObeliskSimRobot<ControlMessageT>(name) {
+        explicit ObeliskMujocoRobot(const std::string& name)
+            : ObeliskSimRobot<ControlMessageT>(name), viz_key_("viz_geom_pub") {
             this->template declare_parameter<std::string>("mujoco_setting", "");
             this->template declare_parameter<std::string>(
                 "ic_keyframe",
@@ -59,15 +62,17 @@ namespace obelisk {
 
             RCLCPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
 
-            nu_                = GetNumInputs(mujoco_config_map); // Required
-            time_step_         = GetTimeSteps(mujoco_config_map);
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
-
-            shared_data_.resize(nu_);
 
             configuration_complete_ = true;
 
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
+
+            try {
+                ParseVizString(mujoco_config_map.at("viz_geoms"));
+            } catch (const std::exception& e) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "No geoms to visualize in the simulator.");
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -158,6 +163,13 @@ namespace obelisk {
             char error[1000] = "Could not load binary model";
             model_           = mj_loadXML(xml_path_.c_str(), 0, error, 1000);
 
+            time_step_ = model_->opt.timestep;
+            RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << time_step_ << " timestep.");
+
+            nu_ = model_->nu;
+            RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << nu_ << " inputs.");
+            shared_data_.resize(nu_);
+
             if (!model_) {
                 throw std::runtime_error("Could not load Mujoco model from the XML!");
             }
@@ -181,11 +193,7 @@ namespace obelisk {
                 if (potential_keyframe == this->get_parameter("ic_keyframe").as_string()) {
                     RCLCPP_INFO_STREAM(this->get_logger(),
                                        "Setting initial condition to keyframe: " << potential_keyframe);
-                    mju_copy(this->data_->qpos, &this->model_->key_qpos[i * this->model_->nq], this->model_->nq);
-                    mju_copy(this->data_->qvel, &this->model_->key_qvel[i * this->model_->nv], this->model_->nv);
-                    this->data_->time = this->model_->key_time[i];
-
-                    mju_copy(this->data_->ctrl, &this->model_->key_ctrl[i * this->model_->nu], this->model_->nu);
+                    mj_resetDataKeyframe(model_, data_, i);
                 }
             }
 
@@ -387,27 +395,6 @@ namespace obelisk {
             }
         }
 
-        int GetNumInputs(const std::map<std::string, std::string>& config_map) {
-            try {
-                int nu = std::stoi(config_map.at("n_u"));
-                if (nu <= 0) {
-                    throw std::runtime_error("Invalid control input dimension - must be greater 0!");
-                }
-                return nu;
-            } catch (const std::exception& e) {
-                throw std::runtime_error("No n_u (number of inputs) was provided!");
-            }
-        }
-
-        float GetTimeSteps(const std::map<std::string, std::string>& config_map) {
-            try {
-                float time_step = std::stof(config_map.at("time_step"));
-                return time_step;
-            } catch (const std::exception& e) {
-                return TIME_STEP_DEFAULT;
-            }
-        }
-
         int GetNumStepsPerViz(const std::map<std::string, std::string>& config_map) {
             try {
                 int num_steps = std::stoi(config_map.at("num_steps_per_viz"));
@@ -574,6 +561,176 @@ namespace obelisk {
                 this->timers_[sensor_key]->cancel(); // Stop the timer
                 num_sensors_++;
             }
+        }
+
+        /**
+         * @brief Parse the settings for visualizing geometries from the mujoco scene.
+         */
+        void ParseVizString(std::string viz_settings) {
+            // TODO: We should probably make the yaml entry a normal list, but with the way config strings are done that
+            // will be a huge pain So in the future we should adjust this. This is because I don't actually need the
+            // user to provide the geom type.
+
+            // Remove {} and []
+            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '{'), viz_settings.end());
+            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '}'), viz_settings.end());
+            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '['), viz_settings.end());
+            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), ']'), viz_settings.end());
+
+            // Wait for mujoco setup to complete
+            while (!mujoco_setup_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+
+            // Extract the geom id's for publishing
+            // Create a new map between the names and their string values
+            const std::string setting_delim = "|";
+            const std::string val_delim     = ":";
+            std::map<std::string, std::string> setting_map;
+
+            size_t val_idx;
+            while (!viz_settings.empty()) {
+                val_idx = viz_settings.find(setting_delim);
+                if (val_idx == std::string::npos) {
+                    val_idx = viz_settings.length();
+                }
+
+                size_t setting_idx = viz_settings.find(val_delim);
+                if (setting_idx == std::string::npos) {
+                    throw std::runtime_error("Invalid viz setting string!");
+                }
+
+                std::string setting = viz_settings.substr(0, setting_idx);
+                std::string val     = viz_settings.substr(setting_idx + 1, val_idx - (setting_idx + 1));
+                setting_map.emplace(setting, val);
+                viz_settings.erase(0, val_idx + val_delim.length());
+            }
+
+            // The dt for the timer
+            double dt = -1;
+            try {
+                dt = std::stod(setting_map.at("dt"));
+                if (dt <= 0) {
+                    throw std::runtime_error("Invalid dt. Must be > 0.");
+                }
+            } catch (const std::exception& e) {
+                throw std::runtime_error("No dt provided for the viz publisher!");
+            }
+
+            for (const auto& [key, value] : setting_map) {
+                if (key != "dt") {
+                    // Find the mujoco geom with that name
+                    const int geom_id = mj_name2id(model_, mjtObj::mjOBJ_GEOM, key.c_str());
+                    if (geom_id == -1) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Geom " << key << " not found in the model! Skipping!");
+                    } else {
+                        // TODO: Can easily add elipsoids in
+                        if (model_->geom_type[geom_id] != mjtGeom::mjGEOM_BOX &&
+                            model_->geom_type[geom_id] != mjtGeom::mjGEOM_SPHERE &&
+                            model_->geom_type[geom_id] != mjtGeom::mjGEOM_CYLINDER) {
+                            RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                "Geom type not supported! Only support Box, Sphere, and Cylinder.");
+                        } else {
+                            viz_geoms_.emplace_back(geom_id);
+                        }
+                    }
+                }
+            }
+
+            if (viz_geoms_.size() > 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Publishing the given mujoco geoms.");
+                // For now hard code the topic
+                auto pub = ObeliskNode::create_publisher<visualization_msgs::msg::MarkerArray>(
+                    "obelisk/sim/mujoco_scene_viz", 10);
+                this->publishers_[viz_key_] =
+                    std::make_shared<internal::ObeliskPublisher<visualization_msgs::msg::MarkerArray>>(pub);
+
+                // Add the timer to the list
+                this->timers_[viz_key_] =
+                    this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                                            std::bind(&ObeliskMujocoRobot::VizTimerCallback, this), callback_group_);
+            }
+        }
+
+        void VizTimerCallback() {
+            std::vector<std::array<double, 3>> positions(viz_geoms_.size());
+            std::vector<std::array<double, 9>> rotmats(viz_geoms_.size());
+            std::vector<std::array<double, 3>> sizes(viz_geoms_.size());
+            std::vector<int> geom_types(viz_geoms_.size());
+
+            {
+                // Grab the mutex on the model and data
+                std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                // Get the position and orientation of the geoms
+                for (size_t i = 0; i < viz_geoms_.size(); i++) {
+                    geom_types[i] = model_->geom_type[viz_geoms_[i]];
+
+                    for (int j = 0; j < 3; j++) {
+                        positions[i][j] = data_->geom_xpos[3 * viz_geoms_[i] + j];
+                        sizes[i][j]     = model_->geom_size[3 * viz_geoms_[i] + j];
+                    }
+
+                    for (int j = 0; j < 9; j++) {
+                        rotmats[i][j] = data_->geom_xmat[9 * viz_geoms_[i] + j];
+                    }
+                }
+            }
+
+            // Format for the display marker
+            visualization_msgs::msg::MarkerArray msg;
+            msg.markers.resize(viz_geoms_.size());
+
+            for (size_t i = 0; i < msg.markers.size(); i++) {
+                msg.markers[i].header.frame_id = "world";
+                msg.markers[i].header.stamp    = this->now();
+
+                msg.markers[i].ns     = "mujoco_scene_viz";
+                msg.markers[i].id     = i;
+                msg.markers[i].action = visualization_msgs::msg::Marker::MODIFY;
+
+                msg.markers[i].pose.position.x = positions[i][0];
+                msg.markers[i].pose.position.y = positions[i][1];
+                msg.markers[i].pose.position.z = positions[i][2];
+
+                // Convert the rotmats to quats
+                mjtNum quat[4];
+                mjtNum* mat = rotmats[i].data();
+                mju_mat2Quat(quat, mat);
+
+                msg.markers[i].pose.orientation.x = -quat[1];
+                msg.markers[i].pose.orientation.y = -quat[2];
+                msg.markers[i].pose.orientation.z = -quat[3];
+                msg.markers[i].pose.orientation.w = -quat[0];
+
+                msg.markers[i].color.a = 1.0;
+                msg.markers[i].color.r = 0.69;
+                msg.markers[i].color.g = 0.541;
+                msg.markers[i].color.b = 0.094;
+
+                if (geom_types[i] == mjtGeom::mjGEOM_BOX) {
+                    msg.markers[i].scale.x = sizes[i][0] * 2;
+                    msg.markers[i].scale.y = sizes[i][1] * 2;
+                    msg.markers[i].scale.z = sizes[i][2] * 2;
+
+                    msg.markers[i].type = visualization_msgs::msg::Marker::CUBE;
+                } else if (geom_types[i] == mjtGeom::mjGEOM_SPHERE) {
+                    msg.markers[i].scale.x = sizes[i][0] * 2;
+                    msg.markers[i].scale.y = sizes[i][0] * 2;
+                    msg.markers[i].scale.z = sizes[i][0] * 2;
+
+                    msg.markers[i].type = visualization_msgs::msg::Marker::SPHERE;
+                } else if (geom_types[i] == mjtGeom::mjGEOM_CYLINDER) {
+                    msg.markers[i].scale.x = sizes[i][0] * 2;
+                    msg.markers[i].scale.y = sizes[i][0] * 2;
+                    msg.markers[i].scale.z = sizes[i][1] * 2;
+
+                    msg.markers[i].type = visualization_msgs::msg::Marker::CYLINDER;
+                }
+            }
+
+            // Publish
+            this->template GetPublisher<visualization_msgs::msg::MarkerArray>(viz_key_)->publish(msg);
         }
 
         /**
@@ -987,6 +1144,12 @@ namespace obelisk {
         std::filesystem::path xml_path_;
         float time_step_;
         int num_steps_per_viz_;
+
+        // Key for viz publishing
+        std::string viz_key_;
+
+        // Geom id's for viz
+        std::vector<int> viz_geoms_;
 
         // Shared data between the main thread and the sim thread
         std::vector<double> shared_data_;

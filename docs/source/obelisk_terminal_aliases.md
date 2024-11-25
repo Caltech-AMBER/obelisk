@@ -12,6 +12,19 @@ Example:
 obk-launch config_file_path=example.yaml device_name=onboard auto_start=True
 ```
 
+## `obk-build`
+Builds Obelisk.
+Usage:
+```
+obk-build
+```
+
+## `obk-clean`
+Cleans the Obelisk build folders. If the build is failing unexpectedly, it can be useful to run this command and try again.
+```
+obk-clean
+```
+
 ## State Transitions
 ### `obk-configure`
 Configure all Obelisk nodes.
