@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from obelisk_py.core.node import ObeliskNode
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
 
 
 class ObeliskController(ABC, ObeliskNode):
@@ -38,7 +37,7 @@ class ObeliskController(ABC, ObeliskNode):
         )
 
     @abstractmethod
-    def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
+    def update_x_hat(self, x_hat_msg) -> None:
         """Update the state estimate.
 
         Parameters:
@@ -46,7 +45,7 @@ class ObeliskController(ABC, ObeliskNode):
         """
 
     @abstractmethod
-    def compute_control(self) -> ObeliskControlMsg:
+    def compute_control(self):
         """Compute the control signal.
 
         This is the control timer callback and is expected to call 'publisher_ctrl' internally. Note that the control

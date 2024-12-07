@@ -6,7 +6,6 @@ import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.node import ObeliskNode
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 
 
 class ObeliskRobot(ABC, ObeliskNode):
@@ -28,7 +27,7 @@ class ObeliskRobot(ABC, ObeliskNode):
         )
 
     @abstractmethod
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+    def apply_control(self, control_msg) -> None:
         """Apply the control message to the robot.
 
         Code interfacing with the hardware should be implemented here.

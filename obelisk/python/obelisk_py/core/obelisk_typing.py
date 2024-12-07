@@ -3,7 +3,6 @@ from typing import List, Type, TypeVar, Union, get_args, get_origin
 import obelisk_control_msgs.msg as ocm
 import obelisk_estimator_msgs.msg as oem
 import obelisk_sensor_msgs.msg as osm
-from rcl_interfaces.msg import ParameterEvent
 
 from obelisk_py.core.utils.internal import get_classes_in_module
 
@@ -44,11 +43,11 @@ ocm_classes = get_classes_in_module(ocm)
 oem_classes = get_classes_in_module(oem)
 osm_classes = get_classes_in_module(osm)
 
-ObeliskControlMsg = TypeVar("ObeliskControlMsg", bound=_create_union_type(ocm_classes))  # type: ignore
-ObeliskEstimatorMsg = TypeVar("ObeliskEstimatorMsg", bound=_create_union_type(oem_classes))  # type: ignore
-ObeliskSensorMsg = TypeVar("ObeliskSensorMsg", bound=_create_union_type(osm_classes))  # type: ignore
-ObeliskMsg = TypeVar("ObeliskMsg", bound=_create_union_type(ocm_classes + oem_classes + osm_classes))  # type: ignore
-ObeliskAllowedMsg = TypeVar(
-    "ObeliskAllowedMsg",
-    bound=_create_union_type(ocm_classes + oem_classes + osm_classes + [ParameterEvent]),  # type: ignore
-)  # [NOTE] ParameterEvent is a special case - all nodes have a ParameterEvent publisher in ROS2
+# ObeliskControlMsg = TypeVar("ObeliskControlMsg", bound=_create_union_type(ocm_classes))  # type: ignore
+# ObeliskEstimatorMsg = TypeVar("ObeliskEstimatorMsg", bound=_create_union_type(oem_classes))  # type: ignore
+# ObeliskSensorMsg = TypeVar("ObeliskSensorMsg", bound=_create_union_type(osm_classes))  # type: ignore
+# ObeliskMsg = TypeVar("ObeliskMsg", bound=_create_union_type(ocm_classes + oem_classes + osm_classes))  # type: ignore
+# ObeliskAllowedMsg = TypeVar(
+#     "ObeliskAllowedMsg",
+#     bound=_create_union_type(ocm_classes + oem_classes + osm_classes + [ParameterEvent]),  # type: ignore
+# )  # [NOTE] ParameterEvent is a special case - all nodes have a ParameterEvent publisher in ROS2

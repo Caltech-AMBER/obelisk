@@ -1,25 +1,17 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, get_args, get_origin
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import rclpy
-from rclpy._rclpy_pybind11 import RCLError
 from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
-from rclpy.publisher import Publisher
-from rclpy.qos import QoSProfile
-from rclpy.qos_event import PublisherEventCallbacks, SubscriptionEventCallbacks
-from rclpy.qos_overriding_options import QoSOverridingOptions
-from rclpy.subscription import Subscription
 
-from obelisk_py.core.exceptions import ObeliskMsgError
-from obelisk_py.core.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
-from obelisk_py.core.utils.internal import check_and_get_obelisk_msg_type
+# from obelisk_py.core.obelisk_typing import ObeliskAllowedMsg, ObeliskMsg, is_in_bound
 
 MsgType = TypeVar("MsgType")  # hack to denote any message type
 
 
 class ObeliskNode(LifecycleNode):
-    """A lifecycle node whose publishers and subscribers can only publish and subscribe to Obelisk messages.
+    """A lifecycle node designed for use in Obelisk.
 
     By convention, the initialization function should only declare ROS parameters and define stateful quantities.
     Some guidelines for the on_configure, on_activate, and on_deactivate callbacks are provided below.
@@ -115,7 +107,7 @@ class ObeliskNode(LifecycleNode):
     def register_obk_subscription(
         self,
         ros_parameter: str,
-        callback: Callable[[Union[ObeliskAllowedMsg, MsgType]], None],
+        callback: Callable[[MsgType], None],
         key: Optional[str] = None,
         msg_type: Optional[Type] = None,
         default_config_str: Optional[str] = None,
@@ -258,20 +250,21 @@ class ObeliskNode(LifecycleNode):
         assert isinstance(config_dict["key"], str), "The 'key' field must be a string!"
         return config_dict["key"]
 
-    @staticmethod
-    def _get_msg_type_from_config_dict(config_dict: Dict) -> Type:
-        """Get the message type from a configuration dictionary."""
-        assert config_dict.get("msg_type") is not None, "No message type supplied!"
-        assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
+    # @staticmethod
+    # def _get_msg_type_from_config_dict(config_dict: Dict) -> Type:
+    #     """Get the message type from a configuration dictionary."""
+    #     assert config_dict.get("msg_type") is not None, "No message type supplied!"
+    #     assert isinstance(config_dict["msg_type"], str), "The 'msg_type' field must be a string!"
 
-        if "non_obelisk" in config_dict:
-            assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
-            assert config_dict["non_obelisk"].lower() != "true", "non_obelisk=True but no message type supplied!"
-            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskMsg)
-        else:
-            msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskAllowedMsg)
+    #     # TODO: Remove
+    #     if "non_obelisk" in config_dict:
+    #         assert isinstance(config_dict["non_obelisk"], str), "The 'non_obelisk' field must be a string!"
+    #         assert config_dict["non_obelisk"].lower() != "true", "non_obelisk=True but no message type supplied!"
+    #         msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskMsg)
+    #     else:
+    #         msg_type = check_and_get_obelisk_msg_type(config_dict["msg_type"], ObeliskAllowedMsg)
 
-        return msg_type
+    #     return msg_type
 
     @staticmethod
     def _create_callback_groups_from_config_str(config_str: str) -> Dict[str, CallbackGroup]:
@@ -364,7 +357,7 @@ class ObeliskNode(LifecycleNode):
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["topic"]
-        optional_field_names = ["key", "msg_type", "history_depth", "callback_group", "non_obelisk"]
+        optional_field_names = ["key", "msg_type", "history_depth", "callback_group"]
         ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
@@ -392,16 +385,13 @@ class ObeliskNode(LifecycleNode):
 
         # run type assertions and create the publisher
         history_depth = config_dict.get("history_depth", 10)
-        non_obelisk_field = config_dict.get("non_obelisk", "False")
         assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
         assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
-        assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
         self.obk_publishers[key] = self.create_publisher(
             msg_type=msg_type,
             topic=config_dict["topic"],
             qos_profile=history_depth,
             callback_group=callback_group,
-            non_obelisk=non_obelisk_field.lower() == "true",
         )
         assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
         setattr(self, key + "_key", self.obk_publishers[key])  # create key attribute for publisher
@@ -410,7 +400,7 @@ class ObeliskNode(LifecycleNode):
     def _create_subscription_from_config_str(
         self,
         config_str: str,
-        callback: Callable[[Union[ObeliskAllowedMsg, MsgType]], None],
+        callback: Callable[[MsgType], None],
         key: Optional[str] = None,
         msg_type: Optional[Type] = None,
     ) -> Tuple[str, Type]:
@@ -441,7 +431,7 @@ class ObeliskNode(LifecycleNode):
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["topic"]
-        optional_field_names = ["key", "msg_type", "history_depth", "callback_group", "non_obelisk"]
+        optional_field_names = ["key", "msg_type", "history_depth", "callback_group"]
         ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
         config_dict = dict(zip(field_names, value_names))
 
@@ -469,10 +459,8 @@ class ObeliskNode(LifecycleNode):
 
         # run type assertions and return the subscription
         history_depth = config_dict.get("history_depth", 10)
-        non_obelisk_field = config_dict.get("non_obelisk", "False")
         assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
         assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
-        assert isinstance(non_obelisk_field, str), "The 'non_obelisk' field must be a str!"
 
         self.obk_subscriptions[key] = self.create_subscription(
             msg_type=msg_type,
@@ -480,7 +468,6 @@ class ObeliskNode(LifecycleNode):
             callback=callback,  # type: ignore
             qos_profile=history_depth,
             callback_group=callback_group,
-            non_obelisk=non_obelisk_field.lower() == "true",
         )
         assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
         setattr(self, key + "_key", self.obk_subscriptions[key])  # create key attribute for subscription
@@ -548,105 +535,105 @@ class ObeliskNode(LifecycleNode):
     # PUB/SUB CREATION #
     # ################ #
 
-    def create_publisher(
-        self,
-        msg_type: ObeliskAllowedMsg,
-        topic: str,
-        qos_profile: Union[QoSProfile, int],
-        *,
-        callback_group: Optional[CallbackGroup] = None,
-        event_callbacks: Optional[PublisherEventCallbacks] = None,
-        qos_overriding_options: Optional[QoSOverridingOptions] = None,
-        publisher_class: Type[Publisher] = Publisher,
-        non_obelisk: bool = False,
-    ) -> Publisher:
-        """Create a new publisher that can only publish Obelisk messages.
+    # def create_publisher(
+    #     self,
+    #     msg_type: ObeliskAllowedMsg,
+    #     topic: str,
+    #     qos_profile: Union[QoSProfile, int],
+    #     *,
+    #     callback_group: Optional[CallbackGroup] = None,
+    #     event_callbacks: Optional[PublisherEventCallbacks] = None,
+    #     qos_overriding_options: Optional[QoSOverridingOptions] = None,
+    #     publisher_class: Type[Publisher] = Publisher,
+    #     non_obelisk: bool = False,
+    # ) -> Publisher:
+    #     """Create a new publisher that can only publish Obelisk messages.
 
-        See: github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1242
+    #     See: github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1242
 
-        Parameters:
-            non_obelisk: If True, the publisher can publish non-Obelisk messages. Default is False.
+    #     Parameters:
+    #         non_obelisk: If True, the publisher can publish non-Obelisk messages. Default is False.
 
-        Raises:
-            ObeliskMsgError: If the message type is not an Obelisk message.
-        """
-        if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
-            if get_origin(ObeliskAllowedMsg.__bound__) is Union:
-                valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
-            else:
-                valid_msg_types = [ObeliskAllowedMsg.__name__]
-            raise ObeliskMsgError(
-                f"msg_type must be one of {valid_msg_types}. "
-                "Got {msg_type.__name__}. If you are sure that the message type is correct, "
-                "set non_obelisk=True. Note that this may cause certain API incompatibilies."
-            )
+    #     Raises:
+    #         ObeliskMsgError: If the message type is not an Obelisk message.
+    #     """
+    #     if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
+    #         if get_origin(ObeliskAllowedMsg.__bound__) is Union:
+    #             valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
+    #         else:
+    #             valid_msg_types = [ObeliskAllowedMsg.__name__]
+    #         raise ObeliskMsgError(
+    #             f"msg_type must be one of {valid_msg_types}. "
+    #             "Got {msg_type.__name__}. If you are sure that the message type is correct, "
+    #             "set non_obelisk=True. Note that this may cause certain API incompatibilies."
+    #         )
 
-        try:
-            return super().create_publisher(
-                msg_type=msg_type,
-                topic=topic,
-                qos_profile=qos_profile,
-                callback_group=callback_group,
-                event_callbacks=event_callbacks,
-                qos_overriding_options=qos_overriding_options,
-                publisher_class=publisher_class,
-            )
-        except RCLError as e:
-            self.get_logger().error(
-                "Failed to create publisher: verify that you haven't declared the same topic twice!"
-            )
-            raise e
+    #     try:
+    #         return super().create_publisher(
+    #             msg_type=msg_type,
+    #             topic=topic,
+    #             qos_profile=qos_profile,
+    #             callback_group=callback_group,
+    #             event_callbacks=event_callbacks,
+    #             qos_overriding_options=qos_overriding_options,
+    #             publisher_class=publisher_class,
+    #         )
+    #     except RCLError as e:
+    #         self.get_logger().error(
+    #             "Failed to create publisher: verify that you haven't declared the same topic twice!"
+    #         )
+    #         raise e
 
-    def create_subscription(
-        self,
-        msg_type: ObeliskAllowedMsg,
-        topic: str,
-        callback: Callable[[ObeliskAllowedMsg], None],
-        qos_profile: Union[QoSProfile, int],
-        *,
-        callback_group: Optional[CallbackGroup] = None,
-        event_callbacks: Optional[SubscriptionEventCallbacks] = None,
-        qos_overriding_options: Optional[QoSOverridingOptions] = None,
-        raw: bool = False,
-        non_obelisk: bool = False,
-    ) -> Subscription:
-        """Create a new subscription that can only subscribe to Obelisk messages.
+    # def create_subscription(
+    #     self,
+    #     msg_type: ObeliskAllowedMsg,
+    #     topic: str,
+    #     callback: Callable[[ObeliskAllowedMsg], None],
+    #     qos_profile: Union[QoSProfile, int],
+    #     *,
+    #     callback_group: Optional[CallbackGroup] = None,
+    #     event_callbacks: Optional[SubscriptionEventCallbacks] = None,
+    #     qos_overriding_options: Optional[QoSOverridingOptions] = None,
+    #     raw: bool = False,
+    #     non_obelisk: bool = False,
+    # ) -> Subscription:
+    #     """Create a new subscription that can only subscribe to Obelisk messages.
 
-        See: github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1316
+    #     See: github.com/ros2/rclpy/blob/e4042398d6f0403df2fafdadbdfc90b6f6678d13/rclpy/rclpy/node.py#L1316
 
-        Parameters:
-            non_obelisk: If True, the subscriber can receive non-Obelisk messages. Default is False.
+    #     Parameters:
+    #         non_obelisk: If True, the subscriber can receive non-Obelisk messages. Default is False.
 
-        Raises:
-            ObeliskMsgError: If the message type is not an Obelisk message.
-        """
-        if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
-            if get_origin(ObeliskAllowedMsg.__bound__) is Union:
-                valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
-            else:
-                valid_msg_types = [ObeliskAllowedMsg.__name__]
-            raise ObeliskMsgError(
-                f"msg_type must be one of {valid_msg_types}. "
-                "Got {msg_type.__name__}. If you are sure that the message type is correct, "
-                "set non_obelisk=True. Note that this may cause certain API incompatibilies."
-            )
+    #     Raises:
+    #         ObeliskMsgError: If the message type is not an Obelisk message.
+    #     """
+    #     if not non_obelisk and not is_in_bound(msg_type, ObeliskAllowedMsg):
+    #         if get_origin(ObeliskAllowedMsg.__bound__) is Union:
+    #             valid_msg_types = [a.__name__ for a in get_args(ObeliskAllowedMsg.__bound__)]
+    #         else:
+    #             valid_msg_types = [ObeliskAllowedMsg.__name__]
+    #         raise ObeliskMsgError(
+    #             f"msg_type must be one of {valid_msg_types}. "
+    #             "Got {msg_type.__name__}. If you are sure that the message type is correct, "
+    #             "set non_obelisk=True. Note that this may cause certain API incompatibilies."
+    #         )
 
-        try:
-            return super().create_subscription(
-                msg_type=msg_type,
-                topic=topic,
-                callback=callback,
-                qos_profile=qos_profile,
-                callback_group=callback_group,
-                event_callbacks=event_callbacks,
-                qos_overriding_options=qos_overriding_options,
-                raw=raw,
-            )
-        except RCLError as e:
-            self.get_logger().error(
-                "Failed to create subscription: verify that you haven't declared the same topic twice!"
-            )
-            raise e
+    #     try:
+    #         return super().create_subscription(
+    #             msg_type=msg_type,
+    #             topic=topic,
+    #             callback=callback,
+    #             qos_profile=qos_profile,
+    #             callback_group=callback_group,
+    #             event_callbacks=event_callbacks,
+    #             qos_overriding_options=qos_overriding_options,
+    #             raw=raw,
+    #         )
+    #     except RCLError as e:
+    #         self.get_logger().error(
+    #             "Failed to create subscription: verify that you haven't declared the same topic twice!"
+    #         )
+    #         raise e
 
     # ################### #
     # LIFECYCLE CALLBACKS #
