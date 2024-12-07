@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any
 
 from obelisk_estimator_msgs.msg import EstimatedState
 from obelisk_sensor_msgs.msg import ObkJointEncoders
@@ -12,12 +12,12 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
 
     def __init__(self, node_name: str = "joint_encoders_passthrough_estimator") -> None:
         """Initialize the joint encoders passthrough estimator."""
-        super().__init__(node_name)
+        super().__init__(node_name, EstimatedState)
         self.register_obk_subscription(
             "sub_sensor_setting",
             self.joint_encoder_callback,  # type: ignore
+            ObkJointEncoders,
             key="sub_sensor",  # key can be specified here or in the config file
-            msg_type=ObkJointEncoders,
         )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -30,7 +30,7 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         """Callback for joint encoder messages."""
         self.joint_encoder_values = msg.joint_pos
 
-    def compute_state_estimate(self) -> Union[EstimatedState, None]:
+    def compute_state_estimate(self) -> Any:
         """Compute the state estimate."""
         estimated_state_msg = EstimatedState()
         if self.joint_encoder_values is not None:

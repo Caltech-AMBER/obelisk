@@ -1,9 +1,12 @@
+from typing import Type
+
 import numpy as np
 from obelisk_control_msgs.msg import PositionSetpoint
+from obelisk_estimator_msgs.msg import EstimatedState
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.control import ObeliskController
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, is_in_bound
 
 
 class ExamplePositionSetpointController(ObeliskController):
@@ -11,7 +14,7 @@ class ExamplePositionSetpointController(ObeliskController):
 
     def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
         """Initialize the example position setpoint controller."""
-        super().__init__(node_name)
+        super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.declare_parameter("test_param", "default_value")
         self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
 
@@ -21,7 +24,7 @@ class ExamplePositionSetpointController(ObeliskController):
         self.joint_pos = None
         return TransitionCallbackReturn.SUCCESS
 
-    def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
+    def update_x_hat(self, x_hat_msg: Type) -> None:
         """Update the state estimate.
 
         Parameters:
@@ -29,7 +32,7 @@ class ExamplePositionSetpointController(ObeliskController):
         """
         pass  # do nothing
 
-    def compute_control(self) -> ObeliskControlMsg:
+    def compute_control(self) -> Type:
         """Compute the control signal for the dummy 2-link robot.
 
         Returns:

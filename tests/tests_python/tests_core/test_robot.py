@@ -6,6 +6,7 @@ from rclpy.lifecycle.node import TransitionCallbackReturn
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
+from std_msgs.msg import String
 
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 from obelisk_py.core.robot import ObeliskRobot, ObeliskSimRobot
@@ -38,7 +39,7 @@ class TestSimRobot(ObeliskSimRobot):
 @pytest.fixture
 def test_robot(ros_context: Any) -> Generator[TestRobot, None, None]:
     """Fixture for the TestRobot class."""
-    robot = TestRobot("test_robot")
+    robot = TestRobot("test_robot", String)
     yield robot
     robot.destroy_node()
 
@@ -46,7 +47,7 @@ def test_robot(ros_context: Any) -> Generator[TestRobot, None, None]:
 @pytest.fixture
 def test_sim_robot(ros_context: Any) -> Generator[TestSimRobot, None, None]:
     """Fixture for the TestSimRobot class."""
-    sim_robot = TestSimRobot("test_sim_robot")
+    sim_robot = TestSimRobot("test_sim_robot", String)
     yield sim_robot
     sim_robot.destroy_node()
 
@@ -80,7 +81,6 @@ def test_robot_subscription_registration(test_robot: TestRobot) -> None:
     """
     sub_setting = next(s for s in test_robot._obk_sub_settings if s["key"] == "sub_ctrl")
     assert sub_setting["callback"] == test_robot.apply_control
-    assert sub_setting["msg_type"] is None  # Should be specified in config file
 
 
 def test_robot_configuration(test_robot: TestRobot, set_node_parameters: Callable) -> None:
@@ -190,7 +190,7 @@ def test_abstract_methods() -> None:
         def apply_control(self, control_msg: ObeliskControlMsg) -> None:
             pass
 
-    complete_robot = CompleteRobot("complete_robot")
+    complete_robot = CompleteRobot("complete_robot", String)
     assert hasattr(complete_robot, "apply_control")
 
     class CompleteSimRobot(ObeliskSimRobot):
@@ -200,6 +200,6 @@ def test_abstract_methods() -> None:
         def run_simulator(self) -> None:
             pass
 
-    complete_sim_robot = CompleteSimRobot("complete_sim_robot")
+    complete_sim_robot = CompleteSimRobot("complete_sim_robot", String)
     assert hasattr(complete_sim_robot, "apply_control")
     assert hasattr(complete_sim_robot, "run_simulator")
