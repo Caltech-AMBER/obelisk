@@ -351,9 +351,6 @@ class ObeliskNode(LifecycleNode):
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
 
-        # parse the message type
-        # msg_type = ObeliskNode._get_msg_type_from_config_dict(config_dict)
-
         # set the callback group
         callback_group = self._get_callback_group_from_config_dict(config_dict)
 
@@ -416,16 +413,6 @@ class ObeliskNode(LifecycleNode):
                 f"'key'={key} registered for this subscription, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
-
-        # parse the message type
-        # if msg_type is None:
-        #     msg_type = ObeliskNode._get_msg_type_from_config_dict(config_dict)
-        # elif "msg_type" in field_names:
-        #     self.get_logger().warn(
-        #         f"'msg_type'={msg_type} registered for this subscription, and 'msg_type'={config_dict['msg_type']} "
-        #         f"specified in the config string. Using the value 'msg_type'={msg_type}, as hardcoded specifications "
-        #         "take precedence!"
-        #     )
 
         # set the callback group
         callback_group = self._get_callback_group_from_config_dict(config_dict)
