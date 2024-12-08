@@ -4,6 +4,7 @@ import pytest
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
+from std_msgs.msg import String
 
 from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg
@@ -28,7 +29,9 @@ class TestController(ObeliskController):
 @pytest.fixture
 def test_controller(ros_context: Any) -> Generator[TestController, None, None]:
     """Fixture for the TestController class."""
-    controller = TestController("test_controller")
+    ctrl_msg_type = String
+    est_msg_type = String
+    controller = TestController("test_controller", ctrl_msg_type, est_msg_type)
     yield controller
     controller.destroy_node()
 
@@ -65,18 +68,6 @@ def test_timer_registration(test_controller: TestController) -> None:
     assert timer_setting["callback"] == test_controller.compute_control
 
 
-def test_publisher_registration(test_controller: TestController) -> None:
-    """Test the registration of the control publisher.
-
-    This test verifies that the control publisher is properly registered with the correct key and message type.
-
-    Parameters:
-        test_controller: An instance of TestController.
-    """
-    pub_setting = next(s for s in test_controller._obk_pub_settings if s["key"] == "pub_ctrl")
-    assert pub_setting["msg_type"] is None  # Should be specified in config file
-
-
 def test_subscription_registration(test_controller: TestController) -> None:
     """Test the registration of the estimator subscription.
 
@@ -88,7 +79,6 @@ def test_subscription_registration(test_controller: TestController) -> None:
     """
     sub_setting = next(s for s in test_controller._obk_sub_settings if s["key"] == "sub_est")
     assert sub_setting["callback"] == test_controller.update_x_hat
-    assert sub_setting["msg_type"] is None  # Should be specified in config file
 
 
 def test_controller_configuration(test_controller: TestController, set_node_parameters: Callable) -> None:
@@ -141,6 +131,6 @@ def test_abstract_methods() -> None:
         def compute_control(self) -> ObeliskControlMsg:
             return ObeliskControlMsg()
 
-    complete_controller = CompleteController("complete_controller")
+    complete_controller = CompleteController("complete_controller", String, String)
     assert hasattr(complete_controller, "update_x_hat")
     assert hasattr(complete_controller, "compute_control")

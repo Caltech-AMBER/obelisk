@@ -7,17 +7,13 @@ onboard:
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/leap/ctrl
-          msg_type: PositionSetpoint
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       subscribers:
         - ros_parameter: sub_est_setting
           topic: /obelisk/leap/est
-          msg_type: EstimatedState
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       timers:
         - ros_parameter: timer_ctrl_setting
           timer_period_sec: 0.001
@@ -29,18 +25,14 @@ onboard:
       publishers:
         - ros_parameter: pub_est_setting
           topic: /obelisk/leap/est
-          msg_type: EstimatedState
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       subscribers:
         - ros_parameter: sub_sensor_setting
           # key: sub1
           topic: /obelisk/leap/joint_encoders
-          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       timers:
         - ros_parameter: timer_est_setting
           timer_period_sec: 0.001
@@ -57,21 +49,17 @@ onboard:
     #   executable: obelisk_leap_robot
     # ==================
       # callback_groups:
-      publishers:
+      publishers:  # for hardware only
         - ros_parameter: pub_sensor_setting
           topic: /obelisk/leap/joint_encoders
-          msg_type: ObkJointEncoders
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       subscribers:
         - ros_parameter: sub_ctrl_setting
           # key: sub1
           topic: /obelisk/leap/ctrl
-          msg_type: PositionSetpoint
           history_depth: 10
           callback_group: None
-          non_obelisk: False
       sim:
         - ros_parameter: mujoco_setting
           n_u: 16

@@ -10,24 +10,25 @@ import obelisk_sensor_msgs.msg as osm
 import rclpy
 from ament_index_python.packages import get_package_share_directory
 from mujoco import MjData, MjModel, mj_forward, mj_name2id, mj_step, mju_copy  # type: ignore
+from obelisk_control_msgs.msg import PositionSetpoint
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from rclpy.publisher import Publisher
 
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskSensorMsg, is_in_bound
+from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
 
 class ObeliskMujocoRobot(ObeliskSimRobot):
     """Simulator that runs Mujoco."""
 
-    def __init__(self, node_name: str = "obelisk_mujoco_robot") -> None:
+    def __init__(self, node_name: str = "obelisk_mujoco_robot", ctrl_msg_type: Type = PositionSetpoint) -> None:
         """Initialize the mujoco simulator."""
-        super().__init__(node_name)
+        super().__init__(node_name, ctrl_msg_type)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
         self.declare_parameter("ic_keyframe", "ic")
 
-    def _get_msg_type_from_string(self, msg_type_str: str) -> Type[ObeliskSensorMsg]:
+    def _get_msg_type_from_string(self, msg_type_str: str) -> Type:
         """Get the message type from a string.
 
         Parameters:
@@ -61,7 +62,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
     def _create_timer_callback_from_msg_type(
         self,
-        msg_type: ObeliskSensorMsg,
+        msg_type: Type,
         mj_sensor_names: List[str],
         obk_sensor_fields: List[str],
         pub_sensor: Publisher,
@@ -408,7 +409,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         return TransitionCallbackReturn.SUCCESS
 
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+    def apply_control(self, control_msg: Type) -> None:
         """Apply the control message.
 
         We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl

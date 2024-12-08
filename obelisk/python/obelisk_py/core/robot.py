@@ -1,12 +1,11 @@
 import multiprocessing
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Type
 
 import obelisk_sensor_msgs.msg as osm
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.node import ObeliskNode
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 
 
 class ObeliskRobot(ABC, ObeliskNode):
@@ -17,18 +16,18 @@ class ObeliskRobot(ABC, ObeliskNode):
     of a real system.
     """
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self, node_name: str, ctrl_msg_type: Type) -> None:
         """Initialize the Obelisk robot."""
         super().__init__(node_name)
         self.register_obk_subscription(
             "sub_ctrl_setting",
             self.apply_control,
+            ctrl_msg_type,
             key="sub_ctrl",
-            msg_type=None,  # generic, specified in config file
         )
 
     @abstractmethod
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+    def apply_control(self, control_msg: Type) -> None:
         """Apply the control message to the robot.
 
         Code interfacing with the hardware should be implemented here.
@@ -49,9 +48,9 @@ class ObeliskSimRobot(ObeliskRobot):
     preventing the end user from implementing their own simulator of choice or us from implementing other simulators.
     """
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self, node_name: str, ctrl_msg_type: Type) -> None:
         """Initialize the Obelisk sim robot."""
-        super().__init__(node_name)
+        super().__init__(node_name, ctrl_msg_type)
         self.register_obk_timer(
             "timer_true_sim_state_setting",
             self.publish_true_sim_state,
@@ -60,8 +59,8 @@ class ObeliskSimRobot(ObeliskRobot):
         )
         self.register_obk_publisher(
             "pub_true_sim_state_setting",
+            osm.TrueSimState,
             key="pub_true_sim_state",
-            msg_type=osm.TrueSimState,
             default_config_str="",
         )
         self.shared_ctrl = None

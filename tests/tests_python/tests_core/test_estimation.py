@@ -1,10 +1,12 @@
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Type
 
 import pytest
 import rclpy
+from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import TransitionCallbackReturn
 from rclpy.publisher import Publisher
 from rclpy.timer import Timer
+from std_msgs.msg import String
 
 from obelisk_py.core.estimation import ObeliskEstimator
 from obelisk_py.core.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
@@ -17,14 +19,14 @@ from obelisk_py.core.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
 class TestEstimator(ObeliskEstimator):
     """A concrete implementation of ObeliskEstimator for testing purposes."""
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self, node_name: str, est_msg_type: Type) -> None:
         """Initialize the TestEstimator."""
-        super().__init__(node_name)
+        super().__init__(node_name, est_msg_type)
         self.register_obk_subscription(
             "sub_sensor_setting",
             self.update_sensor,
+            ObkJointEncoders,
             key="sub_sensor",
-            msg_type=None,  # generic, specified in config file
         )
 
     def update_sensor(self, sensor_msg: ObeliskSensorMsg) -> None:
@@ -39,7 +41,7 @@ class TestEstimator(ObeliskEstimator):
 @pytest.fixture
 def test_estimator(ros_context: Any) -> Generator[TestEstimator, None, None]:
     """Fixture for the TestEstimator class."""
-    estimator = TestEstimator("test_estimator")
+    estimator = TestEstimator("test_estimator", String)
     yield estimator
     estimator.destroy_node()
 
@@ -76,18 +78,6 @@ def test_timer_registration(test_estimator: TestEstimator) -> None:
     assert timer_setting["callback"] == test_estimator.compute_state_estimate
 
 
-def test_publisher_registration(test_estimator: TestEstimator) -> None:
-    """Test the registration of the estimation publisher.
-
-    This test verifies that the estimation publisher is properly registered with the correct key and message type.
-
-    Parameters:
-        test_estimator: An instance of TestEstimator.
-    """
-    pub_setting = next(s for s in test_estimator._obk_pub_settings if s["key"] == "pub_est")
-    assert pub_setting["msg_type"] is None  # Should be specified in config file
-
-
 def test_subscription_registration(test_estimator: TestEstimator) -> None:
     """Test the registration of the sensor subscription.
 
@@ -99,7 +89,6 @@ def test_subscription_registration(test_estimator: TestEstimator) -> None:
     """
     sub_setting = next(s for s in test_estimator._obk_sub_settings if s["key"] == "sub_sensor")
     assert sub_setting["callback"] == test_estimator.update_sensor
-    assert sub_setting["msg_type"] is None  # Should be specified in config file
 
 
 def test_estimator_configuration(test_estimator: TestEstimator, set_node_parameters: Callable) -> None:
@@ -117,7 +106,7 @@ def test_estimator_configuration(test_estimator: TestEstimator, set_node_paramet
         {
             "timer_est_setting": "timer_period_sec:0.1",
             "pub_est_setting": "topic:/test_estimate,msg_type:EstimatedState",
-            "sub_sensor_setting": "topic:/test_sensor,msg_type:ObkJointEncoders",
+            "sub_sensor_setting": "topic:/test_sensor",
         },
     )
     result = test_estimator.on_configure(None)
@@ -128,7 +117,6 @@ def test_estimator_configuration(test_estimator: TestEstimator, set_node_paramet
     assert "pub_est" in test_estimator.obk_publishers
     assert isinstance(test_estimator.obk_publishers["pub_est"], Publisher)
     assert "sub_sensor" in test_estimator.obk_subscriptions
-    assert test_estimator._has_sensor_subscriber
 
 
 def test_abstract_methods() -> None:
@@ -148,7 +136,7 @@ def test_abstract_methods() -> None:
         def compute_state_estimate(self) -> ObeliskEstimatorMsg:
             return ObeliskEstimatorMsg()
 
-    complete_estimator = CompleteEstimator("complete_estimator")
+    complete_estimator = CompleteEstimator("complete_estimator", String)
     assert hasattr(complete_estimator, "compute_state_estimate")
 
 
@@ -162,6 +150,6 @@ def test_missing_sensor_subscriber() -> None:
         def compute_state_estimate(self) -> ObeliskEstimatorMsg:
             return ObeliskEstimatorMsg()
 
-    estimator = NoSensorEstimator("no_sensor_estimator")
+    estimator = NoSensorEstimator("no_sensor_estimator", String)
     with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
         estimator.on_configure(None)

@@ -36,6 +36,12 @@ onboard:
           topic: /obelisk/dummy/joint_encoders
           history_depth: 10
           callback_group: None
+        # TODO(ahl): make a new estimator object that has a zed camera for testing
+        # - ros_parameter: sub_zed_setting
+        #   topic: /obelisk/dummy/zedmini/img
+        #   msg_type: ObkImage
+        #   history_depth: 1
+        #   callback_group: sub_cbg
       timers:
         - ros_parameter: timer_est_setting
           timer_period_sec: 0.001

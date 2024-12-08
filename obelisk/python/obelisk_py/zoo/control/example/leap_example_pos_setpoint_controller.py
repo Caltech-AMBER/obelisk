@@ -1,9 +1,12 @@
+from typing import Type
+
 import numpy as np
 from obelisk_control_msgs.msg import PositionSetpoint
+from obelisk_estimator_msgs.msg import EstimatedState
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 
 from obelisk_py.core.control import ObeliskController
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
+from obelisk_py.core.obelisk_typing import ObeliskControlMsg, is_in_bound
 
 
 class LeapExamplePositionSetpointController(ObeliskController):
@@ -11,7 +14,7 @@ class LeapExamplePositionSetpointController(ObeliskController):
 
     def __init__(self, node_name: str = "leap_example_position_setpoint_controller") -> None:
         """Initialize the example position setpoint controller."""
-        super().__init__(node_name)
+        super().__init__(node_name, PositionSetpoint, EstimatedState)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
@@ -19,7 +22,7 @@ class LeapExamplePositionSetpointController(ObeliskController):
         self.joint_pos = None
         return TransitionCallbackReturn.SUCCESS
 
-    def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
+    def update_x_hat(self, x_hat_msg: Type) -> None:
         """Update the state estimate.
 
         Parameters:
@@ -27,7 +30,7 @@ class LeapExamplePositionSetpointController(ObeliskController):
         """
         pass  # do nothing
 
-    def compute_control(self) -> ObeliskControlMsg:
+    def compute_control(self) -> Type:
         """Compute the control signal for the LEAP hand.
 
         Returns:
