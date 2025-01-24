@@ -1,12 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Union
-
-import obelisk_sensor_msgs.msg as osm
-from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
+from typing import Type
 
 from obelisk_py.core.node import ObeliskNode
-from obelisk_py.core.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
-from obelisk_py.core.utils.internal import get_classes_in_module
 
 
 class ObeliskEstimator(ABC, ObeliskNode):
@@ -32,13 +27,12 @@ class ObeliskEstimator(ABC, ObeliskNode):
     ```
     """
 
-    def __init__(self, node_name: str) -> None:
+    def __init__(self, node_name: str, est_msg_type: Type) -> None:
         """Initialize the Obelisk estimator.
 
         [NOTE] In derived classes, you should declare settings for sensor subscribers.
         """
         super().__init__(node_name)
-        self._has_sensor_subscriber = False
         self.register_obk_timer(
             "timer_est_setting",
             self.compute_state_estimate,
@@ -46,26 +40,12 @@ class ObeliskEstimator(ABC, ObeliskNode):
         )
         self.register_obk_publisher(
             "pub_est_setting",
+            msg_type=est_msg_type,
             key="pub_est",
-            msg_type=None,  # generic, specified in config file
         )
 
-    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the estimator."""
-        super().on_configure(state)
-
-        # ensure there is at least one sensor subscriber
-        for sub_dict in self._obk_sub_settings:
-            msg_type = sub_dict["msg_type"]
-            if msg_type in get_classes_in_module(osm):
-                self._has_sensor_subscriber = True
-                break
-        assert self._has_sensor_subscriber, "At least one sensor subscriber is required in an ObeliskEstimator!"
-
-        return TransitionCallbackReturn.SUCCESS
-
     @abstractmethod
-    def compute_state_estimate(self) -> Union[ObeliskEstimatorMsg, ObeliskSensorMsg]:
+    def compute_state_estimate(self) -> Type:
         """Compute the state estimate.
 
         This is the state estimate timer callback and is expected to call 'publisher_est' internally. Note that the

@@ -9,7 +9,6 @@ from rclpy.subscription import Subscription
 from rclpy.timer import Timer
 from std_msgs.msg import String
 
-from obelisk_py.core.exceptions import ObeliskMsgError
 from obelisk_py.core.node import ObeliskNode
 
 # ##### #
@@ -52,7 +51,7 @@ def test_register_obk_publisher(test_node: ObeliskNode) -> None:
     Parameters:
         test_node: An instance of ObeliskNode.
     """
-    test_node.register_obk_publisher("test_pub_param", key="test_pub", msg_type=String)
+    test_node.register_obk_publisher("test_pub_param", String, key="test_pub")
     assert test_node.has_parameter("test_pub_param")
 
 
@@ -69,7 +68,7 @@ def test_register_obk_subscription(test_node: ObeliskNode) -> None:
     def callback(msg: String) -> None:
         pass
 
-    test_node.register_obk_subscription("test_sub_param", callback, key="test_sub", msg_type=String)
+    test_node.register_obk_subscription("test_sub_param", callback, String, key="test_sub")
     assert test_node.has_parameter("test_sub_param")
 
 
@@ -101,9 +100,6 @@ def test_create_publisher(test_node: ObeliskNode) -> None:
     pub = test_node.create_publisher(ocm.PositionSetpoint, "test_topic", 10)
     assert isinstance(pub, Publisher)
 
-    with pytest.raises(ObeliskMsgError):
-        test_node.create_publisher(String, "test_topic", 10)
-
 
 def test_create_subscription(test_node: ObeliskNode) -> None:
     """Test the creation of a subscription.
@@ -120,9 +116,6 @@ def test_create_subscription(test_node: ObeliskNode) -> None:
 
     sub = test_node.create_subscription(ocm.PositionSetpoint, "test_topic", callback, 10)
     assert isinstance(sub, Subscription)
-
-    with pytest.raises(ObeliskMsgError):
-        test_node.create_subscription(String, "test_topic", callback, 10)
 
 
 def test_lifecycle_callbacks(test_node: ObeliskNode) -> None:
@@ -169,7 +162,7 @@ def test_publisher_creation_from_config(test_node: ObeliskNode, set_node_paramet
         test_node: An instance of ObeliskNode.
         set_node_parameters: A fixture to set node parameters.
     """
-    test_node.register_obk_publisher("test_pub_param", key="test_pub", msg_type=ocm.PositionSetpoint)
+    test_node.register_obk_publisher("test_pub_param", ocm.PositionSetpoint, key="test_pub")
     set_node_parameters(test_node, {"test_pub_param": "topic:/test_topic,msg_type:PositionSetpoint,history_depth:10"})
     test_node.on_configure(None)
 
@@ -190,7 +183,7 @@ def test_subscription_creation_from_config(test_node: ObeliskNode, set_node_para
     def callback(msg: ocm.PositionSetpoint) -> None:
         pass
 
-    test_node.register_obk_subscription("test_sub_param", callback, key="test_sub", msg_type=ocm.PositionSetpoint)
+    test_node.register_obk_subscription("test_sub_param", callback, ocm.PositionSetpoint, key="test_sub")
     set_node_parameters(test_node, {"test_sub_param": "topic:/test_topic,msg_type:PositionSetpoint,history_depth:10"})
     test_node.on_configure(None)
 

@@ -1,11 +1,12 @@
 import math
+from typing import Type
 
 from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
+from obelisk_control_msgs.msg import PositionSetpoint
 from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
 import obelisk_py.zoo.hardware.robots.leap.dxl_motor_helper as dxl
-from obelisk_py.core.obelisk_typing import ObeliskControlMsg
 from obelisk_py.core.robot import ObeliskRobot
 
 
@@ -16,11 +17,11 @@ class ObeliskLeapRobot(ObeliskRobot):
 
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk Leap Hand robot."""
-        super().__init__(node_name)
+        super().__init__(node_name, PositionSetpoint)
         self.register_obk_publisher(
             "pub_sensor_setting",
+            ObkJointEncoders,
             key="pub_sensor",
-            msg_type=ObkJointEncoders,
         )
         self.register_obk_timer(
             "timer_sensor_setting",
@@ -39,7 +40,7 @@ class ObeliskLeapRobot(ObeliskRobot):
     def _dxl_pos_to_radians(dxl_pos: int) -> float:
         return (dxl_pos / (dxl.MAX_POS - dxl.MIN_POS)) * 2 * math.pi - math.pi
 
-    def apply_control(self, control_msg: ObeliskControlMsg) -> None:
+    def apply_control(self, control_msg: Type) -> None:
         """Apply the control message to the robot."""
         for i in range(self.N_MOTORS):
             val = self._radians_to_dxl_pos(control_msg.q_des[i])
