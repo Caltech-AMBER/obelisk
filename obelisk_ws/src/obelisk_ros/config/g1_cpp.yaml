@@ -1,0 +1,181 @@
+config: g1_example
+onboard:
+  control:
+    - pkg: obelisk_unitree_cpp
+      executable: unitree_example_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/g1/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/g1/est
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_unitree_cpp
+      executable: unitree_example_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/g1/est
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          topic: /obelisk/g1/joint_encoders
+          msg_type: ObkJointEncoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  # sensing:
+  robot:
+    # === simulation ===
+    - is_simulated: True
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_g1_robot
+      params:
+        ic_keyframe: standing
+    # === hardware ===
+    # TODO:
+    # - is_simulated: False
+    #   pkg: obelisk_leap_cpp
+    #   executable: obelisk_leap_robot
+    # ==================
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/g1/joint_encoders
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          topic: /obelisk/g1/ctrl
+          history_depth: 10
+          callback_group: None
+      sim:
+        - ros_parameter: mujoco_setting
+          n_u: 16
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: g1_description
+          model_xml_path: g1_fixed_base.xml
+          sensor_settings:
+          - topic: /obelisk/g1/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+            # ---------- Joint Positions ---------- #
+              left_hip_pitch_joint_pos_sensor: jointpos
+              left_hip_roll_joint_pos_sensor: jointpos
+              left_hip_yaw_joint_pos_sensor: jointpos
+              left_knee_joint_pos_sensor: jointpos
+              left_ankle_pitch_joint_pos_sensor: jointpos
+              left_ankle_roll_joint_pos_sensor: jointpos
+
+              right_hip_pitch_joint_pos_sensor: jointpos
+              right_hip_roll_joint_pos_sensor: jointpos
+              right_hip_yaw_joint_pos_sensor: jointpos
+              right_knee_joint_pos_sensor: jointpos
+              right_ankle_pitch_joint_pos_sensor: jointpos
+              right_ankle_roll_joint_pos_sensor: jointpos
+
+              waist_yaw_joint_pos_sensor: jointpos
+              waist_roll_joint_pos_sensor: jointpos
+              waist_pitch_joint_pos_sensor: jointpos
+
+              left_shoulder_pitch_joint_pos_sensor: jointpos
+              left_shoulder_roll_joint_pos_sensor: jointpos
+              left_shoulder_yaw_joint_pos_sensor: jointpos
+              left_elbow_joint_pos_sensor: jointpos
+              left_wrist_roll_joint_pos_sensor: jointpos
+              left_wrist_pitch_joint_pos_sensor: jointpos
+              left_wrist_yaw_joint_pos_sensor: jointpos
+
+              left_hand_thumb_0_joint_pos_sensor: jointpos
+              left_hand_thumb_1_joint_pos_sensor: jointpos
+              left_hand_thumb_2_joint_pos_sensor: jointpos
+              left_hand_middle_0_joint_pos_sensor: jointpos
+              left_hand_middle_1_joint_pos_sensor: jointpos
+              left_hand_index_0_joint_pos_sensor: jointpos
+              left_hand_index_1_joint_pos_sensor: jointpos
+
+              right_shoulder_pitch_joint_pos_sensor: jointpos
+              right_shoulder_roll_joint_pos_sensor: jointpos
+              right_shoulder_yaw_joint_pos_sensor: jointpos
+              right_elbow_joint_pos_sensor: jointpos
+              right_wrist_roll_joint_pos_sensor: jointpos
+              right_wrist_pitch_joint_pos_sensor: jointpos
+              right_wrist_yaw_joint_pos_sensor: jointpos
+
+              right_hand_thumb_0_joint_pos_sensor: jointpos
+              right_hand_thumb_1_joint_pos_sensor: jointpos
+              right_hand_thumb_2_joint_pos_sensor: jointpos
+              right_hand_middle_0_joint_pos_sensor: jointpos
+              right_hand_middle_1_joint_pos_sensor: jointpos
+              right_hand_index_0_joint_pos_sensor: jointpos
+              right_hand_index_1_joint_pos_sensor: jointpos
+            # ---------- Joint Velocities ---------- #
+              left_hip_pitch_joint_vel_sensor: jointvel
+              left_hip_roll_joint_vel_sensor: jointvel
+              left_hip_yaw_joint_vel_sensor: jointvel
+              left_knee_joint_vel_sensor: jointvel
+              left_ankle_pitch_joint_vel_sensor: jointvel
+              left_ankle_roll_joint_vel_sensor: jointvel
+
+              right_hip_pitch_joint_vel_sensor: jointvel
+              right_hip_roll_joint_vel_sensor: jointvel
+              right_hip_yaw_joint_vel_sensor: jointvel
+              right_knee_joint_vel_sensor: jointvel
+              right_ankle_pitch_joint_vel_sensor: jointvel
+              right_ankle_roll_joint_vel_sensor: jointvel
+
+              waist_yaw_joint_vel_sensor: jointvel
+              waist_roll_joint_vel_sensor: jointvel
+              waist_pitch_joint_vel_sensor: jointvel
+
+              left_shoulder_pitch_joint_vel_sensor: jointvel
+              left_shoulder_roll_joint_vel_sensor: jointvel
+              left_shoulder_yaw_joint_vel_sensor: jointvel
+              left_elbow_joint_vel_sensor: jointvel
+              left_wrist_roll_joint_vel_sensor: jointvel
+              left_wrist_pitch_joint_vel_sensor: jointvel
+              left_wrist_yaw_joint_vel_sensor: jointvel
+
+              left_hand_thumb_0_joint_vel_sensor: jointvel
+              left_hand_thumb_1_joint_vel_sensor: jointvel
+              left_hand_thumb_2_joint_vel_sensor: jointvel
+              left_hand_middle_0_joint_vel_sensor: jointvel
+              left_hand_middle_1_joint_vel_sensor: jointvel
+              left_hand_index_0_joint_vel_sensor: jointvel
+              left_hand_index_1_joint_vel_sensor: jointvel
+
+              right_shoulder_pitch_joint_vel_sensor: jointvel
+              right_shoulder_roll_joint_vel_sensor: jointvel
+              right_shoulder_yaw_joint_vel_sensor: jointvel
+              right_elbow_joint_vel_sensor: jointvel
+              right_wrist_roll_joint_vel_sensor: jointvel
+              right_wrist_pitch_joint_vel_sensor: jointvel
+              right_wrist_yaw_joint_vel_sensor: jointvel
+
+              right_hand_thumb_0_joint_vel_sensor: jointvel
+              right_hand_thumb_1_joint_vel_sensor: jointvel
+              right_hand_thumb_2_joint_vel_sensor: jointvel
+              right_hand_middle_0_joint_vel_sensor: jointvel
+              right_hand_middle_1_joint_vel_sensor: jointvel
+              right_hand_index_0_joint_vel_sensor: jointvel
+              right_hand_index_1_joint_vel_sensor: jointvel
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None
