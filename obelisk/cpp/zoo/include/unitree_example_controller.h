@@ -6,17 +6,9 @@
 namespace obelisk {
     using unitree_controller_msg = obelisk_control_msgs::msg::PDFeedForward;
     using unitree_estimator_msg  = obelisk_estimator_msgs::msg::EstimatedState;
-
-    /**
-     * @brief Controller that generates a sinusoidal position setpoint for the Leap hand
-     */
+    
     class UnitreeExampleController : public ObeliskController<unitree_controller_msg, unitree_estimator_msg> {
       public:
-        /**
-         * @brief Construct a new Leap Position Setpoint Controller object
-         *
-         * @param name Name of the controller
-         */
         UnitreeExampleController(const std::string& name)
             : ObeliskController<unitree_controller_msg, unitree_estimator_msg>(name) {}
 

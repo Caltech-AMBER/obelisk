@@ -288,6 +288,7 @@ class G1Example {
     LowCmd_ dds_low_command;
     dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
     dds_low_command.mode_machine() = mode_machine_;
+    std::cout << "MODE MACHINE: " << mode_machine_ << std::endl;
 
     const std::shared_ptr<const MotorCommand> mc = motor_command_buffer_.GetData();
     if (mc) {

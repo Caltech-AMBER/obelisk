@@ -43,13 +43,15 @@ onboard:
     # === simulation ===
     # - is_simulated: True
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_g1_robot
+    #   executable: obelisk_unitree_sim
     #   params:
     #     ic_keyframe: standing
     # === hardware ===
     - is_simulated: False
       pkg: obelisk_unitree_cpp
       executable: obelisk_unitree_hardware
+      params:
+        network_interface_name: enp4s0
     # ==================
       # callback_groups:
       publishers:
