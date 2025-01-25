@@ -41,16 +41,15 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    - is_simulated: True
-      pkg: obelisk_unitree_cpp
-      executable: obelisk_g1_robot
-      params:
-        ic_keyframe: standing
+    # - is_simulated: True
+    #   pkg: obelisk_unitree_cpp
+    #   executable: obelisk_g1_robot
+    #   params:
+    #     ic_keyframe: standing
     # === hardware ===
-    # TODO:
-    # - is_simulated: False
-    #   pkg: obelisk_leap_cpp
-    #   executable: obelisk_leap_robot
+    - is_simulated: False
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_hardware
     # ==================
       # callback_groups:
       publishers:

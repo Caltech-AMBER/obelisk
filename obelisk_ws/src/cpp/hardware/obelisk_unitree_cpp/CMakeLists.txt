@@ -19,10 +19,13 @@ FetchContent_Declare(
 # Lets us get Obelisk::Core and Obelisk::Zoo
 FetchContent_MakeAvailable(Obelisk)
 
-# TODO: Add in the hardware node
-# obelisk_g1_robot
-add_executable(obelisk_g1_robot src/unitree_sim_robot.cpp)
-target_link_libraries(obelisk_g1_robot PUBLIC Obelisk::Core Obelisk::Zoo)
+# obelisk_unitree_sim
+add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
+target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Zoo)
+
+# obelisk_unitree_hardware
+add_executable(obelisk_unitree_hardware src/unitree_hardware_robot.cpp)
+target_link_libraries(obelisk_unitree_hardware PUBLIC Obelisk::Core UnitreeInterface)
 
 # unitree_example_controller
 add_executable(unitree_example_controller src/g1_example_controller.cpp)
@@ -40,7 +43,11 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-    obelisk_g1_robot
+    obelisk_unitree_sim
+    DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+    obelisk_unitree_hardware
     DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS

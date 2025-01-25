@@ -20,7 +20,7 @@ add_library(UnitreeInterface INTERFACE)
 target_include_directories(UnitreeInterface INTERFACE .)
 # target_link_libraries(UnitreeInterface INTERFACE dynamixel_sdk)
 
-target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core)
+target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core unitree_sdk2)
 
 ament_target_dependencies(UnitreeInterface INTERFACE
   rclcpp
