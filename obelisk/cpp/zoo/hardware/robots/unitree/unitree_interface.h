@@ -1,6 +1,7 @@
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
+#include "obelisk_sensor_msgs/msg/obk_imu.h"
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
 
 // DDS
@@ -11,16 +12,17 @@
 #include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowCmd_.hpp>
 #include <unitree/idl/hg/LowState_.hpp>
+#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 namespace obelisk {
     using unitree_control_msg = obelisk_control_msgs::msg::PDFeedForward;
-    using unitree_estimator_msg  = obelisk_sensor_msgs::msg::ObkJointEncoders;
 
     // TODO: Verify these are the same of the G1 and the Go2
     static const std::string HG_CMD_TOPIC = "rt/lowcmd";
     static const std::string HG_IMU_TORSO = "rt/secondary_imu";
     static const std::string HG_STATE_TOPIC = "rt/lowstate";
+    static const std::string HG_ODOM_TOPIC = "rt/odommodestate";
 
     using namespace unitree::common;
     using namespace unitree::robot;
@@ -39,6 +41,11 @@ namespace obelisk {
             this->declare_parameter<std::string>("network_interface_name", "");
             network_interface_name_ = this->get_parameter("network_interface_name").as_string();
 
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", "joint_state_pub");
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", "imu_state_pub");
+            // this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_odom_setting", "odom_state_pub");
+
+
             // ---------- Default PD gains ---------- //
             // TODO: Make this a vector
             this->declare_parameter<std::vector<double>>("default_kp");
@@ -48,8 +55,6 @@ namespace obelisk {
 
             // TODO: User defined safety maybe
             
-            // TODO: Add option for waist locked
-
             // TODO: Consider exposing AB mode
 
             // TODO: Deal with hands
@@ -123,12 +128,25 @@ namespace obelisk {
             // create publisher
             lowcmd_publisher_.reset(new ChannelPublisher<LowCmd_>(HG_CMD_TOPIC));
             lowcmd_publisher_->InitChannel();
-            // create subscriber
-            lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(HG_STATE_TOPIC));
-            lowstate_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::LowStateHandler, this, std::placeholders::_1), 1);
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Pubs and Subs created!");
         }
+
+        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
+            const rclcpp_lifecycle::State& prev_state) {
+            this->ObeliskRobot::on_activate(prev_state);
+
+            // create subscriber
+            // Need to create after the publishers have been activated
+            lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(HG_STATE_TOPIC));
+            lowstate_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::LowStateHandler, this, std::placeholders::_1), 10);
+
+            // odom_subscriber_.reset(new ChannelSubscriber<IMUState_>(HG_ODOM_TOPIC));
+            // odom_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::OdomHandler, this, std::placeholders::_1), 10);
+
+            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
     protected:
 
         void ApplyControl(const unitree_control_msg& msg) override {
@@ -194,13 +212,6 @@ namespace obelisk {
                 dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
                 dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
                 dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
-                
-                // RCLCPP_INFO_STREAM(this->get_logger(), "[" << i << "]" << "data: " 
-                //     << dds_low_command.motor_cmd().at(i).tau() << ", "
-                //     << dds_low_command.motor_cmd().at(i).q() << ", "
-                //     << dds_low_command.motor_cmd().at(i).dq() << ", "
-                //     << dds_low_command.motor_cmd().at(i).kp() << ", "
-                //     << dds_low_command.motor_cmd().at(i).kd() << ", ");
             }
 
             dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
@@ -210,29 +221,78 @@ namespace obelisk {
         void LowStateHandler(const void *message) {
             LowState_ low_state = *(const LowState_ *)message;
             if (low_state.crc() != Crc32Core((uint32_t *)&low_state, (sizeof(LowState_) >> 2) - 1)) {
-                std::cout << "[ERROR] CRC Error" << std::endl;
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
                 return;
             }
-            // get motor state
-            // MotorState ms_tmp;
-            // for (int i = 0; i < G1_NUM_MOTOR; ++i) {
-            //     ms_tmp.q.at(i) = low_state.motor_state()[i].q();
-            //     ms_tmp.dq.at(i) = low_state.motor_state()[i].dq();
-            //     if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll)
-            //     std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
-            // }
-            // motor_state_buffer_.SetData(ms_tmp);
-            // get imu state
-            // ImuState imu_tmp;
-            // imu_tmp.omega = low_state.imu_state().gyroscope();
-            // imu_tmp.rpy = low_state.imu_state().rpy();
-            // imu_state_buffer_.SetData(imu_tmp);
+
+            // Joints
+            obelisk_sensor_msgs::msg::ObkJointEncoders joint_state;
+            joint_state.header.stamp = this->now();
+            joint_state.joint_pos.resize(num_motors_);
+            joint_state.joint_vel.resize(num_motors_);
+            joint_state.joint_names.resize(num_motors_);
+
+            for (size_t i = 0; i < num_motors_; ++i) {
+                joint_state.joint_names.at(i) = joint_names_[i];
+                joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
+                joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
+                if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
+                std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
+            }
+
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("joint_state_pub")->publish(joint_state);
+
+            // IMU
+            obelisk_sensor_msgs::msg::ObkImu imu_state;
+            imu_state.header.stamp = this->now();
+            imu_state.angular_velocity.x = low_state.imu_state().gyroscope()[0];
+            imu_state.angular_velocity.y = low_state.imu_state().gyroscope()[1];
+            imu_state.angular_velocity.z = low_state.imu_state().gyroscope()[2];
+
+            imu_state.orientation.w = low_state.imu_state().quaternion()[0];
+            imu_state.orientation.x = low_state.imu_state().quaternion()[1];
+            imu_state.orientation.y = low_state.imu_state().quaternion()[2];
+            imu_state.orientation.z = low_state.imu_state().quaternion()[3];
+
+            imu_state.linear_acceleration.x = low_state.imu_state().accelerometer()[0];
+            imu_state.linear_acceleration.y= low_state.imu_state().accelerometer()[1];
+            imu_state.linear_acceleration.z = low_state.imu_state().accelerometer()[2];
+
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("imu_state_pub")->publish(imu_state);
+
             // update mode machine
             if (mode_machine_ != low_state.mode_machine()) {
                 if (mode_machine_ == 0) std::cout << "G1 type: " << unsigned(low_state.mode_machine()) << std::endl;
                 mode_machine_ = low_state.mode_machine();
             }
         }
+
+        // void OdomHandler(const void *message) {
+        //     RCLCPP_INFO_STREAM(this->get_logger(), "IN ODOM");
+        //     IMUState_ imu_state = *(const IMUState_ *)message;
+        //     // if (imu_state.crc() != Crc32Core((uint32_t *)&imu_state, (sizeof(imu_state) >> 2) - 1)) {
+        //     //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
+        //     //     return;
+        //     // }
+
+        //     // IMU
+        //     obelisk_sensor_msgs::msg::ObkImu obk_imu_state;
+        //     obk_imu_state.header.stamp = this->now();
+        //     obk_imu_state.angular_velocity.x = imu_state.gyroscope()[0];
+        //     obk_imu_state.angular_velocity.y = imu_state.gyroscope()[1];
+        //     obk_imu_state.angular_velocity.z = imu_state.gyroscope()[2];
+
+        //     obk_imu_state.orientation.w = imu_state.quaternion()[0];
+        //     obk_imu_state.orientation.x = imu_state.quaternion()[1];
+        //     obk_imu_state.orientation.y = imu_state.quaternion()[2];
+        //     obk_imu_state.orientation.z = imu_state.quaternion()[3];
+
+        //     obk_imu_state.linear_acceleration.x = imu_state.accelerometer()[0];
+        //     obk_imu_state.linear_acceleration.y= imu_state.accelerometer()[1];
+        //     obk_imu_state.linear_acceleration.z = imu_state.accelerometer()[2];
+
+        //     this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("odom_state_pub")->publish(obk_imu_state);
+        // }
 
     private:
         inline uint32_t Crc32Core(uint32_t *ptr, uint32_t len) {
@@ -267,6 +327,7 @@ namespace obelisk {
         std::string network_interface_name_;
         unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
+        ChannelSubscriberPtr<IMUState_> odom_subscriber_;
         std::shared_ptr<unitree::robot::b2::MotionSwitcherClient> mode_switch_manager_;
         AnkleMode mode_pr_;
         uint8_t mode_machine_;
@@ -354,6 +415,7 @@ namespace obelisk {
         };
 
         // Go2
+        static constexpr int GO2_MOTOR_NUM = 12;
 
     };
 } // namespace obelisk

@@ -22,10 +22,10 @@ target_include_directories(UnitreeInterface INTERFACE .)
 
 target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core unitree_sdk2)
 
-ament_target_dependencies(UnitreeInterface INTERFACE
-  rclcpp
-  rclcpp_lifecycle
-  sensor_msgs)
+# ament_target_dependencies(UnitreeInterface INTERFACE
+#   rclcpp
+#   rclcpp_lifecycle
+#   sensor_msgs)
 
 
 add_executable(unitree_test unitree_test.cpp)
