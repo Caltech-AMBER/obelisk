@@ -6,3 +6,6 @@ float64[] u_mujoco
 float64[] pos_target
 float64[] vel_target
 float64[] feed_forward
+string[] joint_names
+float64[] kp
+float64[] kd

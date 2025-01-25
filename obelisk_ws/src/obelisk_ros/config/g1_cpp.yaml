@@ -14,6 +14,9 @@ onboard:
           topic: /obelisk/g1/est
           history_depth: 10
           callback_group: None
+        # ----- Joystick subscriber ----- #
+        - ros_parameter: joystick_sub_setting
+          topic: /obelisk/g1/joy
       timers:
         - ros_parameter: timer_ctrl_setting
           timer_period_sec: 0.001
@@ -52,6 +55,29 @@ onboard:
       executable: obelisk_unitree_hardware
       params:
         network_interface_name: enp4s0
+        robot_name: G1 # G1, Go2
+        default_kp: [
+                    10., 10., 10.,    # L hip
+                    10., 10., 10.,    # L knee, ankle
+                    10., 10., 10.,    # R hip
+                    10., 10., 10.,    # R knee, ankle
+                    10., 10., 10.,    # Waist
+                    5., 5., 5.,       # L shoulder
+                    5., 5., 5., 5.,   # L elbow, wrist
+                    5., 5., 5.,       # R shoulder
+                    5., 5., 5., 5.,   # R elbow, wrist
+                    ]
+        default_kd: [
+                    1., 1., 1.,       # L hip
+                    1., 1., 1.,       # L knee, ankle
+                    1., 1., 1.,       # R hip
+                    1., 1., 1.,       # R knee, ankle
+                    1., 1., 1.,       # Waist
+                    1., 1., 1.,       # L shoulder
+                    1., 1., 1., 1.,   # L elbow, wrist
+                    1., 1., 1.,       # R shoulder
+                    1., 1., 1., 1.,   # R elbow, wrist
+        ]
     # ==================
       # callback_groups:
       publishers:
@@ -180,3 +206,7 @@ onboard:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
           callback_group: None
+  joystick:
+    on: True
+    pub_topic: /obelisk/g1/joy
+    sub_topic: /obelisk/g1/joy_feedback

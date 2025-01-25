@@ -627,13 +627,13 @@ Position and velocity actuators added. -->
     <position name="left_wrist_yaw_joint_pos" class="wrist_yaw_pos" joint="left_wrist_yaw_joint"/>
 
     <!-- Left Hand -->
-    <position name="left_hand_thumb_0_joint_pos" class="thumb_joint_0_pos" joint="left_hand_thumb_0_joint"/>
+    <!-- <position name="left_hand_thumb_0_joint_pos" class="thumb_joint_0_pos" joint="left_hand_thumb_0_joint"/>
     <position name="left_hand_thumb_1_joint_pos" class="thumb_joint_1_pos" joint="left_hand_thumb_1_joint"/>
     <position name="left_hand_thumb_2_joint_pos" class="thumb_joint_2_pos" joint="left_hand_thumb_2_joint"/>
     <position name="left_hand_middle_0_joint_pos" class="middle_joint_0_pos" joint="left_hand_middle_0_joint"/>
     <position name="left_hand_middle_1_joint_pos" class="middle_joint_1_pos" joint="left_hand_middle_1_joint"/>
     <position name="left_hand_index_0_joint_pos" class="index_joint_0_pos" joint="left_hand_index_0_joint"/>
-    <position name="left_hand_index_1_joint_pos" class="index_joint_1_pos" joint="left_hand_index_1_joint"/>
+    <position name="left_hand_index_1_joint_pos" class="index_joint_1_pos" joint="left_hand_index_1_joint"/> -->
 
     <!-- Right Arm -->
     <position name="right_shoulder_pitch_joint_pos" class="shoulder_pitch_pos" joint="right_shoulder_pitch_joint"/>
@@ -645,13 +645,13 @@ Position and velocity actuators added. -->
     <position name="right_wrist_yaw_joint_pos" class="wrist_yaw_pos"joint="right_wrist_yaw_joint"/>
 
     <!-- Right Hand -->
-    <position name="right_hand_thumb_0_joint_pos" class="thumb_joint_0_pos" joint="right_hand_thumb_0_joint"/>
+    <!-- <position name="right_hand_thumb_0_joint_pos" class="thumb_joint_0_pos" joint="right_hand_thumb_0_joint"/>
     <position name="right_hand_thumb_1_joint_pos" class="thumb_joint_1_pos" joint="right_hand_thumb_1_joint"/>
     <position name="right_hand_thumb_2_joint_pos" class="thumb_joint_2_pos" joint="right_hand_thumb_2_joint"/>
     <position name="right_hand_index_0_joint_pos" class="middle_joint_0_pos" joint="right_hand_index_0_joint"/>
     <position name="right_hand_index_1_joint_pos" class="middle_joint_1_pos" joint="right_hand_index_1_joint"/>
     <position name="right_hand_middle_0_joint_pos" class="index_joint_0_pos" joint="right_hand_middle_0_joint"/>
-    <position name="right_hand_middle_1_joint_pos" class="index_joint_1_pos" joint="right_hand_middle_1_joint"/>
+    <position name="right_hand_middle_1_joint_pos" class="index_joint_1_pos" joint="right_hand_middle_1_joint"/> -->
 
     <!-- ################## -->
     <!-- Velocity Actuation -->
@@ -687,13 +687,13 @@ Position and velocity actuators added. -->
     <velocity name="left_wrist_yaw_joint_vel" class="wrist_yaw_vel" joint="left_wrist_yaw_joint"/>
 
     <!-- Left Hand -->
-    <velocity name="left_hand_thumb_0_joint_vel" class="thumb_joint_0_pos" joint="left_hand_thumb_0_joint"/>
+    <!-- <velocity name="left_hand_thumb_0_joint_vel" class="thumb_joint_0_pos" joint="left_hand_thumb_0_joint"/>
     <velocity name="left_hand_thumb_1_joint_vel" class="thumb_joint_1_pos" joint="left_hand_thumb_1_joint"/>
     <velocity name="left_hand_thumb_2_joint_vel" class="thumb_joint_2_pos" joint="left_hand_thumb_2_joint"/>
     <velocity name="left_hand_middle_0_joint_vel" class="middle_joint_0_pos" joint="left_hand_middle_0_joint"/>
     <velocity name="left_hand_middle_1_joint_vel" class="middle_joint_1_pos" joint="left_hand_middle_1_joint"/>
     <velocity name="left_hand_index_0_joint_vel" class="index_joint_0_pos" joint="left_hand_index_0_joint"/>
-    <velocity name="left_hand_index_1_joint_vel" class="index_joint_1_pos" joint="left_hand_index_1_joint"/>
+    <velocity name="left_hand_index_1_joint_vel" class="index_joint_1_pos" joint="left_hand_index_1_joint"/> -->
 
     <!-- Right Arm -->
     <velocity name="right_shoulder_pitch_joint_vel" class="shoulder_pitch_vel" joint="right_shoulder_pitch_joint"/>
@@ -705,13 +705,13 @@ Position and velocity actuators added. -->
     <velocity name="right_wrist_yaw_joint_vel" class="wrist_yaw_vel" joint="right_wrist_yaw_joint"/>
 
     <!-- Right Hand -->
-    <velocity name="right_hand_thumb_0_joint_vel" class="thumb_joint_0_pos" joint="right_hand_thumb_0_joint"/>
+    <!-- <velocity name="right_hand_thumb_0_joint_vel" class="thumb_joint_0_pos" joint="right_hand_thumb_0_joint"/>
     <velocity name="right_hand_thumb_1_joint_vel" class="thumb_joint_1_pos" joint="right_hand_thumb_1_joint"/>
     <velocity name="right_hand_thumb_2_joint_vel" class="thumb_joint_2_pos" joint="right_hand_thumb_2_joint"/>
     <velocity name="right_hand_index_0_joint_vel" class="middle_joint_0_pos" joint="right_hand_index_0_joint"/>
     <velocity name="right_hand_index_1_joint_vel" class="middle_joint_1_pos" joint="right_hand_index_1_joint"/>
     <velocity name="right_hand_middle_0_joint_vel" class="index_joint_0_pos" joint="right_hand_middle_0_joint"/>
-    <velocity name="right_hand_middle_1_joint_vel" class="index_joint_1_pos" joint="right_hand_middle_1_joint"/>
+    <velocity name="right_hand_middle_1_joint_vel" class="index_joint_1_pos" joint="right_hand_middle_1_joint"/> -->
 
     <!-- ################ -->
     <!-- Torque Actuation -->
@@ -747,13 +747,13 @@ Position and velocity actuators added. -->
     <motor name="left_wrist_yaw_joint" joint="left_wrist_yaw_joint"/>
 
     <!-- Left Hand -->
-    <motor name="left_hand_thumb_0_joint" joint="left_hand_thumb_0_joint"/>
+    <!-- <motor name="left_hand_thumb_0_joint" joint="left_hand_thumb_0_joint"/>
     <motor name="left_hand_thumb_1_joint" joint="left_hand_thumb_1_joint"/>
     <motor name="left_hand_thumb_2_joint" joint="left_hand_thumb_2_joint"/>
     <motor name="left_hand_middle_0_joint" joint="left_hand_middle_0_joint"/>
     <motor name="left_hand_middle_1_joint" joint="left_hand_middle_1_joint"/>
     <motor name="left_hand_index_0_joint" joint="left_hand_index_0_joint"/>
-    <motor name="left_hand_index_1_joint" joint="left_hand_index_1_joint"/>
+    <motor name="left_hand_index_1_joint" joint="left_hand_index_1_joint"/> -->
 
     <!-- Right Arm -->
     <motor name="right_shoulder_pitch_joint" joint="right_shoulder_pitch_joint"/>
@@ -765,13 +765,13 @@ Position and velocity actuators added. -->
     <motor name="right_wrist_yaw_joint" joint="right_wrist_yaw_joint"/>
 
     <!-- Right Hand -->
-    <motor name="right_hand_thumb_0_joint" joint="right_hand_thumb_0_joint"/>
+    <!-- <motor name="right_hand_thumb_0_joint" joint="right_hand_thumb_0_joint"/>
     <motor name="right_hand_thumb_1_joint" joint="right_hand_thumb_1_joint"/>
     <motor name="right_hand_thumb_2_joint" joint="right_hand_thumb_2_joint"/>
     <motor name="right_hand_index_0_joint" joint="right_hand_index_0_joint"/>
     <motor name="right_hand_index_1_joint" joint="right_hand_index_1_joint"/>
     <motor name="right_hand_middle_0_joint" joint="right_hand_middle_0_joint"/>
-    <motor name="right_hand_middle_1_joint" joint="right_hand_middle_1_joint"/>
+    <motor name="right_hand_middle_1_joint" joint="right_hand_middle_1_joint"/> -->
   </actuator>
 
   <sensor>
@@ -950,23 +950,17 @@ Position and velocity actuators added. -->
             -0.3 0 0 0.52 -0.23 0
             0 0 0
             0 0 0 0.2 0 0 0
-            0 0 0 0 0 0 0
             0 0 0 0.2 0 0 0
-            0 0 0 0 0 0 0
             
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0
-            0 0 0 0 0 0 0
-            0 0 0 0 0 0 0
             
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0
-            0 0 0 0 0 0 0
-            0 0 0 0 0 0 0
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0"/>
     <!-- <key name="home" qpos="0 0 0.27 1 0 0 0 0 0.9 -1.8 0 0.9 -1.8 0 0.9 -1.8 0 0.9 -1.8"
