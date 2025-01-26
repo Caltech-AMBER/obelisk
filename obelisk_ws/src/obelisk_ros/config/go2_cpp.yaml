@@ -1,0 +1,175 @@
+config: go2_example
+onboard:
+  control:
+    - pkg: obelisk_unitree_cpp
+      executable: unitree_example_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/go2/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/go2/est_state
+          history_depth: 10
+          callback_group: None
+        # ----- Joystick subscriber ----- #
+        - ros_parameter: joystick_sub_setting
+          topic: /obelisk/go2/joy
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_unitree_cpp
+      executable: unitree_example_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/go2/est_state
+          msg_type: EstimatedState
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          topic: /obelisk/go2/joint_encoders
+          msg_type: ObkJointEncoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  # sensing:
+  robot:
+    # === simulation ===
+    - is_simulated: True
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_sim
+      params:
+        ic_keyframe: standing
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_unitree_cpp
+    #   executable: obelisk_unitree_hardware
+    #   params:
+    #     network_interface_name: enp4s0
+    #     default_kp: [
+    #                 10., 10., 10.,    # L hip
+    #                 10., 10., 10.,    # L knee, ankle
+    #                 10., 10., 10.,    # R hip
+    #                 10., 10., 10.,    # R knee, ankle
+    #                 10., 10., 10.,    # Waist
+    #                 5., 5., 5.,       # L shoulder
+    #                 5., 5., 5., 5.,   # L elbow, wrist
+    #                 5., 5., 5.,       # R shoulder
+    #                 5., 5., 5., 5.,   # R elbow, wrist
+    #                 ]
+    #     default_kd: [
+    #                 1., 1., 1.,       # L hip
+    #                 1., 1., 1.,       # L knee, ankle
+    #                 1., 1., 1.,       # R hip
+    #                 1., 1., 1.,       # R knee, ankle
+    #                 1., 1., 1.,       # Waist
+    #                 1., 1., 1.,       # L shoulder
+    #                 1., 1., 1., 1.,   # L elbow, wrist
+    #                 1., 1., 1.,       # R shoulder
+    #                 1., 1., 1., 1.,   # R elbow, wrist
+    #     ]
+    # ==================
+      # callback_groups:
+      publishers:
+      # ----- Joints ----- #
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/go2/joint_encoders
+          history_depth: 10
+      # ----- IMU ----- #
+        - ros_parameter: pub_imu_setting
+          topic: /obelisk/go2/torso_imu
+          history_depth: 10
+      # ----- Odom ----- #
+        # - ros_parameter: pub_odom_setting
+        #   topic: /obelisk/go2/odom
+        #   history_depth: 10
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          topic: /obelisk/go2/ctrl
+          history_depth: 10
+          callback_group: None
+      sim:
+        - ros_parameter: mujoco_setting
+          n_u: 16
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: go2_description
+          model_xml_path: go2.xml
+          sensor_settings:
+          - topic: /obelisk/go2/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+            # ---------- Joint Positions ---------- #
+              FR_hip_joint_pos_sensor: jointpos
+              FR_thigh_joint_pos_sensor: jointpos
+              FR_calf_joint_pos_sensor: jointpos
+
+              FL_hip_joint_pos_sensor: jointpos
+              FL_thigh_joint_pos_sensor: jointpos
+              FL_calf_joint_pos_sensor: jointpos
+
+              RR_hip_joint_pos_sensor: jointpos
+              RR_thigh_joint_pos_sensor: jointpos
+              RR_calf_joint_pos_sensor: jointpos
+
+              RR_hip_joint_pos_sensor: jointpos
+              RR_thigh_joint_pos_sensor: jointpos
+              RR_calf_joint_pos_sensor: jointpos
+            # ---------- Joint Velocities ---------- #
+              FR_hip_joint_vel_sensor: jointvel
+              FR_thigh_joint_vel_sensor: jointvel
+              FR_calf_joint_vel_sensor: jointvel
+
+              FL_hip_joint_vel_sensor: jointvel
+              FL_thigh_joint_vel_sensor: jointvel
+              FL_calf_joint_vel_sensor: jointvel
+
+              RR_hip_joint_vel_sensor: jointvel
+              RR_thigh_joint_vel_sensor: jointvel
+              RR_calf_joint_vel_sensor: jointvel
+
+              RR_hip_joint_vel_sensor: jointvel
+              RR_thigh_joint_vel_sensor: jointvel
+              RR_calf_joint_vel_sensor: jointvel
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None
+  viz:
+    on: True
+    viz_tool: foxglove
+    viz_nodes:
+      - pkg: obelisk_viz_cpp
+        executable: default_robot_viz
+        robot_pkg: go2_description
+        urdf: go2.urdf
+        robot_topic: robot_description
+        subscribers:
+          - ros_parameter: sub_viz_est_setting
+            topic: /obelisk/go2/est_state
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        publishers:
+          - ros_parameter: pub_viz_joint_setting
+            topic: joint_states
+            history_depth: 10
+            callback_group: None
+        timers:
+          - ros_parameter: timer_viz_joint_setting
+            timer_period_sec: 0.01
+            callback_group: None
+  joystick:
+    on: True
+    pub_topic: /obelisk/go2/joy
+    sub_topic: /obelisk/go2/joy_feedback

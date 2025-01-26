@@ -1,6 +1,16 @@
 #include "unitree_interface.h"
 
+// IDL
+#include <unitree/idl/hg/IMUState_.hpp>
+#include <unitree/idl/hg/LowCmd_.hpp>
+#include <unitree/idl/hg/LowState_.hpp>
+#include <unitree/idl/hg/IMUState_.hpp>
+
+
 namespace obelisk {
+
+    using namespace unitree_hg::msg::dds_;
+    
     class G1Interface : public ObeliskUnitreeInterface {
     public:
         G1Interface(const std::string& node_name)
@@ -79,7 +89,7 @@ namespace obelisk {
                 for (size_t i = 0; i < num_motors_; i++) {
                     if (msg.joint_names[j] == joint_names_[i]) {
                         if (joint_used[i]) {
-                            throw std::runtime_error("[UnitreeRobotInterface] Control message usess the same joint name twice!");
+                            throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
                         }
 
                         joint_used[i] = true;
@@ -99,6 +109,8 @@ namespace obelisk {
                     throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
                 }
                 use_default_gains = false;
+            } else {
+                RCLCPP_DEBUG_STREAM(this->get_logger(), "USING DEFAULT PD GAINS");
             }
 
             // ---------- Create Packet ---------- //

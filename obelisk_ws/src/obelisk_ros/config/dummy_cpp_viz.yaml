@@ -104,7 +104,7 @@ onboard:
 
   viz:
     on: True
-    viz_tool: rviz
+    viz_tool: foxglove  # rviz
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:

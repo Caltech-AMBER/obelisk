@@ -17,7 +17,7 @@ namespace obelisk {
                         "joystick_sub_setting", "joystick_sub",
                         std::bind(&UnitreeExampleController::JoystickCallback, this, std::placeholders::_1));
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << G1_JOINT_NAMES[joint_idx_]);
+            RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << JOINT_NAMES[joint_idx_]);
         }
 
       protected:
@@ -35,7 +35,7 @@ namespace obelisk {
 
             // TODO With hands we have 43
 
-            for (int i = 0; i < G1_MOTOR_NUM; i++) {
+            for (int i = 0; i < MOTOR_NUM; i++) {
                 if (i == joint_idx_) {
                     msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
                     msg.pos_target.emplace_back(amplitude_ * sin(time_sec));
@@ -52,12 +52,12 @@ namespace obelisk {
                 msg.feed_forward.emplace_back(0);
             }
 
-            for (int i = 0; i < 2*G1_MOTOR_NUM; i++) {
+            for (int i = 0; i < 2*MOTOR_NUM; i++) {
                 msg.u_mujoco.emplace_back(0);
             }
 
-            for (int i = 0; i < G1_MOTOR_NUM; i++) {
-                msg.joint_names.push_back(G1_JOINT_NAMES[i]);
+            for (int i = 0; i < MOTOR_NUM; i++) {
+                msg.joint_names.push_back(JOINT_NAMES[i]);
             }
 
             this->GetPublisher<unitree_controller_msg>(this->ctrl_key_)->publish(msg);
@@ -100,9 +100,9 @@ namespace obelisk {
             if (msg.buttons[X] && (this->now() - last_X_press).seconds() > 1) {
                 
                 joint_idx_++;
-                joint_idx_ = joint_idx_ % G1_MOTOR_NUM;
+                joint_idx_ = joint_idx_ % MOTOR_NUM;
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << G1_JOINT_NAMES[joint_idx_]);
+                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << JOINT_NAMES[joint_idx_]);
 
                 last_X_press = this->now();
             }
@@ -112,37 +112,53 @@ namespace obelisk {
 
         int joint_idx_;
 
-        static constexpr int G1_MOTOR_NUM = 29;
-        const std::array<std::string, G1_MOTOR_NUM> G1_JOINT_NAMES = {
-            "left_hip_pitch_joint",
-            "left_hip_roll_joint",
-            "left_hip_yaw_joint",
-            "left_knee_joint",
-            "left_ankle_pitch_joint",
-            "left_ankle_roll_joint",
-            "right_hip_pitch_joint",
-            "right_hip_roll_joint",
-            "right_hip_yaw_joint",
-            "right_knee_joint",
-            "right_ankle_pitch_joint",
-            "right_ankle_roll_joint",
-            "waist_yaw_joint",
-            "waist_roll_joint",
-            "waist_pitch_joint",
-            "left_shoulder_pitch_joint",
-            "left_shoulder_roll_joint",
-            "left_shoulder_yaw_joint",
-            "left_elbow_joint",
-            "left_wrist_roll_joint",
-            "left_wrist_pitch_joint",
-            "left_wrist_yaw_joint",
-            "right_shoulder_pitch_joint",
-            "right_shoulder_roll_joint",
-            "right_shoulder_yaw_joint",
-            "right_elbow_joint",
-            "right_wrist_roll_joint",
-            "right_wrist_pitch_joint",
-            "right_wrist_yaw_joint",
+        // static constexpr int MOTOR_NUM = 29;
+        // const std::array<std::string, MOTOR_NUM> JOINT_NAMES = {
+        //     "left_hip_pitch_joint",
+        //     "left_hip_roll_joint",
+        //     "left_hip_yaw_joint",
+        //     "left_knee_joint",
+        //     "left_ankle_pitch_joint",
+        //     "left_ankle_roll_joint",
+        //     "right_hip_pitch_joint",
+        //     "right_hip_roll_joint",
+        //     "right_hip_yaw_joint",
+        //     "right_knee_joint",
+        //     "right_ankle_pitch_joint",
+        //     "right_ankle_roll_joint",
+        //     "waist_yaw_joint",
+        //     "waist_roll_joint",
+        //     "waist_pitch_joint",
+        //     "left_shoulder_pitch_joint",
+        //     "left_shoulder_roll_joint",
+        //     "left_shoulder_yaw_joint",
+        //     "left_elbow_joint",
+        //     "left_wrist_roll_joint",
+        //     "left_wrist_pitch_joint",
+        //     "left_wrist_yaw_joint",
+        //     "right_shoulder_pitch_joint",
+        //     "right_shoulder_roll_joint",
+        //     "right_shoulder_yaw_joint",
+        //     "right_elbow_joint",
+        //     "right_wrist_roll_joint",
+        //     "right_wrist_pitch_joint",
+        //     "right_wrist_yaw_joint",
+        // };
+
+        static constexpr int MOTOR_NUM = 12;
+        const std::array<std::string, MOTOR_NUM> JOINT_NAMES = {
+            "FR_hip_joint",
+            "FR_thigh_joint",
+            "FR_calf_joint",
+            "FL_hip_joint",
+            "FL_thigh_joint",
+            "FL_calf_joint",
+            "RR_hip_joint",
+            "RR_thigh_joint",
+            "RR_calf_joint",
+            "RL_hip_joint",
+            "RL_thigh_joint",
+            "RL_calf_joint"
         };
     };
 } // namespace obelisk

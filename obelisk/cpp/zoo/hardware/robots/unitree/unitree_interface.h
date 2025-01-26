@@ -9,10 +9,6 @@
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
 // IDL
-#include <unitree/idl/hg/IMUState_.hpp>
-#include <unitree/idl/hg/LowCmd_.hpp>
-#include <unitree/idl/hg/LowState_.hpp>
-#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 namespace obelisk {
@@ -20,7 +16,6 @@ namespace obelisk {
 
     using namespace unitree::common;
     using namespace unitree::robot;
-    using namespace unitree_hg::msg::dds_;
 
     /**
      * @brief Obelisk robot interface for the Unitree robots
@@ -136,10 +131,6 @@ namespace obelisk {
         // ---------- Gains ---------- //
         std::vector<double> kp_;
         std::vector<double> kd_;
-
-        // Go2
-        static constexpr int GO2_MOTOR_NUM = 12;
-
     private:
     };
 } // namespace obelisk
