@@ -122,11 +122,6 @@ namespace obelisk {
             return CRC32;
         };
 
-        enum class AnkleMode {
-            PR = 0,  // Series Control for Ptich/Roll Joints
-            AB = 1   // Parallel Control for A/B Joints
-        };
-
         // ---------- Topics ---------- //
         // TODO: Verify these are the same of the G1 and the Go2
         std::string CMD_TOPIC_;
@@ -135,7 +130,6 @@ namespace obelisk {
         std::string network_interface_name_;
         std::shared_ptr<unitree::robot::b2::MotionSwitcherClient> mode_switch_manager_;
 
-        std::string name_;
         size_t num_motors_;
         std::vector<std::string> joint_names_;
 
