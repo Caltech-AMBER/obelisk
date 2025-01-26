@@ -2,6 +2,8 @@ config: go2_example
 onboard:
   control:
     - pkg: obelisk_unitree_cpp
+      params:
+        robot_str: Go2
       executable: unitree_example_controller
       # callback_groups:
       publishers:

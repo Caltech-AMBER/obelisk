@@ -2,6 +2,8 @@ config: g1_example
 onboard:
   control:
     - pkg: obelisk_unitree_cpp
+      params:
+        robot_str: G1
       executable: unitree_example_controller
       # callback_groups:
       publishers:

@@ -12,12 +12,25 @@ namespace obelisk {
       public:
         UnitreeExampleController(const std::string& name)
             : ObeliskController<unitree_controller_msg, unitree_estimator_msg>(name), joint_idx_(0) {
+
+            this->declare_parameter<std::string>("robot_str", "");
+            std::string robot_str = this->get_parameter("robot_str").as_string();
+
+            if (robot_str == "G1") {
+                motor_num_ = G1_MOTOR_NUM;
+                joint_names_ = G1_JOINT_NAMES;
+            } else if (robot_str == "Go2") {
+                motor_num_ = GO2_MOTOR_NUM;
+                joint_names_ = GO2_JOINT_NAMES;
+            } else {
+                throw std::runtime_error("[UnitreeExampleController] robot_str is invalid!");
+            }
             // ----- Joystick Subscriber ----- //
             this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
                         "joystick_sub_setting", "joystick_sub",
                         std::bind(&UnitreeExampleController::JoystickCallback, this, std::placeholders::_1));
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << JOINT_NAMES[joint_idx_]);
+            RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);
         }
 
       protected:
@@ -36,9 +49,9 @@ namespace obelisk {
             // TODO With hands we have 43
             float offset = 0;
 
-            for (int i = 0; i < MOTOR_NUM; i++) {
+            for (int i = 0; i < motor_num_; i++) {
                 if (i == joint_idx_) {
-                    if (JOINT_NAMES[i].find("calf") != std::string::npos) {
+                    if (joint_names_[i].find("calf") != std::string::npos) {
                         offset = -1.5;
                     } else {
                         offset = 0;
@@ -58,12 +71,12 @@ namespace obelisk {
                 msg.feed_forward.emplace_back(0);
             }
 
-            for (int i = 0; i < 2*MOTOR_NUM; i++) {
+            for (int i = 0; i < 2*motor_num_; i++) {
                 msg.u_mujoco.emplace_back(0);
             }
 
-            for (int i = 0; i < MOTOR_NUM; i++) {
-                msg.joint_names.push_back(JOINT_NAMES[i]);
+            for (int i = 0; i < motor_num_; i++) {
+                msg.joint_names.push_back(joint_names_[i]);
             }
 
             this->GetPublisher<unitree_controller_msg>(this->ctrl_key_)->publish(msg);
@@ -106,9 +119,9 @@ namespace obelisk {
             if (msg.buttons[X] && (this->now() - last_X_press).seconds() > 1) {
                 
                 joint_idx_++;
-                joint_idx_ = joint_idx_ % MOTOR_NUM;
+                joint_idx_ = joint_idx_ % motor_num_;
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << JOINT_NAMES[joint_idx_]);
+                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);
 
                 last_X_press = this->now();
             }
@@ -117,43 +130,45 @@ namespace obelisk {
         float amplitude_ = 0.2;
 
         int joint_idx_;
+        int motor_num_;
+        std::vector<std::string> joint_names_;
 
-        // static constexpr int MOTOR_NUM = 29;
-        // const std::array<std::string, MOTOR_NUM> JOINT_NAMES = {
-        //     "left_hip_pitch_joint",
-        //     "left_hip_roll_joint",
-        //     "left_hip_yaw_joint",
-        //     "left_knee_joint",
-        //     "left_ankle_pitch_joint",
-        //     "left_ankle_roll_joint",
-        //     "right_hip_pitch_joint",
-        //     "right_hip_roll_joint",
-        //     "right_hip_yaw_joint",
-        //     "right_knee_joint",
-        //     "right_ankle_pitch_joint",
-        //     "right_ankle_roll_joint",
-        //     "waist_yaw_joint",
-        //     "waist_roll_joint",
-        //     "waist_pitch_joint",
-        //     "left_shoulder_pitch_joint",
-        //     "left_shoulder_roll_joint",
-        //     "left_shoulder_yaw_joint",
-        //     "left_elbow_joint",
-        //     "left_wrist_roll_joint",
-        //     "left_wrist_pitch_joint",
-        //     "left_wrist_yaw_joint",
-        //     "right_shoulder_pitch_joint",
-        //     "right_shoulder_roll_joint",
-        //     "right_shoulder_yaw_joint",
-        //     "right_elbow_joint",
-        //     "right_wrist_roll_joint",
-        //     "right_wrist_pitch_joint",
-        //     "right_wrist_yaw_joint",
-        // };
+        static constexpr int G1_MOTOR_NUM = 29;
+        const std::vector<std::string> G1_JOINT_NAMES = {
+            "left_hip_pitch_joint",
+            "left_hip_roll_joint",
+            "left_hip_yaw_joint",
+            "left_knee_joint",
+            "left_ankle_pitch_joint",
+            "left_ankle_roll_joint",
+            "right_hip_pitch_joint",
+            "right_hip_roll_joint",
+            "right_hip_yaw_joint",
+            "right_knee_joint",
+            "right_ankle_pitch_joint",
+            "right_ankle_roll_joint",
+            "waist_yaw_joint",
+            "waist_roll_joint",
+            "waist_pitch_joint",
+            "left_shoulder_pitch_joint",
+            "left_shoulder_roll_joint",
+            "left_shoulder_yaw_joint",
+            "left_elbow_joint",
+            "left_wrist_roll_joint",
+            "left_wrist_pitch_joint",
+            "left_wrist_yaw_joint",
+            "right_shoulder_pitch_joint",
+            "right_shoulder_roll_joint",
+            "right_shoulder_yaw_joint",
+            "right_elbow_joint",
+            "right_wrist_roll_joint",
+            "right_wrist_pitch_joint",
+            "right_wrist_yaw_joint",
+        };
 
         // TODO: identify robot from context?
-        static constexpr int MOTOR_NUM = 12;
-        const std::array<std::string, MOTOR_NUM> JOINT_NAMES = {
+        static constexpr int GO2_MOTOR_NUM = 12;
+        const std::vector<std::string> GO2_JOINT_NAMES = {
             "FR_hip_joint",
             "FR_thigh_joint",
             "FR_calf_joint",
