@@ -58,26 +58,16 @@ onboard:
     #   params:
     #     network_interface_name: enp4s0
     #     default_kp: [
-    #                 10., 10., 10.,    # L hip
-    #                 10., 10., 10.,    # L knee, ankle
-    #                 10., 10., 10.,    # R hip
-    #                 10., 10., 10.,    # R knee, ankle
-    #                 10., 10., 10.,    # Waist
-    #                 5., 5., 5.,       # L shoulder
-    #                 5., 5., 5., 5.,   # L elbow, wrist
-    #                 5., 5., 5.,       # R shoulder
-    #                 5., 5., 5., 5.,   # R elbow, wrist
+    #                 25., 25., 25.,    # FR
+    #                 25., 25., 25.,    # FL
+    #                 25., 25., 25.,    # RR
+    #                 25., 25., 25.,    # RL
     #                 ]
     #     default_kd: [
-    #                 1., 1., 1.,       # L hip
-    #                 1., 1., 1.,       # L knee, ankle
-    #                 1., 1., 1.,       # R hip
-    #                 1., 1., 1.,       # R knee, ankle
-    #                 1., 1., 1.,       # Waist
-    #                 1., 1., 1.,       # L shoulder
-    #                 1., 1., 1., 1.,   # L elbow, wrist
-    #                 1., 1., 1.,       # R shoulder
-    #                 1., 1., 1., 1.,   # R elbow, wrist
+    #                 1., 1., 1.,       # FR
+    #                 1., 1., 1.,       # FL
+    #                 1., 1., 1.,       # RR
+    #                 1., 1., 1.,       # RL
     #     ]
     # ==================
       # callback_groups:
