@@ -18,18 +18,17 @@ FetchContent_MakeAvailable(unitree_sdk)
 
 add_library(UnitreeInterface INTERFACE)
 target_include_directories(UnitreeInterface INTERFACE .)
-# target_link_libraries(UnitreeInterface INTERFACE dynamixel_sdk)
 
 target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core unitree_sdk2)
 
-# ament_target_dependencies(UnitreeInterface INTERFACE
-#   rclcpp
-#   rclcpp_lifecycle
-#   sensor_msgs)
+ament_target_dependencies(UnitreeInterface INTERFACE
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs)
 
 
-add_executable(unitree_test unitree_test.cpp)
-target_link_libraries(unitree_test unitree_sdk2)
+# add_executable(unitree_test unitree_test.cpp)
+# target_link_libraries(unitree_test unitree_sdk2)
 
 # TODO:
 # - Run without Pixi
