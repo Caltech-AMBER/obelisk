@@ -55,7 +55,6 @@ onboard:
       executable: obelisk_unitree_hardware
       params:
         network_interface_name: enp4s0
-        robot_name: G1 # G1, Go2
         default_kp: [
                     10., 10., 10.,    # L hip
                     10., 10., 10.,    # L knee, ankle
@@ -89,7 +88,7 @@ onboard:
         - ros_parameter: pub_imu_setting
           topic: /obelisk/g1/croch_imu
           history_depth: 10
-      # ----- Ogom ----- #
+      # ----- Odom ----- #
         - ros_parameter: pub_odom_setting
           topic: /obelisk/g1/odom
           history_depth: 10
