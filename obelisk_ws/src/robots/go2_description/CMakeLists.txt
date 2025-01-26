@@ -20,9 +20,10 @@ install(
   DESTINATION share/${PROJECT_NAME}/urdf
 )
 
+# install the urdf
 install(
-  DIRECTORY dae/
-  DESTINATION share/${PROJECT_NAME}/dae
+  DIRECTORY mujoco/
+  DESTINATION share/${PROJECT_NAME}/mujoco
 )
 
 if(BUILD_TESTING)

@@ -103,7 +103,7 @@ onboard:
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: go2_description
-          model_xml_path: go2.xml
+          model_xml_path: go2_fixed_base.xml
           sensor_settings:
           - topic: /obelisk/go2/joint_encoders
             dt: 0.002
@@ -122,9 +122,9 @@ onboard:
               RR_thigh_joint_pos_sensor: jointpos
               RR_calf_joint_pos_sensor: jointpos
 
-              RR_hip_joint_pos_sensor: jointpos
-              RR_thigh_joint_pos_sensor: jointpos
-              RR_calf_joint_pos_sensor: jointpos
+              RL_hip_joint_pos_sensor: jointpos
+              RL_thigh_joint_pos_sensor: jointpos
+              RL_calf_joint_pos_sensor: jointpos
             # ---------- Joint Velocities ---------- #
               FR_hip_joint_vel_sensor: jointvel
               FR_thigh_joint_vel_sensor: jointvel
@@ -138,9 +138,9 @@ onboard:
               RR_thigh_joint_vel_sensor: jointvel
               RR_calf_joint_vel_sensor: jointvel
 
-              RR_hip_joint_vel_sensor: jointvel
-              RR_thigh_joint_vel_sensor: jointvel
-              RR_calf_joint_vel_sensor: jointvel
+              RL_hip_joint_vel_sensor: jointvel
+              RL_thigh_joint_vel_sensor: jointvel
+              RL_calf_joint_vel_sensor: jointvel
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
