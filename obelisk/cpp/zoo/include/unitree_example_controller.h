@@ -34,11 +34,17 @@ namespace obelisk {
             double time_sec = this->get_clock()->now().seconds();
 
             // TODO With hands we have 43
+            float offset = 0;
 
             for (int i = 0; i < MOTOR_NUM; i++) {
                 if (i == joint_idx_) {
-                    msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
-                    msg.pos_target.emplace_back(amplitude_ * sin(time_sec));
+                    if (JOINT_NAMES[i].find("calf") != std::string::npos) {
+                        offset = -1.5;
+                    } else {
+                        offset = 0;
+                    }
+                    msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec) + offset);
+                    msg.pos_target.emplace_back(amplitude_ * sin(time_sec) + offset);
                     msg.kp.push_back(20);
                     msg.kd.push_back(2);
                 } else {
