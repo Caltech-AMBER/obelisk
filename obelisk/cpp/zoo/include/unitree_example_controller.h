@@ -145,6 +145,7 @@ namespace obelisk {
         //     "right_wrist_yaw_joint",
         // };
 
+        // TODO: identify robot from context?
         static constexpr int MOTOR_NUM = 12;
         const std::array<std::string, MOTOR_NUM> JOINT_NAMES = {
             "FR_hip_joint",

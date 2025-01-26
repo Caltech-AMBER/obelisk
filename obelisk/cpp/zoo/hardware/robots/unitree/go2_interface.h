@@ -1,6 +1,6 @@
 #include "unitree_interface.h"
 
-//IDL
+// IDL
 #include <unitree/idl/go2/LowState_.hpp>
 #include <unitree/idl/go2/LowCmd_.hpp>
 
