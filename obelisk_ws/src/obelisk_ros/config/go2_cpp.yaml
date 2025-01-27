@@ -46,29 +46,29 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    - is_simulated: True
-      pkg: obelisk_unitree_cpp
-      executable: obelisk_unitree_sim
-      params:
-        ic_keyframe: standing
-    # === hardware ===
-    # - is_simulated: False
+    # - is_simulated: True
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_unitree_hardware
+    #   executable: obelisk_unitree_sim
     #   params:
-    #     network_interface_name: enp4s0
-    #     default_kp: [
-    #                 25., 25., 25.,    # FR
-    #                 25., 25., 25.,    # FL
-    #                 25., 25., 25.,    # RR
-    #                 25., 25., 25.,    # RL
-    #                 ]
-    #     default_kd: [
-    #                 1., 1., 1.,       # FR
-    #                 1., 1., 1.,       # FL
-    #                 1., 1., 1.,       # RR
-    #                 1., 1., 1.,       # RL
-    #     ]
+    #     ic_keyframe: standing
+    # === hardware ===
+    - is_simulated: False
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_go2_hardware
+      params:
+        network_interface_name: enx001cc24ce09a
+        default_kp: [
+                    25., 25., 25.,    # FR
+                    25., 25., 25.,    # FL
+                    25., 25., 25.,    # RR
+                    25., 25., 25.,    # RL
+                    ]
+        default_kd: [
+                    1., 1., 1.,       # FR
+                    1., 1., 1.,       # FL
+                    1., 1., 1.,       # RR
+                    1., 1., 1.,       # RL
+        ]
     # ==================
       # callback_groups:
       publishers:
@@ -85,8 +85,19 @@ onboard:
         #   topic: /obelisk/go2/odom
         #   history_depth: 10
       subscribers:
+      # ----- Control ----- #
         - ros_parameter: sub_ctrl_setting
           topic: /obelisk/go2/ctrl
+          history_depth: 10
+          callback_group: None
+      # ----- Execution FSM ----- #
+        - ros_parameter: sub_fsm_setting
+          topic: /obelisk/go2/exec_fsm
+          history_depth: 10
+          callback_group: None
+      # ----- High Level Control ----- #
+        - ros_parameter: sub_high_level_ctrl_setting
+          topic: /obelisk/go2/high_level_ctrl
           history_depth: 10
           callback_group: None
       sim:
@@ -165,3 +176,22 @@ onboard:
     on: True
     pub_topic: /obelisk/go2/joy
     sub_topic: /obelisk/go2/joy_feedback
+
+  unitree_joystick:
+    pkg: obelisk_unitree_cpp
+    executable: obelisk_unitree_joystick
+    publishers:
+      # ----- Execution FSM ----- #
+        - ros_parameter: pub_exec_fsm_setting
+          topic: /obelisk/go2/exec_fsm
+          history_depth: 10
+          callback_group: None
+      # ----- High Level Control ----- #
+        - ros_parameter: pub_high_level_ctrl_setting
+          topic: /obelisk/go2/high_level_ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: joystick_sub_setting
+          topic: /obelisk/go2/joy

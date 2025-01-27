@@ -54,7 +54,7 @@ onboard:
     # === hardware ===
     # - is_simulated: False
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_unitree_hardware
+    #   executable: obelisk_unitree_g1_hardware
     #   params:
     #     network_interface_name: enp4s0
     #     default_kp: [

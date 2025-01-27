@@ -1,5 +1,8 @@
 #include "unitree_interface.h"
 
+// Sport Client
+#include <unitree/robot/go2/sport/sport_client.hpp>
+
 // IDL
 #include <unitree/idl/go2/LowState_.hpp>
 #include <unitree/idl/go2/LowCmd_.hpp>
@@ -12,9 +15,9 @@ namespace obelisk {
     public:
         Go2Interface(const std::string& node_name)
             : ObeliskUnitreeInterface(node_name) {
-            // TODO: Arm on top of quad??
+            num_motors_ = GO2_MOTOR_NUM;
 
-            for (int i = 0; i < GO2_MOTOR_NUM; i++) {
+            for (size_t i = 0; i < num_motors_; i++) {
                 joint_names_.push_back(GO2_JOINT_NAMES[i]);
             } 
 
@@ -24,6 +27,9 @@ namespace obelisk {
 
             VerifyParameters();
             CreateUnitreePublishers();
+
+            sport_client_.SetTimeout(10.0f);
+            sport_client_.Init();
         }
     protected:
         void CreateUnitreePublishers() override {
@@ -41,9 +47,14 @@ namespace obelisk {
             lowstate_subscriber_->InitChannel(std::bind(&Go2Interface::LowStateHandler, this, std::placeholders::_1), 1);
 
             // Odom state?
+
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
+            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL) {
+                RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring low level control commands!");
+                return;
+            }
             // Apply control to the robot
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
 
@@ -61,14 +72,14 @@ namespace obelisk {
             }
 
             // Check that every joint name is in the list and that they are all there
-            std::vector<bool> joint_used(GO2_MOTOR_NUM, false);
-            std::vector<int> joint_mapping(GO2_MOTOR_NUM, -1);    // Maps the j'th input joint to the i'th output joint
+            std::vector<bool> joint_used(num_motors_, false);
+            std::vector<int> joint_mapping(num_motors_, -1);    // Maps the j'th input joint to the i'th output joint
             if (msg.joint_names.size() != joint_names_.size()) {
                 throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
             }
 
-            for (size_t j = 0; j < GO2_MOTOR_NUM; j++) {
-                for (size_t i = 0; i < GO2_MOTOR_NUM; i++) {
+            for (size_t j = 0; j < num_motors_; j++) {
+                for (size_t i = 0; i < num_motors_; i++) {
                     if (msg.joint_names[j] == joint_names_[i]) {
                         if (joint_used[i]) {
                             throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
@@ -79,7 +90,7 @@ namespace obelisk {
                     }
                 }
             }
-            for (size_t j = 0; j < GO2_MOTOR_NUM; j++) {
+            for (size_t j = 0; j < num_motors_; j++) {
                 if (!joint_used[j]) {
                     throw std::runtime_error("[UnitreeRobotInterface] Control message is missing robot joints!");
                 }
@@ -87,7 +98,7 @@ namespace obelisk {
 
             bool use_default_gains = true;
             if (msg.joint_names.size() == msg.kp.size()) {
-                if (msg.kp.size() != GO2_MOTOR_NUM) {
+                if (msg.kp.size() != num_motors_) {
                     throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
                 }
                 use_default_gains = false;
@@ -96,7 +107,7 @@ namespace obelisk {
             // ---------- Create Packet ---------- //
             LowCmd_ dds_low_command;
 
-            for (size_t j = 0; j < GO2_MOTOR_NUM; j++) {     // Only go through the non-hand motors
+            for (size_t j = 0; j < num_motors_; j++) {     // Only go through the non-hand motors
                 int i = joint_mapping[j];
                 dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                 dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
@@ -120,14 +131,20 @@ namespace obelisk {
             // Joints
             obelisk_sensor_msgs::msg::ObkJointEncoders joint_state;
             joint_state.header.stamp = this->now();
-            joint_state.joint_pos.resize(GO2_MOTOR_NUM);
-            joint_state.joint_vel.resize(GO2_MOTOR_NUM);
-            joint_state.joint_names.resize(GO2_MOTOR_NUM);
+            joint_state.joint_pos.resize(num_motors_);
+            joint_state.joint_vel.resize(num_motors_);
+            joint_state.joint_names.resize(num_motors_);
 
-            for (size_t i = 0; i < GO2_MOTOR_NUM; ++i) {
+            for (size_t i = 0; i < num_motors_; ++i) {
                 joint_state.joint_names.at(i) = joint_names_[i];
                 joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
+                {
+                    std::lock_guard<std::mutex> lock(joint_pos_mutex_);
+                    joint_pos_[i] = low_state.motor_state()[i].q();
+                    joint_vel_[i] = low_state.motor_state()[i].dq();
+                }
+                
                 // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
                 // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
             }
@@ -153,6 +170,91 @@ namespace obelisk {
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("imu_state_pub")->publish(imu_state);
 
             // TODO: foot forces
+        }
+
+        void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
+            if (exec_fsm_state_ != ExecFSMState::HIGH_LEVEL_CTRL) {
+                RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring high level control commands!");
+                return;
+            }
+
+            sport_client_.Move(*msg.v_x, *msg.v_y, *msg.w_z);
+        }
+
+        bool CheckDampingToHomeTransition() {
+            // TODO: check if system can safely transition to home position
+            return false;
+        }
+
+        void TransitionToHome() override{
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTIONING TO HOME!");
+            // First, save current position
+            float _startPos[12];
+            {
+                std::lock_guard<std::mutex> lock(joint_pos_mutex_);
+                std::copy(std::begin(joint_pos_), std::end(joint_pos_), _startPos);
+            }
+            
+
+            // TODO: User defined home position
+            float _homePos[12] = {0.0, 1.36, -2.65, 0.0, 1.36, -2.65,
+                                     -0.2, 1.36, -2.65, 0.2, 1.36, -2.65};
+            
+            // Then loop
+            float t = 0;
+            float duration = 2;
+            float proportion = 0;
+            const int loop_rate_hz = 100;
+            const std::chrono::milliseconds loop_period(1000 / loop_rate_hz); // 100Hz -> 10ms
+
+            auto start_time = std::chrono::steady_clock::now();
+            while (t < duration) {
+                // Grab start of the loop time
+                auto loop_start = std::chrono::steady_clock::now();
+
+                // Check proprotion of completed movement
+                proportion = std::min(t / duration, 1.0f);
+
+                // Send command to the motors
+                LowCmd_ dds_low_command;
+                for (size_t j = 0; j < num_motors_; j++) {
+                    dds_low_command.motor_cmd().at(j).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(j).tau() = 0.;
+                    dds_low_command.motor_cmd().at(j).q() = (1 - proportion) * _startPos[j] + proportion * _homePos[j];
+                    dds_low_command.motor_cmd().at(j).dq() = 0.;
+                    dds_low_command.motor_cmd().at(j).kp() = kp_[j];
+                    dds_low_command.motor_cmd().at(j).kd() = kd_[j];
+                }
+
+                dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+                lowcmd_publisher_->Write(dds_low_command);
+
+                // Handle timing
+                auto now = std::chrono::steady_clock::now();
+                t = std::chrono::duration<float>(now - start_time).count();
+
+                // Sleep to maintain 100Hz loop rate
+                std::this_thread::sleep_until(loop_start + loop_period);
+            }
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME COMPLETE!");
+        }
+
+        void TransitionToDamping() override {
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO DAMPING!");
+            // ---------- Create Packet ---------- //
+            LowCmd_ dds_low_command;
+
+            for (size_t j = 0; j < num_motors_; j++) {
+                dds_low_command.motor_cmd().at(j).mode() = 1;  // 1:Enable, 0:Disable
+                dds_low_command.motor_cmd().at(j).tau() = 0.;
+                dds_low_command.motor_cmd().at(j).q() = 0.;
+                dds_low_command.motor_cmd().at(j).dq() = 0.;
+                dds_low_command.motor_cmd().at(j).kp() = 0.;
+                dds_low_command.motor_cmd().at(j).kd() = kd_[j];
+            }
+
+            dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+            lowcmd_publisher_->Write(dds_low_command);
         }
 
         // void OdomHandler(const void *message) {
@@ -206,5 +308,11 @@ namespace obelisk {
             "RL_thigh_joint",
             "RL_calf_joint"
         };
+
+        float joint_pos_[GO2_MOTOR_NUM];  // Local copy of joint positions
+        float joint_vel_[GO2_MOTOR_NUM];  // Local copy of joint velocities
+        std::mutex joint_pos_mutex_;      // mutex for copying joint positions and velocities
+        go2::SportClient sport_client_;
+        
     };
 }   // namespace obelisk

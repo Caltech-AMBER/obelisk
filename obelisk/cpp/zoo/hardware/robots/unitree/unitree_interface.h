@@ -4,6 +4,9 @@
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
 #include "obelisk_sensor_msgs/msg/obk_imu.h"
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
+#include "obelisk_control_msgs/msg/execution_fsm.h"
+#include "obelisk_control_msgs/msg/velocity_command.h"
+
 
 // DDS
 #include <unitree/robot/channel/channel_publisher.hpp>
@@ -14,6 +17,8 @@
 
 namespace obelisk {
     using unitree_control_msg = obelisk_control_msgs::msg::PDFeedForward;
+    using unitree_fsm_msg = obelisk_control_msgs::msg::ExecutionFSM;
+    using unitree_high_level_ctrl_msg = obelisk_control_msgs::msg::VelocityCommand;
 
     using namespace unitree::common;
     using namespace unitree::robot;
@@ -24,17 +29,27 @@ namespace obelisk {
     class ObeliskUnitreeInterface : public ObeliskRobot<unitree_control_msg> {
 
     public:
-        ObeliskUnitreeInterface(const std::string& node_name)
-            : ObeliskRobot<unitree_control_msg>(node_name) {
+        ObeliskUnitreeInterface(const std::string& node_name, const std::string& sub_fsm_key = "sub_fsm")
+            : ObeliskRobot<unitree_control_msg>(node_name), sub_fsm_key_(sub_fsm_key) {
 
             // Get network interface name as a parameter
             this->declare_parameter<std::string>("network_interface_name", "");
             network_interface_name_ = this->get_parameter("network_interface_name").as_string();
             RCLCPP_INFO_STREAM(this->get_logger(), "Network interface: " << network_interface_name_);
 
+            // Set the Execution FSM into INIT
+            exec_fsm_state_ = ExecFSMState::INIT;
+
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", "joint_state_pub");
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", "imu_state_pub");
+
+            // Register Execution FSM Subscriber
+            this->RegisterObkSubscription<unitree_fsm_msg>(
+                "sub_fsm_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::TransitionFSM, this, std::placeholders::_1));
+            // Register High Level Control Subscriber
+            this->RegisterObkSubscription<unitree_high_level_ctrl_msg>(
+                "sub_high_level_ctrl_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::ApplyHighLevelControl, this, std::placeholders::_1));
 
             // ---------- Default PD gains ---------- //
             this->declare_parameter<std::vector<double>>("default_kp");
@@ -47,15 +62,9 @@ namespace obelisk {
             ChannelFactory::Instance()->Init(0, network_interface_name_);
 
             // Try to shutdown motion control-related service
-            mode_switch_manager_ = std::make_shared<unitree::robot::b2::MotionSwitcherClient>();
+            mode_switch_manager_ = std::make_shared<b2::MotionSwitcherClient>();
             mode_switch_manager_->SetTimeout(5.0f);
             mode_switch_manager_->Init();
-            std::string form, name;
-            while (mode_switch_manager_->CheckMode(form, name), !name.empty()) {
-                if (mode_switch_manager_->ReleaseMode())
-                    std::cout << "Failed to switch to Release Mode\n";
-                sleep(5);
-            }
         }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
@@ -67,9 +76,83 @@ namespace obelisk {
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
+        enum class ExecFSMState : uint8_t {
+            INIT = 0,
+            HOME = 1,
+            LOW_LEVEL_CTRL = 2,
+            HIGH_LEVEL_CTRL = 3,
+            DAMPING = 4
+        };
+
+        // Set of legal transitions for the execution FSM
+        const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
+            {ExecFSMState::INIT, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                           // Init -> Home, Init -> Damp
+            {ExecFSMState::HOME, {ExecFSMState::LOW_LEVEL_CTRL, ExecFSMState::HIGH_LEVEL_CTRL, ExecFSMState::DAMPING}},  // Home -> Low,  Home -> High, Home -> Damp
+            {ExecFSMState::LOW_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                 // Low  -> Home, Low  -> Damp
+            {ExecFSMState::HIGH_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                // High -> Home, High -> Damp
+            {ExecFSMState::DAMPING, {ExecFSMState::HOME}}                                                                // Damp -> Home (check other conditions)
+        };
+
+        // Set of transitions on which motion control must be released
+        const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> RELEASE_MC_TRANSITIONS = {
+            {ExecFSMState::INIT, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                           // Init -> Home, Init -> Damp
+            {ExecFSMState::HOME, {}},
+            {ExecFSMState::LOW_LEVEL_CTRL, {}},
+            {ExecFSMState::HIGH_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                // High -> Home, High -> Damp
+            {ExecFSMState::DAMPING, {}}
+        };
+
+        // Set of transitions on which motion control must be engaged
+        const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> ENGAGE_MC_TRANSITIONS = {
+            {ExecFSMState::HOME, {ExecFSMState::HIGH_LEVEL_CTRL}},                                                       // Home -> High
+            {ExecFSMState::DAMPING, {ExecFSMState::HOME}}
+        };
+
     protected:
         virtual void CreateUnitreeSubscribers() = 0;
         virtual void CreateUnitreePublishers() = 0;
+        virtual void ApplyHighLevelControl(const unitree_high_level_ctrl& msg) = 0;
+        virtual bool CheckDampingToHomeTransition() = 0;
+        virtual void TransitionToHome() = 0;
+        virtual void TransitionToDamping() = 0;
+
+        void TransitionFSM(const unitree_fsm_msg& msg) {
+            // Extract commanded FSM state from the message
+            ExecFSMState cmd_exec_fsm_state = *msg.cmd_exec_fsm_state;
+
+            // Check if transition is legal
+            if (ContainsTransition(TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
+                // Check if robot is in OK state to transition from Damping to Home
+                if (exec_fsm_state_ == ExecFSMState::DAMPING && cmd_exec_fsm_state == ExecFSMState::HOME && !CheckDampingToHomeTransition()) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "ROBOT NOT IN VALID STATE TO TRANSITION EXECUTION FSM FROM DAMPING TO HOME!");
+                    return;
+                }
+
+                // Under some transitions, need to release the motion control
+                if (ContainsTransition(RELEASE_MC_TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
+                    bool success = ReleaseMotionControl();
+                    if (!success) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "RELEASING MOTION CONTROL FAILED!");
+                        return;
+                    }
+                }
+
+                // Under some transitions, need to re-engage the motion control
+                if (ContainsTransition(ENGAGE_MC_TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
+                    bool success = EngageMotionControl();
+                    if (!success) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING MOTION CONTROL FAILED!");
+                        return;
+                    }
+                }
+
+                // Transition the FSM
+                exec_fsm_state_ = cmd_exec_fsm_state;
+                RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED!");
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID!");
+            }
+        }
 
 
         void VerifyParameters() {
@@ -118,13 +201,34 @@ namespace obelisk {
             return CRC32;
         };
 
+        bool ContainsTransition(std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> transitions,
+                                ExecFSMState state,
+                                ExecFSMState next_state) {
+            return std::find(transitions[state].begin(), transitions[state].end(), next_state) != transitions[state].end();
+        }
+
+        bool ReleaseMotionControl() {
+            int32_t ret = mode_switch_manager_->ReleaseMode();
+            return ret == 0;
+        }
+
+        bool EngageMotionControl() {
+            // TODO: What goes here??
+            int32_t ret = mode_switch_manager_->SelectMode("normal");  // Can be "normal", "ai", or "advanced" ?? From reading example code.
+            return ret == 0;
+        }
+
+        // Execution FSM state variable
+        ExecFSMState exec_fsm_state_;
+
         // ---------- Topics ---------- //
         // TODO: Verify these are the same of the G1 and the Go2
         std::string CMD_TOPIC_;
         std::string STATE_TOPIC_;
+        std::string sub_fsm_key_;
 
         std::string network_interface_name_;
-        std::shared_ptr<unitree::robot::b2::MotionSwitcherClient> mode_switch_manager_;
+        std::shared_ptr<b2::MotionSwitcherClient> mode_switch_manager_;
 
         size_t num_motors_;
         std::vector<std::string> joint_names_;
@@ -132,6 +236,7 @@ namespace obelisk {
         // ---------- Gains ---------- //
         std::vector<double> kp_;
         std::vector<double> kd_;
+    
     private:
     };
 } // namespace obelisk

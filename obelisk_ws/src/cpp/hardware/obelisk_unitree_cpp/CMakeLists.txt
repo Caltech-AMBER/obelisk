@@ -23,9 +23,13 @@ FetchContent_MakeAvailable(Obelisk)
 add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
 target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Zoo)
 
-# obelisk_unitree_hardware
-add_executable(obelisk_unitree_hardware src/unitree_hardware_robot.cpp)
-target_link_libraries(obelisk_unitree_hardware PUBLIC Obelisk::Core UnitreeInterface)
+# obelisk_unitree_g1_hardware
+add_executable(obelisk_unitree_g1_hardware src/unitree_g1_hardware_robot.cpp)
+target_link_libraries(obelisk_unitree_g1_hardware PUBLIC Obelisk::Core UnitreeInterface)
+
+# obelisk_unitree_go2_hardware
+add_executable(obelisk_unitree_go2_hardware src/unitree_go2_hardware_robot.cpp)
+target_link_libraries(obelisk_unitree_go2_hardware PUBLIC Obelisk::Core UnitreeInterface)
 
 # unitree_example_controller
 add_executable(unitree_example_controller src/g1_example_controller.cpp)
@@ -47,7 +51,11 @@ install(TARGETS
     DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS
-    obelisk_unitree_hardware
+    obelisk_unitree_g1_hardware
+    DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+    obelisk_unitree_go2_hardware
     DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS
