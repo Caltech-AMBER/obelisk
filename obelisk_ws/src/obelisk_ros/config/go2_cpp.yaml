@@ -1,6 +1,7 @@
 config: go2_example
 onboard:
   control:
+  # ----- Low Level Controller ----- #
     - pkg: obelisk_unitree_cpp
       params:
         robot_str: Go2
@@ -22,6 +23,29 @@ onboard:
       timers:
         - ros_parameter: timer_ctrl_setting
           timer_period_sec: 0.001
+          callback_group: None
+  # ----- High Level/Execution FSM Controller ----- #
+    - pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_joystick
+      # callback_groups:
+      publishers:
+      # ----- Execution FSM ----- #
+        - ros_parameter: pub_exec_fsm_setting
+          topic: /obelisk/go2/exec_fsm
+          history_depth: 10
+          callback_group: None
+      # ----- High Level Control ----- #
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/go2/high_level_ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/go2/joy
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.01
           callback_group: None
   estimation:
     - pkg: obelisk_unitree_cpp
@@ -176,22 +200,3 @@ onboard:
     on: True
     pub_topic: /obelisk/go2/joy
     sub_topic: /obelisk/go2/joy_feedback
-
-  unitree_joystick:
-    pkg: obelisk_unitree_cpp
-    executable: obelisk_unitree_joystick
-    publishers:
-      # ----- Execution FSM ----- #
-        - ros_parameter: pub_exec_fsm_setting
-          topic: /obelisk/go2/exec_fsm
-          history_depth: 10
-          callback_group: None
-      # ----- High Level Control ----- #
-        - ros_parameter: pub_high_level_ctrl_setting
-          topic: /obelisk/go2/high_level_ctrl
-          history_depth: 10
-          callback_group: None
-      subscribers:
-      # ----- Joystick subscriber ----- #
-        - ros_parameter: joystick_sub_setting
-          topic: /obelisk/go2/joy

@@ -39,6 +39,10 @@ target_link_libraries(unitree_example_controller PUBLIC Obelisk::Core Obelisk::Z
 add_executable(unitree_example_estimator src/g1_example_estimator.cpp)
 target_link_libraries(unitree_example_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
 
+# unitree_joystick
+add_executable(obelisk_unitree_joystick src/unitree_joystick.cpp)
+target_link_libraries(obelisk_unitree_joystick PUBLIC Obelisk::Core Obelisk::Zoo)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
@@ -64,6 +68,10 @@ install(TARGETS
 
 install(TARGETS
     unitree_example_estimator
+    DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+    obelisk_unitree_joystick
     DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

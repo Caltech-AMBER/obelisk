@@ -149,7 +149,7 @@ namespace obelisk {
                 // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
             }
 
-            this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("joint_state_pub")->publish(joint_state);
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
 
             // IMU
             obelisk_sensor_msgs::msg::ObkImu imu_state;
@@ -167,7 +167,7 @@ namespace obelisk {
             imu_state.linear_acceleration.y= low_state.imu_state().accelerometer()[1];
             imu_state.linear_acceleration.z = low_state.imu_state().accelerometer()[2];
 
-            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("imu_state_pub")->publish(imu_state);
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
             // TODO: foot forces
         }
@@ -178,7 +178,7 @@ namespace obelisk {
                 return;
             }
 
-            sport_client_.Move(*msg.v_x, *msg.v_y, *msg.w_z);
+            sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);
         }
 
         bool CheckDampingToHomeTransition() {

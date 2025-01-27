@@ -4,8 +4,8 @@
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
 #include "obelisk_sensor_msgs/msg/obk_imu.h"
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
-#include "obelisk_control_msgs/msg/execution_fsm.h"
-#include "obelisk_control_msgs/msg/velocity_command.h"
+#include "obelisk_control_msgs/msg/execution_fsm.hpp"
+#include "obelisk_control_msgs/msg/velocity_command.hpp"
 
 
 // DDS
@@ -29,8 +29,8 @@ namespace obelisk {
     class ObeliskUnitreeInterface : public ObeliskRobot<unitree_control_msg> {
 
     public:
-        ObeliskUnitreeInterface(const std::string& node_name, const std::string& sub_fsm_key = "sub_fsm")
-            : ObeliskRobot<unitree_control_msg>(node_name), sub_fsm_key_(sub_fsm_key) {
+        ObeliskUnitreeInterface(const std::string& node_name)
+            : ObeliskRobot<unitree_control_msg>(node_name) {
 
             // Get network interface name as a parameter
             this->declare_parameter<std::string>("network_interface_name", "");
@@ -41,15 +41,15 @@ namespace obelisk {
             exec_fsm_state_ = ExecFSMState::INIT;
 
             // Additional Publishers
-            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", "joint_state_pub");
-            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", "imu_state_pub");
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", pub_imu_state_key_);
 
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
                 "sub_fsm_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::TransitionFSM, this, std::placeholders::_1));
             // Register High Level Control Subscriber
             this->RegisterObkSubscription<unitree_high_level_ctrl_msg>(
-                "sub_high_level_ctrl_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::ApplyHighLevelControl, this, std::placeholders::_1));
+                "sub_high_level_ctrl_setting", sub_high_level_ctrl_key_, std::bind(&ObeliskUnitreeInterface::ApplyHighLevelControl, this, std::placeholders::_1));
 
             // ---------- Default PD gains ---------- //
             this->declare_parameter<std::vector<double>>("default_kp");
@@ -111,15 +111,16 @@ namespace obelisk {
     protected:
         virtual void CreateUnitreeSubscribers() = 0;
         virtual void CreateUnitreePublishers() = 0;
-        virtual void ApplyHighLevelControl(const unitree_high_level_ctrl& msg) = 0;
+        virtual void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) = 0;
         virtual bool CheckDampingToHomeTransition() = 0;
         virtual void TransitionToHome() = 0;
         virtual void TransitionToDamping() = 0;
 
         void TransitionFSM(const unitree_fsm_msg& msg) {
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSITION COMMAND RECIEVED!");
             // Extract commanded FSM state from the message
-            ExecFSMState cmd_exec_fsm_state = *msg.cmd_exec_fsm_state;
-
+            ExecFSMState cmd_exec_fsm_state = static_cast<ExecFSMState>(msg.cmd_exec_fsm_state);
+            
             // Check if transition is legal
             if (ContainsTransition(TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
                 // Check if robot is in OK state to transition from Damping to Home
@@ -225,7 +226,6 @@ namespace obelisk {
         // TODO: Verify these are the same of the G1 and the Go2
         std::string CMD_TOPIC_;
         std::string STATE_TOPIC_;
-        std::string sub_fsm_key_;
 
         std::string network_interface_name_;
         std::shared_ptr<b2::MotionSwitcherClient> mode_switch_manager_;
@@ -236,6 +236,12 @@ namespace obelisk {
         // ---------- Gains ---------- //
         std::vector<double> kp_;
         std::vector<double> kd_;
+
+        // Keys
+        const std::string sub_fsm_key_ = "sub_exec_fsm_key";
+        const std::string sub_high_level_ctrl_key_ = "sub_high_level_ctrl_key";
+        const std::string pub_joint_state_key_ = "joint_state_pub";
+        const std::string pub_imu_state_key_ = "imu_state_pub";
     
     private:
     };
