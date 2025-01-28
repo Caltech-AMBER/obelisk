@@ -218,7 +218,6 @@ namespace obelisk {
 
         void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
             if (exec_fsm_state_ != ExecFSMState::HIGH_LEVEL_CTRL) {
-                RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring high level control commands!");
                 return;
             }
 
@@ -230,24 +229,18 @@ namespace obelisk {
             return false;
         }
 
-        void TransitionToUnitreeHome() override{
-            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
-            // // First, save current position
-            // {
-            //     std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-            //     std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
-            // }
-            // start_home_time_ = std::chrono::steady_clock::now();  // Save start time
+        void TransitionToUserPose() override{
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
+            // First, save current position
+            {
+                std::lock_guard<std::mutex> lock(joint_pos_mutex_);
+                std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_user_pose_);
+            }
+            user_pose_transition_start_time_ = std::chrono::steady_clock::now();  // Save start time
         }
 
-        void TransitionToUserPose() override{
-            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
-            // // First, save current position
-            // {
-            //     std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-            //     std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
-            // }
-            // start_home_time_ = std::chrono::steady_clock::now();  // Save start time
+        void TransitionToUnitreeHome() override{
+            loco_client_.BalanceStand();
         }
 
         // void OdomHandler(const void *message) {
@@ -304,16 +297,24 @@ namespace obelisk {
         static constexpr int G1_MOTOR_NUM = 29;
         static constexpr int G1_HAND_MOTOR_NUM = 14;
 
-        float start_user_pose_[G1_MOTOR_NUM];     // For transitioning to home position
         float user_pose_transition_duration_;                     // Duration of the transition to home position
 
         float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint positions
         float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
-        float user_pose_[G1_MOTOR_NUM];           // home position
+        float start_user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];     // For transitioning to home position
+        float user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];           // home position
         std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
         std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
-
-        // TODO: Fill in
+        std::vector<double> default_user_pose_ = {
+            0.3, 0, 0, 0.52, -0.23, 0,   // Left Leg
+            -0.3, 0, 0, 0.52, -0.23, 0,  // Right Leg
+            0, 0, 0.03,                  // Waist
+            0, 0, 0, 0.2, 0, 0, 0,       // Left arm
+            0, 0, 0, 0.2, 0, 0, 0,       // Right arm
+            0, 0, 0, 0, 0, 0, 0,         // Left hand
+            0, 0, 0, 0, 0, 0, 0          // Right hand
+        };   // Default home position
+            
         const std::array<std::string, G1_MOTOR_NUM + G1_HAND_MOTOR_NUM> G1_JOINT_NAMES = {
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
