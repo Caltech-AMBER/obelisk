@@ -46,17 +46,20 @@ namespace obelisk {
             constexpr int LEFT_STICK_Y = 1;
             constexpr int RIGHT_STICK_X = 3;
 
-            v_x_ = msg.axes[LEFT_STICK_Y];
-            v_y_ = msg.axes[LEFT_STICK_X];
-            w_z_ = msg.axes[RIGHT_STICK_X];
+            unitree_high_level_ctrl_msg high_level_msg;
+            high_level_msg.header.stamp = this->now();
+            high_level_msg.v_x = msg.axes[LEFT_STICK_Y] * v_x_max_;
+            high_level_msg.v_y = msg.axes[LEFT_STICK_X] * v_y_max_;
+            high_level_msg.w_z = msg.axes[RIGHT_STICK_X] * w_z_max_;
+
+            this->GetPublisher<unitree_high_level_ctrl_msg>(this->ctrl_key_)->publish(high_level_msg);
 
             // ----- Axes ----- //
-            // TODO: Check these
             constexpr int DPAD_VERTICAL = 7;
             constexpr int DPAD_HORIZONTAL = 6;
-
-            // Print control menu
             constexpr int MENU = 7;
+            
+            // Print control menu
             static rclcpp::Time last_menu_press = this->now();
             if ((this->now() - last_menu_press).seconds() > 1 && msg.buttons[MENU]) {
                 RCLCPP_INFO_STREAM(this->get_logger(),
@@ -74,7 +77,7 @@ namespace obelisk {
                 last_menu_press = this->now();
             }
 
-            // DPAD for FSM
+            // Trigger FSM
             static rclcpp::Time last_Dpad_press = this->now();
             if ((this->now() - last_Dpad_press).seconds() > 1) {
                 unitree_fsm_msg fsm_msg;
@@ -98,29 +101,27 @@ namespace obelisk {
         }
 
         unitree_high_level_ctrl_msg ComputeControl() override {
+            // This callback is not used. We send the high level control in the callback,
+            // for safety if the remote is disconnected
             unitree_high_level_ctrl_msg msg;
-            msg.v_x = v_x_ * v_x_max_;
-            msg.v_y = v_y_ * v_y_max_;
-            msg.w_z = w_z_ * w_z_max_;
-
-            this->GetPublisher<unitree_high_level_ctrl_msg>(this->ctrl_key_)->publish(msg);
-
             return msg;
         };
-    
+
+        // Publisher key
         const std::string pub_exec_fsm_key_ = "pub_exec_fsm_key";
-        float v_x_ = 0;
-        float v_y_ = 0; 
-        float w_z_ = 0;
+
+        // Hold velocity bounds
         float v_x_max_;
         float v_y_max_; 
         float w_z_max_;
 
+        // Hold button locations for execution fsm
         int damping_button_;
         int home_button_;
         int low_level_ctrl_button_;
         int high_level_ctrl_button_;
       private:
+        // Button names
         const std::array<std::string, 11> BUTTON_NAMES = {
             "A", "B", "X", "Y", "LB", "RB", "VIEW", "MENU", "LSTICK", "RSTICK", "SHARE"
         };

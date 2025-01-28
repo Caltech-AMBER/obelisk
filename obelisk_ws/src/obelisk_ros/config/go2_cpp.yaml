@@ -45,7 +45,7 @@ onboard:
           topic: /obelisk/go2/joy
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.01
+          timer_period_sec: 100  # Control callback is not being used
           callback_group: None
   estimation:
     - pkg: obelisk_unitree_cpp

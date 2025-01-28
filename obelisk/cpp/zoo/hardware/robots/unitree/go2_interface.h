@@ -19,35 +19,37 @@ namespace obelisk {
             this->declare_parameter<float>("home_transition_duration", 1.);
             home_duration_ = this->get_parameter("home_transition_duration").as_double();
 
+            // Expose high level velocity deadzone as a ros parameter
             this->declare_parameter<float>("velocity_deadzone", 0.01);
             vel_deadzone_ = this->get_parameter("velocity_deadzone").as_double();
 
             // Expose home position as a ros parameter
-            RCLCPP_INFO_STREAM(this->get_logger(), "HERE1");
             this->declare_parameter<std::vector<double>>("home_position", default_home_pos_);
             auto home_pos_vector = this->get_parameter("home_position").as_double_array(); // Get as vector
             std::copy(home_pos_vector.begin(), home_pos_vector.end(), home_pos_);
-            RCLCPP_INFO_STREAM(this->get_logger(), "HERE1");
 
+            // Handle joint names
             num_motors_ = GO2_MOTOR_NUM;
-
             for (size_t i = 0; i < num_motors_; i++) {
                 joint_names_.push_back(GO2_JOINT_NAMES[i]);
             } 
 
+            // Define topic names 
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
             // TODO: Look for ODOM topic
 
+            // Verify params and create unitree publishers
             VerifyParameters();
             CreateUnitreePublishers();
 
+            // Initialize sports client
             sport_client_.SetTimeout(10.0f);
             sport_client_.Init();
         }
     protected:
         void CreateUnitreePublishers() override {
-            // create publisher
+            // create low level command publisher
             lowcmd_publisher_.reset(new ChannelPublisher<LowCmd_>(CMD_TOPIC_));
             lowcmd_publisher_->InitChannel();
 
@@ -55,20 +57,19 @@ namespace obelisk {
         }
 
         void CreateUnitreeSubscribers() override {
-            // create subscriber
+            // Dreate unitree subscriber
             // Need to create after the publishers have been activated
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&Go2Interface::LowStateHandler, this, std::placeholders::_1), 1);
 
             // Odom state?
-
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
+            // Only execute of in Low Level Control or Home modes
             if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::HOME) {
                 return;
             }
-            // Apply control to the robot
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
 
             // Create packet
@@ -84,7 +85,6 @@ namespace obelisk {
                     RCLCPP_ERROR_STREAM(this->get_logger(), "feed forward size: " << msg.feed_forward.size());
                     throw std::runtime_error("[UnitreeRobotInterface] Control message sizes are not self consistent!");
                 }
-
                 if (msg.kp.size() != msg.kd.size()) {
                     throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not self consistent!");
                 }
@@ -114,6 +114,7 @@ namespace obelisk {
                     }
                 }
 
+                // Setup gains 
                 bool use_default_gains = true;
                 if (msg.joint_names.size() == msg.kp.size()) {
                     if (msg.kp.size() != num_motors_) {
@@ -122,6 +123,7 @@ namespace obelisk {
                     use_default_gains = false;
                 }
 
+                // Write message
                 for (size_t j = 0; j < num_motors_; j++) {     // Only go through the non-hand motors
                     int i = joint_mapping[j];
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
@@ -180,9 +182,6 @@ namespace obelisk {
                     joint_pos_[i] = low_state.motor_state()[i].q();
                     joint_vel_[i] = low_state.motor_state()[i].dq();
                 }
-                
-                // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
-                // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
@@ -209,11 +208,12 @@ namespace obelisk {
         }
 
         void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
+            // Ignore if not in high-level mode
             if (exec_fsm_state_ != ExecFSMState::HIGH_LEVEL_CTRL) {
-                RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring high level control commands!");
                 return;
             }
 
+            // Include logic to stand when velocity is within deadzone
             static bool standing = false;
             if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > vel_deadzone_) {
                 if (standing) {
@@ -230,8 +230,10 @@ namespace obelisk {
         }
 
         bool CheckDampingToHomeTransition() {
+            // Define prone joint angles
             const float prone[12] = {0., 1.26, -2.8, 0.0, 1.26, -2.8,
                                      -0.35, 1.3, -2.82, 0.35, 1.3, -2.82};
+            // Check for low velocities and joint angles near prone
             for (size_t i = 0; i < num_motors_; i++) {
                 if (abs(joint_vel_[i]) > 0.1 or abs(joint_pos_[i] - prone[i]) > 0.1) {
                     return false;
@@ -241,14 +243,13 @@ namespace obelisk {
         }
 
         void TransitionToHome() override{
-            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME STARTING!");
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
             // First, save current position
             {
                 std::lock_guard<std::mutex> lock(joint_pos_mutex_);
                 std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
             }
-            // Save start tiem
-            start_home_time_ = std::chrono::steady_clock::now();
+            start_home_time_ = std::chrono::steady_clock::now();  // Save start time
         }
 
         // void OdomHandler(const void *message) {
@@ -285,10 +286,20 @@ namespace obelisk {
         // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
 
     private:
-        // ---------- Robot Specific ---------- //
-        // Go2
-        static constexpr int GO2_MOTOR_NUM = 12;
-        const std::array<std::string, GO2_MOTOR_NUM> GO2_JOINT_NAMES = {
+        static constexpr int GO2_MOTOR_NUM = 12;  // Number of motors
+
+        float joint_pos_[GO2_MOTOR_NUM];          // Local copy of joint positions
+        float joint_vel_[GO2_MOTOR_NUM];          // Local copy of joint velocities
+        float start_home_pos_[GO2_MOTOR_NUM];     // For transitioning to home position
+        float home_duration_;                     // Duration of the transition to home position
+        float vel_deadzone_;                      // Deadzone for high level velocity commands
+        std::vector<double> default_home_pos_ = {0.0, 0.8, -1.4, 0.0, 0.8, -1.4,
+                                                 0.0, 0.8, -1.4, 0.0, 0.8, -1.4};   // Default home position
+        float home_pos_[GO2_MOTOR_NUM];           // home position
+        std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
+        go2::SportClient sport_client_;           // Sports client for high level control
+        std::chrono::steady_clock::time_point start_home_time_;             // Timing variable for transition to stand
+        const std::array<std::string, GO2_MOTOR_NUM> GO2_JOINT_NAMES = {    // Names of joints, in order for hardware
             "FR_hip_joint",
             "FR_thigh_joint",
             "FR_calf_joint",
@@ -302,18 +313,5 @@ namespace obelisk {
             "RL_thigh_joint",
             "RL_calf_joint"
         };
-
-        float joint_pos_[GO2_MOTOR_NUM];  // Local copy of joint positions
-        float joint_vel_[GO2_MOTOR_NUM];  // Local copy of joint velocities
-        float start_home_pos_[GO2_MOTOR_NUM];  // For transitioning to home position
-        std::chrono::steady_clock::time_point start_home_time_;
-        float home_duration_;
-        float vel_deadzone_;
-        std::vector<double> default_home_pos_ = {0.0, 0.8, -1.4, 0.0, 0.8, -1.4,
-                                                 0.0, 0.8, -1.4, 0.0, 0.8, -1.4};
-        float home_pos_[GO2_MOTOR_NUM];
-        std::mutex joint_pos_mutex_;      // mutex for copying joint positions and velocities
-        go2::SportClient sport_client_;
-        
     };
 }   // namespace obelisk
