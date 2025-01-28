@@ -84,6 +84,14 @@ namespace obelisk {
             DAMPING = 4
         };
 
+        const std::unordered_map<ExecFSMState, std::string> TRANSITION_STRINGS = {
+            {ExecFSMState::INIT, "INIT"},
+            {ExecFSMState::HOME, "HOME"},
+            {ExecFSMState::LOW_LEVEL_CTRL, "LOW_LEVEL_CONTROL"},
+            {ExecFSMState::HIGH_LEVEL_CTRL, "HIGH_LEVEL_CONTROL"},
+            {ExecFSMState::DAMPING, "DAMPING"}
+        };
+
         // Set of legal transitions for the execution FSM
         const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
             {ExecFSMState::INIT, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                           // Init -> Home, Init -> Damp
@@ -105,7 +113,7 @@ namespace obelisk {
         // Set of transitions on which motion control must be engaged
         const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> ENGAGE_MC_TRANSITIONS = {
             {ExecFSMState::HOME, {ExecFSMState::HIGH_LEVEL_CTRL}},                                                       // Home -> High
-            {ExecFSMState::DAMPING, {ExecFSMState::HOME}}
+            {ExecFSMState::DAMPING, {}}
         };
 
     protected:
@@ -114,10 +122,8 @@ namespace obelisk {
         virtual void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) = 0;
         virtual bool CheckDampingToHomeTransition() = 0;
         virtual void TransitionToHome() = 0;
-        virtual void TransitionToDamping() = 0;
 
         void TransitionFSM(const unitree_fsm_msg& msg) {
-            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSITION COMMAND RECIEVED!");
             // Extract commanded FSM state from the message
             ExecFSMState cmd_exec_fsm_state = static_cast<ExecFSMState>(msg.cmd_exec_fsm_state);
             
@@ -136,6 +142,7 @@ namespace obelisk {
                         RCLCPP_ERROR_STREAM(this->get_logger(), "RELEASING MOTION CONTROL FAILED!");
                         return;
                     }
+                    RCLCPP_INFO_STREAM(this->get_logger(), "RELEASED MOTION CONTROL!");
                 }
 
                 // Under some transitions, need to re-engage the motion control
@@ -145,13 +152,22 @@ namespace obelisk {
                         RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING MOTION CONTROL FAILED!");
                         return;
                     }
+                    RCLCPP_INFO_STREAM(this->get_logger(), "ENGAGED MOTION CONTROL!");
                 }
 
                 // Transition the FSM
                 exec_fsm_state_ = cmd_exec_fsm_state;
-                RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED!");
+                RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED TO " << TRANSITION_STRINGS.at(exec_fsm_state_));
+
+                if (exec_fsm_state_ == ExecFSMState::HOME) {
+                    TransitionToHome();
+                }
             } else {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID!");
+                if (exec_fsm_state_ == cmd_exec_fsm_state) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM AREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
+                } else {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID: " <<  TRANSITION_STRINGS.at(exec_fsm_state_) << " -> " <<  TRANSITION_STRINGS.at(cmd_exec_fsm_state));
+                }
             }
         }
 

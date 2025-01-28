@@ -262,24 +262,6 @@ namespace obelisk {
             // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME COMPLETE!");
         }
 
-        void TransitionToDamping() override {
-            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO DAMPING!");
-            // ---------- Create Packet ---------- //
-            LowCmd_ dds_low_command;
-
-            for (size_t j = 0; j < num_motors_; j++) {
-                dds_low_command.motor_cmd().at(j).mode() = 1;  // 1:Enable, 0:Disable
-                dds_low_command.motor_cmd().at(j).tau() = 0.;
-                dds_low_command.motor_cmd().at(j).q() = 0.;
-                dds_low_command.motor_cmd().at(j).dq() = 0.;
-                dds_low_command.motor_cmd().at(j).kp() = 0.;
-                dds_low_command.motor_cmd().at(j).kd() = kd_[j];
-            }
-
-            dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
-            lowcmd_publisher_->Write(dds_low_command);
-        }
-
         // void OdomHandler(const void *message) {
         //     RCLCPP_INFO_STREAM(this->get_logger(), "IN ODOM");
         //     IMUState_ imu_state = *(const IMUState_ *)message;
