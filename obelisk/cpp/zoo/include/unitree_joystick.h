@@ -13,7 +13,12 @@ namespace obelisk {
         UnitreeJoystick(const std::string& name)
             : ObeliskController<unitree_high_level_ctrl_msg, sensor_msgs::msg::Joy>(name) {
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick node startup.");            
+            this->declare_parameter<float>("v_x_max", 0.5);
+            this->declare_parameter<float>("v_y_max", 0.5);
+            this->declare_parameter<float>("w_z_max", 0.5);
+            v_x_max_ = this->get_parameter("v_x_max").as_double();
+            v_y_max_ = this->get_parameter("v_y_max").as_double();
+            w_z_max_ = this->get_parameter("w_z_max").as_double();
 
             // Register publishers
             this->RegisterObkPublisher<unitree_fsm_msg>("pub_exec_fsm_setting", pub_exec_fsm_key_);
@@ -37,8 +42,27 @@ namespace obelisk {
             constexpr int DPAD_VERTICAL = 7;
             constexpr int DPAD_HORIZONTAL = 6;
 
-            static rclcpp::Time last_Dpad_press = this->now();
+            // Print control menu
+            constexpr int MENU = 7;
+            static rclcpp::Time last_menu_press = this->now();
+            if ((this->now() - last_menu_press).seconds() > 1 && msg.buttons[MENU]) {
+                RCLCPP_INFO_STREAM(this->get_logger(),
+                    "UnitreeJoystick Button Layout:\n" <<
+                    "Execution Finite State Machine:\n" << 
+                    "\tHOME:            DPAD_LEFT\n" <<
+                    "\tDAMPING:         DPAD_RIGHT\n" <<
+                    "\tLOW_LEVEL_CTRL:  DPAD_DOWN\n" <<
+                    "\tHIGH_LEVEL_CTRL: DPAD_DOWN\n" <<
+                    "High Level Velocity Commands:\n" <<
+                    "\tFront/Back: Left Stick Vertical\n" <<
+                    "\tSide/Side:  Left Stick Horizontal\n" <<
+                    "\tYaw Rate:   Right Stick Horizontal"
+                );
+                last_menu_press = this->now();
+            }
 
+            // DPAD for FSM
+            static rclcpp::Time last_Dpad_press = this->now();
             if ((this->now() - last_Dpad_press).seconds() > 1) {
                 unitree_fsm_msg fsm_msg;
                 fsm_msg.header.stamp = this->now();
@@ -62,9 +86,9 @@ namespace obelisk {
 
         unitree_high_level_ctrl_msg ComputeControl() override {
             unitree_high_level_ctrl_msg msg;
-            msg.v_x = v_x_;
-            msg.v_y = v_y_;
-            msg.w_z = w_z_;
+            msg.v_x = v_x_ * v_x_max_;
+            msg.v_y = v_y_ * v_y_max_;
+            msg.w_z = w_z_ * w_z_max_;
 
             this->GetPublisher<unitree_high_level_ctrl_msg>(this->ctrl_key_)->publish(msg);
 
@@ -75,6 +99,9 @@ namespace obelisk {
         float v_x_ = 0;
         float v_y_ = 0; 
         float w_z_ = 0;
+        float v_x_max_;
+        float v_y_max_; 
+        float w_z_max_;
       private:
     };
 }

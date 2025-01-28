@@ -15,6 +15,20 @@ namespace obelisk {
     public:
         Go2Interface(const std::string& node_name)
             : ObeliskUnitreeInterface(node_name) {
+            // Expose duration of transition to home position as ros parameter
+            this->declare_parameter<float>("home_transition_duration", 1.);
+            home_duration_ = this->get_parameter("home_transition_duration").as_double();
+
+            this->declare_parameter<float>("velocity_deadzone", 0.01);
+            vel_deadzone_ = this->get_parameter("velocity_deadzone").as_double();
+
+            // Expose home position as a ros parameter
+            RCLCPP_INFO_STREAM(this->get_logger(), "HERE1");
+            this->declare_parameter<std::vector<double>>("home_position", default_home_pos_);
+            auto home_pos_vector = this->get_parameter("home_position").as_double_array(); // Get as vector
+            std::copy(home_pos_vector.begin(), home_pos_vector.end(), home_pos_);
+            RCLCPP_INFO_STREAM(this->get_logger(), "HERE1");
+
             num_motors_ = GO2_MOTOR_NUM;
 
             for (size_t i = 0; i < num_motors_; i++) {
@@ -200,15 +214,35 @@ namespace obelisk {
                 return;
             }
             // Apply move if velocity is non-zero, otherwise stop moving
-            if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > 0.1) {
-                sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);
+            static bool standing = false;
+            if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > vel_deadzone_) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "WALK!");
+                if (standing) {
+                    int32_t ret = 1;
+                    while (ret != 0) {
+                        ret = sport_client_.SwitchGait(1);
+                        RCLCPP_INFO_STREAM(this->get_logger(), "ATTEMPTING GAIT SWITCH!");
+                    };
+                    standing = false;
+                }
+                int32_t ret = sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
+                RCLCPP_INFO_STREAM(this->get_logger(), "WALK! " << ret);
             } else {
-                sport_client_.StandUp();
+                RCLCPP_INFO_STREAM(this->get_logger(), "STAND!");
+                if (!standing) {
+                    sport_client_.Move(0., 0., 0.);                 // Command zero velocity before transition
+                    int32_t ret = 1;
+                    while (ret != 0) {
+                        ret = sport_client_.SwitchGait(0);
+                        RCLCPP_INFO_STREAM(this->get_logger(), "ATTEMPTING GAIT SWITCH!");
+                    };
+                    standing = true;
+                }
+                sport_client_.StandUp();                            // Command standing
             }
         }
 
         bool CheckDampingToHomeTransition() {
-            // TODO: check if system can safely transition to home position
             const float prone[12] = {0., 1.26, -2.8, 0.0, 1.26, -2.8,
                                      -0.35, 1.3, -2.82, 0.35, 1.3, -2.82};
             for (size_t i = 0; i < num_motors_; i++) {
@@ -286,9 +320,11 @@ namespace obelisk {
         float joint_vel_[GO2_MOTOR_NUM];  // Local copy of joint velocities
         float start_home_pos_[GO2_MOTOR_NUM];  // For transitioning to home position
         std::chrono::steady_clock::time_point start_home_time_;
-        const float home_duration_ = 2;
-        const float home_pos_[12] = {0.0, 0.8, -1.5, 0.0, 0.8, -1.5,
-                                     0.0, 0.8, -1.5, 0.0, 0.8, -1.5};
+        float home_duration_;
+        float vel_deadzone_;
+        std::vector<double> default_home_pos_ = {0.0, 0.8, -1.4, 0.0, 0.8, -1.4,
+                                                 0.0, 0.8, -1.4, 0.0, 0.8, -1.4};
+        float home_pos_[GO2_MOTOR_NUM];
         std::mutex joint_pos_mutex_;      // mutex for copying joint positions and velocities
         go2::SportClient sport_client_;
         
