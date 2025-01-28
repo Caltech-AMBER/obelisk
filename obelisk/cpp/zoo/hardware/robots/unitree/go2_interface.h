@@ -217,13 +217,13 @@ namespace obelisk {
             static bool standing = false;
             if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > vel_deadzone_) {
                 if (standing) {
-                    sport_client_.SwitchGait(1);
+                    sport_client_.SwitchGait(1);                    // Set gait to trot
                     standing = false;
                 }
                 sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
             } else {
                 if (!standing) {
-                    sport_client_.SwitchGait(0);
+                    sport_client_.SwitchGait(0);                    // Set gait to stand
                     standing = true;
                 }
             }
