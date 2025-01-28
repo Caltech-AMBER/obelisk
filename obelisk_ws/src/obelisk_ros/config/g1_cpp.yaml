@@ -23,6 +23,29 @@ onboard:
         - ros_parameter: timer_ctrl_setting
           timer_period_sec: 0.001
           callback_group: None
+  # ----- High Level/Execution FSM Controller ----- #
+    - pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_joystick
+      # callback_groups:
+      publishers:
+      # ----- Execution FSM ----- #
+        - ros_parameter: pub_exec_fsm_setting
+          topic: /obelisk/go2/exec_fsm
+          history_depth: 10
+          callback_group: None
+      # ----- High Level Control ----- #
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/go2/high_level_ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/go2/joy
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 100  # Control callback is not being used
+          callback_group: None
   estimation:
     - pkg: obelisk_unitree_cpp
       executable: unitree_example_estimator

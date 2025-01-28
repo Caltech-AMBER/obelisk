@@ -16,17 +16,17 @@ namespace obelisk {
         Go2Interface(const std::string& node_name)
             : ObeliskUnitreeInterface(node_name) {
             // Expose duration of transition to home position as ros parameter
-            this->declare_parameter<float>("home_transition_duration", 1.);
-            home_duration_ = this->get_parameter("home_transition_duration").as_double();
+            this->declare_parameter<float>("user_pose_transition_duration", 1.);
+            user_pose_transition_duration_ = this->get_parameter("user_pose_transition_duration").as_double();
 
             // Expose high level velocity deadzone as a ros parameter
             this->declare_parameter<float>("velocity_deadzone", 0.01);
             vel_deadzone_ = this->get_parameter("velocity_deadzone").as_double();
 
             // Expose home position as a ros parameter
-            this->declare_parameter<std::vector<double>>("home_position", default_home_pos_);
-            auto home_pos_vector = this->get_parameter("home_position").as_double_array(); // Get as vector
-            std::copy(home_pos_vector.begin(), home_pos_vector.end(), home_pos_);
+            this->declare_parameter<std::vector<double>>("home_position", default_user_pose_);
+            auto user_pose_vector = this->get_parameter("home_position").as_double_array(); // Get as vector
+            std::copy(user_pose_vector.begin(), user_pose_vector.end(), user_pose_);
 
             // Handle joint names
             num_motors_ = GO2_MOTOR_NUM;
@@ -67,7 +67,7 @@ namespace obelisk {
 
         void ApplyControl(const unitree_control_msg& msg) override {
             // Only execute of in Low Level Control or Home modes
-            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::HOME) {
+            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
@@ -134,18 +134,18 @@ namespace obelisk {
                     dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
                 }
 
-            // ------------------------ Execution FSM: Home ------------------------ //
-            } else if (exec_fsm_state_ == ExecFSMState::HOME) {
+            // ------------------------ Execution FSM: user_pose ------------------------ //
+            } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
                 // Compute time that robot has been in HOME
                 float t = std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - start_home_time_).count();
+                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
                 // Compute proportion of time relative to transition duration
-                float proportion = std::min(t / home_duration_, 1.0f);
+                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
                 for (size_t i = 0; i < num_motors_; i++) {
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = 0.;
-                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_home_pos_[i] + proportion * home_pos_[i];
+                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
                     dds_low_command.motor_cmd().at(i).dq() = 0.;
                     dds_low_command.motor_cmd().at(i).kp() = kp_[i];
                     dds_low_command.motor_cmd().at(i).kd() = kd_[i];
@@ -229,7 +229,7 @@ namespace obelisk {
             }
         }
 
-        bool CheckDampingToHomeTransition() {
+        bool CheckDampingToUnitreeHomeTransition() {
             // Define prone joint angles
             const float prone[12] = {0., 1.26, -2.8, 0.0, 1.26, -2.8,
                                      -0.35, 1.3, -2.82, 0.35, 1.3, -2.82};
@@ -242,14 +242,18 @@ namespace obelisk {
             return true;
         }
 
-        void TransitionToHome() override{
-            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
+        void TransitionToUserPose() override{
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO user_pose!");
             // First, save current position
             {
                 std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-                std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
+                std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_user_pose_);
             }
-            start_home_time_ = std::chrono::steady_clock::now();  // Save start time
+            user_pose_transition_start_time_ = std::chrono::steady_clock::now();  // Save start time
+        }
+
+        void TransitionToUnitreeHome() override{
+            sport_client_.BalanceStand();
         }
 
         // void OdomHandler(const void *message) {
@@ -290,15 +294,15 @@ namespace obelisk {
 
         float joint_pos_[GO2_MOTOR_NUM];          // Local copy of joint positions
         float joint_vel_[GO2_MOTOR_NUM];          // Local copy of joint velocities
-        float start_home_pos_[GO2_MOTOR_NUM];     // For transitioning to home position
-        float home_duration_;                     // Duration of the transition to home position
+        float start_user_pose_[GO2_MOTOR_NUM];     // For transitioning to home position
+        float user_pose_transition_duration_;                     // Duration of the transition to home position
         float vel_deadzone_;                      // Deadzone for high level velocity commands
-        std::vector<double> default_home_pos_ = {0.0, 0.8, -1.4, 0.0, 0.8, -1.4,
-                                                 0.0, 0.8, -1.4, 0.0, 0.8, -1.4};   // Default home position
-        float home_pos_[GO2_MOTOR_NUM];           // home position
+        std::vector<double> default_user_pose_ = {0.0, 0.9, -1.8, 0.0, 0.9, -1.8,
+                                                  0.0, 0.9, -1.8, 0.0, 0.9, -1.8};   // Default home position
+        float user_pose_[GO2_MOTOR_NUM];           // home position
         std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
         go2::SportClient sport_client_;           // Sports client for high level control
-        std::chrono::steady_clock::time_point start_home_time_;             // Timing variable for transition to stand
+        std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
         const std::array<std::string, GO2_MOTOR_NUM> GO2_JOINT_NAMES = {    // Names of joints, in order for hardware
             "FR_hip_joint",
             "FR_thigh_joint",

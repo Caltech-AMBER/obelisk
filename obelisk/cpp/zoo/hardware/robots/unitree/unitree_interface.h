@@ -78,15 +78,17 @@ namespace obelisk {
 
         enum class ExecFSMState : uint8_t {
             INIT = 0,
-            HOME = 1,
-            LOW_LEVEL_CTRL = 2,
-            HIGH_LEVEL_CTRL = 3,
-            DAMPING = 4
+            UNITREE_HOME = 1,
+            USER_POSE = 2,
+            LOW_LEVEL_CTRL = 3,
+            HIGH_LEVEL_CTRL = 4,
+            DAMPING = 5
         };
 
         const std::unordered_map<ExecFSMState, std::string> TRANSITION_STRINGS = {
             {ExecFSMState::INIT, "INIT"},
-            {ExecFSMState::HOME, "HOME"},
+            {ExecFSMState::UNITREE_HOME, "UNITREE_HOME"},
+            {ExecFSMState::USER_POSE, "USER_POSE"},
             {ExecFSMState::LOW_LEVEL_CTRL, "LOW_LEVEL_CONTROL"},
             {ExecFSMState::HIGH_LEVEL_CTRL, "HIGH_LEVEL_CONTROL"},
             {ExecFSMState::DAMPING, "DAMPING"}
@@ -94,34 +96,31 @@ namespace obelisk {
 
         // Set of legal transitions for the execution FSM
         const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
-            {ExecFSMState::INIT, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                           // Init -> Home, Init -> Damp
-            {ExecFSMState::HOME, {ExecFSMState::LOW_LEVEL_CTRL, ExecFSMState::HIGH_LEVEL_CTRL, ExecFSMState::DAMPING}},  // Home -> Low,  Home -> High, Home -> Damp
-            {ExecFSMState::LOW_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                 // Low  -> Home, Low  -> Damp
-            {ExecFSMState::HIGH_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                // High -> Home, High -> Damp
-            {ExecFSMState::DAMPING, {ExecFSMState::HOME}}                                                                // Damp -> Home (check other conditions)
+            {ExecFSMState::INIT, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING}},                                                                    // Init -> Home, Init -> Damp
+            {ExecFSMState::UNITREE_HOME, {ExecFSMState::USER_POSE, ExecFSMState::LOW_LEVEL_CTRL, ExecFSMState::HIGH_LEVEL_CTRL, ExecFSMState::DAMPING}},  // Home -> Pose, Home -> Low,  Home -> High, Home -> Damp
+            {ExecFSMState::USER_POSE, {ExecFSMState::UNITREE_HOME, ExecFSMState::LOW_LEVEL_CTRL, ExecFSMState::DAMPING}},                                 // Pose -> Home, Pose -> Low,  Pose -> Damp
+            {ExecFSMState::LOW_LEVEL_CTRL, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_POSE, ExecFSMState::DAMPING}},                                 // Low  -> Home, Low  -> Pose, Low  -> Damp
+            {ExecFSMState::HIGH_LEVEL_CTRL, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING}},                                                         // High -> Home, High -> Damp
+            {ExecFSMState::DAMPING, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_POSE}}                                                                // Damp -> Home, Damp -> Pose
         };
 
         // Set of transitions on which motion control must be released
-        const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> RELEASE_MC_TRANSITIONS = {
-            {ExecFSMState::INIT, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                           // Init -> Home, Init -> Damp
-            {ExecFSMState::HOME, {}},
-            {ExecFSMState::LOW_LEVEL_CTRL, {}},
-            {ExecFSMState::HIGH_LEVEL_CTRL, {ExecFSMState::HOME, ExecFSMState::DAMPING}},                                // High -> Home, High -> Damp
-            {ExecFSMState::DAMPING, {}}
+        const std::vector<ExecFSMState> RELEASE_MC_STATES = {
+            ExecFSMState::USER_POSE, ExecFSMState::LOW_LEVEL_CTRL, ExecFSMState::DAMPING
         };
 
         // Set of transitions on which motion control must be engaged
-        const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> ENGAGE_MC_TRANSITIONS = {
-            {ExecFSMState::HOME, {ExecFSMState::HIGH_LEVEL_CTRL}},                                                       // Home -> High
-            {ExecFSMState::DAMPING, {}}
+        const std::vector<ExecFSMState> ENGAGE_MC_STATES = {
+            ExecFSMState::UNITREE_HOME, ExecFSMState::HIGH_LEVEL_CTRL
         };
 
     protected:
         virtual void CreateUnitreeSubscribers() = 0;
         virtual void CreateUnitreePublishers() = 0;
         virtual void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) = 0;
-        virtual bool CheckDampingToHomeTransition() = 0;
-        virtual void TransitionToHome() = 0;
+        virtual bool CheckDampingToUnitreeHomeTransition() = 0;
+        virtual void TransitionToUnitreeHome() = 0;
+        virtual void TransitionToUserPose() = 0;
 
         void TransitionFSM(const unitree_fsm_msg& msg) {
             // Extract commanded FSM state from the message
@@ -130,13 +129,13 @@ namespace obelisk {
             // Check if transition is legal
             if (ContainsTransition(TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
                 // Check if robot is in OK state to transition from Damping to Home
-                if (exec_fsm_state_ == ExecFSMState::DAMPING && cmd_exec_fsm_state == ExecFSMState::HOME && !CheckDampingToHomeTransition()) {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "ROBOT NOT IN VALID STATE TO TRANSITION EXECUTION FSM FROM DAMPING TO HOME!");
+                if (exec_fsm_state_ == ExecFSMState::DAMPING && cmd_exec_fsm_state == ExecFSMState::UNITREE_HOME && !CheckDampingToUnitreeHomeTransition()) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "ROBOT NOT IN VALID STATE TO TRANSITION EXECUTION FSM FROM DAMPING TO UNITREE_HOME!");
                     return;
                 }
 
                 // Under some transitions, need to release the motion control
-                if (ContainsTransition(RELEASE_MC_TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
+                if (std::find(RELEASE_MC_STATES.begin(), RELEASE_MC_STATES.end(), cmd_exec_fsm_state) != RELEASE_MC_STATES.end()) {
                     bool success = ReleaseMotionControl();
                     if (!success) {
                         RCLCPP_ERROR_STREAM(this->get_logger(), "RELEASING MOTION CONTROL FAILED!");
@@ -146,7 +145,7 @@ namespace obelisk {
                 }
 
                 // Under some transitions, need to re-engage the motion control
-                if (ContainsTransition(ENGAGE_MC_TRANSITIONS, exec_fsm_state_, cmd_exec_fsm_state)) {
+                if (std::find(ENGAGE_MC_STATES.begin(), ENGAGE_MC_STATES.end(), cmd_exec_fsm_state) != ENGAGE_MC_STATES.end()) {
                     bool success = EngageMotionControl();
                     if (!success) {
                         RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING MOTION CONTROL FAILED!");
@@ -154,13 +153,15 @@ namespace obelisk {
                     }
                     RCLCPP_INFO_STREAM(this->get_logger(), "ENGAGED MOTION CONTROL!");
                 }
-
+  
                 // Transition the FSM
                 exec_fsm_state_ = cmd_exec_fsm_state;
                 RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED TO " << TRANSITION_STRINGS.at(exec_fsm_state_));
-
-                if (exec_fsm_state_ == ExecFSMState::HOME) {
-                    TransitionToHome();
+                
+                if (exec_fsm_state_ == ExecFSMState::UNITREE_HOME) {
+                    TransitionToUnitreeHome();
+                } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
+                    TransitionToUserPose();
                 }
             } else {
                 if (exec_fsm_state_ == cmd_exec_fsm_state) {
@@ -224,15 +225,33 @@ namespace obelisk {
             return std::find(transitions[state].begin(), transitions[state].end(), next_state) != transitions[state].end();
         }
 
+        // bool ReleaseMotionControl() {
+        //     int32_t ret = mode_switch_manager_->ReleaseMode();
+        //     return ret == 0;
+        // }
+
         bool ReleaseMotionControl() {
-            int32_t ret = mode_switch_manager_->ReleaseMode();
-            return ret == 0;
+            std::string robot_form, motion_mode;
+            mode_switch_manager_->CheckMode(robot_form, motion_mode);
+            if (!motion_mode.empty()) {
+                return mode_switch_manager_->ReleaseMode() == 0;
+            }
+            return true;
         }
 
+        // bool EngageMotionControl() {
+        //     // TODO: What goes here??
+        //     int32_t ret = mode_switch_manager_->SelectMode("normal");  // Can be "normal", "ai", or "advanced" ?? From reading example code.
+        //     return ret == 0;
+        // }
+
         bool EngageMotionControl() {
-            // TODO: What goes here??
-            int32_t ret = mode_switch_manager_->SelectMode("normal");  // Can be "normal", "ai", or "advanced" ?? From reading example code.
-            return ret == 0;
+            std::string robot_form, motion_mode;
+            mode_switch_manager_->CheckMode(robot_form, motion_mode);
+            if (motion_mode.empty()) {
+                return mode_switch_manager_->SelectMode("normal") == 0;
+            }
+            return true;
         }
 
         // Execution FSM state variable

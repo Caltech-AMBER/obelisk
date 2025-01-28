@@ -69,75 +69,98 @@ namespace obelisk {
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
-            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL) {
-                RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring low level control commands!");
+            // Only execute of in Low Level Control or Home modes
+            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
-
-            // Apply control to the robot
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
-
-            // ---------- Verify message ---------- //
-            if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
-                RCLCPP_ERROR_STREAM(this->get_logger(), "position size: " << msg.pos_target.size());
-                RCLCPP_ERROR_STREAM(this->get_logger(), "velocity size: " << msg.vel_target.size());
-                RCLCPP_ERROR_STREAM(this->get_logger(), "feed forward size: " << msg.feed_forward.size());
-                throw std::runtime_error("[UnitreeRobotInterface] Control message sizes are not self consistent!");
-            }
-
-            if (msg.kp.size() != msg.kd.size()) {
-                throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not self consistent!");
-            }
-
-            // Check that every joint name is in the list and that they are all there
-            std::vector<bool> joint_used(num_motors_, false);
-            std::vector<int> joint_mapping(num_motors_, -1);    // Maps the j'th input joint to the i'th output joint
-            if (msg.joint_names.size() != joint_names_.size()) {
-                throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
-            }
-
-            for (size_t j = 0; j < num_motors_; j++) {
-                for (size_t i = 0; i < num_motors_; i++) {
-                    if (msg.joint_names[j] == joint_names_[i]) {
-                        if (joint_used[i]) {
-                            throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
-                        }
-
-                        joint_used[i] = true;
-                        joint_mapping[j] = i;
-                    }
-                }
-            }
-            for (size_t j = 0; j < num_motors_; j++) {
-                if (!joint_used[j]) {
-                    throw std::runtime_error("[UnitreeRobotInterface] Control message is missing robot joints!");
-                }
-            }
-
-            bool use_default_gains = true;
-            if (msg.joint_names.size() == msg.kp.size()) {
-                if (msg.kp.size() != num_motors_) {
-                    throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
-                }
-                use_default_gains = false;
-            }
 
             // ---------- Create Packet ---------- //
             LowCmd_ dds_low_command;
-            dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
-            dds_low_command.mode_machine() = mode_machine_;
 
-            for (size_t j = 0; j < G1_MOTOR_NUM; j++) {     // Only go through the non-hand motors
-                int i = joint_mapping[j];
-                dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
-                dds_low_command.motor_cmd().at(i).q() = msg.pos_target[j];
-                dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
-                dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
-                dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
+            // ------------------------ Execution FSM: Low Level Control ------------------------ //
+            if (exec_fsm_state_ == ExecFSMState::LOW_LEVEL_CTRL) {
+                // ---------- Verify message ---------- //
+                if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "position size: " << msg.pos_target.size());
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "velocity size: " << msg.vel_target.size());
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "feed forward size: " << msg.feed_forward.size());
+                    throw std::runtime_error("[UnitreeRobotInterface] Control message sizes are not self consistent!");
+                }
+
+                if (msg.kp.size() != msg.kd.size()) {
+                    throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not self consistent!");
+                }
+
+                // Check that every joint name is in the list and that they are all there
+                std::vector<bool> joint_used(num_motors_, false);
+                std::vector<int> joint_mapping(num_motors_, -1);    // Maps the j'th input joint to the i'th output joint
+                if (msg.joint_names.size() != joint_names_.size()) {
+                    throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
+                }
+
+                for (size_t j = 0; j < num_motors_; j++) {
+                    for (size_t i = 0; i < num_motors_; i++) {
+                        if (msg.joint_names[j] == joint_names_[i]) {
+                            if (joint_used[i]) {
+                                throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
+                            }
+
+                            joint_used[i] = true;
+                            joint_mapping[j] = i;
+                        }
+                    }
+                }
+                for (size_t j = 0; j < num_motors_; j++) {
+                    if (!joint_used[j]) {
+                        throw std::runtime_error("[UnitreeRobotInterface] Control message is missing robot joints!");
+                    }
+                }
+
+                // Setup gains
+                bool use_default_gains = true;
+                if (msg.joint_names.size() == msg.kp.size()) {
+                    if (msg.kp.size() != num_motors_) {
+                        throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
+                    }
+                    use_default_gains = false;
+                }
+
+                // Write message
+                dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
+                dds_low_command.mode_machine() = mode_machine_;
+
+                for (size_t j = 0; j < G1_MOTOR_NUM; j++) {     // Only go through the non-hand motors
+                    int i = joint_mapping[j];
+                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
+                    dds_low_command.motor_cmd().at(i).q() = msg.pos_target[j];
+                    dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
+                    dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
+                    dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
+                }
+            // ------------------------ Execution FSM: Home ------------------------ //
+            } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
+                // Compute time that robot has been in HOME
+                float t = std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
+                // Compute proportion of time relative to transition duration
+                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
+                // Write message
+                for (size_t i = 0; i < num_motors_; i++) {
+                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = 0.;
+                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
+                    dds_low_command.motor_cmd().at(i).dq() = 0.;
+                    dds_low_command.motor_cmd().at(i).kp() = kp_[i];
+                    dds_low_command.motor_cmd().at(i).kd() = kd_[i];
+                }
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Execution FSM state not recognized in ApplyControl!");
             }
 
+            // Write command to the robot
             dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
             lowcmd_publisher_->Write(dds_low_command);
             
@@ -199,67 +222,32 @@ namespace obelisk {
                 return;
             }
 
-            // TODO: how to set duration??
-            loco_client_.SetVelocity(msg.v_x, msg.v_y, msg.w_z, 1.0);
+            loco_client_.SetVelocity(msg.v_x, msg.v_y, msg.w_z);
         }
 
-        bool CheckDampingToHomeTransition() {
+        bool CheckDampingToUnitreeHomeTransition() {
             // TODO: check if system can safely transition to home position
             return false;
         }
 
-        void TransitionToHome() override{
-            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTIONING TO HOME!");
-            // First, save current position
-            // float _startPos[12];
+        void TransitionToUnitreeHome() override{
+            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
+            // // First, save current position
             // {
             //     std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-            //     std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_pos);
+            //     std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
             // }
-            
+            // start_home_time_ = std::chrono::steady_clock::now();  // Save start time
+        }
 
-            // // TODO: User defined home position
-            // float _homePos[12] = {0.0, 1.36, -2.65, 0.0, 1.36, -2.65,
-            //                          -0.2, 1.36, -2.65, 0.2, 1.36, -2.65};
-            
-            // // Then loop
-            // float t = 0;
-            // float duration = 2;
-            // float proportion = 0;
-            // const int loop_rate_hz = 100;
-            // const std::chrono::milliseconds loop_period(1000 / loop_rate_hz); // 100Hz -> 10ms
-
-            // auto start_time = std::chrono::steady_clock::now();
-            // while (t < duration) {
-            //     // Grab start of the loop time
-            //     auto loop_start = std::chrono::steady_clock::now();
-
-            //     // Check proprotion of completed movement
-            //     proportion = std::min(t / duration, 1.of);
-
-            //     // Send command to the motors
-            //     LowCmd_ dds_low_command;
-            //     for (size_t j = 0; j < num_motors_; j++) {
-            //         int i = joint_mapping[j];
-            //         dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-            //         dds_low_command.motor_cmd().at(i).tau() = 0.;
-            //         dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * _startPos[i] + proportion * _homePos[i];
-            //         dds_low_command.motor_cmd().at(i).dq() = 0.;
-            //         dds_low_command.motor_cmd().at(i).kp() = kp_[i];
-            //         dds_low_command.motor_cmd().at(i).kd() = kd_[i];
-            //     }
-
-            //     dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
-            //     lowcmd_publisher_->Write(dds_low_command);
-
-            //     // Handle timing
-            //     auto now = std::chrono::steady_clock::now();
-            //     t = std::chrono::duration<float>(now - start_time).count();
-
-            //     // Sleep to maintain 100Hz loop rate
-            //     std::this_thread::sleep_until(loop_start + loop_period);
+        void TransitionToUserPose() override{
+            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
+            // // First, save current position
+            // {
+            //     std::lock_guard<std::mutex> lock(joint_pos_mutex_);
+            //     std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_home_pos_);
             // }
-            // RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME COMPLETE!");
+            // start_home_time_ = std::chrono::steady_clock::now();  // Save start time
         }
 
         // void OdomHandler(const void *message) {
@@ -316,9 +304,14 @@ namespace obelisk {
         static constexpr int G1_MOTOR_NUM = 29;
         static constexpr int G1_HAND_MOTOR_NUM = 14;
 
+        float start_user_pose_[G1_MOTOR_NUM];     // For transitioning to home position
+        float user_pose_transition_duration_;                     // Duration of the transition to home position
+
         float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint positions
         float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
-        std::mutex joint_pos_mutex_;      // mutex for copying joint positions and velocities
+        float user_pose_[G1_MOTOR_NUM];           // home position
+        std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
+        std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
 
         // TODO: Fill in
         const std::array<std::string, G1_MOTOR_NUM + G1_HAND_MOTOR_NUM> G1_JOINT_NAMES = {

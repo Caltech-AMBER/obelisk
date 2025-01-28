@@ -22,15 +22,19 @@ namespace obelisk {
 
             // Handle Execution FSM buttons
             // Buttons with negative values will corrospond to the DPAD
-            this->declare_parameter<int>("home_button", -1);
+            this->declare_parameter<int>("unitree_home_button", -1);
+            this->declare_parameter<int>("user_pose_button", 6);
             this->declare_parameter<int>("low_level_ctrl_button", -1);
             this->declare_parameter<int>("high_level_ctrl_button", -1);
             this->declare_parameter<int>("damping_button", -1);
-            home_button_ = this->get_parameter("home_button").as_int();
+            unitree_home_button_ = this->get_parameter("unitree_home_button").as_int();
+            user_pose_button_ = this->get_parameter("user_pose_button").as_int();
             low_level_ctrl_button_ = this->get_parameter("low_level_ctrl_button").as_int();
             high_level_ctrl_button_ = this->get_parameter("high_level_ctrl_button").as_int();
             damping_button_ = this->get_parameter("damping_button").as_int();
-            if (home_button_ > 10 || low_level_ctrl_button_ > 10 || high_level_ctrl_button_ > 10 || damping_button_ > 10) {
+            if (unitree_home_button_ > 10 || low_level_ctrl_button_ > 10 || 
+                high_level_ctrl_button_ > 10 || damping_button_ > 10 || 
+                user_pose_button_ > 10 || user_pose_button_ < 0) {
                 throw std::runtime_error("[UnitreeJoystick] Execution FSM buttons exceed number of buttons (0-10)!");
             }
 
@@ -65,7 +69,7 @@ namespace obelisk {
                 RCLCPP_INFO_STREAM(this->get_logger(),
                     "UnitreeJoystick Button Layout (XBox Controller):\n" <<
                     "Execution Finite State Machine:\n" << 
-                    "\tHOME:            " << ((home_button_ < 0) ? "DPAD_LEFT" : BUTTON_NAMES[home_button_]) << "\n" << 
+                    "\tHOME:            " << ((unitree_home_button_ < 0) ? "DPAD_LEFT" : BUTTON_NAMES[unitree_home_button_]) << "\n" << 
                     "\tDAMPING:         " << ((damping_button_ < 0) ? "DPAD_RIGHT" : BUTTON_NAMES[damping_button_]) << "\n" <<
                     "\tLOW_LEVEL_CTRL:  " << ((low_level_ctrl_button_ < 0) ? "DPAD_DOWN" : BUTTON_NAMES[low_level_ctrl_button_]) << "\n" <<
                     "\tHIGH_LEVEL_CTRL: " << ((high_level_ctrl_button_ < 0) ? "DPAD_UP" : BUTTON_NAMES[high_level_ctrl_button_]) << "\n" <<
@@ -84,14 +88,16 @@ namespace obelisk {
                 fsm_msg.header.stamp = this->now();
 
                 if ((msg.axes[DPAD_HORIZONTAL] < -0.5 && damping_button_ < 0) || (damping_button_ >= 0 && msg.buttons[damping_button_])) {
-                    fsm_msg.cmd_exec_fsm_state = 4;         // Damping
-                } else if ((msg.axes[DPAD_HORIZONTAL] > 0.5 && home_button_ < 0) || (home_button_ >= 0 && msg.buttons[home_button_])) {
+                    fsm_msg.cmd_exec_fsm_state = 5;         // Damping
+                } else if ((msg.axes[DPAD_HORIZONTAL] > 0.5 && unitree_home_button_ < 0) || (unitree_home_button_ >= 0 && msg.buttons[unitree_home_button_])) {
                     fsm_msg.cmd_exec_fsm_state = 1;         // Home
                 } else if ((msg.axes[DPAD_VERTICAL] > 0.5 && high_level_ctrl_button_ < 0) || (high_level_ctrl_button_ >= 0 && msg.buttons[high_level_ctrl_button_])) {
-                    fsm_msg.cmd_exec_fsm_state = 3;         // High Level Contrl
+                    fsm_msg.cmd_exec_fsm_state = 4;         // High Level Contrl
                 } else if ((msg.axes[DPAD_VERTICAL] < -0.5 && low_level_ctrl_button_ < 0) || (low_level_ctrl_button_ >= 0 && msg.buttons[low_level_ctrl_button_])) {
-                    fsm_msg.cmd_exec_fsm_state = 2;         // Low Level Control
-                } else {
+                    fsm_msg.cmd_exec_fsm_state = 3;         // Low Level Control
+                } else if (msg.buttons[user_pose_button_]) {
+                    fsm_msg.cmd_exec_fsm_state = 2;         // User Pose
+                }else {
                     return;
                 }
                 last_Dpad_press = this->now();
@@ -117,7 +123,8 @@ namespace obelisk {
 
         // Hold button locations for execution fsm
         int damping_button_;
-        int home_button_;
+        int unitree_home_button_;
+        int user_pose_button_;
         int low_level_ctrl_button_;
         int high_level_ctrl_button_;
       private:
