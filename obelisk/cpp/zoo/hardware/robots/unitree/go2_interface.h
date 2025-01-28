@@ -213,32 +213,19 @@ namespace obelisk {
                 RCLCPP_DEBUG_STREAM(this->get_logger(), "Ignoring high level control commands!");
                 return;
             }
-            // Apply move if velocity is non-zero, otherwise stop moving
+
             static bool standing = false;
             if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > vel_deadzone_) {
-                RCLCPP_INFO_STREAM(this->get_logger(), "WALK!");
                 if (standing) {
-                    int32_t ret = 1;
-                    while (ret != 0) {
-                        ret = sport_client_.SwitchGait(1);
-                        RCLCPP_INFO_STREAM(this->get_logger(), "ATTEMPTING GAIT SWITCH!");
-                    };
+                    sport_client_.SwitchGait(1);
                     standing = false;
                 }
-                int32_t ret = sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
-                RCLCPP_INFO_STREAM(this->get_logger(), "WALK! " << ret);
+                sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
             } else {
-                RCLCPP_INFO_STREAM(this->get_logger(), "STAND!");
                 if (!standing) {
-                    sport_client_.Move(0., 0., 0.);                 // Command zero velocity before transition
-                    int32_t ret = 1;
-                    while (ret != 0) {
-                        ret = sport_client_.SwitchGait(0);
-                        RCLCPP_INFO_STREAM(this->get_logger(), "ATTEMPTING GAIT SWITCH!");
-                    };
+                    sport_client_.SwitchGait(0);
                     standing = true;
                 }
-                sport_client_.StandUp();                            // Command standing
             }
         }
 
