@@ -194,6 +194,11 @@ namespace obelisk {
                     RCLCPP_INFO_STREAM(this->get_logger(),
                                        "Setting initial condition to keyframe: " << potential_keyframe);
                     mj_resetDataKeyframe(model_, data_, i);
+                    std::vector<double> shared_data_tmp;
+                    for (int i = 0; i < model_->nu; i++) {
+                        shared_data_tmp.push_back(data_->ctrl[i]);
+                    }
+                    SetSharedData(shared_data_tmp);
                 }
             }
 
