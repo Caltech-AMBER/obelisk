@@ -35,6 +35,10 @@ target_link_libraries(obelisk_unitree_go2_hardware PUBLIC Obelisk::Core UnitreeI
 add_executable(unitree_example_controller src/g1_example_controller.cpp)
 target_link_libraries(unitree_example_controller PUBLIC Obelisk::Core Obelisk::Zoo)
 
+# unitree_go2_estimator
+add_executable(unitree_go2_estimator src/unitree_go2_estimator.cpp)
+target_link_libraries(unitree_go2_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+
 # unitree_example_estimator
 add_executable(unitree_example_estimator src/g1_example_estimator.cpp)
 target_link_libraries(unitree_example_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
@@ -68,6 +72,10 @@ install(TARGETS
 
 install(TARGETS
     unitree_example_estimator
+    DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+    unitree_go2_estimator
     DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS

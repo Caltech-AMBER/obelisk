@@ -21,9 +21,5 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
-    <body>
-      <geom name="tile1" pos="0.25 0 -0.095" type="box" contype="4" conaffinity="1" size="10 10 0.095" friction="0.5" material="box_material" rgba="0.87 0.72 0.53 0.0"/>
-    </body>
-
   </worldbody>
 </mujoco>
