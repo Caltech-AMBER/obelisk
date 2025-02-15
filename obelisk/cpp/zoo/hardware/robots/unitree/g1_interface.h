@@ -18,22 +18,40 @@ namespace obelisk {
     class G1Interface : public ObeliskUnitreeInterface {
     public:
         G1Interface(const std::string& node_name)
-            : ObeliskUnitreeInterface(node_name), use_hands_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
+            : ObeliskUnitreeInterface(node_name), use_hands_(false), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
 
-            this->declare_parameter<bool>("use_hands", true);
+            this->declare_parameter<bool>("use_hands", false);
             use_hands_ = this->get_parameter("use_hands").as_bool();
 
-            // Set G1 specific values
-            if (use_hands_) {
-                num_motors_ = G1_MOTOR_NUM + G1_HAND_MOTOR_NUM;
-            } else {
-                num_motors_ = G1_MOTOR_NUM;
-            }
+            this->declare_parameter<bool>("fixed_waist", true);
+            fixed_waist_ = this->get_parameter("fixed_waist").as_bool();
 
-            for (int i = 0; i < G1_MOTOR_NUM; i++) {
-                joint_names_.push_back(G1_JOINT_NAMES[i]);
+            // Set G1 specific values
+            num_motors_ = G1_27DOF;
+            if (use_hands_) {
+                num_motors_ += G1_HAND_MOTOR_NUM;
             } 
 
+            if (!fixed_waist_) {
+                num_motors_ += G1_EXTRA_WAIST;
+            }
+
+            for (int i = 0; i < G1_27DOF; i++) {
+                joint_names_.push_back(G1_27DOF_JOINT_NAMES[i]);
+            }
+            if (!fixed_waist_) {
+                for (int i = 0; i < G1_EXTRA_WAIST; i++) {
+                    joint_names_.push_back(G1_EXTRA_WAIST_JOINT_NAMES[i]);
+                }
+            }
+
+            // Setup local variables
+            // TODO: For now we are not supporting the hands here
+            joint_pos_.resize(G1_27DOF + G1_EXTRA_WAIST);
+            joint_vel_.resize(G1_27DOF + G1_EXTRA_WAIST);
+            start_user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
+            user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
+            
             CMD_TOPIC_ = "rt/lowcmd";
             IMU_TORSO_ = "rt/secondary_imu";
             STATE_TOPIC_ = "rt/lowstate";
@@ -42,6 +60,8 @@ namespace obelisk {
             // TODO: Consider exposing AB mode
 
             // TODO: Deal with hands
+
+            RCLCPP_INFO_STREAM(this->get_logger(), "G1 configured as: \n" << "\tHands: " << use_hands_ << "\n\tFixed waist: " << fixed_waist_);
 
             VerifyParameters();
             CreateUnitreePublishers();
@@ -77,6 +97,8 @@ namespace obelisk {
 
             // ---------- Create Packet ---------- //
             LowCmd_ dds_low_command;
+            dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
+            dds_low_command.mode_machine() = mode_machine_;
 
             // ------------------------ Execution FSM: Low Level Control ------------------------ //
             if (exec_fsm_state_ == ExecFSMState::LOW_LEVEL_CTRL) {
@@ -95,7 +117,6 @@ namespace obelisk {
 
                 // Check that every joint name is in the list and that they are all there
                 std::vector<bool> joint_used(num_motors_, false);
-                std::vector<int> joint_mapping(num_motors_, -1);    // Maps the j'th input joint to the i'th output joint
                 if (msg.joint_names.size() != joint_names_.size()) {
                     throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
                 }
@@ -108,7 +129,6 @@ namespace obelisk {
                             }
 
                             joint_used[i] = true;
-                            joint_mapping[j] = i;
                         }
                     }
                 }
@@ -127,18 +147,25 @@ namespace obelisk {
                     use_default_gains = false;
                 }
 
-                // Write message
-                dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
-                dds_low_command.mode_machine() = mode_machine_;
-
-                for (size_t j = 0; j < G1_MOTOR_NUM; j++) {     // Only go through the non-hand motors
-                    int i = joint_mapping[j];
+                for (size_t j = 0; j < G1_27DOF; j++) {     // Only go through the non-hand motors
+                    int i = G1_JOINT_MAPPINGS.at(msg.joint_names[j]);
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
                     dds_low_command.motor_cmd().at(i).q() = msg.pos_target[j];
                     dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
                     dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
                     dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
+                }
+                if (fixed_waist_) {
+                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
+                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
+                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(i).tau() = 0;
+                        dds_low_command.motor_cmd().at(i).q() = 0;
+                        dds_low_command.motor_cmd().at(i).dq() = 0;
+                        dds_low_command.motor_cmd().at(i).kp() = 0;
+                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    }
                 }
             // ------------------------ Execution FSM: Home ------------------------ //
             } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
@@ -148,7 +175,7 @@ namespace obelisk {
                 // Compute proportion of time relative to transition duration
                 float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
-                for (size_t i = 0; i < num_motors_; i++) {
+                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; i++) {    // Sending the extra waist commands while in fixed waist should have no effect
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = 0.;
                     dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
@@ -234,7 +261,7 @@ namespace obelisk {
             // First, save current position
             {
                 std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-                std::copy(std::begin(joint_pos_), std::end(joint_pos_), start_user_pose_);
+                joint_pos_ = start_user_pose_;
             }
             user_pose_transition_start_time_ = std::chrono::steady_clock::now();  // Save start time
         }
@@ -271,6 +298,7 @@ namespace obelisk {
         // }
 
         bool use_hands_;
+        bool fixed_waist_;
 
         std::string IMU_TORSO_;
         std::string ODOM_TOPIC_;
@@ -294,15 +322,21 @@ namespace obelisk {
     private:
         // ---------- Robot Specific ---------- //
         // G1
-        static constexpr int G1_MOTOR_NUM = 29;
+        static constexpr int G1_27DOF = 27;
+        static constexpr int G1_EXTRA_WAIST = 2;
         static constexpr int G1_HAND_MOTOR_NUM = 14;
 
         float user_pose_transition_duration_;                     // Duration of the transition to home position
 
-        float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint positions
-        float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
-        float start_user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];     // For transitioning to home position
-        float user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];           // home position
+        std::vector<double> joint_pos_; // Local copy of joint positions
+        std::vector<double> joint_vel_; // Local copy of joint positions
+        std::vector<double> start_user_pose_; // For transitioning to home position
+        std::vector<double> user_pose_; // home position
+        // float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  
+        // float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
+        // float start_user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];     // For transitioning to home position
+        // float user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];           // home position
+
         std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
         std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
         std::vector<double> default_user_pose_ = {
@@ -315,7 +349,53 @@ namespace obelisk {
             0, 0, 0, 0, 0, 0, 0          // Right hand
         };   // Default home position
             
-        const std::array<std::string, G1_MOTOR_NUM + G1_HAND_MOTOR_NUM> G1_JOINT_NAMES = {
+        // const std::array<std::string, G1_27DOF + G1_EXTRA_WAIST + G1_HAND_MOTOR_NUM> G1_FULL_JOINT_NAMES = {
+        //     "left_hip_pitch_joint",
+        //     "left_hip_roll_joint",
+        //     "left_hip_yaw_joint",
+        //     "left_knee_joint",
+        //     "left_ankle_pitch_joint",
+        //     "left_ankle_roll_joint",
+        //     "right_hip_pitch_joint",
+        //     "right_hip_roll_joint",
+        //     "right_hip_yaw_joint",
+        //     "right_knee_joint",
+        //     "right_ankle_pitch_joint",
+        //     "right_ankle_roll_joint",
+        //     "waist_yaw_joint",
+        //     "waist_roll_joint",
+        //     "waist_pitch_joint",
+        //     "left_shoulder_pitch_joint",
+        //     "left_shoulder_roll_joint",
+        //     "left_shoulder_yaw_joint",
+        //     "left_elbow_joint",
+        //     "left_wrist_roll_joint",
+        //     "left_wrist_pitch_joint",
+        //     "left_wrist_yaw_joint",
+        //     "right_shoulder_pitch_joint",
+        //     "right_shoulder_roll_joint",
+        //     "right_shoulder_yaw_joint",
+        //     "right_elbow_joint",
+        //     "right_wrist_roll_joint",
+        //     "right_wrist_pitch_joint",
+        //     "right_wrist_yaw_joint",
+        //     "left_hand_thumb_0_joint",      // ----- Hand Start ----- //
+        //     "left_hand_thumb_1_joint",
+        //     "left_hand_thumb_2_joint",
+        //     "left_hand_middle_0_joint",
+        //     "left_hand_middle_1_joint",
+        //     "left_hand_index_0_joint",
+        //     "left_hand_index_1_joint",
+        //     "right_hand_thumb_0_joint",      
+        //     "right_hand_thumb_1_joint",
+        //     "right_hand_thumb_2_joint",
+        //     "right_hand_middle_0_joint",
+        //     "right_hand_middle_1_joint",
+        //     "right_hand_index_0_joint",
+        //     "right_hand_index_1_joint"
+        // };
+
+        const std::array<std::string, G1_27DOF> G1_27DOF_JOINT_NAMES = {
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
             "left_hip_yaw_joint",
@@ -329,8 +409,6 @@ namespace obelisk {
             "right_ankle_pitch_joint",
             "right_ankle_roll_joint",
             "waist_yaw_joint",
-            "waist_roll_joint",
-            "waist_pitch_joint",
             "left_shoulder_pitch_joint",
             "left_shoulder_roll_joint",
             "left_shoulder_yaw_joint",
@@ -345,7 +423,15 @@ namespace obelisk {
             "right_wrist_roll_joint",
             "right_wrist_pitch_joint",
             "right_wrist_yaw_joint",
-            "left_hand_thumb_0_joint",      // ----- Hand Start ----- //
+        };
+
+        const std::array<std::string, G1_EXTRA_WAIST> G1_EXTRA_WAIST_JOINT_NAMES = {
+            "waist_roll_joint",
+            "waist_pitch_joint"
+        };
+
+        const std::array<std::string, G1_HAND_MOTOR_NUM> G1_HAND_JOINT_NAMES = {
+            "left_hand_thumb_0_joint",
             "left_hand_thumb_1_joint",
             "left_hand_thumb_2_joint",
             "left_hand_middle_0_joint",
@@ -398,5 +484,37 @@ namespace obelisk {
         //     RightWristPitch = 27,  // NOTE INVALID for g1 23dof
         //     RightWristYaw = 28     // NOTE INVALID for g1 23dof
         // };
+
+        const std::map<std::string, int> G1_JOINT_MAPPINGS = {
+            {"left_hip_pitch_joint", 0},
+            {"left_hip_roll_joint", 1},
+            {"left_hip_yaw_joint", 2},
+            {"left_knee_joint", 3},
+            {"left_ankle_pitch_joint", 4},
+            {"left_ankle_roll_joint", 5},
+            {"right_hip_pitch_joint", 6},
+            {"right_hip_roll_joint", 7},
+            {"right_hip_yaw_joint", 8},
+            {"right_knee_joint", 9},
+            {"right_ankle_pitch_joint", 10},
+            {"right_ankle_roll_joint", 11},
+            {"waist_yaw_joint", 12},
+            {"waist_roll_joint", 13},
+            {"waist_pitch_joint", 14},
+            {"left_shoulder_pitch_joint", 15},
+            {"left_shoulder_roll_joint", 16},
+            {"left_shoulder_yaw_joint", 17},
+            {"left_elbow_joint", 18},
+            {"left_wrist_roll_joint", 19},
+            {"left_wrist_pitch_joint", 20},
+            {"left_wrist_yaw_joint", 21},
+            {"right_shoulder_pitch_joint", 22},
+            {"right_shoulder_roll_joint", 23},
+            {"right_shoulder_yaw_joint", 24},
+            {"right_elbow_joint", 25},
+            {"right_wrist_roll_joint", 26},
+            {"right_wrist_pitch_joint", 27},
+            {"right_wrist_yaw_joint", 28}
+        };
     };
 }   // namespace obelisk

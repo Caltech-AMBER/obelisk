@@ -133,7 +133,7 @@ namespace obelisk {
         int motor_num_;
         std::vector<std::string> joint_names_;
 
-        static constexpr int G1_MOTOR_NUM = 29;
+        static constexpr int G1_MOTOR_NUM = 27;
         const std::vector<std::string> G1_JOINT_NAMES = {
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
@@ -148,8 +148,8 @@ namespace obelisk {
             "right_ankle_pitch_joint",
             "right_ankle_roll_joint",
             "waist_yaw_joint",
-            "waist_roll_joint",
-            "waist_pitch_joint",
+            // "waist_roll_joint",
+            // "waist_pitch_joint",
             "left_shoulder_pitch_joint",
             "left_shoulder_roll_joint",
             "left_shoulder_yaw_joint",
