@@ -257,7 +257,6 @@ namespace obelisk {
         }
 
         void TransitionToUserPose() override{
-            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO HOME!");
             // First, save current position
             {
                 std::lock_guard<std::mutex> lock(joint_pos_mutex_);
