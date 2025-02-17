@@ -53,9 +53,10 @@ namespace obelisk {
             user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
             
             CMD_TOPIC_ = "rt/lowcmd";
-            IMU_TORSO_ = "rt/secondary_imu";
             STATE_TOPIC_ = "rt/lowstate";
             ODOM_TOPIC_ = "rt/odommodestate";
+
+            // TODO: Add support for rt/lowstate_doubleimu
 
             // TODO: Consider exposing AB mode
 
@@ -88,6 +89,7 @@ namespace obelisk {
             // odom_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::OdomHandler, this, std::placeholders::_1), 10);
         }
 
+        // TODO: Adjust this function so that we can go to a user pose even when no low level control functions are being sent
         void ApplyControl(const unitree_control_msg& msg) override {
             // Only execute of in Low Level Control or Home modes
             if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
@@ -299,7 +301,6 @@ namespace obelisk {
         bool use_hands_;
         bool fixed_waist_;
 
-        std::string IMU_TORSO_;
         std::string ODOM_TOPIC_;
 
         unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
