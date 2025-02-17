@@ -198,6 +198,7 @@ namespace obelisk {
 
         void LowStateHandler(const void *message) {
             LowState_ low_state = *(const LowState_ *)message;
+            // TODO: Right now we always report the full state (minus the hands for now) regardless of the joint mode
             if (low_state.crc() != Crc32Core((uint32_t *)&low_state, (sizeof(LowState_) >> 2) - 1)) {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
                 return;
@@ -206,12 +207,12 @@ namespace obelisk {
             // Joints
             obelisk_sensor_msgs::msg::ObkJointEncoders joint_state;
             joint_state.header.stamp = this->now();
-            joint_state.joint_pos.resize(num_motors_);
-            joint_state.joint_vel.resize(num_motors_);
-            joint_state.joint_names.resize(num_motors_);
+            joint_state.joint_pos.resize(G1_27DOF + G1_EXTRA_WAIST);
+            joint_state.joint_vel.resize(G1_27DOF + G1_EXTRA_WAIST);
+            joint_state.joint_names.resize(G1_27DOF + G1_EXTRA_WAIST);
 
-            for (size_t i = 0; i < num_motors_; ++i) {
-                joint_state.joint_names.at(i) = joint_names_[i];
+            for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
+                joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
                 joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
                 // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
@@ -349,51 +350,51 @@ namespace obelisk {
             0, 0, 0, 0, 0, 0, 0          // Right hand
         };   // Default home position
             
-        // const std::array<std::string, G1_27DOF + G1_EXTRA_WAIST + G1_HAND_MOTOR_NUM> G1_FULL_JOINT_NAMES = {
-        //     "left_hip_pitch_joint",
-        //     "left_hip_roll_joint",
-        //     "left_hip_yaw_joint",
-        //     "left_knee_joint",
-        //     "left_ankle_pitch_joint",
-        //     "left_ankle_roll_joint",
-        //     "right_hip_pitch_joint",
-        //     "right_hip_roll_joint",
-        //     "right_hip_yaw_joint",
-        //     "right_knee_joint",
-        //     "right_ankle_pitch_joint",
-        //     "right_ankle_roll_joint",
-        //     "waist_yaw_joint",
-        //     "waist_roll_joint",
-        //     "waist_pitch_joint",
-        //     "left_shoulder_pitch_joint",
-        //     "left_shoulder_roll_joint",
-        //     "left_shoulder_yaw_joint",
-        //     "left_elbow_joint",
-        //     "left_wrist_roll_joint",
-        //     "left_wrist_pitch_joint",
-        //     "left_wrist_yaw_joint",
-        //     "right_shoulder_pitch_joint",
-        //     "right_shoulder_roll_joint",
-        //     "right_shoulder_yaw_joint",
-        //     "right_elbow_joint",
-        //     "right_wrist_roll_joint",
-        //     "right_wrist_pitch_joint",
-        //     "right_wrist_yaw_joint",
-        //     "left_hand_thumb_0_joint",      // ----- Hand Start ----- //
-        //     "left_hand_thumb_1_joint",
-        //     "left_hand_thumb_2_joint",
-        //     "left_hand_middle_0_joint",
-        //     "left_hand_middle_1_joint",
-        //     "left_hand_index_0_joint",
-        //     "left_hand_index_1_joint",
-        //     "right_hand_thumb_0_joint",      
-        //     "right_hand_thumb_1_joint",
-        //     "right_hand_thumb_2_joint",
-        //     "right_hand_middle_0_joint",
-        //     "right_hand_middle_1_joint",
-        //     "right_hand_index_0_joint",
-        //     "right_hand_index_1_joint"
-        // };
+        const std::array<std::string, G1_27DOF + G1_EXTRA_WAIST + G1_HAND_MOTOR_NUM> G1_FULL_JOINT_NAMES = {
+            "left_hip_pitch_joint",
+            "left_hip_roll_joint",
+            "left_hip_yaw_joint",
+            "left_knee_joint",
+            "left_ankle_pitch_joint",
+            "left_ankle_roll_joint",
+            "right_hip_pitch_joint",
+            "right_hip_roll_joint",
+            "right_hip_yaw_joint",
+            "right_knee_joint",
+            "right_ankle_pitch_joint",
+            "right_ankle_roll_joint",
+            "waist_yaw_joint",
+            "waist_roll_joint",
+            "waist_pitch_joint",
+            "left_shoulder_pitch_joint",
+            "left_shoulder_roll_joint",
+            "left_shoulder_yaw_joint",
+            "left_elbow_joint",
+            "left_wrist_roll_joint",
+            "left_wrist_pitch_joint",
+            "left_wrist_yaw_joint",
+            "right_shoulder_pitch_joint",
+            "right_shoulder_roll_joint",
+            "right_shoulder_yaw_joint",
+            "right_elbow_joint",
+            "right_wrist_roll_joint",
+            "right_wrist_pitch_joint",
+            "right_wrist_yaw_joint",
+            "left_hand_thumb_0_joint",      // ----- Hand Start ----- //
+            "left_hand_thumb_1_joint",
+            "left_hand_thumb_2_joint",
+            "left_hand_middle_0_joint",
+            "left_hand_middle_1_joint",
+            "left_hand_index_0_joint",
+            "left_hand_index_1_joint",
+            "right_hand_thumb_0_joint",      
+            "right_hand_thumb_1_joint",
+            "right_hand_thumb_2_joint",
+            "right_hand_middle_0_joint",
+            "right_hand_middle_1_joint",
+            "right_hand_index_0_joint",
+            "right_hand_index_1_joint"
+        };
 
         const std::array<std::string, G1_27DOF> G1_27DOF_JOINT_NAMES = {
             "left_hip_pitch_joint",
