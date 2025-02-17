@@ -8,6 +8,7 @@
 #include <mujoco/mujoco.h>
 
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -546,18 +547,18 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == obelisk_sensor_msgs::msg::ObkFramePose::MESSAGE_NAME) {
+                } else if (sensor_type == "PoseStamped") {
                     // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkFramePose>(topic, depth);
+                    auto pub = ObeliskNode::create_publisher<geometry_msgs::msg::PoseStamped>(topic, depth);
                     this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkFramePose>>(pub);
+                        std::make_shared<internal::ObeliskPublisher<geometry_msgs::msg::PoseStamped>>(pub);
 
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkFramePose>(
+                        CreateTimerCallback<geometry_msgs::msg::PoseStamped>(
                             sensor_names, mj_sensor_types,
-                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkFramePose>(sensor_key)),
+                            this->template GetPublisher<geometry_msgs::msg::PoseStamped>(sensor_key)),
                         callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
@@ -896,12 +897,12 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a IMU!");
                 return cb;
-            } else if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkFramePose>::value) {
+            } else if constexpr (std::is_same<MessageT, geometry_msgs::msg::PoseStamped>::value) {
                 // ------------------------------------------ //
                 // ---------- Frame Pose call back ---------- //
                 // ------------------------------------------ //
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
-                    obelisk_sensor_msgs::msg::ObkFramePose msg;
+                    geometry_msgs::msg::PoseStamped msg;
 
                     bool has_framepos  = false;
                     bool has_framequat = false;
@@ -919,34 +920,34 @@ namespace obelisk {
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "framepos") {
                             if (!has_framepos) {
-                                msg.position.x = this->data_->sensordata[sensor_addr];
-                                msg.position.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.position.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.pose.position.x = this->data_->sensordata[sensor_addr];
+                                msg.pose.position.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.pose.position.z = this->data_->sensordata[sensor_addr + 2];
 
-                                // Framepos sensors can be mounted to different objects
-                                int obj_type = this->model_->sensor_objtype[sensor_id];
-                                int obj_id   = this->model_->sensor_objid[sensor_id];
-                                if (obj_type == mjOBJ_SITE) {
-                                    msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_siteadr[obj_id]);
-                                } else if (obj_type == mjOBJ_BODY) {
-                                    msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_bodyadr[obj_id]);
-                                } else if (obj_type == mjOBJ_GEOM) {
-                                    msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_geomadr[obj_id]);
-                                } else if (obj_type == mjOBJ_CAMERA) {
-                                    msg.frame_name =
-                                        std::string(this->model_->names + this->model_->name_camadr[obj_id]);
-                                } else {
-                                    RCLCPP_ERROR_STREAM(
-                                        this->get_logger(),
-                                        "Framepos sensor, "
-                                            << sensor_names.at(i)
-                                            << ", is not associated with a supported Mujoco object type! "
-                                               "Current object type (mjtObj): "
-                                            << obj_type);
-                                }
+                                // // Framepos sensors can be mounted to different objects
+                                // int obj_type = this->model_->sensor_objtype[sensor_id];
+                                // int obj_id   = this->model_->sensor_objid[sensor_id];
+                                // if (obj_type == mjOBJ_SITE) {
+                                //     msg.frame_name =
+                                //         std::string(this->model_->names + this->model_->name_siteadr[obj_id]);
+                                // } else if (obj_type == mjOBJ_BODY) {
+                                //     msg.frame_name =
+                                //         std::string(this->model_->names + this->model_->name_bodyadr[obj_id]);
+                                // } else if (obj_type == mjOBJ_GEOM) {
+                                //     msg.frame_name =
+                                //         std::string(this->model_->names + this->model_->name_geomadr[obj_id]);
+                                // } else if (obj_type == mjOBJ_CAMERA) {
+                                //     msg.frame_name =
+                                //         std::string(this->model_->names + this->model_->name_camadr[obj_id]);
+                                // } else {
+                                //     RCLCPP_ERROR_STREAM(
+                                //         this->get_logger(),
+                                //         "Framepos sensor, "
+                                //             << sensor_names.at(i)
+                                //             << ", is not associated with a supported Mujoco object type! "
+                                //                "Current object type (mjtObj): "
+                                //             << obj_type);
+                                // }
 
                                 if (this->model_->sensor_refid[sensor_id] == -1) {
                                     msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
@@ -982,10 +983,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.orientation.w = this->data_->sensordata[sensor_addr];
-                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
-                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
-                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                msg.pose.orientation.w = this->data_->sensordata[sensor_addr];
+                                msg.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
+                                msg.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
+                                msg.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),

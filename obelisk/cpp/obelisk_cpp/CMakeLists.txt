@@ -71,4 +71,5 @@ ament_target_dependencies(ObkCore INTERFACE
   obelisk_estimator_msgs
   obelisk_sensor_msgs
   visualization_msgs
+  geometry_msgs
   std_msgs)

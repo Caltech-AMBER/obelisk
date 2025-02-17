@@ -100,7 +100,7 @@ onboard:
               tip_frame_sensor: framequat
           - topic: /obelisk/dummy/framepose
             dt: 0.002
-            msg_type: ObkFramePose
+            msg_type: PoseStamped
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
