@@ -9,6 +9,7 @@
 
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -560,6 +561,19 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<geometry_msgs::msg::PoseStamped>(sensor_key)),
                         callback_group_);
+                } else if (sensor_type == "Odometry") {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<nav_msgs::msg::Odometry>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::Odometry>>(pub);
+
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<nav_msgs::msg::Odometry>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
+                        callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
@@ -1007,6 +1021,117 @@ namespace obelisk {
                 };
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a FramePose!");
+                return cb;
+            } else if constexpr (std::is_same<MessageT, nav_msgs::msg::Odometry>::value) {
+                // ------------------------------------------ //
+                // ------------ Odometry Sensor ------------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    // This sensor is always made up of:
+                    //  - Framepos
+                    //  - Framequat
+                    //  - velocimeter
+                    //  - gyro
+                    // NOTE: For now the velocities are in the local frame, we should add an option to make this sensor with the global ones
+
+                    nav_msgs::msg::Odometry msg;
+
+                    bool has_framepos  = false;
+                    bool has_framequat = false;
+                    bool has_velocimeter = false;
+                    bool has_gyro = false;
+
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
+                        }
+
+                        // *** Note *** We only use the frame name and relative frame for the framepos. Be sure that
+                        // framepos and framequat have the same object/frame. Framequat is always given in global
+                        // coordinates
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "framepos") {
+                            if (!has_framepos) {
+                                msg.pose.pose.position.x = this->data_->sensordata[sensor_addr];
+                                msg.pose.pose.position.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.pose.pose.position.z = this->data_->sensordata[sensor_addr + 2];
+
+                                if (this->model_->sensor_refid[sensor_id] == -1) {
+                                    msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
+                                } else {
+                                    int ref_type = this->model_->sensor_reftype[sensor_id];
+                                    int ref_id   = this->model_->sensor_refid[sensor_id];
+                                    if (ref_type == mjOBJ_SITE) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_siteadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_BODY) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_bodyadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_GEOM) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_geomadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_CAMERA) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_camadr[ref_id]);
+                                    } else {
+                                        RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                            "Framepos sensor, "
+                                                                << sensor_names.at(i)
+                                                                << ", is not associated with a supported Mujoco object "
+                                                                   "type! Current object type (mjtObj): "
+                                                                << ref_type);
+                                    }
+                                }
+                                has_framepos = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framepos associated with this FramePose! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "framequat") {
+                            if (!has_framequat) {
+                                msg.pose.pose.orientation.w = this->data_->sensordata[sensor_addr];
+                                msg.pose.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
+                                msg.pose.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
+                                msg.pose.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                has_framequat     = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framequats associated with this FramePose! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "velocimeter") {
+                            if (!has_velocimeter) {
+                                msg.twist.twist.linear.x = this->data_->sensordata[sensor_addr];
+                                msg.twist.twist.linear.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.twist.twist.linear.z = this->data_->sensordata[sensor_addr + 2];
+
+                                has_velocimeter = true;
+                            }
+                        } else if (mj_sensor_types.at(i) == "gyro") {
+                            if (!has_gyro) {
+                                msg.twist.twist.angular.x = this->data_->sensordata[sensor_addr];
+                                msg.twist.twist.angular.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.twist.twist.angular.z = this->data_->sensordata[sensor_addr + 2];
+
+                                has_gyro = true;
+                            }
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        msg.header.stamp = this->now();
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Odometry!");
                 return cb;
             }
         }

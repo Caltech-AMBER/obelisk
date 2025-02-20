@@ -96,6 +96,14 @@ onboard:
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
+          - topic: /obelisk/dummy/odom
+            dt: 0.005
+            msg_type: Odometry
+            sensor_names:
+              tip_pos_sensor: framepos
+              tip_orientation_sensor: framequat
+              tip_velocimeter: velocimeter
+              tip_gyro_sensor: gyro
           viz_geoms:
             dt: 1.0
             dummy_box: box
