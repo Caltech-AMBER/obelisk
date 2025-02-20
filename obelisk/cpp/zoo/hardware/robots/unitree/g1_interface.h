@@ -8,6 +8,7 @@
 #include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowCmd_.hpp>
 #include <unitree/idl/hg/LowState_.hpp>
+#include <unitree/idl/hg/MainBoardState_.hpp>
 #include <unitree/idl/hg/IMUState_.hpp>
 
 
@@ -55,6 +56,7 @@ namespace obelisk {
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
             ODOM_TOPIC_ = "rt/odommodestate";
+            MAIN_BOARD_STATE_TOPIC_ = "rt/lf/mainboardstate";
 
             // TODO: Add support for rt/lowstate_doubleimu
 
@@ -87,6 +89,9 @@ namespace obelisk {
 
             // odom_subscriber_.reset(new ChannelSubscriber<IMUState_>(HG_ODOM_TOPIC));
             // odom_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::OdomHandler, this, std::placeholders::_1), 10);
+
+            main_board_subscriber_.reset(new ChannelSubscriber<MainBoardState_>(MAIN_BOARD_STATE_TOPIC_));
+            main_board_subscriber_->InitChannel(std::bind(&G1Interface::MainboardHandler, this, std::placeholders::_1), 10);
         }
 
         // TODO: Adjust this function so that we can go to a user pose even when no low level control functions are being sent
@@ -215,6 +220,7 @@ namespace obelisk {
                 joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
                 joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
+                // RCLCPP_INFO_STREAM(this->get_logger(), "Joint: " << joint_state.joint_names.at(i) << " motor state: " << low_state.motor_state()[i].motorstate());
                 // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
                 // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
             }
@@ -244,6 +250,19 @@ namespace obelisk {
                 if (mode_machine_ == 0) std::cout << "G1 type: " << unsigned(low_state.mode_machine()) << std::endl;
                 mode_machine_ = low_state.mode_machine();
             }
+        }
+
+        void MainboardHandler(const void *message) {
+            MainBoardState_ board_state = *(const MainBoardState_ *)message;
+
+            // if (board_state.crc() != Crc32Core((uint32_t *)&board_state, (sizeof(MainBoardState_) >> 2) - 1)) {
+            //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] MainBoardState CRC Error");
+            //     return;
+            // }
+
+            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board state: " << board_state.state()[0] << ", " << board_state.state()[1] << ", " << board_state.state()[2] << ", " << board_state.state()[3] << ", " << board_state.state()[4] << ", " << board_state.state()[5] );
+
+            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board value: " << board_state.value()[0] << ", " << board_state.value()[1] << ", " << board_state.value()[2] << ", " << board_state.value()[3] << ", " << board_state.value()[4] << ", " << board_state.value()[5] );
         }
 
         void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
@@ -303,9 +322,11 @@ namespace obelisk {
         bool fixed_waist_;
 
         std::string ODOM_TOPIC_;
+        std::string MAIN_BOARD_STATE_TOPIC_;
 
         unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
+        ChannelSubscriberPtr<MainBoardState_> main_board_subscriber_;
         // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
 
 

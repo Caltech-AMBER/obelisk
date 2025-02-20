@@ -232,7 +232,14 @@ namespace obelisk {
 
         bool ReleaseMotionControl() {
             std::string robot_form, motion_mode;
-            mode_switch_manager_->CheckMode(robot_form, motion_mode);
+            int ret = mode_switch_manager_->CheckMode(robot_form, motion_mode);
+            if (ret == 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "[UnitreeInterface] Check mode succeeded.");
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
+
             if (!motion_mode.empty()) {
                 return mode_switch_manager_->ReleaseMode() == 0;
             }
