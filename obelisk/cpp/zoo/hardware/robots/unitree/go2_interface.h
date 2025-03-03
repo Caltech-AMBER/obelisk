@@ -1,5 +1,7 @@
 #include "unitree_interface.h"
 
+#include "obelisk_sensor_msgs/msg/obk_force_sensor.hpp"
+
 // Sport Client
 #include <unitree/robot/go2/sport/sport_client.hpp>
 
@@ -15,6 +17,10 @@ namespace obelisk {
     public:
         Go2Interface(const std::string& node_name)
             : ObeliskUnitreeInterface(node_name) {
+
+            // Additional Publishers
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkForceSensor>("pub_force_sensor_setting", "force_sensor_key");
+
             // Expose duration of transition to home position as ros parameter
             this->declare_parameter<float>("user_pose_transition_duration", 1.);
             user_pose_transition_duration_ = this->get_parameter("user_pose_transition_duration").as_double();
@@ -204,7 +210,15 @@ namespace obelisk {
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
-            // TODO: foot forces
+            // Foot forces
+            obelisk_sensor_msgs::msg::ObkForceSensor force_sensor;
+            force_sensor.header.stamp = this->now();
+            force_sensor.forces.resize(4);
+            force_sensor.frames = {"FR_foot", "FL_foot", "RR_foot", "RL_foot"};
+            for (int i = 0; i < 4; i++) {
+                force_sensor.forces[i] = low_state.foot_force()[i];
+            }
+            this->GetPublisher<obelisk_sensor_msgs::msg::ObkForceSensor>("force_sensor_key")->publish(force_sensor);
         }
 
         void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
