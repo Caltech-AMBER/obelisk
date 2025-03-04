@@ -188,6 +188,9 @@ namespace obelisk {
                     joint_pos_[i] = low_state.motor_state()[i].q();
                     joint_vel_[i] = low_state.motor_state()[i].dq();
                 }
+                if (low_state.motor_state()[i].lost() > 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Motor " << joint_names_[i] << " lost: " << low_state.motor_state()[i].lost() << " packets!");
+                }
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
