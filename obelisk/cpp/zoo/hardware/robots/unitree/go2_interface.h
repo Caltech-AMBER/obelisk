@@ -189,7 +189,11 @@ namespace obelisk {
                     joint_vel_[i] = low_state.motor_state()[i].dq();
                 }
                 if (low_state.motor_state()[i].lost() > 0) {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "Motor " << joint_names_[i] << " lost: " << low_state.motor_state()[i].lost() << " packets!");
+                    static std::array<unsigned int, GO2_MOTOR_NUM> last_loss = {0,0,0, 0,0,0, 0,0,0, 0,0,0};
+                    if (low_state.motor_state()[i].lost() != last_loss[i]) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Motor " << joint_names_[i] << " lost: " << low_state.motor_state()[i].lost() << " packets!");
+                    }
+                    last_loss[i] = low_state.motor_state()[i].lost();
                 }
             }
 
