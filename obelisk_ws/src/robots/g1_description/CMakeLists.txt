@@ -20,6 +20,12 @@ install(
   DESTINATION share/${PROJECT_NAME}/urdf
 )
 
+# install the mujoco files
+install(
+  DIRECTORY mujoco/
+  DESTINATION share/${PROJECT_NAME}/mujoco
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)

@@ -16,6 +16,9 @@ find_package(obelisk_sensor_msgs REQUIRED)
 find_package(obelisk_estimator_msgs REQUIRED)
 find_package(obelisk_std_msgs REQUIRED)
 
+# --------- Nav Messages --------- #
+find_package(nav_msgs REQUIRED)
+
 # --------- Viz Messages --------- #
 find_package(visualization_msgs REQUIRED)
 
@@ -71,4 +74,6 @@ ament_target_dependencies(ObkCore INTERFACE
   obelisk_estimator_msgs
   obelisk_sensor_msgs
   visualization_msgs
+  geometry_msgs
+  nav_msgs
   std_msgs)

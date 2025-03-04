@@ -78,6 +78,20 @@ else()
   message(STATUS "Zed2 Sensors not configured")
 endif()
 
+# Check the environment variable using if
+message(STATUS "OBELISK_BUILD_UNITREE env variable: ${OBELISK_BUILD_UNITREE}")
+message(STATUS $ENV{OBELISK_BUILD_UNITREE})
+if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL "true")
+    set(UNITREE_VAR_ENV TRUE)
+else()
+    set(UNITREE_VAR_ENV FALSE)
+endif()
+
+if(UNITREE_VAR_ENV)
+  message(STATUS "Configuring Unitree interface...")
+  add_subdirectory(hardware/robots/unitree)
+endif()
+
 target_link_libraries(Zoo INTERFACE Obelisk::Core)
 
 ament_target_dependencies(Zoo INTERFACE

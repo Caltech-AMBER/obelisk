@@ -333,7 +333,9 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
             xml_launch_file = os.path.join(
                 get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
             )
-            launch_actions += [IncludeLaunchDescription(FrontendLaunchDescriptionSource(xml_launch_file))]
+            launch_actions += [IncludeLaunchDescription(FrontendLaunchDescriptionSource(xml_launch_file),
+                                launch_arguments={"capabilities": 
+                                                  "[clientPublish,parametersSubscribe,services,connectionGraph,assets]"}.items(),)]
         else:
             raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
 

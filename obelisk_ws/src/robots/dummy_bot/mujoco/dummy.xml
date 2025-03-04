@@ -56,6 +56,9 @@
         <!-- FramePose -->
         <framepos name="tip_pos_sensor" objtype="site" objname="tip"/>
         <framequat name="tip_orientation_sensor" objtype="site" objname="tip"/>
+
+        <!-- Velocity -->
+        <velocimeter name="tip_velocimeter" site="tip"/>
     </sensor>
 
     <keyframe>
