@@ -259,9 +259,9 @@ namespace obelisk {
             // Check if the user specified a custom camera
             this->template declare_parameter<std::string>("camera_name", "");
             const std::string camera_name = this->get_parameter("camera_name").as_string();
-            RCLCPP_ERROR_STREAM(this->get_logger(), "camera name: " << camera_name);
             int cam_id = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
             if (cam_id != -1) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "camera name: " << camera_name);
                 cam.type = mjCAMERA_FIXED;
                 cam.fixedcamid = cam_id;
             }
