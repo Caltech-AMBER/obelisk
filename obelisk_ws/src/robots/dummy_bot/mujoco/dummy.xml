@@ -18,6 +18,9 @@
         <geom name="floor" type="plane" size="5 5 0.1" material="blue_grid"/>
         <light name="light" pos="0 0 3" dir="0 0 -1" diffuse="1 1 1" specular="0.3 0.3 0.3"/>
 
+        <!-- Cameras -->
+        <camera name="fixed_cam" pos="2 2 2" quat="0.804 -0.362 0.469 -0.054"/>
+
         <!-- Robot -->
         <body name="link0" pos="0 0 0" quat="-0.707 0 0 0.707">
             <geom type="cylinder" fromto="0 0 0 0 0 1" size="0.05"/>

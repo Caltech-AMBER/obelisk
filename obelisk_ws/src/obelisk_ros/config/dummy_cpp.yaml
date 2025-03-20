@@ -60,6 +60,7 @@ onboard:
       executable: obelisk_mujoco_robot
       params:
         ic_keyframe: ic
+        camera_name: "fixed_cam"  # You can select a camera to use here
       publishers:
         - ros_parameter: pub_true_sim_state_setting
           topic: /obelisk/dummy/true_sim_state

@@ -256,6 +256,16 @@ namespace obelisk {
             mjv_defaultScene(&scn);
             mjr_defaultContext(&con);
 
+            // Check if the user specified a custom camera
+            this->template declare_parameter<std::string>("camera_name", "");
+            const std::string camera_name = this->get_parameter("camera_name").as_string();
+            RCLCPP_ERROR_STREAM(this->get_logger(), "camera name: " << camera_name);
+            int cam_id = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
+            if (cam_id != -1) {
+                cam.type = mjCAMERA_FIXED;
+                cam.fixedcamid = cam_id;
+            }
+
             // create scene and context
             mjv_makeScene(model_, &scn, 2000);
             mjr_makeContext(model_, &con, mjFONTSCALE_150);
