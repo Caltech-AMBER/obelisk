@@ -5,6 +5,7 @@ basic=false
 cyclone_perf=false
 leap=false
 zed=false
+unitree=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -43,6 +44,11 @@ for arg in "$@"; do
             zed=true
             shift  # Enables ZED SDK
             ;;
+        --unitree)
+            unitree=true
+            shift
+            ;;
+
 
         # docker setup
         --docker-install)
@@ -92,6 +98,7 @@ Options:
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
+  --unitree                    Enables the unitree interfaces
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -130,14 +137,16 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ "$unitree" = true ] && echo "--docker-unitree")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$pixi" = true ] && echo "--docker-pixi")
+        $([ "$pixi" = true ] && echo "--docker-pixi") \
+        $([ "$unitree" = true ] && echo "--docker-unitree")
 fi
 
 # group configuration on host
@@ -154,7 +163,8 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$zed" = true ] && echo "--zed") \
+        $([ "$unitree" = true ] && echo "--unitree")
 fi
 
 # run user-specific setup
@@ -162,4 +172,5 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
+    $(["$unitree" = true] && echo "--unitree") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")

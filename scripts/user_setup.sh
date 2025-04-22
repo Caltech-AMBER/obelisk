@@ -81,6 +81,11 @@ fi'
     else
         OBELISK_BUILD_ZED=false
     fi
+    if ["$unitree" = true]; then
+        OBELISK_BUILD_UNITREE=true
+    else
+        OBELISK_BUILD_UNITREE=false
+    fi
 
     obk_aliases=$(cat << EOF
 # >>> obelisk >>>

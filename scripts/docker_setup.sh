@@ -6,6 +6,7 @@ docker_cyclone_perf=false
 docker_leap=false
 docker_zed=false
 docker_pixi=false
+docker_unitree=false
 
 docker_group_leap=false
 docker_group_zed=false
@@ -37,6 +38,10 @@ for arg in "$@"; do
             docker_pixi=true
             shift  # Sets OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
             ;;
+        --docker-unitree)
+            docker_unitree=true
+            shift   # Sets OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
+            ;;
 
         # docker group additions
         --docker-group-leap)
@@ -59,6 +64,7 @@ Options:
   --docker-leap          Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
   --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
+  --docker-unitree       Set OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
 
   --docker-group-leap    Adds user to the dialout group
   --docker-group-zed     Adds user to the video group
@@ -197,6 +203,16 @@ if [ "$docker_pixi" = true ]; then
     echo -e "\033[1;32mSetting OBELISK_DOCKER_PIXI=true!\033[0m"
     echo "OBELISK_DOCKER_PIXI=true" >> $env_file
     export OBELISK_DOCKER_PIXI=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
+    echo "OBELISK_DOCKER_PIXI=false" >> $env_file
+    export OBELISK_DOCKER_PIXI=false
+fi
+
+if [ "$docker_unitree" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_UNITREE=true!\033[0m"
+    echo "OBELISK_DOCKER_UNITREE=true" >> $env_file
+    export OBELISK_DOCKER_UNITREE=true
 else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
     echo "OBELISK_DOCKER_PIXI=false" >> $env_file

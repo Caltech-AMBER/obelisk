@@ -9,6 +9,7 @@ source_ros=false
 # hardware-specific deps
 leap=false
 zed=false
+unitree=false
 
 for arg in "$@"; do
     case $arg in
@@ -32,6 +33,10 @@ for arg in "$@"; do
             zed=true
             shift # Installs ZED SDK
             ;;
+        --unitree)
+            unitree=true
+            shift # Sets up the Unitree interfaces
+            ;;
         --help)
             echo "Usage: $0 [OPTIONS]
 
@@ -41,6 +46,7 @@ Options:
   --source-ros         Source base ROS in ~/.bashrc
   --leap               Install LEAP hand dependencies
   --zed                Install ZED SDK
+  --unitree            Sets up the Unitree interface
 
   --help               Display this help message and exit
 "
