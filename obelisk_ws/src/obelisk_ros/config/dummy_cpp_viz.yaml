@@ -92,10 +92,18 @@ onboard:
               tip_frame_sensor: framequat
           - topic: /obelisk/dummy/framepose
             dt: 0.002
-            msg_type: ObkFramePose
+            msg_type: PoseStamped
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
+          - topic: /obelisk/dummy/odom
+            dt: 0.005
+            msg_type: Odometry
+            sensor_names:
+              tip_pos_sensor: framepos
+              tip_orientation_sensor: framequat
+              tip_velocimeter: velocimeter
+              tip_gyro_sensor: gyro
           viz_geoms:
             dt: 1.0
             dummy_box: box
@@ -104,7 +112,7 @@ onboard:
 
   viz:
     on: True
-    viz_tool: rviz
+    viz_tool: foxglove  # rviz
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:

@@ -46,6 +46,8 @@ RUN apt-get update && apt-get install -y \
     git \
     mesa-common-dev \
     locales \
+    iputils-ping \
+    evtest \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
     locale-gen en_US.UTF-8
@@ -66,6 +68,7 @@ RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && [ "$OBELISK_DOCKER_PIXI" = "false" ] && FLAGS="$FLAGS --source-ros"; \
     [ "$OBELISK_DOCKER_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
     [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
+    [ "$OBELISK_DOCKER_UNITREE" = "true" ] && FLAGS="$FLAGS --unitree"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
     sudo rm /tmp/install_sys_deps.sh
 
