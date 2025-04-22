@@ -6,6 +6,7 @@ obk_aliases=false
 
 leap=false
 zed=false
+unitree=false
 
 for arg in "$@"; do
     case $arg in
@@ -27,6 +28,10 @@ for arg in "$@"; do
         --zed)
             zed=true
             shift  # Adds ZED ROS packages to colcon build command
+            ;;
+        --unitree)
+            unitree=true
+            shift  # Sets up the Unitree interface
             ;;
         *)
             # Unknown option
@@ -81,7 +86,7 @@ fi'
     else
         OBELISK_BUILD_ZED=false
     fi
-    if ["$unitree" = true]; then
+    if [ "$unitree" = true ]; then
         OBELISK_BUILD_UNITREE=true
     else
         OBELISK_BUILD_UNITREE=false
@@ -99,6 +104,7 @@ export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
+export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
 '
 
     # Check if the --permanent flag is passed

@@ -172,5 +172,5 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
-    $(["$unitree" = true] && echo "--unitree") \
+    $([ "$unitree" = true ] && echo "--unitree") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")
