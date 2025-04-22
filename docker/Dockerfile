@@ -46,6 +46,8 @@ RUN apt-get update && apt-get install -y \
     git \
     mesa-common-dev \
     locales \
+    iputils-ping \
+    evtest \
     sudo && \
     rm -rf /var/lib/apt/lists/* && \
     locale-gen en_US.UTF-8
