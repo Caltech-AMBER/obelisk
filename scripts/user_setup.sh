@@ -88,6 +88,8 @@ fi'
     fi
     if [ "$unitree" = true ]; then
         OBELISK_BUILD_UNITREE=true
+        ROS_DOMAIN_ID=2
+        echo -e "\033[1;32mSetting ROS_DOMAIN_ID=2\033[0m"
     else
         OBELISK_BUILD_UNITREE=false
     fi
@@ -105,6 +107,7 @@ export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
+export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
 '
 
     # Check if the --permanent flag is passed
