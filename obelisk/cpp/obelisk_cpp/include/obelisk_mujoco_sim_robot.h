@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <filesystem>
+#include <vector>
 
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
@@ -14,6 +15,7 @@
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
+#include "obelisk_sensor_msgs/msg/obk_scan_dots.hpp"
 #include "obelisk_sim_robot.h"
 
 namespace obelisk {
@@ -67,6 +69,12 @@ namespace obelisk {
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
 
             configuration_complete_ = true;
+            
+            // this->declare_parameter("height_map_grid_size", rclcpp::PARAMETER_DOUBLE_ARRAY);
+            // this->set_parameter("height_map_grid_size", std::vector<double>{0.})
+            this->declare_parameter("height_map_grid_spacing", 0.0);
+            // height_map_grid_size_ = this->get_parameter("height_map_grid_size").as_double_array();
+            height_map_grid_spacing_ = this->get_parameter("height_map_grid_spacing").as_double();
 
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
 
@@ -1143,6 +1151,91 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Odometry!");
                 return cb;
+            } else if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkScanDots>::value) {
+                // ------------------------------------------ //
+                // ------------ Scan Dots Sensor ------------ //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    // This sensor is always made up of:
+                    //  - Framepos
+
+                    nav_msgs::msg::Odometry msg;
+
+                    bool has_framepos  = false;
+
+                    if (this->height_map_grid_size_.size() != 2) {
+                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid size!");
+                    }
+                    if (this->height_map_grid_spacing_ == 0) {
+                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid spacing!");
+                    }
+
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
+                        }
+
+                        // *** Note *** We only use the frame name and relative frame for the framepos. Be sure that
+                        // framepos and framequat have the same object/frame. Framequat is always given in global
+                        // coordinates
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "framepos") {
+                            if (!has_framepos) {
+                                msg.pose.pose.position.x = this->data_->sensordata[sensor_addr];
+                                msg.pose.pose.position.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.pose.pose.position.z = this->data_->sensordata[sensor_addr + 2];
+
+                                if (this->model_->sensor_refid[sensor_id] == -1) {
+                                    msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
+                                } else {
+                                    int ref_type = this->model_->sensor_reftype[sensor_id];
+                                    int ref_id   = this->model_->sensor_refid[sensor_id];
+                                    if (ref_type == mjOBJ_SITE) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_siteadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_BODY) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_bodyadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_GEOM) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_geomadr[ref_id]);
+                                    } else if (ref_type == mjOBJ_CAMERA) {
+                                        msg.header.frame_id =
+                                            std::string(this->model_->names + this->model_->name_camadr[ref_id]);
+                                    } else {
+                                        RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                            "Framepos sensor, "
+                                                                << sensor_names.at(i)
+                                                                << ", is not associated with a supported Mujoco object "
+                                                                   "type! Current object type (mjtObj): "
+                                                                << ref_type);
+                                    }
+                                }
+                                has_framepos = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framepos associated with this FramePose! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        msg.header.stamp = this->now();
+
+                        // Make a grid about the site
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Scan Dots sensor!");
+                return cb;
             }
         }
 
@@ -1308,6 +1401,10 @@ namespace obelisk {
         std::thread rendering_thread_;
 
         int num_sensors_;
+
+        // For the height map
+        std::vector<double> height_map_grid_size_;
+        double height_map_grid_spacing_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;

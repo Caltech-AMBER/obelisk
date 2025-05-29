@@ -22,6 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObkImu.msg"
   "msg/ObkFramePose.msg"
   "msg/ObkForceSensor.msg"
+  "msg/ObkScanDots.msg"
   DEPENDENCIES
   std_msgs
   geometry_msgs
