@@ -34,25 +34,20 @@ onboard:
       # callback_groups:
       publishers:
         - ros_parameter: pub_est_setting
-          # key: pub1
           topic: /obelisk/dummy/est
           msg_type: EstimatedState
           history_depth: 10
           callback_group: None
       subscribers:
         - ros_parameter: sub_sensor_setting
-          # key: sub1
           topic: /obelisk/dummy/joint_encoders
           msg_type: JointEncoders
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
       timers:
         - ros_parameter: timer_est_setting
-          # key: timer1
           timer_period_sec: 0.001
           callback_group: None
-          # callback_key: timer_callback1
   # sensing:
   robot:
     - is_simulated: True
@@ -60,7 +55,10 @@ onboard:
       executable: obelisk_mujoco_robot
       params:
         ic_keyframe: ic
-        camera_name: "fixed_cam"  # You can select a camera to use here
+        height_map_grid_size: [1., 1.]
+        height_map_grid_spacing: 0.1
+        height_map_geom_group: [0]
+        # camera_name: "fixed_cam"  # You can select a camera to use here
       publishers:
         - ros_parameter: pub_true_sim_state_setting
           topic: /obelisk/dummy/true_sim_state
@@ -73,13 +71,10 @@ onboard:
           callback_group: None
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/dummy/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
-          non_obelisk: False
       sim:
         - ros_parameter: mujoco_setting
           num_steps_per_viz: 5
@@ -113,6 +108,11 @@ onboard:
               tip_orientation_sensor: framequat
               tip_velocimeter: velocimeter
               tip_gyro_sensor: gyro
+          - topic: /obelisk/dummy/scan_dots
+            dt: 0.1
+            msg_type: GridCells
+            sensor_names:
+              tip_pos_sensor: framepos
   joystick:
     on: True
     pub_topic: /obelisk/dummy/joy
