@@ -57,7 +57,7 @@
         <framequat name="tip_frame_sensor" objtype="site" objname="imu_site"/>
 
         <!-- FramePose -->
-        <framepos name="tip_pos_sensor" objtype="site" objname="tip"/>
+        <framepos name="tip_pos_sensor" objtype="site" objname="tip" reftype="body" refname="link1"/>
         <framequat name="tip_orientation_sensor" objtype="site" objname="tip"/>
 
         <!-- Velocity -->

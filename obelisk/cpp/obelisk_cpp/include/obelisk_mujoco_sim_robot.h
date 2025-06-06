@@ -1206,13 +1206,44 @@ namespace obelisk {
                         if (mj_sensor_types.at(i) == "framepos") {
                             if (!has_framepos) {
                                 // Starting ray origin position (top-left corner of scan)
-                                std::array<double, 3> site_pos = {this->data_->sensordata[sensor_addr],
+                                std::array<double, 3> sensor_pos = {this->data_->sensordata[sensor_addr],
                                     this->data_->sensordata[sensor_addr + 1],
                                     this->data_->sensordata[sensor_addr + 2] + 10.0 };  // shift upward
 
+                                int site_id = model_->sensor_objid[sensor_id];
+                                std::array<double, 3> site_pos_global = {this->data_->site_xpos[3*site_id],
+                                    this->data_->site_xpos[3*site_id + 1],
+                                    this->data_->site_xpos[3*site_id + 2],
+                                };
+
+                                sensor_pos[0] += site_pos_global[0];
+                                sensor_pos[1] += site_pos_global[1];
+
+                                // Get the yaw from the quat
+                                double w = this->data_->qpos[3], x = this->data_->qpos[4], y = this->data_->qpos[5], z = this->data_->qpos[6];
+
+                                // Yaw (Z-axis rotation)
+                                double siny_cosp = 2.0 * (w * z + x * y);
+                                double cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
+                                double base_yaw = std::atan2(siny_cosp, cosy_cosp);
+
+                                // Make the rotation matrix
+                                double cos_yaw = std::cos(base_yaw);
+                                double sin_yaw = std::sin(base_yaw);
+                                double R_2d[2][2] = {
+                                    { cos_yaw, -sin_yaw },
+                                    { sin_yaw,  cos_yaw }
+                                };
+
                                 // Adjust X and Y to go to bottom-left corner
-                                site_pos[0] -= this->height_map_grid_size_[0] / 2.0;
-                                site_pos[1] -= this->height_map_grid_size_[1] / 2.0;
+                                std::array<double, 2> offset = { -this->height_map_grid_size_[0] / 2.0, -this->height_map_grid_size_[1] / 2.0 };
+                                // Rotate offset: R_2d x offset
+                                std::array<double, 2> rotated_offset = {
+                                    R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
+                                    R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
+                                };
+                                sensor_pos[0] += rotated_offset[0];
+                                sensor_pos[1] += rotated_offset[1];
 
                                 // Ray direction: straight down
                                 const std::array<double, 3> direction = { 0.0, 0.0, -1.0 };
@@ -1230,11 +1261,18 @@ namespace obelisk {
                                 for (int x = 0; x < x_y_num_rays[0]; ++x) {
                                     for (int y = 0; y < x_y_num_rays[1]; ++y) {
                                         // Compute origin for this ray
-                                        std::array<double, 3> offset = { this->height_map_grid_spacing_ * x, this->height_map_grid_spacing_ * y, 0.0 };
+                                        offset = { this->height_map_grid_spacing_ * x, this->height_map_grid_spacing_ * y};
+
+                                        // Rotate offset: R_2d x offset
+                                        rotated_offset = {
+                                            R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
+                                            R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
+                                        };
+
                                         std::array<double, 3> ray_origin = {
-                                            site_pos[0] + offset[0],
-                                            site_pos[1] + offset[1],
-                                            site_pos[2]               // z already offset upward
+                                            sensor_pos[0] + rotated_offset[0],
+                                            sensor_pos[1] + rotated_offset[1],
+                                            sensor_pos[2]               // z already offset upward
                                         };
 
                                         // Perform ray cast
@@ -1247,17 +1285,17 @@ namespace obelisk {
                                             ray_origin[2] + direction[2] * dist
                                         };
                                         geometry_msgs::msg::Point ros_pt;
-                                        ros_pt.x = hit_point[0];
-                                        ros_pt.y = hit_point[1];
+                                        // Making it relative to the base link
+                                        ros_pt.x = hit_point[0] - site_pos_global[0];
+                                        ros_pt.y = hit_point[1] - site_pos_global[1];
                                         ros_pt.z = hit_point[2];
                                         msg.cells[ii] = ros_pt;
                                         ii++;
                                     }
                                 }
 
-
                                 if (this->model_->sensor_refid[sensor_id] == -1) {
-                                    msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
+                                    msg.header.frame_id = "world";
                                 } else {
                                     int ref_type = this->model_->sensor_reftype[sensor_id];
                                     int ref_id   = this->model_->sensor_refid[sensor_id];
