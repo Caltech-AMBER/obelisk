@@ -52,6 +52,9 @@ namespace obelisk {
             joint_vel_.resize(G1_27DOF + G1_EXTRA_WAIST);
             start_user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
             user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
+
+            this->declare_parameter<std::vector<double>>("user_pose", user_pose_);
+            user_pose_ = this->get_parameter("user_pose").as_double_array();
             
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
@@ -179,13 +182,14 @@ namespace obelisk {
                 // Compute time that robot has been in HOME
                 float t = std::chrono::duration<double>(
                     std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
-                // Compute proportion of time relative to transition duration
-                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
+                // Compute proportion of time relative to transition duration 
+                // TODO this is not working
+                //float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
                 for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; i++) {    // Sending the extra waist commands while in fixed waist should have no effect
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = 0.;
-                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
+                    dds_low_command.motor_cmd().at(i).q() = user_pose_[i];//(1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
                     dds_low_command.motor_cmd().at(i).dq() = 0.;
                     dds_low_command.motor_cmd().at(i).kp() = kp_[i];
                     dds_low_command.motor_cmd().at(i).kd() = kd_[i];
