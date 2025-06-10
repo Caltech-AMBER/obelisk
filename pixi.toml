@@ -23,7 +23,7 @@ env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="l
 
 # minimal
 [dependencies]
-python = ">=3.10"
+python = ">=3.11"  # restricted by colcon-common-extensions
 pip = ">=24.0"
 setuptools = "<=70.4"
 compilers = "*"
