@@ -56,9 +56,6 @@ The options are as follows:
 source setup.sh [OPTIONS]
 
 Options:
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
-
   --basic                      Enables basic dependencies necessary for Obelisk locally
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
