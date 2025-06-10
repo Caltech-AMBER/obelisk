@@ -180,8 +180,8 @@ namespace obelisk {
             // ------------------------ Execution FSM: Home ------------------------ //
             } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
                 // Compute time that robot has been in HOME
-                float t = std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
+                // float t = std::chrono::duration<double>(
+                    // std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
                 // Compute proportion of time relative to transition duration 
                 // TODO this is not working
                 //float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
