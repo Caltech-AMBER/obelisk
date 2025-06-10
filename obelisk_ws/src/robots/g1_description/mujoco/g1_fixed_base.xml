@@ -218,7 +218,7 @@ Position and velocity actuators added. -->
       <position kv="1" ctrllimited="false"/>
     </default>
   </default>
-  
+
   <asset>
     <mesh name="pelvis" file="pelvis.STL"/>
     <mesh name="pelvis_contour_link" file="pelvis_contour_link.STL"/>
@@ -893,7 +893,7 @@ Position and velocity actuators added. -->
     <jointvel name="right_hand_index_0_joint_vel_sensor" joint="right_hand_index_0_joint"/>
     <jointvel name="right_hand_index_1_joint_vel_sensor" joint="right_hand_index_1_joint"/>
     <jointvel name="right_hand_middle_0_joint_vel_sensor" joint="right_hand_middle_0_joint"/>
-    <jointvel name="right_hand_middle_1_joint_vel_sensor" joint="right_hand_middle_1_joint"/> 
+    <jointvel name="right_hand_middle_1_joint_vel_sensor" joint="right_hand_middle_1_joint"/>
 
 
     <!-- IMU sensors -->
@@ -907,7 +907,7 @@ Position and velocity actuators added. -->
   </sensor>
 
   <keyframe>
-    <!-- <key name="standing" 
+    <!-- <key name="standing"
       qpos="-0.3 0 0 0.52 -0.23 0
             -0.3 0 0 0.52 -0.23 0
             0 0 0.03
@@ -922,7 +922,7 @@ Position and velocity actuators added. -->
             0 0 0 0 0 0 0
             0 0 0 0.2 0 0 0
             0 0 0 0 0 0 0
-            
+
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0
@@ -930,7 +930,7 @@ Position and velocity actuators added. -->
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0
-            
+
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0
@@ -938,7 +938,7 @@ Position and velocity actuators added. -->
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0"/> -->
-    <key name="standing" 
+    <key name="standing"
       qpos="-0.3 0 0 0.52 -0.23 0
             -0.3 0 0 0.52 -0.23 0
             0 0 0.03
@@ -951,13 +951,13 @@ Position and velocity actuators added. -->
             0 0 0
             0 0 0 0.2 0 0 0
             0 0 0 0.2 0 0 0
-            
+
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0
             0 0 0 0 0 0 0
             0 0 0 0 0 0 0
-            
+
             0 0 0 0 0 0
             0 0 0 0 0 0
             0 0 0

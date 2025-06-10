@@ -7,9 +7,9 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
-#include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -259,10 +259,10 @@ namespace obelisk {
             // Check if the user specified a custom camera
             this->template declare_parameter<std::string>("camera_name", "");
             const std::string camera_name = this->get_parameter("camera_name").as_string();
-            int cam_id = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
+            int cam_id                    = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
             if (cam_id != -1) {
                 RCLCPP_INFO_STREAM(this->get_logger(), "camera name: " << camera_name);
-                cam.type = mjCAMERA_FIXED;
+                cam.type       = mjCAMERA_FIXED;
                 cam.fixedcamid = cam_id;
             }
 
@@ -578,12 +578,12 @@ namespace obelisk {
                         std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::Odometry>>(pub);
 
                     // Add the timer to the list
-                    this->timers_[sensor_key] = this->create_wall_timer(
-                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<nav_msgs::msg::Odometry>(
-                            sensor_names, mj_sensor_types,
-                            this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
-                        callback_group_);
+                    this->timers_[sensor_key] =
+                        this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                                                CreateTimerCallback<nav_msgs::msg::Odometry>(
+                                                    sensor_names, mj_sensor_types,
+                                                    this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
+                                                callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
@@ -1011,7 +1011,7 @@ namespace obelisk {
                                 msg.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
                                 msg.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
                                 msg.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
-                                has_framequat     = true;
+                                has_framequat          = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
                                                     "There are two framequats associated with this FramePose! Ignoring "
@@ -1042,20 +1042,22 @@ namespace obelisk {
                     //  - Framequat
                     //  - velocimeter
                     //  - gyro
-                    // NOTE: For now the velocities are in the local frame, we should add an option to make this sensor with the global ones
+                    // NOTE: For now the velocities are in the local frame, we should add an option to make this sensor
+                    // with the global ones
 
                     nav_msgs::msg::Odometry msg;
 
-                    bool has_framepos  = false;
-                    bool has_framequat = false;
+                    bool has_framepos    = false;
+                    bool has_framequat   = false;
                     bool has_velocimeter = false;
-                    bool has_gyro = false;
+                    bool has_gyro        = false;
 
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
-                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " +
+                                                     sensor_names.at(i));
                         }
 
                         // *** Note *** We only use the frame name and relative frame for the framepos. Be sure that
@@ -1106,7 +1108,7 @@ namespace obelisk {
                                 msg.pose.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
                                 msg.pose.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
                                 msg.pose.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
-                                has_framequat     = true;
+                                has_framequat               = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
                                                     "There are two framequats associated with this FramePose! Ignoring "
