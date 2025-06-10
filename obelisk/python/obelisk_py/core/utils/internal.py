@@ -42,9 +42,9 @@ def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union
                     break
         else:
             assert msg_module_or_type.__bound__ is not None, "The TypeVar does not have a bound."
-            assert (
-                msg_type_name == msg_module_or_type.__bound__.__name__
-            ), f"{msg_type_name} must be {msg_module_or_type.__bound__.__name__}"
+            assert msg_type_name == msg_module_or_type.__bound__.__name__, (
+                f"{msg_type_name} must be {msg_module_or_type.__bound__.__name__}"
+            )
             msg_type = msg_module_or_type.__bound__
 
     else:
