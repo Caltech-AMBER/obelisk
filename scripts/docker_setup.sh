@@ -214,9 +214,9 @@ if [ "$docker_unitree" = true ]; then
     echo "OBELISK_DOCKER_UNITREE=true" >> $env_file
     export OBELISK_DOCKER_UNITREE=true
 else
-    echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
-    echo "OBELISK_DOCKER_PIXI=false" >> $env_file
-    export OBELISK_DOCKER_PIXI=false
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_UNITREE=false!\033[0m"
+    echo "OBELISK_DOCKER_UNITREE=false" >> $env_file
+    export OBELISK_DOCKER_UNITREE=false
 fi
 
 if [ "$docker_group_leap" = true ]; then
