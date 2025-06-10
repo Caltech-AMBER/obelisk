@@ -24,7 +24,7 @@ find_package(visualization_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 include(FetchContent)
-set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
+set(MUJOCO_VERSION "3.3.2" CACHE STRING "mujoco version")
 set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
 
 FetchContent_Declare(
