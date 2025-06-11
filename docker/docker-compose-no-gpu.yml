@@ -14,6 +14,7 @@ services:
         OBELISK_DOCKER_PIXI: $OBELISK_DOCKER_PIXI
         OBELISK_DOCKER_GROUP_LEAP: $OBELISK_DOCKER_GROUP_LEAP
       dockerfile: Dockerfile
+      network: host
     network_mode: host
     ipc: host
     environment:

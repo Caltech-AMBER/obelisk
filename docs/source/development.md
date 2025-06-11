@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose-no-gpu.yml run --build obelisk
 
 Either way, your repository root will be mounted into the container at the exact same file location, your username, user ID, and group ID will be shared with the container, and you can freely run `sudo` without supplying a password for any command.
 
-<!-- 
+<!--
 Once ready for development, you should start the `pixi` shell, which is like activating a `conda` environment (but `pixi` environments are project/directory-specific, not shell-wide). To do this, run in the repo root:
 ```
 # if your machine has a gpu

@@ -47,7 +47,6 @@ select = [
     "PLW",  # Pylint warnings
 ]
 ignore = [
-    "ANN101",  # Missing type annotation for self
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
     "D100",  # missing docstring in public module
     "D104",  # missing docstring in public package

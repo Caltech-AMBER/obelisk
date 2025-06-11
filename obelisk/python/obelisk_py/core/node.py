@@ -213,9 +213,9 @@ class ObeliskNode(LifecycleNode):
         Raises:
             AssertionError: If the configuration string is invalid.
         """
-        assert all(
-            [field in field_names for field in required_field_names]
-        ), f"config_str must contain the following fields: {required_field_names}"
+        assert all([field in field_names for field in required_field_names]), (
+            f"config_str must contain the following fields: {required_field_names}"
+        )
         assert all([field in required_field_names + optional_field_names for field in field_names]), (
             f"""The following fields in the config_str are invalid: {
                 set(field_names) - set(required_field_names + optional_field_names)
@@ -475,9 +475,9 @@ class ObeliskNode(LifecycleNode):
         callback_group = self._get_callback_group_from_config_dict(config_dict)
 
         # run type assertions and return the timer
-        assert isinstance(
-            config_dict["timer_period_sec"], (int, float)
-        ), "The 'timer_period_sec' field must be a number!"
+        assert isinstance(config_dict["timer_period_sec"], (int, float)), (
+            "The 'timer_period_sec' field must be a number!"
+        )
 
         timer = self.create_timer(
             config_dict["timer_period_sec"],

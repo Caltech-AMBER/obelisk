@@ -6,5 +6,5 @@
 
 int main(int argc, char* argv[]) {
     obelisk::utils::SpinObelisk<obelisk::G1Interface, rclcpp::executors::SingleThreadedExecutor>(argc, argv,
-                                                                                                     "unitree_robot");
+                                                                                                 "unitree_robot");
 }

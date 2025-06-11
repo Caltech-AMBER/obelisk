@@ -8,10 +8,10 @@
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
-#include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/grid_cells.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -69,13 +69,13 @@ namespace obelisk {
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
 
             configuration_complete_ = true;
-            
+
             this->declare_parameter("height_map_geom_group", std::vector<long>{0});
             this->declare_parameter("height_map_grid_size", std::vector<double>{0.});
             this->declare_parameter("height_map_grid_spacing", 0.0);
-            height_map_grid_size_ = this->get_parameter("height_map_grid_size").as_double_array();
+            height_map_grid_size_    = this->get_parameter("height_map_grid_size").as_double_array();
             height_map_grid_spacing_ = this->get_parameter("height_map_grid_spacing").as_double();
-            height_map_geom_group_ = this->get_parameter("height_map_geom_group").as_integer_array();
+            height_map_geom_group_   = this->get_parameter("height_map_geom_group").as_integer_array();
 
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
 
@@ -268,10 +268,10 @@ namespace obelisk {
             // Check if the user specified a custom camera
             this->template declare_parameter<std::string>("camera_name", "");
             const std::string camera_name = this->get_parameter("camera_name").as_string();
-            int cam_id = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
+            int cam_id                    = mj_name2id(model_, mjOBJ_CAMERA, camera_name.c_str());
             if (cam_id != -1) {
                 RCLCPP_INFO_STREAM(this->get_logger(), "camera name: " << camera_name);
-                cam.type = mjCAMERA_FIXED;
+                cam.type       = mjCAMERA_FIXED;
                 cam.fixedcamid = cam_id;
             }
 
@@ -587,12 +587,12 @@ namespace obelisk {
                         std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::Odometry>>(pub);
 
                     // Add the timer to the list
-                    this->timers_[sensor_key] = this->create_wall_timer(
-                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<nav_msgs::msg::Odometry>(
-                            sensor_names, mj_sensor_types,
-                            this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
-                        callback_group_);
+                    this->timers_[sensor_key] =
+                        this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                                                CreateTimerCallback<nav_msgs::msg::Odometry>(
+                                                    sensor_names, mj_sensor_types,
+                                                    this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
+                                                callback_group_);
                 } else if (sensor_type == "GridCells") {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<nav_msgs::msg::GridCells>(topic, depth);
@@ -600,12 +600,12 @@ namespace obelisk {
                         std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::GridCells>>(pub);
 
                     // Add the timer to the list
-                    this->timers_[sensor_key] = this->create_wall_timer(
-                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<nav_msgs::msg::GridCells>(
-                            sensor_names, mj_sensor_types,
-                            this->template GetPublisher<nav_msgs::msg::GridCells>(sensor_key)),
-                        callback_group_);
+                    this->timers_[sensor_key] =
+                        this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                                                CreateTimerCallback<nav_msgs::msg::GridCells>(
+                                                    sensor_names, mj_sensor_types,
+                                                    this->template GetPublisher<nav_msgs::msg::GridCells>(sensor_key)),
+                                                callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
@@ -1033,7 +1033,7 @@ namespace obelisk {
                                 msg.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
                                 msg.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
                                 msg.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
-                                has_framequat     = true;
+                                has_framequat          = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
                                                     "There are two framequats associated with this FramePose! Ignoring "
@@ -1064,20 +1064,22 @@ namespace obelisk {
                     //  - Framequat
                     //  - velocimeter
                     //  - gyro
-                    // NOTE: For now the velocities are in the local frame, we should add an option to make this sensor with the global ones
+                    // NOTE: For now the velocities are in the local frame, we should add an option to make this sensor
+                    // with the global ones
 
                     nav_msgs::msg::Odometry msg;
 
-                    bool has_framepos  = false;
-                    bool has_framequat = false;
+                    bool has_framepos    = false;
+                    bool has_framequat   = false;
                     bool has_velocimeter = false;
-                    bool has_gyro = false;
+                    bool has_gyro        = false;
 
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
-                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " +
+                                                     sensor_names.at(i));
                         }
 
                         // *** Note *** We only use the frame name and relative frame for the framepos. Be sure that
@@ -1128,7 +1130,7 @@ namespace obelisk {
                                 msg.pose.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
                                 msg.pose.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
                                 msg.pose.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
-                                has_framequat     = true;
+                                has_framequat               = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
                                                     "There are two framequats associated with this FramePose! Ignoring "
@@ -1175,20 +1177,21 @@ namespace obelisk {
 
                     nav_msgs::msg::GridCells msg;
 
-                    bool has_framepos  = false;
-                    
+                    bool has_framepos = false;
+
                     // Verify that the proper parameters have been passed
                     if (this->height_map_grid_size_.size() != 2) {
-                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid size!");
+                        throw std::runtime_error(
+                            "Attempted to use a scan dots sensor without providing a valid grid size!");
                     }
                     int x_rays = this->height_map_grid_size_[0] / this->height_map_grid_spacing_ + 1;
                     int y_rays = this->height_map_grid_size_[1] / this->height_map_grid_spacing_ + 1;
                     msg.cells.resize(x_rays * y_rays);
 
                     if (this->height_map_grid_spacing_ == 0) {
-                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid spacing!");
+                        throw std::runtime_error(
+                            "Attempted to use a scan dots sensor without providing a valid grid spacing!");
                     }
-
 
                     std::array<int, 2> x_y_num_rays = {x_rays, y_rays};
 
@@ -1198,7 +1201,8 @@ namespace obelisk {
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
-                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " +
+                                                     sensor_names.at(i));
                         }
                         // Get the sensor id
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
@@ -1206,47 +1210,46 @@ namespace obelisk {
                         if (mj_sensor_types.at(i) == "framepos") {
                             if (!has_framepos) {
                                 // Starting ray origin position (top-left corner of scan)
-                                std::array<double, 3> sensor_pos = {this->data_->sensordata[sensor_addr],
-                                    this->data_->sensordata[sensor_addr + 1],
-                                    this->data_->sensordata[sensor_addr + 2] + 10.0 };  // shift upward
+                                std::array<double, 3> sensor_pos = {
+                                    this->data_->sensordata[sensor_addr], this->data_->sensordata[sensor_addr + 1],
+                                    this->data_->sensordata[sensor_addr + 2] + 10.0}; // shift upward
 
-                                int site_id = model_->sensor_objid[sensor_id];
-                                std::array<double, 3> site_pos_global = {this->data_->site_xpos[3*site_id],
-                                    this->data_->site_xpos[3*site_id + 1],
-                                    this->data_->site_xpos[3*site_id + 2],
+                                int site_id                           = model_->sensor_objid[sensor_id];
+                                std::array<double, 3> site_pos_global = {
+                                    this->data_->site_xpos[3 * site_id],
+                                    this->data_->site_xpos[3 * site_id + 1],
+                                    this->data_->site_xpos[3 * site_id + 2],
                                 };
 
                                 sensor_pos[0] += site_pos_global[0];
                                 sensor_pos[1] += site_pos_global[1];
 
                                 // Get the yaw from the quat
-                                double w = this->data_->qpos[3], x = this->data_->qpos[4], y = this->data_->qpos[5], z = this->data_->qpos[6];
+                                double w = this->data_->qpos[3], x = this->data_->qpos[4], y = this->data_->qpos[5],
+                                       z = this->data_->qpos[6];
 
                                 // Yaw (Z-axis rotation)
                                 double siny_cosp = 2.0 * (w * z + x * y);
                                 double cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
-                                double base_yaw = std::atan2(siny_cosp, cosy_cosp);
+                                double base_yaw  = std::atan2(siny_cosp, cosy_cosp);
 
                                 // Make the rotation matrix
-                                double cos_yaw = std::cos(base_yaw);
-                                double sin_yaw = std::sin(base_yaw);
-                                double R_2d[2][2] = {
-                                    { cos_yaw, -sin_yaw },
-                                    { sin_yaw,  cos_yaw }
-                                };
+                                double cos_yaw    = std::cos(base_yaw);
+                                double sin_yaw    = std::sin(base_yaw);
+                                double R_2d[2][2] = {{cos_yaw, -sin_yaw}, {sin_yaw, cos_yaw}};
 
                                 // Adjust X and Y to go to bottom-left corner
-                                std::array<double, 2> offset = { -this->height_map_grid_size_[0] / 2.0, -this->height_map_grid_size_[1] / 2.0 };
+                                std::array<double, 2> offset = {-this->height_map_grid_size_[0] / 2.0,
+                                                                -this->height_map_grid_size_[1] / 2.0};
                                 // Rotate offset: R_2d x offset
-                                std::array<double, 2> rotated_offset = {
-                                    R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
-                                    R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
-                                };
+                                std::array<double, 2> rotated_offset = {R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
+                                                                        R_2d[1][0] * offset[0] +
+                                                                            R_2d[1][1] * offset[1]};
                                 sensor_pos[0] += rotated_offset[0];
                                 sensor_pos[1] += rotated_offset[1];
 
                                 // Ray direction: straight down
-                                const std::array<double, 3> direction = { 0.0, 0.0, -1.0 };
+                                const std::array<double, 3> direction = {0.0, 0.0, -1.0};
 
                                 // Geom groups active for ray collisions
                                 mjtByte geom_group[mjNGROUP] = {0, 0, 0, 0, 0, 0};
@@ -1255,40 +1258,37 @@ namespace obelisk {
                                 }
 
                                 // Temp storage for geom id output
-                                int geom_id[1] = { -1 };
+                                int geom_id[1] = {-1};
 
                                 int ii = 0;
                                 for (int x = 0; x < x_y_num_rays[0]; ++x) {
                                     for (int y = 0; y < x_y_num_rays[1]; ++y) {
                                         // Compute origin for this ray
-                                        offset = { this->height_map_grid_spacing_ * x, this->height_map_grid_spacing_ * y};
+                                        offset = {this->height_map_grid_spacing_ * x,
+                                                  this->height_map_grid_spacing_ * y};
 
                                         // Rotate offset: R_2d x offset
-                                        rotated_offset = {
-                                            R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
-                                            R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
-                                        };
+                                        rotated_offset = {R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
+                                                          R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]};
 
                                         std::array<double, 3> ray_origin = {
-                                            sensor_pos[0] + rotated_offset[0],
-                                            sensor_pos[1] + rotated_offset[1],
-                                            sensor_pos[2]               // z already offset upward
+                                            sensor_pos[0] + rotated_offset[0], sensor_pos[1] + rotated_offset[1],
+                                            sensor_pos[2] // z already offset upward
                                         };
 
                                         // Perform ray cast
-                                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), geom_group, 1, -1, geom_id);
+                                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(),
+                                                             direction.data(), geom_group, 1, -1, geom_id);
 
                                         // Compute hit point
-                                        std::array<double, 3> hit_point = {
-                                            ray_origin[0] + direction[0] * dist,
-                                            ray_origin[1] + direction[1] * dist,
-                                            ray_origin[2] + direction[2] * dist
-                                        };
+                                        std::array<double, 3> hit_point = {ray_origin[0] + direction[0] * dist,
+                                                                           ray_origin[1] + direction[1] * dist,
+                                                                           ray_origin[2] + direction[2] * dist};
                                         geometry_msgs::msg::Point ros_pt;
                                         // Making it relative to the base link
-                                        ros_pt.x = hit_point[0] - site_pos_global[0];
-                                        ros_pt.y = hit_point[1] - site_pos_global[1];
-                                        ros_pt.z = hit_point[2];
+                                        ros_pt.x      = hit_point[0] - site_pos_global[0];
+                                        ros_pt.y      = hit_point[1] - site_pos_global[1];
+                                        ros_pt.z      = hit_point[2];
                                         msg.cells[ii] = ros_pt;
                                         ii++;
                                     }

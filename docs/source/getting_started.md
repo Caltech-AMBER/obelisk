@@ -83,9 +83,6 @@ is critical as this runs the Obelisk setup script within the docker container. I
 The flag options are:
 ```
 Options:
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
-
   --basic                      Enables basic dependencies necessary for Obelisk locally
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies

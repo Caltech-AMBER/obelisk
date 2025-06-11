@@ -6,7 +6,7 @@ on:
 
 jobs:
   pages:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -26,5 +26,5 @@ jobs:
     - id: deployment
       uses: sphinx-notes/pages@v3
       with:
-        python_version: 3.11
+        python_version: 3.13
         documentation_path: ./docs/source

@@ -1,5 +1,5 @@
-#include "sensor_msgs/msg/joy.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/joy.hpp"
 
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
@@ -17,20 +17,21 @@ namespace obelisk {
             std::string robot_str = this->get_parameter("robot_str").as_string();
 
             if (robot_str == "G1") {
-                motor_num_ = G1_MOTOR_NUM;
+                motor_num_   = G1_MOTOR_NUM;
                 joint_names_ = G1_JOINT_NAMES;
             } else if (robot_str == "Go2") {
-                motor_num_ = GO2_MOTOR_NUM;
+                motor_num_   = GO2_MOTOR_NUM;
                 joint_names_ = GO2_JOINT_NAMES;
             } else {
                 throw std::runtime_error("[UnitreeExampleController] robot_str is invalid!");
             }
             // ----- Joystick Subscriber ----- //
             this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
-                        "joystick_sub_setting", "joystick_sub",
-                        std::bind(&UnitreeExampleController::JoystickCallback, this, std::placeholders::_1));
+                "joystick_sub_setting", "joystick_sub",
+                std::bind(&UnitreeExampleController::JoystickCallback, this, std::placeholders::_1));
 
-            RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);
+            RCLCPP_INFO_STREAM(this->get_logger(),
+                               "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);
         }
 
       protected:
@@ -71,7 +72,7 @@ namespace obelisk {
                 msg.feed_forward.emplace_back(0);
             }
 
-            for (int i = 0; i < 2*motor_num_; i++) {
+            for (int i = 0; i < 2 * motor_num_; i++) {
                 msg.u_mujoco.emplace_back(0);
             }
 
@@ -117,11 +118,12 @@ namespace obelisk {
             // static rclcpp::Time last_target_update = this->now();
 
             if (msg.buttons[X] && (this->now() - last_X_press).seconds() > 1) {
-                
+
                 joint_idx_++;
                 joint_idx_ = joint_idx_ % motor_num_;
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);
+                RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: "
+                                                                           << joint_names_[joint_idx_]);
 
                 last_X_press = this->now();
             }
@@ -133,7 +135,7 @@ namespace obelisk {
         int motor_num_;
         std::vector<std::string> joint_names_;
 
-        static constexpr int G1_MOTOR_NUM = 27;
+        static constexpr int G1_MOTOR_NUM             = 27;
         const std::vector<std::string> G1_JOINT_NAMES = {
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
@@ -167,20 +169,9 @@ namespace obelisk {
         };
 
         // TODO: identify robot from context?
-        static constexpr int GO2_MOTOR_NUM = 12;
+        static constexpr int GO2_MOTOR_NUM             = 12;
         const std::vector<std::string> GO2_JOINT_NAMES = {
-            "FR_hip_joint",
-            "FR_thigh_joint",
-            "FR_calf_joint",
-            "FL_hip_joint",
-            "FL_thigh_joint",
-            "FL_calf_joint",
-            "RR_hip_joint",
-            "RR_thigh_joint",
-            "RR_calf_joint",
-            "RL_hip_joint",
-            "RL_thigh_joint",
-            "RL_calf_joint"
-        };
+            "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint", "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
+            "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint", "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"};
     };
 } // namespace obelisk

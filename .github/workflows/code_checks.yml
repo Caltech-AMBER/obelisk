@@ -12,17 +12,17 @@ permissions:
 
 jobs:
   code-checks:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.4'
-      - uses: prefix-dev/setup-pixi@v0.8.1
+          python-version: '3.13'
+      - uses: prefix-dev/setup-pixi@v0.8.8
         with:
-          pixi-version: v0.26.1
+          pixi-version: v0.48.1
           cache: true
       - uses: actions/cache@v4
         with:
@@ -30,7 +30,7 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
       - name: Set Up Development Environment
         run: |
-          source setup.sh --recommended --leap
+          source setup.sh --obk-aliases --leap
           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
       - name: Build Obelisk ROS2 messages
         run: |

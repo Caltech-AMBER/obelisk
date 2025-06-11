@@ -41,7 +41,7 @@ set(YAML_CPP_BUILD_TOOLS OFF)
 FetchContent_Declare(
     yaml-cpp
     GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0 # note all other versions are of the form yaml-cpp-x.y.z
+    GIT_TAG master  # [June 10, 2025] The 0.8.0 release needs to have the minimum version raised to 3.5, master fixed
 )
 FetchContent_MakeAvailable(yaml-cpp)
 

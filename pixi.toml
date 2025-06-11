@@ -23,7 +23,7 @@ env = { RMW_IMPLEMENTATION="rmw_cyclonedds_cpp", PYRIGHT_PYTHON_FORCE_VERSION="l
 
 # minimal
 [dependencies]
-python = ">=3.10"
+python = ">=3.11"  # restricted by colcon-common-extensions
 pip = ">=24.0"
 setuptools = "<=70.4"
 compilers = "*"
@@ -35,14 +35,14 @@ obelisk_py = { path="./obelisk/python", editable=true }
 
 
 # cuda
-[feature.cuda121]
-system-requirements = {cuda="12.1.1"}
+[feature.cuda]
+system-requirements = {cuda="12.9"}
 
-[feature.cuda121.activation]
+[feature.cuda.activation]
 scripts = ["scripts/add_cuda_cmake_prefix_path.sh"]
 
-[feature.cuda121.dependencies]
-cuda = "12.1.1"
+[feature.cuda.dependencies]
+cuda = ">=12.9"
 
 # ros2
 [feature.ros2base]
@@ -53,7 +53,7 @@ ros-humble-ros-base = "*"
 colcon-common-extensions = "*"
 ros-humble-rviz-visual-tools = "*"
 ros-humble-foxglove-bridge = "*"
-ros-humble-joy = "3.3.0"
+ros-humble-joy = "==3.3.0"
 
 # TODO(ahl): this was just a test to see if we could install many
 # prune these away to a true minimal set later
@@ -106,10 +106,8 @@ sphinx-tabs = ">=3.0.0"
 
 
 # test
-# TODO(ahl): pytest bounded until issue resolved
-# https://github.com/prefix-dev/pixi/issues/1529
 [feature.test.dependencies]
-pytest = "<=8.0.0"
+pytest = "*"
 
 [feature.test.pypi-dependencies]
 pytest-xdist = ">=3.6.1"
@@ -149,10 +147,10 @@ pyright = "*"
 
 # build
 [feature.build.dependencies]
-cmake = "3.16.*"
-ninja = "1.12.1"
+cmake = ">=3.16"
+ninja = ">=1.12.1"
 make = ">=4.3,<5"
-glfw = "3.4"
+glfw = ">=3.4"
 mesalib = "*"
 
 # ################ #
@@ -167,7 +165,7 @@ obelisk = { features=["obelisk"] }
 
 # test
 # TODO(ahl): see if we can use the original tests env with github CI, issue is cuda
-test = { features=["cuda121", "obelisk", "ros2base", "test"], solve-group="dev" }
+test = { features=["cuda", "obelisk", "ros2base", "test"], solve-group="dev" }
 
 # ros2
 ros2-install = { features=["ros2base"] }
@@ -175,13 +173,13 @@ ros2-install = { features=["ros2base"] }
 # dev
 dev-no-gpu = { features=["obelisk", "ros2base", "test", "dev", "build", "leap"] }
 
-dev = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
+dev = { features=["cuda", "obelisk", "ros2base", "test", "dev", "build", "leap"], solve-group="dev" }
 
-dev-zed = { features=["cuda121", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
+dev-zed = { features=["cuda", "obelisk", "ros2base", "test", "dev", "build", "leap", "zed"], solve-group="dev" }
 
 docs = { features=["docs"] }
 
-build = { features = ["cuda121", "build"] }
+build = { features = ["cuda", "build"] }
 
 # ##### #
 # TASKS #

@@ -3,13 +3,46 @@ This repository hosts generic interfaces for controlling robots with ROS2.
 
 [Docs](https://caltech-amber.github.io/obelisk/)
 
-## Setup
+# Quickstart
+
+This section contains Quickstart information for members of the AMBER Lab.
+
+## FR3
+Initial setup in the repo root:
+```bash
+source setup.sh \
+    --cyclone-perf \
+    --obk-aliases \
+    --zed \
+    --leap \
+    --pixi \
+    --config-groups
+```
+
+Enter Docker container + setup in the container:
+```bash
+cd docker
+docker compose -f docker-compose.yml run --build obelisk
+```
+
+Inside the Docker container:
+```
+# build and enter the pixi shell
+pixi shell -e dev
+
+# activate obelisk, clean, and rebuild
+obk
+obk-clean
+obk-build
+```
+
+# Setup
 Obelisk should be used as a dependency for external robot control code that is written in other downstream projects. There are a few options:
 1. Use Obelisk in Docker (this is mainly for developing in Obelisk).
 2. Use Obelisk on your local filesystem.
 3. Use Obelisk in a project that uses `pixi`.
 
-### Initial Setup
+## Initial Setup
 Initial setup proceeds by running the `setup.sh` script in the repository root. This script has the ability to make changes to your local dependencies - all such changes are opt-in. **It is very important that you run `setup.sh` using the `source` command, and not `bash`, because there are environment variables that will be sourced!**
 
 This script has the ability to do 4 things:
@@ -23,9 +56,6 @@ The options are as follows:
 source setup.sh [OPTIONS]
 
 Options:
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
-
   --basic                      Enables basic dependencies necessary for Obelisk locally
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
@@ -78,7 +108,7 @@ If you're installing `docker` for the first time using this script, you also nee
 newgrp docker
 ```
 
-### Building Obelisk ROS Packages
+## Building Obelisk ROS Packages
 Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have to build it. You can either build it on your local filesystem or in a virtual environment that we manage using `pixi`.
 
 * If you are building it on your local filesystem, you need some minimal set of local dependencies. These should have been installed in the previous step.
@@ -102,7 +132,7 @@ Next, since Obelisk acts as a dependency for a downstream ROS2 project, you have
     obk-build
     ```
 
-### Using Obelisk
+## Using Obelisk
 Once Obelisk has been built, you can use it. If you have set up Obelisk using the `--obk-aliases` flag, we provide a very useful command:
 ```
 obk
@@ -115,5 +145,5 @@ obk-clean
 ```
 This will delete cached build files associated with Obelisk. If you have tried building the Obelisk source code multiple times or from different environments/local filesystems, it may be corrupted, and cleaning the installation can help fix issues.
 
-## Building Docs
+# Building Docs
 In the repository root, to build the docs locally, run `sphinx-build -M html docs/source/ docs/build/`.
