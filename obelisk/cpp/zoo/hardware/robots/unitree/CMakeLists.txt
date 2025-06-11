@@ -9,7 +9,7 @@ include(FetchContent)
 FetchContent_Declare(
     unitree_sdk
     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
-    GIT_TAG main)
+    GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d) # main # TODO: Fix the issue here
 
 set(UNITREE_SDK_BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
 set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
