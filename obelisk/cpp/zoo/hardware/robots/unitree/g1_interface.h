@@ -188,20 +188,6 @@ namespace obelisk {
                 // ------------------------ Execution FSM: Home ------------------------ //
             } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
                 // Compute time that robot has been in HOME
-<<<<<<< HEAD
-                float t =
-                    std::chrono::duration<double>(std::chrono::steady_clock::now() - user_pose_transition_start_time_)
-                        .count();
-                // Compute proportion of time relative to transition duration
-                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
-                // Write message
-                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST;
-                     i++) { // Sending the extra waist commands while in fixed waist should have no effect
-                    dds_low_command.motor_cmd().at(i).mode() = 1; // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau()  = 0.;
-                    dds_low_command.motor_cmd().at(i).q() =
-                        (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
-=======
                 // float t = std::chrono::duration<double>(
                 // std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
                 // Compute proportion of time relative to transition duration
@@ -214,7 +200,6 @@ namespace obelisk {
                     dds_low_command.motor_cmd().at(i).tau()  = 0.;
                     dds_low_command.motor_cmd().at(i).q() =
                         user_pose_[i]; //(1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
->>>>>>> af84dd9a8a0053d4eeaad66b902ac3d8cc662622
                     dds_low_command.motor_cmd().at(i).dq() = 0.;
                     dds_low_command.motor_cmd().at(i).kp() = kp_[i];
                     dds_low_command.motor_cmd().at(i).kd() = kd_[i];

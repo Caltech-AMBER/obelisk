@@ -587,14 +587,6 @@ namespace obelisk {
                         std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::Odometry>>(pub);
 
                     // Add the timer to the list
-<<<<<<< HEAD
-                    this->timers_[sensor_key] =
-                        this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                                                CreateTimerCallback<nav_msgs::msg::Odometry>(
-                                                    sensor_names, mj_sensor_types,
-                                                    this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
-                                                callback_group_);
-=======
                     this->timers_[sensor_key] =
                         this->create_wall_timer(std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
                                                 CreateTimerCallback<nav_msgs::msg::Odometry>(
@@ -614,7 +606,6 @@ namespace obelisk {
                                                     sensor_names, mj_sensor_types,
                                                     this->template GetPublisher<nav_msgs::msg::GridCells>(sensor_key)),
                                                 callback_group_);
->>>>>>> af84dd9a8a0053d4eeaad66b902ac3d8cc662622
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
                 }
