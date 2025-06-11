@@ -7,7 +7,6 @@ onboard:
       # callback_groups:
       publishers:
         - ros_parameter: pub_ctrl_setting
-          # key: pub1
           topic: /obelisk/dummy/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
@@ -15,26 +14,21 @@ onboard:
           non_obelisk: False
       subscribers:
         - ros_parameter: sub_est_setting
-          # key: sub1
           topic: /obelisk/dummy/est
           msg_type: EstimatedState
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       timers:
         - ros_parameter: timer_ctrl_setting
-          # key: timer1
           timer_period_sec: 0.001
           callback_group: None
-          # callback_key: timer_callback1
   estimation:
     - pkg: obelisk_estimation_cpp
       executable: jointencoders_passthrough_estimator
       # callback_groups:
       publishers:
         - ros_parameter: pub_est_setting
-          # key: pub1
           topic: /obelisk/dummy/est
           msg_type: EstimatedState
           history_depth: 10
@@ -42,33 +36,30 @@ onboard:
           non_obelisk: False
       subscribers:
         - ros_parameter: sub_sensor_setting
-          # key: sub1
           topic: /obelisk/dummy/joint_encoders
           msg_type: JointEncoders
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       timers:
         - ros_parameter: timer_est_setting
-          # key: timer1
           timer_period_sec: 0.001
           callback_group: None
-          # callback_key: timer_callback1
   # sensing:
   robot:
     - is_simulated: True
       pkg: obelisk_sim_cpp
       executable: obelisk_mujoco_robot
       # callback_groups:
-      # publishers:
+      params:
+        height_map_grid_size: [1., 1.]
+        height_map_grid_spacing: 0.1
+        height_map_geom_group: [0]
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/dummy/ctrl
           msg_type: PositionSetpoint
           history_depth: 10
-          # callback_key: sub_callback1
           callback_group: None
           non_obelisk: False
       sim:
@@ -104,6 +95,11 @@ onboard:
               tip_orientation_sensor: framequat
               tip_velocimeter: velocimeter
               tip_gyro_sensor: gyro
+          - topic: /obelisk/dummy/scan_dots
+            dt: 0.1
+            msg_type: GridCells
+            sensor_names:
+              tip_pos_sensor: framepos
           viz_geoms:
             dt: 1.0
             dummy_box: box
