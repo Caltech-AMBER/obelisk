@@ -133,7 +133,6 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree")
 else
@@ -142,7 +141,6 @@ else
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree")
 fi
