@@ -1,3 +1,5 @@
+from typing import Type
+
 import numpy as np
 from franky import Affine, CartesianMotion, JointMotion, ReferenceType
 from obelisk_control_msgs.msg import PoseSetpoint, PositionSetpoint
@@ -44,7 +46,7 @@ class ObeliskFR3Robot(ObeliskRobot):
         assert self.ctrl_mode in ["ee", "joint"], "Invalid control mode specified."
         self._ready = True
 
-    def apply_control(self, control_msg: PositionSetpoint | PoseSetpoint) -> None:
+    def apply_control(self, control_msg: Type) -> None:
         """Write the control message to the FR3."""
         if not self._ready:
             return None
@@ -52,11 +54,10 @@ class ObeliskFR3Robot(ObeliskRobot):
         self.robot.recover_from_errors()
         if self.ctrl_mode == "ee":
             assert isinstance(control_msg, PoseSetpoint)
+            pos = np.array([control_msg[0], control_msg[1], control_msg[2]])  # type: ignore
+            quat = np.array([control_msg[4], control_msg[5], control_msg[6], control_msg[3]])  # type: ignore
             motion = CartesianMotion(
-                Affine(
-                    np.array([control_msg[0], control_msg[1], control_msg[2]]),
-                    np.array([control_msg[4], control_msg[5], control_msg[6], control_msg[3]]),  # (w, x, y, z) in
-                ),
+                Affine(pos, quat),  # (w, x, y, z) in
                 ReferenceType.Absolute,  # TODO: expose an option for relative motion
             )
         elif self.ctrl_mode == "joint":
@@ -96,22 +97,14 @@ class ObeliskFR3Robot(ObeliskRobot):
         frame_pose.orientation.y = ee_quaternion[1]
         frame_pose.orientation.z = ee_quaternion[2]
         frame_pose.orientation.w = ee_quaternion[3]
-        frame_pose.linear_velocity.x = ee_linvel[0]
-        frame_pose.linear_velocity.y = ee_linvel[1]
-        frame_pose.linear_velocity.z = ee_linvel[2]
-        frame_pose.angular_velocity.x = ee_angvel[0]
-        frame_pose.angular_velocity.y = ee_angvel[1]
-        frame_pose.angular_velocity.z = ee_angvel[2]
+        frame_pose.linvel.x = ee_linvel[0]
+        frame_pose.linvel.y = ee_linvel[1]
+        frame_pose.linvel.z = ee_linvel[2]
+        frame_pose.angvel.x = ee_angvel[0]
+        frame_pose.angvel.y = ee_angvel[1]
+        frame_pose.angvel.z = ee_angvel[2]
         frame_pose.frame_name = "ee_tcp"
 
         # publish
         self.obk_publishers["pub_joints"].publish(joint_encoders)
         self.obk_publishers["pub_ee_pose"].publish(frame_pose)
-
-
-if __name__ == "__main__":
-    robot_ip = "172.16.0.2"
-    username = "persephone"
-    password = "persephone"
-    robot, gripper = setup_robot(robot_ip, username, password)
-    breakpoint()
