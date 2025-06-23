@@ -28,7 +28,8 @@ setup(
     entry_points={
         "console_scripts": [
             "obelisk_fr3_robot = obelisk_fr3_py.obelisk_fr3_robot:main",
-            # "fr3_example_controller = obelisk_fr3_py.fr3_example_controller:main",
+            "fr3_example_joint_controller = obelisk_fr3_py.fr3_example_joint_controller:main",
+            # "fr3_example_ee_controller = obelisk_fr3_py.fr3_example_ee_controller:main",
         ],
     },
 )

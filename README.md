@@ -59,6 +59,8 @@ Options:
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
+  --unitree                    Enables Unitree dependencies
+  --fr3                        Enables FR3 dependencies
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker

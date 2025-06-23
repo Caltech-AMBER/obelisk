@@ -1,0 +1,110 @@
+config: fr3
+onboard:
+  robot:  # hardware must be on the onboard computer
+    - is_simulated: False
+      pkg: obelisk_fr3_py
+      executable: obelisk_fr3_robot
+      # callback_groups:
+      publishers:  # for hardware only
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/fr3/joint_encoders
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          # key: sub1
+          topic: /obelisk/fr3/ctrl
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None
+high_level:  # everything else can be computed on the high-level computer
+  control:
+    - pkg: obelisk_fr3_py
+      executable: fr3_example_joint_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/fr3/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/fr3/est
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_estimation_py
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/fr3/est
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          # key: sub1
+          topic: /obelisk/fr3/joint_encoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  # sensing:
+  # # TODO: clean this up
+  # robot:  # if we're only simulating the system, we can use a non-onboard computer
+  #   - is_simulated: True
+  #     pkg: obelisk_sim_py
+  #     executable: obelisk_mujoco_robot
+  #     # callback_groups:
+  #     publishers:  # for hardware only
+  #       - ros_parameter: pub_sensor_setting
+  #         topic: /obelisk/fr3/joint_encoders
+  #         history_depth: 10
+  #         callback_group: None
+  #     subscribers:
+  #       - ros_parameter: sub_ctrl_setting
+  #         # key: sub1
+  #         topic: /obelisk/fr3/ctrl
+  #         history_depth: 10
+  #         callback_group: None
+  #     # sim:
+  #     #   - ros_parameter: mujoco_setting
+  #     #     n_u: 16
+  #     #     time_step: 0.002
+  #     #     num_steps_per_viz: 5
+  #     #     robot_pkg: leap_rh
+  #     #     model_xml_path: leap_palm_up.xml
+  #     #     sensor_settings:
+  #     #     - topic: /obelisk/leap/joint_encoders
+  #     #       dt: 0.002
+  #     #       msg_type: ObkJointEncoders
+  #     #       sensor_names:
+  #     #         if_mcp_sensor: jointpos
+  #     #         if_rot_sensor: jointpos
+  #     #         if_pip_sensor: jointpos
+  #     #         if_dip_sensor: jointpos
+  #     #         mf_mcp_sensor: jointpos
+  #     #         mf_rot_sensor: jointpos
+  #     #         mf_pip_sensor: jointpos
+  #     #         mf_dip_sensor: jointpos
+  #     #         rf_mcp_sensor: jointpos
+  #     #         rf_rot_sensor: jointpos
+  #     #         rf_pip_sensor: jointpos
+  #     #         rf_dip_sensor: jointpos
+  #     #         th_cmc_sensor: jointpos
+  #     #         th_axl_sensor: jointpos
+  #     #         th_mcp_sensor: jointpos
+  #     #         th_ipl_sensor: jointpos
+  #     timers:
+  #       - ros_parameter: timer_sensor_setting
+  #         timer_period_sec: 0.02
+  #         callback_group: None
