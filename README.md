@@ -8,14 +8,16 @@ This repository hosts generic interfaces for controlling robots with ROS2.
 This section contains Quickstart information for members of the AMBER Lab.
 
 ## FR3
-Initial setup in the repo root:
+Initial setup in the repo root. For AMBER lab members, get the FR3 credentials from Albert or Gary.
 ```bash
 source setup.sh \
     --cyclone-perf \
     --obk-aliases \
     --pixi \
     --fr3 \
-    --config-groups
+    --config-groups \
+    --fr3-username=<YOUR_FR3_USERNAME> \
+    --fr3-password=<YOUR_FR3_PASSWORD>
 ```
 
 Enter Docker container + setup in the container:

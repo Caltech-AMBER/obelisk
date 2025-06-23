@@ -53,6 +53,16 @@ for arg in "$@"; do
             shift  # Adds user to the video group
             ;;
 
+        # docker hardware credentials
+        --docker-fr3-username=*)
+            DOCKER_FR3_USERNAME="${arg#*=}"
+            export OBELISK_DOCKER_FR3_USERNAME="$DOCKER_FR3_USERNAME"
+            ;;
+        --docker-fr3-password=*)
+            DOCKER_FR3_PASSWORD="${arg#*=}"
+            export OBELISK_DOCKER_FR3_PASSWORD="$DOCKER_FR3_PASSWORD"
+            ;;
+
         --help)
             echo "Usage: $0 [OPTIONS]
 
@@ -68,6 +78,9 @@ Options:
 
   --docker-group-leap    Adds user to the dialout group
   --docker-group-zed     Adds user to the video group
+
+  --docker-fr3-username [USERNAME]  Sets the FR3 username for docker
+  --docker-fr3-password [PASSWORD]  Sets the FR3 password for docker
 
   --help                 Display this help message and exit
 "
@@ -237,6 +250,21 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_ZED=false!\033[0m"
     echo "OBELISK_DOCKER_GROUP_ZED=false" >> $env_file
     export OBELISK_DOCKER_GROUP_ZED=false
+fi
+
+# hardware credentials
+if [ -n "$OBELISK_DOCKER_FR3_USERNAME" ]; then
+    echo -e "\033[1;32mWriting OBELISK_DOCKER_FR3_USERNAME to .env\033[0m"
+    echo "OBELISK_DOCKER_FR3_USERNAME=$OBELISK_DOCKER_FR3_USERNAME" >> $env_file
+else
+    echo -e "\033[1;33mOBELISK_DOCKER_FR3_USERNAME not set. Skipping.\033[0m"
+fi
+
+if [ -n "$OBELISK_DOCKER_FR3_PASSWORD" ]; then
+    echo -e "\033[1;32mWriting OBELISK_DOCKER_FR3_PASSWORD to .env\033[0m"
+    echo "OBELISK_DOCKER_FR3_PASSWORD=$OBELISK_DOCKER_FR3_PASSWORD" >> $env_file
+else
+    echo -e "\033[1;33mOBELISK_DOCKER_FR3_PASSWORD not set. Skipping.\033[0m"
 fi
 
 # copy scripts to the docker directory

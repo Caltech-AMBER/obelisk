@@ -84,6 +84,16 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
 
+        # hardware credentials
+        --fr3-username=*)
+            FR3_USERNAME="${arg#*=}"
+            export FR3_USERNAME
+            ;;
+        --fr3-password=*)
+            FR3_PASSWORD="${arg#*=}"
+            export FR3_PASSWORD
+            ;;
+
         # help
         --help)
             echo "Usage: source setup.sh [OPTIONS]
@@ -95,6 +105,8 @@ Options:
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
   --fr3                        Enables FR3 dependencies
+  --fr3-username=[USERNAME]    Set the FR3 username
+  --fr3-password=[PASSWORD]    Set the FR3 password
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -134,7 +146,9 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
+        $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
@@ -142,7 +156,9 @@ else
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
+        $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 fi
 
 # group configuration on host

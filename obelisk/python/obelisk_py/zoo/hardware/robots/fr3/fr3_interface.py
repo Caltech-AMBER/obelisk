@@ -1,9 +1,11 @@
+import os
 from typing import Type
 
 import numpy as np
 from franky import Affine, CartesianMotion, JointMotion, ReferenceType
 from obelisk_control_msgs.msg import PoseSetpoint, PositionSetpoint
 from obelisk_sensor_msgs.msg import ObkFramePose, ObkJointEncoders
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 
 from obelisk_py.core.robot import ObeliskRobot
 from obelisk_py.zoo.hardware.robots.fr3.fr3_utils import setup_robot
@@ -33,8 +35,10 @@ class ObeliskFR3Robot(ObeliskRobot):
         )
 
         # initialize
-        self.declare_parameter("username")
-        self.declare_parameter("password")
+        # the username and password are read from environment variables so credentials aren't committed
+        str_descriptor = ParameterDescriptor(type=ParameterType.PARAMETER_STRING)
+        self.declare_parameter("username", os.getenv("FR3_USERNAME"), descriptor=str_descriptor)
+        self.declare_parameter("password", os.getenv("FR3_PASSWORD"), descriptor=str_descriptor)
         self.declare_parameter("robot_ip", "172.16.0.2")
         self.declare_parameter("ctrl_mode", "ee")
 

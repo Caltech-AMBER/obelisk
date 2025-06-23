@@ -5,9 +5,13 @@ onboard:
       pkg: obelisk_fr3_py
       executable: obelisk_fr3_robot
       # callback_groups:
-      publishers:  # for hardware only
-        - ros_parameter: pub_sensor_setting
+      publishers:
+        - ros_parameter: pub_joints_setting
           topic: /obelisk/fr3/joint_encoders
+          history_depth: 10
+          callback_group: None
+        - ros_parameter: pub_ee_pose_setting
+          topic: /obelisk/fr3/ee_pose
           history_depth: 10
           callback_group: None
       subscribers:
