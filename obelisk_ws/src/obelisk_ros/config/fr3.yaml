@@ -22,7 +22,7 @@ onboard:
           callback_group: None
       timers:
         - ros_parameter: timer_sensor_setting
-          timer_period_sec: 0.02
+          timer_period_sec: 0.001
           callback_group: None
 high_level:  # everything else can be computed on the high-level computer
   control:
