@@ -59,9 +59,9 @@
           <!-- <velocity kv="0" ctrllimited="false"/> -->
           <!-- <velocity kv="1" ctrllimited="false"/> -->
           <velocity kv="2.5" ctrllimited="false"/>
-        </default> 
+        </default>
       </default>
-      
+
       <!-- Calf joints -->
       <default class="calf">
         <joint range="-2.7227 -0.83776" actuatorfrcrange="-45.43 45.43"/>
@@ -112,7 +112,7 @@
     <mesh name="thigh_mirror" file="thigh_mirror.stl"/>
     <mesh name="calf_mirror" file="calf_mirror.stl"/>
 
-<!-- 
+<!--
     <mesh file="base_0.obj"/>
     <mesh file="base_1.obj"/>
     <mesh file="base_2.obj"/>
@@ -148,7 +148,7 @@
       <geom size="0.1881 0.04675 0.057" type="box" class="collision"/>
       <geom size="0.05 0.045" pos="0.285 0 0.01" type="cylinder" class="collision"/>
       <geom size="0.047" pos="0.293 0 -0.06" class="collision"/>
-      
+
       <site name="imu" pos="-0.02557 0 0.04232"/>
       <site name="torso_mocap_site" pos="0 0 0" euler="0 0 0" size="0.01"/>
 
@@ -369,7 +369,7 @@
     <position class="hip_pos" name="RL_hip_joint_pos" joint="RL_hip_joint"/>
     <position class="thigh_pos" name="RL_thigh_joint_pos" joint="RL_thigh_joint"/>
     <position class="calf_pos" name="RL_calf_joint_pos" joint="RL_calf_joint"/>
-    
+
     <!-- Velocity Control -->
     <velocity class="hip_vel" name="FR_hip_joint_vel" joint="FR_hip_joint"/>
     <velocity class="thigh_vel" name="FR_thigh_joint_vel" joint="FR_thigh_joint"/>
@@ -383,7 +383,7 @@
     <velocity class="hip_vel" name="RL_hip_joint_vel" joint="RL_hip_joint"/>
     <velocity class="thigh_vel" name="RL_thigh_joint_vel" joint="RL_thigh_joint"/>
     <velocity class="calf_vel" name="RL_calf_joint_vel" joint="RL_calf_joint"/>
-    
+
     <!-- Torque Control -->
     <motor class="hip" name="FR_hip_joint" joint="FR_hip_joint"/>
     <motor class="thigh" name="FR_thigh_joint" joint="FR_thigh_joint"/>

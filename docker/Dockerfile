@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # base image
-FROM ubuntu:22.04 as base
+FROM ubuntu:24.04 as base
 SHELL ["/bin/bash", "-c"]
 
 # build args
@@ -53,11 +53,20 @@ RUN apt-get update && apt-get install -y \
     locale-gen en_US.UTF-8
 
 # create non-root user with sudo privileges
-RUN groupadd --gid $GID $USER && \
-    useradd --uid $UID --gid $GID -m $USER -d /home/${USER} --shell /usr/bin/bash && \
-    echo "${USER}:password" | chpasswd && \
-    usermod -aG sudo ${USER} && \
-    echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# if the UID/GID in the container conflict with the host, then change the user/group to that of the host
+RUN if id -u ${UID} &>/dev/null; then \
+        existing_user=$(getent passwd ${UID} | cut -d: -f1); \
+        usermod -l ${USER} ${existing_user} && \
+        usermod -d /home/${USER} -m ${USER}; \
+        existing_group=$(getent group ${GID} | cut -d: -f1); \
+        if [ "${existing_group}" != "${USER}" ]; then \
+            groupmod -n ${USER} ${existing_group}; \
+        fi; \
+    else \
+        groupadd --gid ${GID} ${USER}; \
+        useradd --uid ${UID} --gid ${GID} -m ${USER} -d /home/${USER} --shell /usr/bin/bash; \
+    fi && \
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # conditionally install dependencies based on build args
 # source base ROS if basic deps are installed and you are not using pixi

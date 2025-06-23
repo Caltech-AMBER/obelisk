@@ -16,6 +16,7 @@ services:
         OBELISK_DOCKER_GROUP_LEAP: $OBELISK_DOCKER_GROUP_LEAP
         OBELISK_DOCKER_GROUP_ZED: $OBELISK_DOCKER_GROUP_ZED
       dockerfile: Dockerfile
+      network: host
     network_mode: host
     ipc: host
     environment:

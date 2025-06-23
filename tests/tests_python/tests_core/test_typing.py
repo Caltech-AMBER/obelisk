@@ -4,6 +4,7 @@ import obelisk_control_msgs.msg as ocm
 import obelisk_estimator_msgs.msg as oem
 import obelisk_sensor_msgs.msg as osm
 import pytest
+from rcl_interfaces.msg import ParameterEvent
 
 from obelisk_py.core.obelisk_typing import (
     ObeliskAllowedMsg,
@@ -48,7 +49,5 @@ def test_obelisk_allowed_msg_types() -> None:
 
     This test verifies that the ObeliskAllowedMsg type includes the ParameterEvent type in addition to ObeliskMsg types.
     """
-    from rcl_interfaces.msg import ParameterEvent
-
     assert ParameterEvent in ObeliskAllowedMsg.__bound__.__args__
     assert all(arg in ObeliskAllowedMsg.__bound__.__args__ for arg in ObeliskMsg.__bound__.__args__)

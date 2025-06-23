@@ -20,13 +20,6 @@ obk_aliases=false
 
 for arg in "$@"; do
     case $arg in
-        --recommended)
-            cyclone_perf=true
-            pixi=true
-            obk_aliases=true
-            shift  # Allows recommended system-level changes
-            ;;
-
         # dependency groups to configure
         --basic)
             basic=true
@@ -91,9 +84,6 @@ for arg in "$@"; do
             echo "Usage: source setup.sh [OPTIONS]
 
 Options:
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
-
   --basic                      Enables basic dependencies necessary for Obelisk locally
   --cyclone-perf               Enables cyclone performance optimizations
   --leap                       Enables LEAP hand dependencies

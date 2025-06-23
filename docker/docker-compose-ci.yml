@@ -10,6 +10,7 @@ services:
         OBELISK_ROOT: $OBELISK_ROOT
         OBELISK_DOCKER_PIXI: true
       dockerfile: Dockerfile
+      network: host
     network_mode: host
     ipc: host
     environment:

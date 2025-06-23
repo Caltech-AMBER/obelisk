@@ -185,17 +185,17 @@ if [ "$zed" = true ]; then
             wget \
             zstd
 
-        # [July 24, 2024] installing ZED SDK, including python version (version 4.1.3)
+        # [June 10, 2025] installing ZED SDK, including python version (version 5.0.1)
         if [ ! -d /etc/udev/rules.d ]; then
             sudo mkdir -p /etc/udev/rules.d
         fi
         sudo /lib/systemd/systemd-udevd --daemon  # starting a udev daemon
-        wget https://download.stereolabs.com/zedsdk/4.1/cu121/ubuntu22 -O ubuntu22  # download installer
-        sudo chmod +x ubuntu22  # make installer executable
-        ./ubuntu22 -- silent skip_od_module skip_hub skip_tools  # run installer
+        wget https://download.stereolabs.com/zedsdk/5.0.1/cu12/ubuntu24 -O ubuntu24  # download installer
+        sudo chmod +x ubuntu24  # make installer executable
+        ./ubuntu24 -- silent skip_cuda skip_od_module skip_python skip_hub  # run installer
         sudo chown -R $USER:$USER /usr/local/zed  # change ownership of zed sdk
         sudo udevadm control --reload-rules && sudo udevadm trigger  # activating udev rules
-        rm ubuntu22  # remove installer
+        rm ubuntu24  # remove installer
 
         # granting permissions for python dist-packages because zed SDK installs a bunch of these necessary for colcon
         sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/
