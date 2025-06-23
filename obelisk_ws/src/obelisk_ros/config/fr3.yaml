@@ -5,6 +5,8 @@ onboard:
       pkg: obelisk_fr3_py
       executable: obelisk_fr3_robot
       # callback_groups:
+      params:
+        ctrl_mode: joint
       publishers:
         - ros_parameter: pub_joints_setting
           topic: /obelisk/fr3/joint_encoders
