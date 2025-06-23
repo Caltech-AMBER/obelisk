@@ -6,6 +6,7 @@ cyclone_perf=false
 leap=false
 zed=false
 unitree=false
+fr3=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -40,6 +41,10 @@ for arg in "$@"; do
         --unitree)
             unitree=true
             shift
+            ;;
+        --fr3)
+            fr3=true
+            shift  # Enables FR3 dependencies
             ;;
 
 
@@ -89,6 +94,7 @@ Options:
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
+  --fr3                        Enables FR3 dependencies
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -127,6 +133,7 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree")
 else
@@ -135,6 +142,7 @@ else
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree")
 fi
@@ -163,4 +171,5 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
     $([ "$unitree" = true ] && echo "--unitree") \
+    $([ "$fr3" = true ] && echo "--fr3") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")

@@ -13,9 +13,8 @@ Initial setup in the repo root:
 source setup.sh \
     --cyclone-perf \
     --obk-aliases \
-    --zed \
-    --leap \
     --pixi \
+    --fr3 \
     --config-groups
 ```
 

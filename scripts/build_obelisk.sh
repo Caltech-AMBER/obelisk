@@ -2,6 +2,8 @@
 
 leap=false
 zed=false
+unitree=false
+fr3=false
 verbose=false
 
 for arg in "$@"; do
@@ -14,6 +16,14 @@ for arg in "$@"; do
         --zed)
             zed=true
             shift  # Adds ZED ROS packages to colcon build command
+            ;;
+        --unitree)
+            unitree=true
+            shift  # Adds Unitree ROS packages to colcon build command
+            ;;
+        --fr3)
+            fr3=true
+            shift  # Adds FR3 ROS packages to colcon build command
             ;;
         --verbose)
             verbose=true
@@ -36,6 +46,12 @@ if [ "$leap" = false ]; then
 fi
 if [ "$zed" = false ]; then
     SKIP_PKGS+=" obelisk_zed_cpp"
+fi
+if [ "$unitree" = false ]; then
+    SKIP_PKGS+=" obelisk_unitree_cpp"
+fi
+if [ "$fr3" = false ]; then
+    SKIP_PKGS+=" obelisk_fr3_py"
 fi
 VERBOSE_STR=""
 if [ "$verbose" = true ]; then
