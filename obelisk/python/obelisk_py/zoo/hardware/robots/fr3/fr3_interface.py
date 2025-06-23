@@ -58,15 +58,22 @@ class ObeliskFR3Robot(ObeliskRobot):
         self.robot.recover_from_errors()
         if self.ctrl_mode == "ee":
             assert isinstance(control_msg, PoseSetpoint)
-            pos = np.array([control_msg[0], control_msg[1], control_msg[2]])  # type: ignore
-            quat = np.array([control_msg[4], control_msg[5], control_msg[6], control_msg[3]])  # type: ignore
+            x, y, z = control_msg.pose_des[0], control_msg.pose_des[1], control_msg.pose_des[2]
+            qw, qx, qy, qz = (
+                control_msg.pose_des[3],
+                control_msg.pose_des[4],
+                control_msg.pose_des[5],
+                control_msg.pose_des[6],
+            )
+            pos = np.array([x, y, z])  # type: ignore
+            quat = np.array([qx, qy, qz, qw])  # type: ignore
             motion = CartesianMotion(
                 Affine(pos, quat),  # (w, x, y, z) in
                 ReferenceType.Absolute,  # TODO: expose an option for relative motion
             )
         elif self.ctrl_mode == "joint":
             assert isinstance(control_msg, PositionSetpoint)
-            motion = JointMotion(np.array(control_msg.q_des))
+            motion = JointMotion(np.array([control_msg.q_des[i] for i in range(7)]))
         else:
             raise ValueError(f"Invalid control mode: {self.ctrl_mode}. Valid modes are 'ee' and 'joint'.")
         self.robot.move(motion, asynchronous=True)
