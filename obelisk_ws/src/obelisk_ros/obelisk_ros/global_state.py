@@ -20,11 +20,11 @@ class GlobalStateNode(LifecycleNode):
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
     rclpy.init(args=args)
-    obelisk_mujoco_robot = GlobalStateNode()
+    global_state_node = GlobalStateNode()
     executor = SingleThreadedExecutor()
-    executor.add_node(obelisk_mujoco_robot)
+    executor.add_node(global_state_node)
     executor.spin()
-    obelisk_mujoco_robot.destroy_node()
+    global_state_node.destroy_node()
     rclpy.shutdown()
 
 
