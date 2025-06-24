@@ -6,7 +6,7 @@ onboard:
       executable: obelisk_fr3_robot
       # callback_groups:
       params:
-        ctrl_mode: joint
+        ctrl_mode: joint_pos
       publishers:
         - ros_parameter: pub_joints_setting
           topic: /obelisk/fr3/joint_encoders

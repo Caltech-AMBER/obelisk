@@ -2,7 +2,7 @@ import os
 from typing import Type
 
 import numpy as np
-from franky import Affine, CartesianMotion, JointMotion, ReferenceType
+from franky import Affine, CartesianMotion, JointMotion, JointVelocityMotion, ReferenceType
 from obelisk_control_msgs.msg import PoseSetpoint, PositionSetpoint
 from obelisk_sensor_msgs.msg import ObkFramePose, ObkJointEncoders
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
@@ -47,7 +47,7 @@ class ObeliskFR3Robot(ObeliskRobot):
         robot_ip = self.get_parameter("robot_ip").get_parameter_value().string_value
         self.robot, self.gripper, self.web_session = setup_robot(robot_ip, username, password)
         self.ctrl_mode = self.get_parameter("ctrl_mode").get_parameter_value().string_value
-        assert self.ctrl_mode in ["ee", "joint"], "Invalid control mode specified."
+        assert self.ctrl_mode in ["ee_pos", "joint_pos", "joint_vel"], "Invalid control mode specified."
         self._ready = True
 
     def apply_control(self, control_msg: Type) -> None:
@@ -56,7 +56,7 @@ class ObeliskFR3Robot(ObeliskRobot):
             return None
 
         self.robot.recover_from_errors()
-        if self.ctrl_mode == "ee":
+        if self.ctrl_mode == "ee_pos":
             assert isinstance(control_msg, PoseSetpoint)
             x, y, z = control_msg.pose_des[0], control_msg.pose_des[1], control_msg.pose_des[2]
             qw, qx, qy, qz = (
@@ -71,11 +71,16 @@ class ObeliskFR3Robot(ObeliskRobot):
                 Affine(pos, quat),  # (w, x, y, z) in
                 ReferenceType.Absolute,  # TODO: expose an option for relative motion
             )
-        elif self.ctrl_mode == "joint":
+        elif self.ctrl_mode == "joint_pos":
             assert isinstance(control_msg, PositionSetpoint)
             motion = JointMotion(np.array([control_msg.q_des[i] for i in range(7)]))
+        elif self.ctrl_mode == "joint_vel":
+            assert isinstance(control_msg, PositionSetpoint)
+            motion = JointVelocityMotion(np.array([control_msg.q_des[i] for i in range(7)]))
         else:
-            raise ValueError(f"Invalid control mode: {self.ctrl_mode}. Valid modes are 'ee' and 'joint'.")
+            raise ValueError(
+                f"Invalid control mode: {self.ctrl_mode}. Valid modes are 'ee_pos', 'joint_pos', or 'joint_vel'."
+            )
         self.robot.move(motion, asynchronous=True)
 
     def get_state(self) -> None:
