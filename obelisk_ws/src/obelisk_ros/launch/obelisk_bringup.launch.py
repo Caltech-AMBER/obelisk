@@ -58,6 +58,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     # parsing the launch arguments
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
+    launch_global = context.launch_configurations.get("launch_global")
+    launch_global = "true" if launch_global is None else launch_global.lower()
     auto_start = context.launch_configurations.get("auto_start")
     auto_start = "true" if auto_start is None else auto_start.lower()
     bag = context.launch_configurations.get("bag")
@@ -89,7 +91,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             entities=[shutdown_event],
         )
     )  # when the global state node enters its shutdown state, the launch file also shuts down
-    obelisk_launch_actions += [global_state_node, shutdown_event_handler]
+    if launch_global == "true":
+        obelisk_launch_actions += [global_state_node, shutdown_event_handler]
 
     # If auto_start is "true" or "activate" then configure and activate
     # If auto_start is "configure" then only configure the nodes

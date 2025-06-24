@@ -266,6 +266,7 @@ function obk-kill {
 function obk-launch {
     local config_file_path=""
     local device_name=""
+    local launch_global="True"
     local auto_start="True"
     local bag="True"
 
@@ -278,6 +279,10 @@ function obk-launch {
             ;;
             device_name=*)
             device_name="\${key#*=}"
+            shift
+            ;;
+            launch_global=*)
+            launch_global="\${key#*=}"
             shift
             ;;
             auto_start=*)
@@ -298,11 +303,11 @@ function obk-launch {
     # Check if any of the required arguments are empty
     if [[ -z "\$config_file_path" || -z "\$device_name" ]]; then
         echo -e "\033[1;34mError: Missing required arguments.\033[0m"
-        echo -e "\033[1;34mUsage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>\033[0m"
+        echo -e "\033[1;34mUsage: obk-launch config_file_path=<path> device_name=<name> launch_global=<True|False> auto_start=<True|False>\033[0m"
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config_file_path} device_name:=\${device_name} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config_file_path} device_name:=\${device_name} launch_global:=\${launch_global} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command
