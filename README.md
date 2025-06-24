@@ -7,6 +7,16 @@ This repository hosts generic interfaces for controlling robots with ROS2.
 
 This section contains Quickstart information for members of the AMBER Lab.
 
+Clone this repo and update submodules:
+```bash
+git clone https://github.com/Caltech-AMBER/obelisk.git
+cd obelisk
+
+# need this until cascade_lifecycle's python ros package gets added to the ROS index
+# https://github.com/fmrico/cascade_lifecycle/issues/20
+git submodule update --init --recursive
+```
+
 ## FR3
 Initial setup in the repo root:
 ```bash
