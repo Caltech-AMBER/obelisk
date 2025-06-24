@@ -48,8 +48,8 @@ class FR3ExampleJointController(ObeliskController):
         position_setpoint_msg = PositionSetpoint()
 
         # example state-independent input
-        position_setpoint_msg.u_mujoco = [self.reset_pos[i] + 0.3 * np.sin(self.t) for i in range(7)]
-        position_setpoint_msg.q_des = [self.reset_pos[i] + 0.3 * np.sin(self.t) for i in range(7)]
+        position_setpoint_msg.u_mujoco = [self.reset_pos[i] + 0.1 * np.sin(self.t) for i in range(7)]
+        position_setpoint_msg.q_des = [self.reset_pos[i] + 0.1 * np.sin(self.t) for i in range(7)]
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

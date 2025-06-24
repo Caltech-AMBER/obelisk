@@ -43,7 +43,7 @@ high_level:  # everything else can be computed on the high-level computer
           callback_group: None
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.001
+          timer_period_sec: 0.01
           callback_group: None
   estimation:
     - pkg: obelisk_estimation_py
@@ -63,6 +63,32 @@ high_level:  # everything else can be computed on the high-level computer
       timers:
         - ros_parameter: timer_est_setting
           timer_period_sec: 0.001
+          callback_group: None
+  robot:  # hardware must be on the onboard computer
+    - is_simulated: False
+      pkg: obelisk_fr3_py
+      executable: obelisk_fr3_robot
+      # callback_groups:
+      params:
+        ctrl_mode: joint_pos
+      publishers:
+        - ros_parameter: pub_joints_setting
+          topic: /obelisk/fr3/joint_encoders
+          history_depth: 10
+          callback_group: None
+        - ros_parameter: pub_ee_pose_setting
+          topic: /obelisk/fr3/ee_pose
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          # key: sub1
+          topic: /obelisk/fr3/ctrl
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.004
           callback_group: None
   # sensing:
   # # TODO: clean this up

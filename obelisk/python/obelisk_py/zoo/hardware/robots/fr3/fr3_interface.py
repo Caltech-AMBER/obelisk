@@ -49,7 +49,7 @@ class ObeliskFR3Robot(ObeliskRobot):
         self.robot, self.gripper, self.web_session = setup_robot(robot_ip, username, password)
 
         # [DEBUG]
-        self.robot.relative_dynamics_factor = RelativeDynamicsFactor(velocity=0.15, acceleration=0.05, jerk=0.1)
+        self.robot.relative_dynamics_factor = RelativeDynamicsFactor(velocity=0.25, acceleration=0.1, jerk=0.2)
         self.robot.set_collision_behavior(torque_thresholds=[100.0] * 7, force_thresholds=[100.0] * 6)
 
         self.ctrl_mode = self.get_parameter("ctrl_mode").get_parameter_value().string_value
