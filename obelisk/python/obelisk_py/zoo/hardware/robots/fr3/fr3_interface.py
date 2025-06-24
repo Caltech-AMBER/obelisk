@@ -1,6 +1,7 @@
 import os
 from typing import Type
 
+import franky
 import numpy as np
 from franky import Affine, CartesianMotion, JointMotion, JointVelocityMotion, ReferenceType
 from obelisk_control_msgs.msg import PoseSetpoint, PositionSetpoint
@@ -56,32 +57,35 @@ class ObeliskFR3Robot(ObeliskRobot):
             return None
 
         self.robot.recover_from_errors()
-        if self.ctrl_mode == "ee_pos":
-            assert isinstance(control_msg, PoseSetpoint)
-            x, y, z = control_msg.pose_des[0], control_msg.pose_des[1], control_msg.pose_des[2]
-            qw, qx, qy, qz = (
-                control_msg.pose_des[3],
-                control_msg.pose_des[4],
-                control_msg.pose_des[5],
-                control_msg.pose_des[6],
-            )
-            pos = np.array([x, y, z])  # type: ignore
-            quat = np.array([qx, qy, qz, qw])  # type: ignore
-            motion = CartesianMotion(
-                Affine(pos, quat),  # (w, x, y, z) in
-                ReferenceType.Absolute,  # TODO: expose an option for relative motion
-            )
-        elif self.ctrl_mode == "joint_pos":
-            assert isinstance(control_msg, PositionSetpoint)
-            motion = JointMotion(np.array([control_msg.q_des[i] for i in range(7)]))
-        elif self.ctrl_mode == "joint_vel":
-            assert isinstance(control_msg, PositionSetpoint)
-            motion = JointVelocityMotion(np.array([control_msg.q_des[i] for i in range(7)]))
-        else:
-            raise ValueError(
-                f"Invalid control mode: {self.ctrl_mode}. Valid modes are 'ee_pos', 'joint_pos', or 'joint_vel'."
-            )
-        self.robot.move(motion, asynchronous=True)
+        try:
+            if self.ctrl_mode == "ee_pos":
+                assert isinstance(control_msg, PoseSetpoint)
+                x, y, z = control_msg.pose_des[0], control_msg.pose_des[1], control_msg.pose_des[2]
+                qw, qx, qy, qz = (
+                    control_msg.pose_des[3],
+                    control_msg.pose_des[4],
+                    control_msg.pose_des[5],
+                    control_msg.pose_des[6],
+                )
+                pos = np.array([x, y, z])  # type: ignore
+                quat = np.array([qx, qy, qz, qw])  # type: ignore
+                motion = CartesianMotion(
+                    Affine(pos, quat),  # (w, x, y, z) in
+                    ReferenceType.Absolute,  # TODO: expose an option for relative motion
+                )
+            elif self.ctrl_mode == "joint_pos":
+                assert isinstance(control_msg, PositionSetpoint)
+                motion = JointMotion(np.array([control_msg.q_des[i] for i in range(7)]))
+            elif self.ctrl_mode == "joint_vel":
+                assert isinstance(control_msg, PositionSetpoint)
+                motion = JointVelocityMotion(np.array([control_msg.q_des[i] for i in range(7)]))
+            else:
+                raise ValueError(
+                    f"Invalid control mode: {self.ctrl_mode}. Valid modes are 'ee_pos', 'joint_pos', or 'joint_vel'."
+                )
+            self.robot.move(motion, asynchronous=True)
+        except franky.ControlException:
+            self.get_logger().error(f"Control exception at time {self.t}")
 
     def get_state(self) -> None:
         """Read the joint encoders and publish a sensor message."""
