@@ -43,7 +43,7 @@ high_level:  # everything else can be computed on the high-level computer
           callback_group: None
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.01
+          timer_period_sec: 0.01  # send mid-level commands at 100Hz to franky, which controls at 1000Hz
           callback_group: None
   estimation:
     - pkg: obelisk_estimation_py
