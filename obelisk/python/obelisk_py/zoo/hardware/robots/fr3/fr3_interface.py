@@ -3,7 +3,7 @@ from typing import Type
 
 import franky
 import numpy as np
-from franky import Affine, CartesianMotion, JointMotion, JointVelocityMotion, ReferenceType
+from franky import Affine, CartesianMotion, JointMotion, JointVelocityMotion, ReferenceType, RelativeDynamicsFactor
 from obelisk_control_msgs.msg import PoseSetpoint, PositionSetpoint
 from obelisk_sensor_msgs.msg import ObkFramePose, ObkJointEncoders
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
@@ -47,6 +47,11 @@ class ObeliskFR3Robot(ObeliskRobot):
         password = self.get_parameter("password").get_parameter_value().string_value
         robot_ip = self.get_parameter("robot_ip").get_parameter_value().string_value
         self.robot, self.gripper, self.web_session = setup_robot(robot_ip, username, password)
+
+        # [DEBUG]
+        self.robot.relative_dynamics_factor = RelativeDynamicsFactor(velocity=0.15, acceleration=0.05, jerk=0.1)
+        self.robot.set_collision_behavior(torque_thresholds=[100.0] * 7, force_thresholds=[100.0] * 6)
+
         self.ctrl_mode = self.get_parameter("ctrl_mode").get_parameter_value().string_value
         assert self.ctrl_mode in ["ee_pos", "joint_pos", "joint_vel"], "Invalid control mode specified."
         self._ready = True
