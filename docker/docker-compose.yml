@@ -43,7 +43,12 @@ services:
     security_opt:
       - seccomp=unconfined
     cap_add:
+      - SYS_NICE
       - NET_ADMIN
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: 8428281856
     volumes:
       - $OBELISK_ROOT:$OBELISK_ROOT
       - /tmp/.X11-unix:/tmp/.X11-unix
