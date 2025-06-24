@@ -147,6 +147,7 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
         $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 else
@@ -157,6 +158,7 @@ else
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
         $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
         $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
         $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 fi
@@ -165,7 +167,8 @@ fi
 if [ "$config_groups" = true ]; then
     source $OBELISK_ROOT/scripts/config_groups.sh \
         $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$zed" = true ] && echo "--zed") \
+        $([ "$fr3" = true ] && echo "--fr3")
 fi
 
 # system-level deps
@@ -176,7 +179,8 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$leap" = true ] && echo "--leap") \
         $([ "$zed" = true ] && echo "--zed") \
-        $([ "$unitree" = true ] && echo "--unitree")
+        $([ "$unitree" = true ] && echo "--unitree") \
+        $([ "$fr3" = true ] && echo "--fr3")
 fi
 
 # run user-specific setup

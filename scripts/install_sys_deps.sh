@@ -10,6 +10,7 @@ source_ros=false
 leap=false
 zed=false
 unitree=false
+fr3=false
 
 for arg in "$@"; do
     case $arg in
@@ -37,6 +38,10 @@ for arg in "$@"; do
             unitree=true
             shift # Sets up the Unitree interfaces
             ;;
+        --fr3)
+            fr3=true
+            shift  # Enables FR3 dependencies
+            ;;
         --help)
             echo "Usage: $0 [OPTIONS]
 
@@ -47,6 +52,7 @@ Options:
   --leap               Install LEAP hand dependencies
   --zed                Install ZED SDK
   --unitree            Sets up the Unitree interface
+  --fr3                Enable FR3 dependencies
 
   --help               Display this help message and exit
 "
@@ -206,4 +212,22 @@ if [ "$zed" = true ]; then
     fi
 else
     echo -e "\033[1;33mNot installing ZED SDK!\033[0m"
+fi
+
+# [6] updating security limits for realtime operations
+if [ "$fr3" = true ]; then
+    if ! grep -q "@realtime soft rtprio 99" /etc/security/limits.conf; then
+        echo -e "\n# Realtime group limits" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime soft rtprio 99" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime soft priority 99" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime soft memlock 102400" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime hard rtprio 99" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime hard priority 99" | sudo tee -a /etc/security/limits.conf
+        echo "@realtime hard memlock 102400" | sudo tee -a /etc/security/limits.conf
+        echo -e "\033[1;32mRealtime group limits updated successfully!\033[0m"
+    else
+        echo -e "\033[1;33mRealtime group limits already set!\033[0m"
+    fi
+else
+    echo -e "\033[1;33mNot updating realtime group limits!\033[0m"
 fi
