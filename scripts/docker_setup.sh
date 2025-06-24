@@ -7,9 +7,11 @@ docker_leap=false
 docker_zed=false
 docker_pixi=false
 docker_unitree=false
+docker_fr3=false
 
 docker_group_leap=false
 docker_group_zed=false
+docker_group_fr3=false
 
 for arg in "$@"; do
     case $arg in
@@ -42,6 +44,10 @@ for arg in "$@"; do
             docker_unitree=true
             shift   # Sets OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
             ;;
+        --docker-fr3)
+            docker_fr3=true
+            shift  # Sets OBELISK_DOCKER_FR3=true for docker, which enables FR3 dependencies
+            ;;
 
         # docker group additions
         --docker-group-leap)
@@ -51,6 +57,20 @@ for arg in "$@"; do
         --docker-group-zed)
             docker_group_zed=true
             shift  # Adds user to the video group
+            ;;
+        --docker-group-fr3)
+            docker_group_fr3=true
+            shift  # Adds user to the realtime group
+            ;;
+
+        # docker hardware credentials
+        --docker-fr3-username=*)
+            DOCKER_FR3_USERNAME="${arg#*=}"
+            export OBELISK_DOCKER_FR3_USERNAME="$DOCKER_FR3_USERNAME"
+            ;;
+        --docker-fr3-password=*)
+            DOCKER_FR3_PASSWORD="${arg#*=}"
+            export OBELISK_DOCKER_FR3_PASSWORD="$DOCKER_FR3_PASSWORD"
             ;;
 
         --help)
@@ -65,9 +85,14 @@ Options:
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
   --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
   --docker-unitree       Set OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
+  --docker-fr3           Set OBELISK_DOCKER_FR3=true for docker, which enables FR3 dependencies
 
   --docker-group-leap    Adds user to the dialout group
   --docker-group-zed     Adds user to the video group
+  --docker-group-fr3     Adds user to the realtime group
+
+  --docker-fr3-username [USERNAME]  Sets the FR3 username for docker
+  --docker-fr3-password [PASSWORD]  Sets the FR3 password for docker
 
   --help                 Display this help message and exit
 "
@@ -219,6 +244,16 @@ else
     export OBELISK_DOCKER_UNITREE=false
 fi
 
+if [ "$docker_fr3" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_FR3=true!\033[0m"
+    echo "OBELISK_DOCKER_FR3=true" >> $env_file
+    export OBELISK_DOCKER_FR3=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_FR3=false!\033[0m"
+    echo "OBELISK_DOCKER_FR3=false" >> $env_file
+    export OBELISK_DOCKER_FR3=false
+fi
+
 if [ "$docker_group_leap" = true ]; then
     echo -e "\033[1;32mSetting OBELISK_DOCKER_GROUP_LEAP=true!\033[0m"
     echo "OBELISK_DOCKER_GROUP_LEAP=true" >> $env_file
@@ -237,6 +272,31 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_ZED=false!\033[0m"
     echo "OBELISK_DOCKER_GROUP_ZED=false" >> $env_file
     export OBELISK_DOCKER_GROUP_ZED=false
+fi
+
+if [ "$docker_group_fr3" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_GROUP_FR3=true!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_FR3=true" >> $env_file
+    export OBELISK_DOCKER_GROUP_FR3=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_FR3=false!\033[0m"
+    echo "OBELISK_DOCKER_GROUP_FR3=false" >> $env_file
+    export OBELISK_DOCKER_GROUP_FR3=false
+fi
+
+# hardware credentials
+if [ -n "$OBELISK_DOCKER_FR3_USERNAME" ]; then
+    echo -e "\033[1;32mWriting OBELISK_DOCKER_FR3_USERNAME to .env\033[0m"
+    echo "OBELISK_DOCKER_FR3_USERNAME=$OBELISK_DOCKER_FR3_USERNAME" >> $env_file
+else
+    echo -e "\033[1;33mOBELISK_DOCKER_FR3_USERNAME not set. Skipping.\033[0m"
+fi
+
+if [ -n "$OBELISK_DOCKER_FR3_PASSWORD" ]; then
+    echo -e "\033[1;32mWriting OBELISK_DOCKER_FR3_PASSWORD to .env\033[0m"
+    echo "OBELISK_DOCKER_FR3_PASSWORD=$OBELISK_DOCKER_FR3_PASSWORD" >> $env_file
+else
+    echo -e "\033[1;33mOBELISK_DOCKER_FR3_PASSWORD not set. Skipping.\033[0m"
 fi
 
 # copy scripts to the docker directory

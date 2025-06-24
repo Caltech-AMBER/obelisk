@@ -7,6 +7,7 @@ obk_aliases=false
 leap=false
 zed=false
 unitree=false
+fr3=false
 
 for arg in "$@"; do
     case $arg in
@@ -32,6 +33,10 @@ for arg in "$@"; do
         --unitree)
             unitree=true
             shift  # Sets up the Unitree interface
+            ;;
+        --fr3)
+            fr3=true
+            shift  # Adds FR3 ROS packages to colcon build command
             ;;
         *)
             # Unknown option
@@ -87,11 +92,18 @@ fi'
         OBELISK_BUILD_ZED=false
     fi
     if [ "$unitree" = true ]; then
+        OBELISK_BUILD_OPTIONS+="--unitree "
         OBELISK_BUILD_UNITREE=true
         ROS_DOMAIN_ID=2
         echo -e "\033[1;32mSetting ROS_DOMAIN_ID=2\033[0m"
     else
         OBELISK_BUILD_UNITREE=false
+    fi
+    if [ "$fr3" = true ]; then
+        OBELISK_BUILD_OPTIONS+="--fr3 "
+        OBELISK_BUILD_FR3=true
+    else
+        OBELISK_BUILD_FR3=false
     fi
 
     obk_aliases=$(cat << EOF
@@ -107,7 +119,8 @@ export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
-export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
+export OBELISK_BUILD_FR3=$OBELISK_BUILD_FR3
+export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 '
 
     # Check if the --permanent flag is passed
@@ -253,6 +266,7 @@ function obk-kill {
 function obk-launch {
     local config_file_path=""
     local device_name=""
+    local launch_global="True"
     local auto_start="True"
     local bag="True"
 
@@ -265,6 +279,10 @@ function obk-launch {
             ;;
             device_name=*)
             device_name="\${key#*=}"
+            shift
+            ;;
+            launch_global=*)
+            launch_global="\${key#*=}"
             shift
             ;;
             auto_start=*)
@@ -285,11 +303,11 @@ function obk-launch {
     # Check if any of the required arguments are empty
     if [[ -z "\$config_file_path" || -z "\$device_name" ]]; then
         echo -e "\033[1;34mError: Missing required arguments.\033[0m"
-        echo -e "\033[1;34mUsage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>\033[0m"
+        echo -e "\033[1;34mUsage: obk-launch config_file_path=<path> device_name=<name> launch_global=<True|False> auto_start=<True|False>\033[0m"
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config_file_path} device_name:=\${device_name} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config_file_path} device_name:=\${device_name} launch_global:=\${launch_global} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command

@@ -6,6 +6,7 @@ cyclone_perf=false
 leap=false
 zed=false
 unitree=false
+fr3=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -40,6 +41,10 @@ for arg in "$@"; do
         --unitree)
             unitree=true
             shift
+            ;;
+        --fr3)
+            fr3=true
+            shift  # Enables FR3 dependencies
             ;;
 
 
@@ -79,6 +84,16 @@ for arg in "$@"; do
             shift # Adds obelisk aliases to the ~/.bash_aliases file
             ;;
 
+        # hardware credentials
+        --fr3-username=*)
+            FR3_USERNAME="${arg#*=}"
+            export FR3_USERNAME
+            ;;
+        --fr3-password=*)
+            FR3_PASSWORD="${arg#*=}"
+            export FR3_PASSWORD
+            ;;
+
         # help
         --help)
             echo "Usage: source setup.sh [OPTIONS]
@@ -89,6 +104,9 @@ Options:
   --leap                       Enables LEAP hand dependencies
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
+  --fr3                        Enables FR3 dependencies
+  --fr3-username=[USERNAME]    Set the FR3 username
+  --fr3-password=[PASSWORD]    Set the FR3 password
 
   --docker-install             Install Docker and nvidia-container-toolkit
   --install-sys-deps-docker    Installs system dependencies in Docker
@@ -128,7 +146,10 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$leap" = true ] && echo "--docker-leap --docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
+        $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
+        $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
@@ -136,14 +157,18 @@ else
         $([ "$leap" = true ] && echo "--docker-group-leap") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$pixi" = true ] && echo "--docker-pixi") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$fr3" = true ] && echo "--docker-fr3") \
+        $([ -n "$FR3_USERNAME" ] && echo "--docker-fr3-username=$FR3_USERNAME") \
+        $([ -n "$FR3_PASSWORD" ] && echo "--docker-fr3-password=$FR3_PASSWORD")
 fi
 
 # group configuration on host
 if [ "$config_groups" = true ]; then
     source $OBELISK_ROOT/scripts/config_groups.sh \
         $([ "$leap" = true ] && echo "--leap") \
-        $([ "$zed" = true ] && echo "--zed")
+        $([ "$zed" = true ] && echo "--zed") \
+        $([ "$fr3" = true ] && echo "--fr3")
 fi
 
 # system-level deps
@@ -154,7 +179,8 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$leap" = true ] && echo "--leap") \
         $([ "$zed" = true ] && echo "--zed") \
-        $([ "$unitree" = true ] && echo "--unitree")
+        $([ "$unitree" = true ] && echo "--unitree") \
+        $([ "$fr3" = true ] && echo "--fr3")
 fi
 
 # run user-specific setup
@@ -163,4 +189,5 @@ source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$leap" = true ] && echo "--leap") \
     $([ "$zed" = true ] && echo "--zed") \
     $([ "$unitree" = true ] && echo "--unitree") \
+    $([ "$fr3" = true ] && echo "--fr3") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")

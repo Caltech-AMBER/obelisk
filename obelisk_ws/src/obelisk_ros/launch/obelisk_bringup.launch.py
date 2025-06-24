@@ -58,6 +58,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     # parsing the launch arguments
     config_file_path = context.launch_configurations.get("config_file_path")
     device_name = context.launch_configurations.get("device_name")
+    launch_global = context.launch_configurations.get("launch_global")
+    launch_global = "true" if launch_global is None else launch_global.lower()
     auto_start = context.launch_configurations.get("auto_start")
     auto_start = "true" if auto_start is None else auto_start.lower()
     bag = context.launch_configurations.get("bag")
@@ -67,11 +69,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     config_name = full_config_dict["config"]
     obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
-
-    # checks - we must at least have these 3 components
-    assert "control" in obelisk_config
-    assert "estimation" in obelisk_config
-    assert "robot" in obelisk_config
     obelisk_launch_actions = []
 
     # Setup logging
@@ -94,7 +91,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             entities=[shutdown_event],
         )
     )  # when the global state node enters its shutdown state, the launch file also shuts down
-    obelisk_launch_actions += [global_state_node, shutdown_event_handler]
+    if launch_global == "true":
+        obelisk_launch_actions += [global_state_node, shutdown_event_handler]
 
     # If auto_start is "true" or "activate" then configure and activate
     # If auto_start is "configure" then only configure the nodes
@@ -133,21 +131,24 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         obelisk_launch_actions += [configure_event]
 
     # generate all launch actions
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["control"],
-        "control",
-        global_state_node,
-    )
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["estimation"],
-        "estimation",
-        global_state_node,
-    )
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["robot"],
-        "robot",
-        global_state_node,
-    )
+    if "control" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["control"],
+            "control",
+            global_state_node,
+        )
+    if "estimation" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["estimation"],
+            "estimation",
+            global_state_node,
+        )
+    if "robot" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["robot"],
+            "robot",
+            global_state_node,
+        )
     if "sensing" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["sensing"],
@@ -157,7 +158,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     if "viz" in obelisk_config:
         logger.info("Viz present in config file.")
         obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)
-
     if "joystick" in obelisk_config:
         logger.info("joystick present in config file.")
         obelisk_launch_actions += get_launch_actions_from_joystick_settings(

@@ -134,6 +134,11 @@ cython = "*"
 opencv = "*"
 
 
+# franka research 3
+[feature.fr3.pypi-dependencies]
+franky-control = ">=1.0.2"  # TODO: pray that Tim updates the pypi version: https://github.com/TimSchneider42/franky/pull/33
+
+
 # dev
 [feature.dev.dependencies]
 nano = "*"
@@ -180,6 +185,10 @@ dev-zed = { features=["cuda", "obelisk", "ros2base", "test", "dev", "build", "le
 docs = { features=["docs"] }
 
 build = { features = ["cuda", "build"] }
+
+# robot-specific groups #
+# fr3
+fr3 = { features=["cuda", "obelisk", "ros2base", "test", "dev", "build", "fr3"], solve-group="dev" }
 
 # ##### #
 # TASKS #
