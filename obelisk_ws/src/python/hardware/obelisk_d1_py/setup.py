@@ -22,7 +22,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='amber-lab',
+    maintainer='ezeng',
     maintainer_email='ezeng@caltech.edu',
     description='Python Obelisk ROS2 package for simulation.',
     license='MIT',

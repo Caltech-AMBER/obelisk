@@ -1,0 +1,85 @@
+config: d1
+onboard:
+  control:
+    - pkg: obelisk_d1_py
+      executable: d1_example_controller
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/d1/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/d1/est
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_estimation_py
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/d1/est
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          # key: sub1
+          topic: /obelisk/d1/joint_encoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  # sensing:
+  robot:
+    # === simulation ===
+    - is_simulated: True
+      pkg: obelisk_sim_py
+      executable: obelisk_mujoco_robot
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_d1_py
+    #   executable: obelisk_d1_robot
+    # ===============
+      # callback_groups:
+      publishers: # for hardware only
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/d1/joint_encoders
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          # key: sub1
+          topic: /obelisk/d1/ctrl
+          history_depth: 10
+          callback_group: None
+      sim: 
+        - ros_parameter: mujoco_setting
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: d1_description
+          model_xml_path: scene.xml
+          sensor_settings:
+          - topic: /obelisk/d1/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+              joint1_sensor: jointpos
+              joint2_sensor: jointpos
+              joint3_sensor: jointpos
+              joint4_sensor: jointpos
+              joint5_sensor: jointpos
+              joint6_sensor: jointpos
+              joint7_1sensor: jointpos
+              joint7_2sensor: jointpos
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None
