@@ -1256,7 +1256,7 @@ namespace obelisk {
 
                                 // Temp storage for geom id output
                                 int geom_id[1] = { -1 };
-
+                                std::array<double, 2> offset_local = { -this->height_map_grid_size_[0] / 2.0, -this->height_map_grid_size_[1] / 2.0 };
                                 int ii = 0;
                                 for (int x = 0; x < x_y_num_rays[0]; ++x) {
                                     for (int y = 0; y < x_y_num_rays[1]; ++y) {
@@ -1286,9 +1286,9 @@ namespace obelisk {
                                         };
                                         geometry_msgs::msg::Point ros_pt;
                                         // Making it relative to the base link
-                                        ros_pt.x = hit_point[0] - site_pos_global[0];
-                                        ros_pt.y = hit_point[1] - site_pos_global[1];
-                                        ros_pt.z = hit_point[2];
+                                        ros_pt.x = offset_local[0]+offset[0];//hit_point[0] - site_pos_global[0];
+                                        ros_pt.y = offset_local[1]+offset[1];//hit_point[1] - site_pos_global[1];
+                                        ros_pt.z = this->data_->site_xpos[3*site_id + 2] - hit_point[2];
                                         msg.cells[ii] = ros_pt;
                                         ii++;
                                     }

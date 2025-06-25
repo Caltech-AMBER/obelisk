@@ -79,7 +79,7 @@ onboard:
       pkg: obelisk_unitree_cpp
       executable: obelisk_unitree_g1_hardware
       params:
-        network_interface_name: enp4s0
+        network_interface_name: enx9cbf0d00b3c9
         default_kp: [
                     10., 10., 10.,    # L hip
                     10., 10., 10.,    # L knee, ankle
