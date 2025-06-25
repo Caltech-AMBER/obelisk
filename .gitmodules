@@ -1,3 +1,4 @@
 [submodule "obelisk_ws/src/cascade_lifecycle"]
 	path = obelisk_ws/src/cascade_lifecycle
-	url = https://github.com/fmrico/cascade_lifecycle.git#branch=humble-devel
+	url = https://github.com/alberthli/cascade_lifecycle.git
+	branch = rclpy-only

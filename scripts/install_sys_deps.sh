@@ -86,15 +86,18 @@ if [ "$basic" = true ]; then
         sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
     sudo apt-get update -y && \
     sudo apt-get install -y \
-        ros-humble-ros-base \
+        ros-kilted-ros-base \
         ros-dev-tools \
-        ros-humble-rosidl-generator-cpp \
-        ros-humble-rosidl-default-generators \
-        ros-humble-rmw-cyclonedds-cpp \
-        ros-humble-rviz-visual-tools \
-        ros-humble-foxglove-bridge \
-        ros-humble-joy              # Need to make sure this is version 3.3.0
-    source /opt/ros/humble/setup.bash
+        ros-kilted-rosidl-generator-cpp \
+        ros-kilted-rosidl-default-generators \
+        ros-kilted-rmw-cyclonedds-cpp \
+        ros-kilted-rviz-visual-tools \
+        ros-kilted-foxglove-bridge \
+        ros-kilted-joy \
+        ros-kilted-cascade-lifecycle-msgs \
+        ros-kilted-rclcpp-cascade-lifecycle \
+        ros-kilted-rclpy-cascade-lifecycle
+    source /opt/ros/kilted/setup.bash
 
     # python deps
     pip install -U \
@@ -138,12 +141,12 @@ fi
 
 # [3] sourcing base ROS2
 if [ "$source_ros" = true ]; then
-    # check whether /opt/ros/humble/setup.bash exists; if so, source
-    if [ -f /opt/ros/humble/setup.bash ]; then
-        source /opt/ros/humble/setup.bash
+    # check whether /opt/ros/kilted/setup.bash exists; if so, source
+    if [ -f /opt/ros/kilted/setup.bash ]; then
+        source /opt/ros/kilted/setup.bash
         echo -e "\033[1;32mROS 2 sourced successfully!\033[0m"
     else
-        echo -e "\033[1;33mROS 2 not sourced because /opt/ros/humble/setup.bash does not exist!\033[0m"
+        echo -e "\033[1;33mROS 2 not sourced because /opt/ros/kilted/setup.bash does not exist!\033[0m"
     fi
 fi
 
@@ -151,7 +154,7 @@ fi
 if [ "$leap" = true ]; then
     # system-level deps
     sudo apt-get install -y \
-        ros-humble-dynamixel-sdk
+        ros-kilted-dynamixel-sdk
 
     # python deps
     pip install -U \

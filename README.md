@@ -21,11 +21,10 @@ git submodule update --init --recursive
 Initial setup in the repo root:
 ```bash
 source setup.sh \
+    --basic \
+    --install-sys-deps-docker \
     --cyclone-perf \
     --obk-aliases \
-    --zed \
-    --leap \
-    --pixi \
     --config-groups
 ```
 

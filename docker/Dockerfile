@@ -15,6 +15,7 @@ ARG OBELISK_DOCKER_CYCLONE_PERF=false
 ARG OBELISK_DOCKER_LEAP=false
 ARG OBELISK_DOCKER_ZED=false
 ARG OBELISK_DOCKER_PIXI=false
+ARG OBELISK_DOCKER_UNITREE=false
 
 ARG OBELISK_DOCKER_GROUP_LEAP=false
 ARG OBELISK_DOCKER_GROUP_ZED=false
@@ -30,6 +31,7 @@ ENV OBELISK_DOCKER_CYCLONE_PERF=$OBELISK_DOCKER_CYCLONE_PERF
 ENV OBELISK_DOCKER_LEAP=$OBELISK_DOCKER_LEAP
 ENV OBELISK_DOCKER_ZED=$OBELISK_DOCKER_ZED
 ENV OBELISK_DOCKER_PIXI=$OBELISK_DOCKER_PIXI
+ENV OBELISK_DOCKER_UNITREE=$OBELISK_DOCKER_UNITREE
 
 ENV OBELISK_DOCKER_GROUP_LEAP=$OBELISK_DOCKER_GROUP_LEAP
 ENV OBELISK_DOCKER_GROUP_ZED=$OBELISK_DOCKER_GROUP_ZED
@@ -71,7 +73,8 @@ RUN if id -u ${UID} &>/dev/null; then \
 # conditionally install dependencies based on build args
 # source base ROS if basic deps are installed and you are not using pixi
 COPY install_sys_deps.sh /tmp/install_sys_deps.sh
-RUN FLAGS=""; \
+RUN echo "force-install=yes" > /etc/pip.conf && \
+    FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
     [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && [ "$OBELISK_DOCKER_PIXI" = "false" ] && FLAGS="$FLAGS --source-ros"; \
