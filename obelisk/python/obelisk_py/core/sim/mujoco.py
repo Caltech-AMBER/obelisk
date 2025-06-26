@@ -429,11 +429,19 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             potential_keyframe = self.mj_model.key(i).name
             if potential_keyframe == self.get_parameter("ic_keyframe").get_parameter_value().string_value:
                 self.get_logger().info(f"Setting initial condition to keyframe: {potential_keyframe}")
-                mju_copy(self.mj_data.qpos, self.mj_model.key_qpos[i * self.mj_model.nq : (i + 1) * self.mj_model.nq])
-                mju_copy(self.mj_data.qvel, self.mj_model.key_qvel[i * self.mj_model.nv : (i + 1) * self.mj_model.nv])
-                self.mj_data.time = self.mj_model.key_time[i]
+                key_qpos = self.mj_model.key_qpos[i * self.mj_model.nq : (i + 1) * self.mj_model.nq]
+                key_qvel = self.mj_model.key_qvel[i * self.mj_model.nv : (i + 1) * self.mj_model.nv]
+                key_ctrl = self.mj_model.key_ctrl[i * self.mj_model.nu : (i + 1) * self.mj_model.nu]
 
-                mju_copy(self.mj_data.ctrl, self.mj_model.key_ctrl[i * self.mj_model.nu : (i + 1) * self.mj_model.nu])
+                key_qpos = key_qpos.flatten()
+                key_qvel = key_qvel.flatten()
+                key_ctrl = key_ctrl.flatten()
+
+                mju_copy(self.mj_data.qpos, key_qpos)
+                mju_copy(self.mj_data.qvel, key_qvel)
+                mju_copy(self.mj_data.ctrl, key_ctrl)
+                self.mj_data.time = self.mj_model.key_time[i]
+                break
 
         with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
             while viewer.is_running() and self.is_sim_running.value:

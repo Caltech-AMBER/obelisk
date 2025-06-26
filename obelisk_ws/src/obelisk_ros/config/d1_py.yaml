@@ -43,6 +43,8 @@ onboard:
     - is_simulated: True
       pkg: obelisk_sim_py
       executable: obelisk_mujoco_robot
+      params:
+        ic_keyframe: zero
     # === hardware ===
     # - is_simulated: False
     #   pkg: obelisk_d1_py
@@ -62,6 +64,7 @@ onboard:
           callback_group: None
       sim: 
         - ros_parameter: mujoco_setting
+          n_u: 8 # Number of control inputs
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: d1_description
@@ -71,6 +74,8 @@ onboard:
             dt: 0.002
             msg_type: ObkJointEncoders
             sensor_names:
+              # joint_pos: jointpos
+              # joint_vel: jointvel
               joint1_sensor: jointpos
               joint2_sensor: jointpos
               joint3_sensor: jointpos

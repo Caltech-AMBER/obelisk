@@ -108,8 +108,8 @@
     <jointpos name="joint7_1sensor" joint="joint7_1"/>
     <jointpos name="joint7_2sensor" joint="joint7_2"/>
   </sensor>
-  <!-- <keyframe>
-    <key name="home" qpos="0 0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0 0"/>
-    <key name="home" qpos="0 0.785 -0.261 0 0 0 0 0" ctrl="0 0.785 -0.261 0 0 0 0 0"/>
-  </keyframe> -->
+  <keyframe>
+    <key name="zero" qpos="0 0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0 0"/>
+    <!-- <key name="other" qpos="0 0.785 -0.261 0 0 0 0 0" ctrl="0 0.785 -0.261 0 0 0 0 0"/> -->
+  </keyframe>
 </mujoco>

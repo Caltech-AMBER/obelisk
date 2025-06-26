@@ -7,9 +7,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+
+
+# install all the mesh files
+install(
+  DIRECTORY meshes/
+  DESTINATION share/${PROJECT_NAME}/meshes
+)
+
+# install the urdf
+install(
+  DIRECTORY urdf/
+  DESTINATION share/${PROJECT_NAME}/urdf
+)
+
+# install the mujogo files
+install(
+  DIRECTORY mujoco/
+  DESTINATION share/${PROJECT_NAME}/mujoco
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
