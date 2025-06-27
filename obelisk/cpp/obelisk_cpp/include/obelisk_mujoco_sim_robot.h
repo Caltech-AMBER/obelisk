@@ -180,7 +180,6 @@ namespace obelisk {
             nu_ = model_->nu;
             RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << nu_ << " inputs.");
             shared_data_.resize(nu_);
-
             if (!model_) {
                 throw std::runtime_error("Could not load Mujoco model from the XML!");
             }
@@ -210,9 +209,10 @@ namespace obelisk {
                         shared_data_tmp.push_back(data_->ctrl[i]);
                     }
                     SetSharedData(shared_data_tmp);
+                    break;
                 }
             }
-
+            
             while (!this->stop_thread_) {
                 auto start_time = this->now();
                 {
@@ -222,9 +222,11 @@ namespace obelisk {
                         data_->ctrl[i] = shared_data_.at(i);
                     }
                 }
-
+                
                 {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "1 shared_data_.size()" << shared_data_.size());
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    RCLCPP_INFO_STREAM(this->get_logger(), "2 shared_data_.size()" << shared_data_.size());
                     mj_step(model_, data_);
                 }
 
@@ -233,12 +235,10 @@ namespace obelisk {
                 while ((this->now() - start_time).nanoseconds() < time_step_ * 1e9) {
                 }
             }
-
             RCLCPP_WARN_STREAM(this->get_logger(), "Cleaning up simulation data and model...");
             // free MuJoCo model and data
             mj_deleteData(data_);
             mj_deleteModel(model_);
-
             rendering_thread_.join();
         }
 

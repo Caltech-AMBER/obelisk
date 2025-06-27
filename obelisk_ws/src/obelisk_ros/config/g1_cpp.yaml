@@ -249,31 +249,31 @@ onboard:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
           callback_group: None
-  viz:
-    on: True
-    viz_tool: foxglove
-    viz_nodes:
-      - pkg: obelisk_viz_cpp
-        executable: default_robot_viz
-        robot_pkg: g1_description
-        urdf: g1.urdf
-        robot_topic: robot_description
-        subscribers:
-          - ros_parameter: sub_viz_est_setting
-            topic: /obelisk/g1/est_state
-            history_depth: 10
-            callback_group: None
-            non_obelisk: False
-        publishers:
-          - ros_parameter: pub_viz_joint_setting
-            topic: joint_states
-            history_depth: 10
-            callback_group: None
-        timers:
-          - ros_parameter: timer_viz_joint_setting
-            timer_period_sec: 0.01
-            callback_group: None
-  joystick:
-    on: True
-    pub_topic: /obelisk/g1/joy
-    sub_topic: /obelisk/g1/joy_feedback
+  # viz:
+  #   on: True
+  #   viz_tool: foxglove
+  #   viz_nodes:
+  #     - pkg: obelisk_viz_cpp
+  #       executable: default_robot_viz
+  #       robot_pkg: g1_description
+  #       urdf: g1.urdf
+  #       robot_topic: robot_description
+  #       subscribers:
+  #         - ros_parameter: sub_viz_est_setting
+  #           topic: /obelisk/g1/est_state
+  #           history_depth: 10
+  #           callback_group: None
+  #           non_obelisk: False
+  #       publishers:
+  #         - ros_parameter: pub_viz_joint_setting
+  #           topic: joint_states
+  #           history_depth: 10
+  #           callback_group: None
+  #       timers:
+  #         - ros_parameter: timer_viz_joint_setting
+  #           timer_period_sec: 0.01
+  #           callback_group: None
+  # joystick:
+  #   on: True
+  #   pub_topic: /obelisk/g1/joy
+  #   sub_topic: /obelisk/g1/joy_feedback

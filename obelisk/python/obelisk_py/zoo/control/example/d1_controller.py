@@ -1,4 +1,6 @@
 import numpy as np
+from math import pi
+
 from obelisk_control_msgs.msg import PositionSetpoint
 from obelisk_estimator_msgs.msg import EstimatedState
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
@@ -6,14 +8,17 @@ from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
-from math import pi
-
 class D1Controller(ObeliskController):
     """Example position setpoint controller for the Unitree D1 Arm."""
 
     def __init__(self, node_name: str="d1_controller") -> None:
         """Initialize controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
+
+        # # What are the following two lines for? They were in example_position_setpoint_controller.py. FIXME
+        # self.declare_parameter("test_param", "default_value")
+        # self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
+
         self.start_time = self.get_clock().now()
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
