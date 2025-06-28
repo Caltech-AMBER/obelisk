@@ -69,39 +69,39 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    - is_simulated: True
-      pkg: obelisk_unitree_cpp
-      executable: obelisk_unitree_sim
-      params:
-        ic_keyframe: standing
-    # === hardware ===
-    # - is_simulated: False
+    # - is_simulated: True
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_unitree_g1_hardware
+    #   executable: obelisk_unitree_sim
     #   params:
-    #     network_interface_name: enp4s0
-    #     default_kp: [
-    #                 10., 10., 10.,    # L hip
-    #                 10., 10., 10.,    # L knee, ankle
-    #                 10., 10., 10.,    # R hip
-    #                 10., 10., 10.,    # R knee, ankle
-    #                 10., #10., 10.,    # Waist
-    #                 5., 5., 5.,       # L shoulder
-    #                 5., 5., 5., 5.,   # L elbow, wrist
-    #                 5., 5., 5.,       # R shoulder
-    #                 5., 5., 5., 5.,   # R elbow, wrist
-    #                 ]
-    #     default_kd: [
-    #                 1., 1., 1.,       # L hip
-    #                 1., 1., 1.,       # L knee, ankle
-    #                 1., 1., 1.,       # R hip
-    #                 1., 1., 1.,       # R knee, ankle
-    #                 1., #1., 1.,       # Waist
-    #                 1., 1., 1.,       # L shoulder
-    #                 1., 1., 1., 1.,   # L elbow, wrist
-    #                 1., 1., 1.,       # R shoulder
-    #                 1., 1., 1., 1.,   # R elbow, wrist
-    #     ]
+    #     ic_keyframe: standing
+    # === hardware ===
+    - is_simulated: False
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_g1_hardware
+      params:
+        network_interface_name: enp4s0
+        default_kp: [
+                    10., 10., 10.,    # L hip
+                    10., 10., 10.,    # L knee, ankle
+                    10., 10., 10.,    # R hip
+                    10., 10., 10.,    # R knee, ankle
+                    10., #10., 10.,    # Waist
+                    5., 5., 5.,       # L shoulder
+                    5., 5., 5., 5.,   # L elbow, wrist
+                    5., 5., 5.,       # R shoulder
+                    5., 5., 5., 5.,   # R elbow, wrist
+                    ]
+        default_kd: [
+                    1., 1., 1.,       # L hip
+                    1., 1., 1.,       # L knee, ankle
+                    1., 1., 1.,       # R hip
+                    1., 1., 1.,       # R knee, ankle
+                    1., #1., 1.,       # Waist
+                    1., 1., 1.,       # L shoulder
+                    1., 1., 1., 1.,   # L elbow, wrist
+                    1., 1., 1.,       # R shoulder
+                    1., 1., 1., 1.,   # R elbow, wrist
+        ]
     # ==================
       # callback_groups:
       publishers:

@@ -19,7 +19,7 @@ class ExamplePositionSetpointController(ObeliskController):
         self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the controller."""
+        """Configure the controller. I.e. Declare all variables required to compute the control input."""
         super().on_configure(state)
         self.joint_pos = None
         return TransitionCallbackReturn.SUCCESS

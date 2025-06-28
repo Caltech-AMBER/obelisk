@@ -23,8 +23,8 @@ namespace obelisk {
         }
 
         /**
-         * @brief Configures all the required ROS components. Specifcially this
-         * registers the control_subscriver_. Also makes a call to ObeliskNode on configure
+         * @brief Configures all the required ROS components. Specifically this
+         * registers the control_subscriber_. Also makes a call to ObeliskNode on configure
          * to parse and create the callback group map.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_configure(

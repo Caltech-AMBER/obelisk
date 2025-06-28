@@ -55,7 +55,7 @@ namespace obelisk {
         }
     protected:
         void CreateUnitreePublishers() override {
-            // create low level command publisher
+            // Create low level command publisher
             lowcmd_publisher_.reset(new ChannelPublisher<LowCmd_>(CMD_TOPIC_));
             lowcmd_publisher_->InitChannel();
 
@@ -63,7 +63,7 @@ namespace obelisk {
         }
 
         void CreateUnitreeSubscribers() override {
-            // Dreate unitree subscriber
+            // Create unitree subscriber
             // Need to create after the publishers have been activated
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&Go2Interface::LowStateHandler, this, std::placeholders::_1), 1);
