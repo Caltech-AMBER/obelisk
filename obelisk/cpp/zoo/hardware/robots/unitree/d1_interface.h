@@ -34,6 +34,12 @@ namespace obelisk {
         void CreateUnitreePublishers() override {
             lowcmd_publisher_.reset(new ChannelPublisher<ArmString_>(CMD_TOPIC_));
             lowcmd_publisher_->InitChannel();
+
+            RCLCPP_INFO_STREAM(this->get_logger(), "D1 command publishers created.");
+        }
+
+        void CreateUnitreeSubscribers() override {
+            
         }
 
         ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
