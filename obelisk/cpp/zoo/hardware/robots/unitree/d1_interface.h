@@ -73,7 +73,7 @@ namespace obelisk {
                 msg.data_() = "{\"seq\":4,\"address\":1,\"funcode\":2,\"data\":{\"mode\":1,\"angle0\":0,\"angle1\":-60,\"angle2\":60,\"angle3\":0,\"angle4\":30,\"angle5\":0,\"angle6\":0}}";
                 
                 // Publish message
-                lowcmd_publisher_.Write(msg);
+                lowcmd_publisher_->Write(msg);
             }
         
         std::string network_interface_name_;

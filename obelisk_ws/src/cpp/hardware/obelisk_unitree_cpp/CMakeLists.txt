@@ -64,6 +64,10 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
         DESTINATION lib/${PROJECT_NAME})
 
     install(TARGETS
+        unitree_d1_hardware
+        DESTINATION lib/${PROJECT_NAME})
+
+    install(TARGETS
         obelisk_unitree_g1_hardware
         DESTINATION lib/${PROJECT_NAME})
 
