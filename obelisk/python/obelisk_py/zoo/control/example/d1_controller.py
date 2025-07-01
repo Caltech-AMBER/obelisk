@@ -14,17 +14,12 @@ class D1Controller(ObeliskController):
     def __init__(self, node_name: str="d1_controller") -> None:
         """Initialize controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
-
-        # # What are the following two lines for? They were in example_position_setpoint_controller.py. FIXME
-        # self.declare_parameter("test_param", "default_value")
-        # self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
-
         self.start_time = self.get_clock().now()
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
-        # self.x_hat = None # FIXME: should say self.joint_pos = None
+        # self.x_hat = None
         return TransitionCallbackReturn.SUCCESS
     
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
@@ -38,7 +33,11 @@ class D1Controller(ObeliskController):
 
     def compute_control(self) -> ObeliskControlMsg:
         """
-        Compute the control signal for the 6-DOF+1 robot.
+        Compute the control signal for the 6-DOF+1 robot. 
+        
+        The two joints for the gripper are controlled by one motor on the actual arm.
+        The position of motor 7_1 is positive. 
+        The position of motor 7_2 is the negative of that of motor 7_1.
         
         Returns:
             obelisk_control_msg (ObeliskControlMsg): The control message.
@@ -62,4 +61,4 @@ class D1Controller(ObeliskController):
         position_setpoint_msg.q_des = u
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
-        return position_setpoint_msg # type: ignore. FIXME: ignore what?
+        return position_setpoint_msg # ignore type checking for now

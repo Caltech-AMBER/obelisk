@@ -72,7 +72,7 @@ namespace obelisk {
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
-            // Only execute of in Low Level Control or Home modes
+            // Only execute if in Low Level Control or Home modes
             if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
@@ -238,13 +238,17 @@ namespace obelisk {
             static bool standing = false;
             if (msg.v_x * msg.v_x + msg.v_y * msg.v_y + msg.w_z * msg.w_z > vel_deadzone_) {
                 if (standing) {
-                    sport_client_.SwitchGait(1);                    // Set gait to trot
+                    // TODO: Uncomment this. Version 2.0.1 of unitree_sdk2 doesn't have 
+                    // the member `SwitchGait`
+                    // sport_client_.SwitchGait(1);                    // Set gait to trot
                     standing = false;
                 }
                 sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
             } else {
                 if (!standing) {
-                    sport_client_.SwitchGait(0);                    // Set gait to stand
+                    // TODO: Uncomment this. Version 2.0.1 of unitree_sdk2 doesn't have 
+                    // the member `SwitchGait`
+                    // sport_client_.SwitchGait(0);                    // Set gait to stand
                     standing = true;
                 }
             }
