@@ -28,7 +28,6 @@ FetchContent_MakeAvailable(unitree_sdk)
 # solely .cpp files.
 set(UNITREE_ARM_MSGS
   msg/ArmString_.cpp
-  msg/PubServoInfo_.cpp
 )
 
 # Creates a library called `unitree_arm_msgs` containing all files in `UNITREE_ARM_MSGS`
