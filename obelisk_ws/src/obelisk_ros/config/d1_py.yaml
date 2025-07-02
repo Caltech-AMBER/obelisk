@@ -3,7 +3,6 @@ onboard:
   control:
     - pkg: obelisk_d1_py
       executable: d1_example_controller
-      # callback_groups:
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/d1/ctrl
@@ -21,7 +20,6 @@ onboard:
   estimation:
     - pkg: obelisk_estimation_py
       executable: jointencoders_passthrough_estimator
-      # callback_groups:
       publishers:
         - ros_parameter: pub_est_setting
           topic: /obelisk/d1/est
@@ -29,7 +27,6 @@ onboard:
           callback_group: None
       subscribers:
         - ros_parameter: sub_sensor_setting
-          # key: sub1
           topic: /obelisk/d1/joint_encoders
           history_depth: 10
           callback_group: None
@@ -37,7 +34,6 @@ onboard:
         - ros_parameter: timer_est_setting
           timer_period_sec: 0.001
           callback_group: None
-  # sensing:
   robot:
     # === simulation ===
     # - is_simulated: True
@@ -52,7 +48,6 @@ onboard:
       params:
           network_interface_name: enx001cc24ce09a
     # ===============
-      # callback_groups:
       publishers: # for hardware only
         - ros_parameter: pub_sensor_setting
           topic: /obelisk/d1/joint_encoders
@@ -66,7 +61,7 @@ onboard:
           callback_group: None
       sim: 
         - ros_parameter: mujoco_setting
-          n_u: 8 # Number of control inputs
+          n_u: 8 # Number of joint positions for visualization.
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: d1_description

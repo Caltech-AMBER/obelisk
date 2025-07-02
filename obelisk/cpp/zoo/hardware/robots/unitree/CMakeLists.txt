@@ -6,16 +6,16 @@ message(STATUS "Configuring Unitree Interface")
 find_package(ament_cmake REQUIRED)
 
 include(FetchContent)
-# FetchContent_Declare(
-#     unitree_sdk
-#     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
-#     GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d) # main # TODO: Fix the issue here
 
 # Let `unitree_sdk` refer to the content fetched from the git repo.
 FetchContent_Declare(
     unitree_sdk
     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
-    GIT_TAG 7b00ca4b766272d137cf7ff751d4a067bc99ca85) # Most recent tag
+    GIT_TAG 7b00ca4b766272d137cf7ff751d4a067bc99ca85) # Most recent commit includes the Write()
+    # method in channel_publisher.hpp
+
+    # GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d # This commit doesn't include the aforementioned
+    # method, however, it has the SwitchGait() method which enables go2_interface.h to compile.
 
 # Couldn't find `UNITREE_SDK_BUILD_EXAMPLES` being defined in unitree_sdk2.
 # set(UNITREE_SDK_BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
@@ -69,7 +69,6 @@ ament_target_dependencies(UnitreeInterface INTERFACE
   rclcpp
   rclcpp_lifecycle
   sensor_msgs)
-
 
 # add_executable(unitree_test unitree_test.cpp)
 # target_link_libraries(unitree_test unitree_sdk2)

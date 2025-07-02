@@ -310,7 +310,7 @@ namespace obelisk {
 
         std::string ODOM_TOPIC_;
 
-        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
+        ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
         // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
 

@@ -1,5 +1,7 @@
 #include <cmath>
+#include <rapidjson/document.h>
 
+// Obelisk
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
@@ -8,8 +10,10 @@
 #include <unitree/robot/channel/channel_publisher.hpp>
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
-// Message Types
+// D1 Arm Message Types
 #include <msg/ArmString_.hpp>
+#include <msg/AllJointFeedback.hpp>
+
 
 namespace obelisk {
     using namespace unitree::common;
@@ -17,20 +21,21 @@ namespace obelisk {
     using namespace unitree_arm::msg::dds_;
     
     using d1_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
-    using d1_sensor_msg = obelisk_sensor_msgs::msg::ObkJointEncoders; // TODO: Do something with this?
+    using d1_sensor_msg = obelisk_sensor_msgs::msg::ObkJointEncoders;
+    using Document = rapidjson::Document;
 
     class D1Interface : public ObeliskRobot<d1_control_msg> {
         public:
             D1Interface(const std::string& node_name)
                 : ObeliskRobot<d1_control_msg>(node_name) {
-                RCLCPP_INFO_STREAM(this->get_logger(), "Initializing Interface");
+                // Register additional publishers
+                this->RegisterObkPublisher<d1_sensor_msg>("pub_sensor_setting", pub_joint_state_key_);
+
                 // Get network interface name as a parameter
                 this->declare_parameter<std::string>("network_interface_name", "");
                 network_interface_name_ = this->get_parameter("network_interface_name").as_string();
                 RCLCPP_INFO_STREAM(this->get_logger(), "Network interface: " << network_interface_name_);
-
                 ChannelFactory::Instance()->Init(0, network_interface_name_);
-                
                 CreatePublishers();
             }
 
@@ -41,8 +46,7 @@ namespace obelisk {
             }
 
             void CreateSubscribers() {
-                // Create subscribers
-                // Should create after the publishers have been activated
+                // Create low state subscriber after the publisher(s) have been activated
                 RCLCPP_INFO_STREAM(this->get_logger(), "Creating subscribers");
                 lowstate_subscriber_.reset(new ChannelSubscriber<ArmString_>(STATE_TOPIC));
                 lowstate_subscriber_->InitChannel(std::bind(&D1Interface::LowStateHandler, this, std::placeholders::_1));
@@ -52,9 +56,7 @@ namespace obelisk {
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
                 const rclcpp_lifecycle::State& prev_state) {
                 this->ObeliskRobot::on_activate(prev_state);
-
                 CreateSubscribers();
-
                 return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
             }
 
@@ -64,19 +66,65 @@ namespace obelisk {
                 
                 The joint positions are in degrees.
                 */
-                const ArmString_* pm = (const ArmString_*) msg;
-                RCLCPP_INFO_STREAM(this->get_logger(), "arm_Feedback_data:" << pm->data_());
+                const ArmString_* state = (const ArmString_*) msg;
+                // RCLCPP_INFO_STREAM(this->get_logger(), "arm_Feedback_data:" << state->data_());
+
+                std::string json_str = state->data_();
+
+                Document document;
+                document.Parse(json_str.c_str());
+
+                if (!document.HasParseError()) {
+                    if (document.IsObject()) {
+                        int seq = document["seq"].GetInt();
+                        int address = document["address"].GetInt();
+                        int funcode = document["funcode"].GetInt();
+
+                        if (seq == AllJointFeedback::SEQ 
+                            && address == AllJointFeedback::ADDRESS
+                            && funcode == AllJointFeedback::FUNCODE) {
+                            RCLCPP_INFO_STREAM(this->get_logger(), "Publishing arm feedback data");
+                            PublishJointState(document);
+                        }
+                    }
+                    else {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "Unknown arm feedback object");
+                    }
+                }
+                else {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to parse arm feedback JSON message");
+                }
+            }
+
+            void PublishJointState(const Document& document) {
+                // Joints
+                d1_sensor_msg joint_state;
+                joint_state.header.stamp = this->now();
+                joint_state.joint_pos.resize(NUM_JOINTS);
+                joint_state.joint_vel.resize(NUM_JOINTS);
+                joint_state.joint_names.resize(NUM_JOINTS);
+                
+                std::string joint_name;
+                for (int i = 0; i < NUM_JOINTS; i++) {
+                    joint_name = JOINT_NAMES[i];
+                    joint_state.joint_names.at(i) = joint_name;
+                    joint_state.joint_pos.at(i) = document["data"][joint_name.c_str()].GetDouble();
+                    joint_state.joint_vel.at(i) = 0; // arm_Feedback doesn't report joint velocities.
+                }
+
+                this->GetPublisher<d1_sensor_msg>(pub_joint_state_key_)->publish(joint_state);
             }
 
             void ApplyControl(const d1_control_msg& control_msg) {
                 /*
-                Command the joint positions of the D1 Arm.
+                Command the joint positions (in degrees) of the D1 Arm.
 
                 The D1 Arm can also be commanded to release control of all motors, but this is not implemented here.
                 */
+                // FIXME: Clean code, add visualization in yaml
                 std::stringstream cmd;
                 cmd << "{\"seq\":" 
-                << SEQ_ALL_JOINTS 
+                << SEQ_ALL_JOINTS
                 << ",\"address\":" 
                 << ADDRESS_ALL_JOINTS 
                 << ",\"funcode\":" 
@@ -92,12 +140,11 @@ namespace obelisk {
                     pos_in_degrees = pos_in_rads * 180 / M_PI;
                     // Round to two decimal places
                     pos_in_degrees = std::round(pos_in_degrees * 100) / 100;
-                    cmd << ",\"angle" << i << "\":" << pos_in_degrees;
+                    cmd << ",\"" << JOINT_NAMES[i] << "\":" << pos_in_degrees;
                 }
                 
                 cmd << "}}";
                 std::string cmd_str = cmd.str();
-                // RCLCPP_INFO_STREAM(this->get_logger(), "cmd_str: " << cmd_str);
 
                 // Create message
                 ArmString_ msg{};
@@ -113,70 +160,21 @@ namespace obelisk {
 
         const std::string CMD_TOPIC = "rt/arm_Command";
         const std::string STATE_TOPIC = "rt/arm_Feedback";
-        
+        const std::string pub_joint_state_key_ = "joint_state_pub";
+
         static const int NUM_JOINTS = 7;
+        const std::array<std::string, NUM_JOINTS> JOINT_NAMES = {
+            "angle0",
+            "angle1",
+            "angle2",
+            "angle3",
+            "angle4",
+            "angle5",
+            "angle6",
+        };
         static const int SEQ_ALL_JOINTS = 4;
         static const int ADDRESS_ALL_JOINTS = 1;
         static const int FUNCODE_ALL_JOINTS = 2;
         static const int MODE_ALL_JOINTS = 1;
     };
 }
-
-// #include "unitree_interface.h"
-
-// // Message Types
-// #include <msg/ArmString_.hpp>
-// #include <msg/PubServoInfo_.hpp>
-
-// namespace obelisk {
-
-//     using namespace unitree_arm::msg::dds_;
-
-//     class D1Interface : public ObeliskUnitreeInterface {
-//     public:
-//         D1Interface(const std::string& node_name)
-//         : ObeliskUnitreeInterface(node_name) {
-//             // Handle joint names
-//             num_motors_ = D1_MOTOR_NUM;
-//             for (size_t i = 0; i < num_motors_; i++) {
-//                 joint_names_.push_back(D1_JOINT_NAMES[i]);
-//             }
-
-//             // Define topic names
-//             CMD_TOPIC_ = "rt/arm_Command"; // commanded servo angles in degrees
-//             // FEEDBACK_TOPIC_ = "rt/arm_Feedback"; // TODO: We probably don't need this since we have SERVO_TOPIC_
-//             SERVO_TOPIC_ = "rt/current_servo_angle"; // current servo angles in degrees
-
-//             // Verify params and create unitree publishers
-//             VerifyParameters();
-//             CreateUnitreePublishers();
-//         }
-//     protected:
-//         void CreateUnitreePublishers() override {
-//             lowcmd_publisher_.reset(new ChannelPublisher<ArmString_>(CMD_TOPIC_));
-//             lowcmd_publisher_->InitChannel();
-
-//             RCLCPP_INFO_STREAM(this->get_logger(), "D1 command publishers created.");
-//         }
-
-//         void CreateUnitreeSubscribers() override {
-//             lowstate_subscriber_.reset(new ChannelSubscriber<PubServoInfo_>(SERVO_TOPIC_));
-//             lowstate_subscriber_->InitChannel(std::bind(&D1Interface::LowStateHandler, this, std::placeholders::_1_), 1)
-//         }
-
-//         void ApplyControl(const unitree_control_msg& msg) override {
-//             // The Unitree D1 Arm only takes in position commands, however, it's ideal that at the Unitree robots
-//             // inherit the UnitreeInterface class and thus use the `unitree_control_msg` type.
-//             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to D1 Arm!");
-
-//             // Create packet
-            
-
-//             // Verify message
-//             if (msg.joint_names.size() != msg.)
-//         }
-//         ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
-//         ChannelSubscriberPtr<PubServoInfo_> servo_subscriber;
-
-//     }
-// } // namespace obelisk

@@ -19,7 +19,6 @@ class D1Controller(ObeliskController):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
-        # self.x_hat = None
         return TransitionCallbackReturn.SUCCESS
     
     def update_x_hat(self, x_hat_msg: ObeliskEstimatorMsg) -> None:
@@ -33,7 +32,7 @@ class D1Controller(ObeliskController):
 
     def compute_control(self) -> ObeliskControlMsg:
         """
-        Compute the control signal for the 6-DOF+1 robot. 
+        Compute the joint positions (radians) for the 6-DOF+1 robot. 
         
         The two joints for the gripper are controlled by one motor on the actual arm.
         The position of motor 7_1 is positive. 
