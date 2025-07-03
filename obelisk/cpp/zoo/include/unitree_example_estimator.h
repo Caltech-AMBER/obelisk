@@ -25,9 +25,9 @@ namespace obelisk {
             obelisk_estimator_msgs::msg::EstimatedState msg;
 
             msg.header.stamp = this->now();
-            msg.q_joints       = joint_encoders_;   // Joint Positions
-            msg.v_joints       = joint_vels_;        // Joint Velocities
-            msg.joint_names    = joint_names_;      // Joint Names
+            msg.q_joints       = joint_encoders_; // Joint Positions
+            msg.v_joints       = joint_vels_; // Joint Velocities
+            msg.joint_names    = joint_names_; // Joint Names
             msg.base_link_name = "base_link";
 
             this->GetPublisher<obelisk_estimator_msgs::msg::EstimatedState>(this->est_pub_key_)->publish(msg);

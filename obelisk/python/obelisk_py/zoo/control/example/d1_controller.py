@@ -26,36 +26,43 @@ class D1Controller(ObeliskController):
         Update the state estimate.
         
         Args:
-            x_hat_msg (ObeliskEstimatorMsg): The Obelisk message containing the state estimate.
+            x_hat_msg (ObeliskEstimatorMsg): The Obelisk message containing the 
+            state estimate.
         """
         pass
 
     def compute_control(self) -> ObeliskControlMsg:
         """
-        Compute the joint positions (radians) for the 6-DOF+1 robot. 
+        Compute the joint positions for the 6-DOF+1 robot. 
         
-        The two joints for the gripper are controlled by one motor on the actual arm.
+        joint0 to joint5 positions are in radians.
+        joint6 and joint6_2 are in meters. 
+        They control the gripper.
         The position of motor 6 is positive. 
         The position of motor 6_2 is the negative of that of motor 6.
-        The control message contains eight joints for Mujoco to simulate the robot.
+        The control message contains eight joints for Mujoco to simulate the 
+        robot.
         
         Returns:
             obelisk_control_msg (ObeliskControlMsg): The control message.
         """
         # Computing the control input
         # Grab the current time.
-        t = self.t - self.start_time.nanoseconds * 1e-9 # This doesn't start at 0. It starts at 0.13 seconds.
+        # `t` doesn't start at 0. It starts at 0.13 seconds.
+        t = self.t - self.start_time.nanoseconds * 1e-9 
         w = 1
 
-        if t < float('inf'): # pi / w:
-            u = np.zeros(8).astype(float).tolist() # example state-independent control input
+        if t < pi / w: # float('inf'): # pi / w:
+            # example state-independent control input
+            u = np.zeros(8).astype(float).tolist() 
         else:
-            u = [(0.3 * np.sin(w * t)) for _ in range(8)] # example state-independent control input
-            # Could clip the control input to be within the limits of the robot over here.
-            # u[-2] = 0.0
-            # u[-1] = 0.0
+            u = [(0.3 * np.sin(w * t)) for _ in range(6)]
+            # u = [0.0 for _ in range(6)]
+            u_gripper = 0.015 * np.sin(w * t) + 0.015
+            u.append(u_gripper)
+            u.append(-u_gripper)
 
-        # Setting the message
+        # Create the message
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u_mujoco = u
         position_setpoint_msg.q_des = u

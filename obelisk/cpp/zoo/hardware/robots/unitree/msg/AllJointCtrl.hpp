@@ -2,6 +2,8 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <Unit.hpp>
+
 using namespace rapidjson;
 
 struct AllJointCtrl {
@@ -11,8 +13,10 @@ struct AllJointCtrl {
     static const int MODE = 1;
 
     std::vector<double> q_des;
-    std::vector<std::string> joint_names;
-
+    std::vector<std::string> joint_names_hardware;
+    std::vector<Unit> joint_units_hardware;
+    std::vector<Unit> joint_units;
+    
     std::string str() {
         /* Format the struct into a string that can be stored in the 
         the data member of the ArmString_ message.
@@ -25,16 +29,37 @@ struct AllJointCtrl {
 
         data.AddMember("mode", MODE, allocator);
 
-        // Add joint positions to data
-        double pos_in_rads;
-        double pos_in_degrees;
+        Unit joint_unit_hardware;
+        Unit joint_unit;
+        double joint_pos_hardware;
+        double joint_pos;
 
+        // Add joint positions to data with the proper units
         for (size_t i = 0; i < q_des.size(); i++) {
-            pos_in_rads = q_des.at(i);
-            pos_in_degrees = pos_in_rads * 180 / M_PI;
+            joint_unit_hardware = joint_units_hardware.at(i);
+            joint_unit = joint_units.at(i);
+            joint_pos = q_des.at(i);
+
+            if (joint_unit_hardware == DEGREES && joint_unit == RADIANS) {
+                joint_pos_hardware = joint_pos * 180 / M_PI;
+            }
+            else if (joint_unit_hardware == MILLIMETERS && joint_unit == METERS) {
+                joint_pos_hardware = joint_pos * 1000;
+                // This joint6 position is half of what it is on the hardware
+                joint_pos_hardware *= 2;
+            }
+            else {
+                std::cerr << "Didn't implement unit conversion yet.\n";
+                return "";
+            }
+
             // Round to two decimal places
-            pos_in_degrees = std::round(pos_in_degrees * 100) / 100;
-            data.AddMember(GenericStringRef(joint_names.at(i).c_str()), pos_in_degrees, allocator);
+            joint_pos_hardware = std::round(joint_pos_hardware * 100) / 100;
+            data.AddMember(
+                GenericStringRef(joint_names_hardware.at(i).c_str()), 
+                joint_pos_hardware, 
+                allocator
+            );
         }
 
         document.AddMember("seq", SEQ, allocator);
