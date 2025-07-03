@@ -86,7 +86,7 @@
     </collision>
   </link>
   <joint
-    name="Joint1"
+    name="angle0"
     type="revolute">
     <origin
       xyz="0 0 0.0533"
@@ -144,7 +144,7 @@
     </collision>
   </link>
   <joint
-    name="Joint2"
+    name="angle1"
     type="revolute">
     <origin
       xyz="0 0.028 0.0563"
@@ -202,7 +202,7 @@
     </collision>
   </link>
   <joint
-    name="Joint3"
+    name="angle2"
     type="revolute">
     <origin
       xyz="0 0.2693 0.0009"
@@ -260,7 +260,7 @@
     </collision>
   </link>
   <joint
-    name="Joint4"
+    name="angle3"
     type="revolute">
     <origin
       xyz="0.0577 0.042 -0.0275"
@@ -318,7 +318,7 @@
     </collision>
   </link>
   <joint
-    name="Joint5"
+    name="angle4"
     type="revolute">
     <origin
       xyz="-0.0001 -0.0237 0.14018"
@@ -376,7 +376,7 @@
     </collision>
   </link>
   <joint
-    name="Joint6"
+    name="angle5"
     type="revolute">
     <origin
       xyz="0.0825 -0.0010782 -0.023822"
@@ -434,7 +434,7 @@
     </collision>
   </link>
   <joint
-    name="Joint7_1"
+    name="angle6"
     type="prismatic">
     <origin
       xyz="-0.0056012 -0.029636 0.0706"
@@ -492,7 +492,7 @@
     </collision>
   </link>
   <joint
-    name="Joint7_2"
+    name="angle6_2"
     type="prismatic">
     <origin
       xyz="-0.0056388 0.02964 0.0706"

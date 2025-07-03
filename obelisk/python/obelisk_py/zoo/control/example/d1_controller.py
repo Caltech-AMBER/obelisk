@@ -35,8 +35,8 @@ class D1Controller(ObeliskController):
         Compute the joint positions (radians) for the 6-DOF+1 robot. 
         
         The two joints for the gripper are controlled by one motor on the actual arm.
-        The position of motor 7_1 is positive. 
-        The position of motor 7_2 is the negative of that of motor 7_1.
+        The position of motor 6 is positive. 
+        The position of motor 6_2 is the negative of that of motor 6.
         The control message contains eight joints for Mujoco to simulate the robot.
         
         Returns:

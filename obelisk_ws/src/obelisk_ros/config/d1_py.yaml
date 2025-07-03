@@ -36,17 +36,17 @@ onboard:
           callback_group: None
   robot:
     # === simulation ===
-    # - is_simulated: True
-    #   pkg: obelisk_sim_py
-    #   executable: obelisk_mujoco_robot
-    #   params:
-    #     ic_keyframe: zero
-    # === hardware ===
-    - is_simulated: False
-      pkg: obelisk_unitree_cpp
-      executable: unitree_d1_hardware
+    - is_simulated: True
+      pkg: obelisk_sim_py
+      executable: obelisk_mujoco_robot
       params:
-          network_interface_name: enx001cc24ce09a
+        ic_keyframe: zero
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_unitree_cpp
+    #   executable: unitree_d1_hardware
+    #   params:
+    #       network_interface_name: enx001cc24ce09a
     # ===============
       publishers: # for hardware only
         - ros_parameter: pub_sensor_setting
@@ -71,15 +71,39 @@ onboard:
             dt: 0.002
             msg_type: ObkJointEncoders
             sensor_names:
+              joint0_sensor: jointpos
               joint1_sensor: jointpos
               joint2_sensor: jointpos
               joint3_sensor: jointpos
               joint4_sensor: jointpos
               joint5_sensor: jointpos
               joint6_sensor: jointpos
-              joint7_1sensor: jointpos
-              joint7_2sensor: jointpos
+              joint6_2_sensor: jointpos
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
           callback_group: None
+  viz:
+    on: True
+    viz_tool: foxglove
+    viz_nodes:
+      - pkg: obelisk_viz_cpp
+        executable: default_robot_viz
+        robot_pkg: d1_description
+        urdf: d1.urdf
+        robot_topic: robot_description
+        subscribers:
+          - ros_parameter: sub_viz_est_setting
+            topic: /obelisk/d1/est_state
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        publishers:
+          - ros_parameter: pub_viz_joint_setting
+            topic: joint_states
+            history_depth: 10
+            callback_group: None
+        timers:
+          - ros_parameter: timer_viz_joint_setting
+            timer_period_sec: 0.01
+            callback_group: None
