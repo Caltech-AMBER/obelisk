@@ -52,12 +52,10 @@ class D1Controller(ObeliskController):
         t = self.t - self.start_time.nanoseconds * 1e-9 
         w = 1
 
-        if t < pi / w: # float('inf'): # pi / w:
-            # example state-independent control input
+        if t < pi / w: 
             u = np.zeros(8).astype(float).tolist() 
         else:
             u = [(0.3 * np.sin(w * t)) for _ in range(6)]
-            # u = [0.0 for _ in range(6)]
             u_gripper = 0.015 * np.sin(w * t) + 0.015
             u.append(u_gripper)
             u.append(-u_gripper)

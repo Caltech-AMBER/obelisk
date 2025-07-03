@@ -55,6 +55,7 @@ struct AllJointCtrl {
 
             // Round to two decimal places
             joint_pos_hardware = std::round(joint_pos_hardware * 100) / 100;
+            
             data.AddMember(
                 GenericStringRef(joint_names_hardware.at(i).c_str()), 
                 joint_pos_hardware, 
