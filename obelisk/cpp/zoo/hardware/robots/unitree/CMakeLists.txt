@@ -12,10 +12,10 @@ FetchContent_Declare(
     unitree_sdk
     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
     GIT_TAG 7b00ca4b766272d137cf7ff751d4a067bc99ca85) # Most recent commit includes the Write()
-    # method in channel_publisher.hpp
+    # member function in channel_publisher.hpp
 
     # GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d # This commit doesn't include the aforementioned
-    # method, however, it has the SwitchGait() method which enables go2_interface.h to compile.
+    # member function, however, it has the SwitchGait() member function which enables go2_interface.h to compile.
 
 # Couldn't find `UNITREE_SDK_BUILD_EXAMPLES` being defined in unitree_sdk2.
 # set(UNITREE_SDK_BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")

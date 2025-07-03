@@ -37,6 +37,7 @@ class D1Controller(ObeliskController):
         The two joints for the gripper are controlled by one motor on the actual arm.
         The position of motor 7_1 is positive. 
         The position of motor 7_2 is the negative of that of motor 7_1.
+        The control message contains eight joints for Mujoco to simulate the robot.
         
         Returns:
             obelisk_control_msg (ObeliskControlMsg): The control message.

@@ -13,17 +13,17 @@
 // D1 Arm Message Types
 #include <msg/ArmString_.hpp>
 #include <msg/AllJointFeedback.hpp>
-
+#include <msg/AllJointCtrl.hpp>
 
 namespace obelisk {
     using namespace unitree::common;
     using namespace unitree::robot;
     using namespace unitree_arm::msg::dds_;
+    using namespace rapidjson;
     
     using d1_control_msg = obelisk_control_msgs::msg::PositionSetpoint;
     using d1_sensor_msg = obelisk_sensor_msgs::msg::ObkJointEncoders;
-    using Document = rapidjson::Document;
-
+    
     class D1Interface : public ObeliskRobot<d1_control_msg> {
         public:
             D1Interface(const std::string& node_name)
@@ -62,9 +62,9 @@ namespace obelisk {
 
             void LowStateHandler(const void* msg) {
                 /*
-                Called when the arm_Feedback subscriber hears a message on the state topic.
-                
-                The joint positions are in degrees.
+                Called when the arm_Feedback subscriber hears a message sent by the robot
+                over the state topic. Publishes the joint positions (in degrees) to 
+                Obelisk `pub_joint_state_key_` topic.
                 */
                 const ArmString_* state = (const ArmString_*) msg;
                 // RCLCPP_INFO_STREAM(this->get_logger(), "arm_Feedback_data:" << state->data_());
@@ -97,7 +97,7 @@ namespace obelisk {
             }
 
             void PublishJointState(const Document& document) {
-                // Joints
+                // Publish first seven joint positions. FIXME: may need to publish eight.
                 d1_sensor_msg joint_state;
                 joint_state.header.stamp = this->now();
                 joint_state.joint_pos.resize(NUM_JOINTS);
@@ -106,7 +106,7 @@ namespace obelisk {
                 
                 std::string joint_name;
                 for (int i = 0; i < NUM_JOINTS; i++) {
-                    joint_name = JOINT_NAMES[i];
+                    joint_name = JOINT_NAMES.at(i);
                     joint_state.joint_names.at(i) = joint_name;
                     joint_state.joint_pos.at(i) = document["data"][joint_name.c_str()].GetDouble();
                     joint_state.joint_vel.at(i) = 0; // arm_Feedback doesn't report joint velocities.
@@ -116,65 +116,35 @@ namespace obelisk {
             }
 
             void ApplyControl(const d1_control_msg& control_msg) {
-                /*
-                Command the joint positions (in degrees) of the D1 Arm.
+                // Extract first seven joint positions to command to robot.
+                std::vector<double> q_des = control_msg.q_des;
+                std::vector<double> q_des_7(q_des.begin(), q_des.begin() + JOINT_NAMES.size());
 
-                The D1 Arm can also be commanded to release control of all motors, but this is not implemented here.
-                */
-                // FIXME: Clean code, add visualization in yaml
-                std::stringstream cmd;
-                cmd << "{\"seq\":" 
-                << SEQ_ALL_JOINTS
-                << ",\"address\":" 
-                << ADDRESS_ALL_JOINTS 
-                << ",\"funcode\":" 
-                << FUNCODE_ALL_JOINTS 
-                << ",\"data\":{\"mode\":"
-                << MODE_ALL_JOINTS;
-
-                double pos_in_rads;
-                double pos_in_degrees;
-
-                for (int i = 0; i < NUM_JOINTS; i++) {
-                    pos_in_rads = control_msg.q_des.at(i);
-                    pos_in_degrees = pos_in_rads * 180 / M_PI;
-                    // Round to two decimal places
-                    pos_in_degrees = std::round(pos_in_degrees * 100) / 100;
-                    cmd << ",\"" << JOINT_NAMES[i] << "\":" << pos_in_degrees;
-                }
-                
-                cmd << "}}";
-                std::string cmd_str = cmd.str();
-
+                AllJointCtrl ctrl = { q_des_7, JOINT_NAMES };
+                std::string ctrl_str = ctrl.str();
+            
                 // Create message
                 ArmString_ msg{};
-                msg.data_() = cmd_str;
+                msg.data_() = ctrl_str;
+
+                // RCLCPP_INFO_STREAM(this->get_logger(), ctrl_str);
 
                 // Publish message
                 lowcmd_publisher_->Write(msg);
             }
-        
-        std::string network_interface_name_;
-        ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
-        ChannelSubscriberPtr<ArmString_> lowstate_subscriber_;
 
-        const std::string CMD_TOPIC = "rt/arm_Command";
-        const std::string STATE_TOPIC = "rt/arm_Feedback";
-        const std::string pub_joint_state_key_ = "joint_state_pub";
+        private:
+            std::string network_interface_name_;
+            ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
+            ChannelSubscriberPtr<ArmString_> lowstate_subscriber_;
 
-        static const int NUM_JOINTS = 7;
-        const std::array<std::string, NUM_JOINTS> JOINT_NAMES = {
-            "angle0",
-            "angle1",
-            "angle2",
-            "angle3",
-            "angle4",
-            "angle5",
-            "angle6",
-        };
-        static const int SEQ_ALL_JOINTS = 4;
-        static const int ADDRESS_ALL_JOINTS = 1;
-        static const int FUNCODE_ALL_JOINTS = 2;
-        static const int MODE_ALL_JOINTS = 1;
+            const std::string CMD_TOPIC = "rt/arm_Command";
+            const std::string STATE_TOPIC = "rt/arm_Feedback";
+            const std::string pub_joint_state_key_ = "joint_state_pub";
+
+            const int NUM_JOINTS = 7;
+            const std::vector<std::string> JOINT_NAMES = {
+                "angle0", "angle1", "angle2", "angle3", "angle4", "angle5", "angle6",
+            };
     };
-}
+} // namespace obelisk
