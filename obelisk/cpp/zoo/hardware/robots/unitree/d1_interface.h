@@ -62,8 +62,9 @@ namespace obelisk {
 
             void LowStateHandler(const void* msg) {
                 /*
-                Called when the arm_Feedback subscriber hears a message sent by the robot
-                over the state topic. Publishes the joint positions (in degrees) to 
+                Called when the arm_Feedback subscriber hears a message (joint positions in degrees) sent by the robot
+                over the state topic. 
+                LowStateHandler publishes the joint positions (in radians) to 
                 Obelisk `pub_joint_state_key_` topic.
                 */
                 const ArmString_* state = (const ArmString_*) msg;
@@ -83,7 +84,6 @@ namespace obelisk {
                         if (seq == AllJointFeedback::SEQ 
                             && address == AllJointFeedback::ADDRESS
                             && funcode == AllJointFeedback::FUNCODE) {
-                            RCLCPP_INFO_STREAM(this->get_logger(), "Publishing arm feedback data");
                             PublishJointState(document);
                         }
                     }
@@ -97,7 +97,11 @@ namespace obelisk {
             }
 
             void PublishJointState(const Document& document) {
-                // Publish first seven joint positions. FIXME: may need to publish eight.
+                /* 
+                Publishes eight joint positions (rads), velocities (default to 0 rad/s), and names. 
+
+                document (Document): arm feedback document that contains joint positions in degrees.
+                */
                 d1_sensor_msg joint_state;
                 joint_state.header.stamp = this->now();
                 joint_state.joint_pos.resize(NUM_JOINTS);
@@ -105,10 +109,20 @@ namespace obelisk {
                 joint_state.joint_names.resize(NUM_JOINTS);
                 
                 std::string joint_name;
+                double joint_pos_degs;
                 for (int i = 0; i < NUM_JOINTS; i++) {
                     joint_name = JOINT_NAMES.at(i);
                     joint_state.joint_names.at(i) = joint_name;
-                    joint_state.joint_pos.at(i) = document["data"][joint_name.c_str()].GetDouble();
+                    
+                    // Set joint6 position to be the negative of the joint6_2 position.
+                    if (i == NUM_JOINTS - 1) {
+                        joint_state.joint_pos.at(i) = -joint_state.joint_pos.at(i - 1);
+                    }
+                    else {
+                        joint_pos_degs = document["data"][joint_name.c_str()].GetDouble();
+                        joint_state.joint_pos.at(i) = joint_pos_degs * M_PI / 180;
+                    }
+
                     joint_state.joint_vel.at(i) = 0; // arm_Feedback doesn't report joint velocities.
                 }
 
@@ -116,18 +130,21 @@ namespace obelisk {
             }
 
             void ApplyControl(const d1_control_msg& control_msg) {
-                // Extract first seven joint positions to command to robot.
+                /* 
+                Extract first seven joint positions to command to robot.
+                First six joint positions are given in radians. The seventh joint position is in meters.
+                TODO: Enum for units?
+                */
                 std::vector<double> q_des = control_msg.q_des;
-                std::vector<double> q_des_7(q_des.begin(), q_des.begin() + JOINT_NAMES.size());
+                std::vector<double> q_des_7(q_des.begin(), q_des.begin() + NUM_JOINTS - 1);
+                std::vector<std::string> joint_names_7(JOINT_NAMES.begin(), JOINT_NAMES.begin() + NUM_JOINTS - 1);
 
-                AllJointCtrl ctrl = { q_des_7, JOINT_NAMES };
+                AllJointCtrl ctrl = { q_des_7, joint_names_7 };
                 std::string ctrl_str = ctrl.str();
             
                 // Create message
                 ArmString_ msg{};
                 msg.data_() = ctrl_str;
-
-                // RCLCPP_INFO_STREAM(this->get_logger(), ctrl_str);
 
                 // Publish message
                 lowcmd_publisher_->Write(msg);
@@ -142,9 +159,9 @@ namespace obelisk {
             const std::string STATE_TOPIC = "rt/arm_Feedback";
             const std::string pub_joint_state_key_ = "joint_state_pub";
 
-            const int NUM_JOINTS = 7;
+            const int NUM_JOINTS = 8;
             const std::vector<std::string> JOINT_NAMES = {
-                "angle0", "angle1", "angle2", "angle3", "angle4", "angle5", "angle6",
+                "angle0", "angle1", "angle2", "angle3", "angle4", "angle5", "angle6", "angle6_2"
             };
     };
 } // namespace obelisk

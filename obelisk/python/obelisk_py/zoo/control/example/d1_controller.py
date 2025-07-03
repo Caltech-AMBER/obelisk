@@ -47,7 +47,7 @@ class D1Controller(ObeliskController):
         t = self.t - self.start_time.nanoseconds * 1e-9 # This doesn't start at 0. It starts at 0.13 seconds.
         w = 1
 
-        if t < pi / w: # float('inf'): # pi / w:
+        if t < float('inf'): # pi / w:
             u = np.zeros(8).astype(float).tolist() # example state-independent control input
         else:
             u = [(0.3 * np.sin(w * t)) for _ in range(8)] # example state-independent control input
