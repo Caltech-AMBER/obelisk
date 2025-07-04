@@ -34,8 +34,8 @@ echo Installing Librealsense-required dev packages
 sudo apt-get install git cmake libssl-dev freeglut3-dev libusb-1.0-0-dev pkg-config libgtk-3-dev unzip -y
 rm -f ./master.zip
 
-wget https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.50.0.zip
-unzip ./v2.50.0.zip -d .
+wget -q https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.50.0.zip
+unzip -qq ./v2.50.0.zip -d .
 cd ./librealsense-2.50.0
 
 echo Install udev-rules
