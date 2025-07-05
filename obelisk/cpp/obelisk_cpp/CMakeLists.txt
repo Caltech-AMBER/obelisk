@@ -24,8 +24,24 @@ find_package(visualization_msgs REQUIRED)
 
 # ------- Mujoco ------- #
 include(FetchContent)
-set(MUJOCO_VERSION "3.3.2" CACHE STRING "mujoco version")
-set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
+set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
+# ------- Detect architecture and set COMP_ARCH accordingly ------- #
+if(NOT DEFINED COMP_ARCH)
+  execute_process(
+    COMMAND uname -m
+    OUTPUT_VARIABLE ARCH_DETECTED
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(ARCH_DETECTED STREQUAL "x86_64")
+    set(COMP_ARCH "x86_64" CACHE STRING "computer architecture" FORCE)
+    message(STATUS "Detected architecture: x86_64")
+  elseif(ARCH_DETECTED STREQUAL "aarch64")
+    set(COMP_ARCH "aarch64" CACHE STRING "computer architecture" FORCE)
+    message(STATUS "Detected architecture: aarch64")
+  else()
+    message(FATAL_ERROR "Unsupported architecture: ${ARCH_DETECTED}")
+  endif()
+endif()
 
 FetchContent_Declare(
   mujoco
