@@ -29,7 +29,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "d1_example_controller = obelisk_d1_py.d1_example_controller:main"
+            "d1_example_controller = obelisk_d1_py.d1_example_controller:main",
+            "d1_example_estimator = obelisk_d1_py.d1_example_estimator:main",
         ],
     },
 )

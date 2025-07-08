@@ -18,8 +18,11 @@ onboard:
           timer_period_sec: 0.001
           callback_group: None
   estimation:
-    - pkg: obelisk_unitree_cpp
-      executable: unitree_example_estimator
+    # The two lines below work as well.
+    # - pkg: obelisk_unitree_cpp
+    #   executable: unitree_example_estimator
+    - pkg: obelisk_d1_py
+      executable: d1_example_estimator
       publishers:
         - ros_parameter: pub_est_setting
           topic: /obelisk/d1/est
