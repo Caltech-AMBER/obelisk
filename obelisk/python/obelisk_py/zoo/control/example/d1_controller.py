@@ -8,6 +8,8 @@ from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
+PUB_CONTROL_TOPIC = "pub_ctrl"
+
 class D1Controller(ObeliskController):
     """Example position setpoint controller for the Unitree D1 Arm."""
 
@@ -64,6 +66,6 @@ class D1Controller(ObeliskController):
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u_mujoco = u
         position_setpoint_msg.q_des = u
-        self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
+        self.obk_publishers[PUB_CONTROL_TOPIC].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg # ignore type checking for now

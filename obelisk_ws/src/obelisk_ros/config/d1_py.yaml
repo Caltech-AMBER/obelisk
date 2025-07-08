@@ -58,7 +58,6 @@ onboard:
           callback_group: None
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/d1/ctrl
           history_depth: 10
           callback_group: None

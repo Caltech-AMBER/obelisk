@@ -32,7 +32,7 @@ namespace obelisk {
                 : ObeliskRobot<d1_control_msg>(node_name) {
                 // Register additional publishers
                 this->RegisterObkPublisher<d1_sensor_msg>(
-                    "pub_sensor_setting", pub_joint_state_key_
+                    PUB_SENSOR_SETTING_TOPIC, PUB_SENSOR_SETTING_KEY
                 );
 
                 // Get network interface name as a parameter
@@ -107,7 +107,7 @@ namespace obelisk {
                 /* 
                 Publishes joint0 to joint5 positions in radians as well as 
                 joint6 and joint6_2 in meters to the Obelisk 
-                `pub_joint_state_key_` topic. Velocities (default to 0 rad/s). 
+                `PUB_SENSOR_SETTING_KEY` topic. Velocities (default to 0 rad/s). 
 
                 document (Document): arm feedback document that contains 
                 joint0 to joint5 positions in degrees and 
@@ -165,7 +165,7 @@ namespace obelisk {
                     joint_state.joint_vel.at(i) = 0; 
                 }
 
-                this->GetPublisher<d1_sensor_msg>(pub_joint_state_key_)->publish(joint_state);
+                this->GetPublisher<d1_sensor_msg>(PUB_SENSOR_SETTING_KEY)->publish(joint_state);
             }
 
             void ApplyControl(const d1_control_msg& control_msg) {
@@ -210,9 +210,12 @@ namespace obelisk {
             ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
             ChannelSubscriberPtr<ArmString_> lowstate_subscriber_;
 
+            const std::string PUB_SENSOR_SETTING_TOPIC = "pub_sensor_setting";
+            const std::string PUB_SENSOR_SETTING_KEY = "joint_state_pub";
+            
             const std::string CMD_TOPIC = "rt/arm_Command";
             const std::string STATE_TOPIC = "rt/arm_Feedback";
-            const std::string pub_joint_state_key_ = "joint_state_pub";
+            
 
             const int NUM_JOINTS = 8;
             const std::vector<std::string> JOINT_NAMES = {
