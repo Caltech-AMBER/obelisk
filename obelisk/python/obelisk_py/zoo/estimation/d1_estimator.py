@@ -33,15 +33,17 @@ class D1Estimator(ObeliskEstimator):
 
     def compute_state_estimate(self) -> Any:
         """Compute the state estimate."""
+        if not self.received_joint_encoders:
+            return
+        
         msg = EstimatedState()
-        if self.received_joint_encoders:
-            msg.q_joints = self.joint_pos
-            msg.v_joints = self.joint_vel
-            msg.joint_names = self.joint_names
-            msg.base_link_name = BASE_LINK_NAME
-            msg.header.stamp = self.get_clock().now().to_msg()
-            self.obk_publishers[PUB_ESTIMATOR_TOPIC].publish(msg)
-            return msg
+        msg.q_joints = self.joint_pos
+        msg.v_joints = self.joint_vel
+        msg.joint_names = self.joint_names
+        msg.base_link_name = BASE_LINK_NAME
+        msg.header.stamp = self.get_clock().now().to_msg()
+        self.obk_publishers[PUB_ESTIMATOR_TOPIC].publish(msg)
+        return msg
 
 
 
