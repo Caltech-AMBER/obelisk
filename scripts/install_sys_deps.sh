@@ -94,6 +94,8 @@ if [ "$basic" = true ]; then
         ros-humble-rviz-visual-tools \
         ros-humble-foxglove-bridge \
         ros-humble-joy              # Need to make sure this is version 3.3.0
+        ros-humble-urdfdom-py \
+        ros-humble-urdfdom
     source /opt/ros/humble/setup.bash
 
     # python deps
@@ -101,6 +103,7 @@ if [ "$basic" = true ]; then
         colcon-common-extensions \
         "ruamel.yaml" \
         mujoco
+        
     if [ -d $OBELISK_ROOT ]; then
         pip install -e $OBELISK_ROOT/obelisk/python
         echo -e "\033[1;32mOBELISK_ROOT exists, obelisk_py installed as editable!\033[0m"
