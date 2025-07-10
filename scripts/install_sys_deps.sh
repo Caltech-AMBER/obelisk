@@ -94,15 +94,14 @@ if [ "$basic" = true ]; then
         ros-humble-rviz-visual-tools \
         ros-humble-foxglove-bridge \
         ros-humble-joy              # Need to make sure this is version 3.3.0
-        ros-humble-urdfdom-py \
-        ros-humble-urdfdom
     source /opt/ros/humble/setup.bash
 
     # python deps
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
-        mujoco
+        mujoco \
+        urdf-parser-py \
         
     if [ -d $OBELISK_ROOT ]; then
         pip install -e $OBELISK_ROOT/obelisk/python
