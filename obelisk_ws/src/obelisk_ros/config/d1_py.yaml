@@ -73,14 +73,14 @@ onboard:
             dt: 0.002
             msg_type: ObkJointEncoders
             sensor_names:
-              joint0_sensor: jointpos
               joint1_sensor: jointpos
               joint2_sensor: jointpos
               joint3_sensor: jointpos
               joint4_sensor: jointpos
               joint5_sensor: jointpos
               joint6_sensor: jointpos
-              joint6_2_sensor: jointpos
+              gripper1_sensor: jointpos
+              gripper2_sensor: jointpos
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02

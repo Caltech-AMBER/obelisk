@@ -11,10 +11,10 @@
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
 // D1 Arm Message Types
-#include <msg/ArmString_.hpp>
-#include <msg/AllJointFeedback.hpp>
-#include <msg/AllJointCtrl.hpp>
-#include <msg/Unit.hpp>
+#include <d1/msg/ArmString_.hpp>
+#include <d1/utils/AllServoFeedback.hpp>
+#include <d1/utils/AllServoCtrl.hpp>
+#include <d1/utils/Unit.hpp>
 
 namespace obelisk {
     using namespace unitree::common;
@@ -86,9 +86,9 @@ namespace obelisk {
                         int address = document["address"].GetInt();
                         int funcode = document["funcode"].GetInt();
 
-                        if (seq == AllJointFeedback::SEQ 
-                            && address == AllJointFeedback::ADDRESS
-                            && funcode == AllJointFeedback::FUNCODE) {
+                        if (seq == AllServoFeedback::SEQ 
+                            && address == AllServoFeedback::ADDRESS
+                            && funcode == AllServoFeedback::FUNCODE) {
                             PublishJointState(document);
                         }
                     }
@@ -105,45 +105,43 @@ namespace obelisk {
 
             void PublishJointState(const Document& document) {
                 /* 
-                Publishes joint0 to joint5 positions in radians as well as 
-                joint6 and joint6_2 in meters to the Obelisk 
+                Publishes joint1 to joint6 positions in radians as well as 
+                gripper1 and gripper2 in meters to the Obelisk 
                 `PUB_SENSOR_SETTING_KEY` topic. Velocities (default to 0 rad/s). 
 
                 document (Document): arm feedback document that contains 
-                joint0 to joint5 positions in degrees and 
-                joint6 position in millimeters. This joint6 position is double
-                of what it is in the simulation.
+                joint1 to joint6 positions and gripper position in degrees.
+                One servo motor controls gripper1 and gripper2, so the 
+                gripper position is the position of this servo motor.
+
+                The joint state will include joint and gripper data for ease
+                of publishing arm data.
                 */
                 d1_sensor_msg joint_state;
                 joint_state.header.stamp = this->now();
-                joint_state.joint_pos.resize(NUM_JOINTS);
-                joint_state.joint_vel.resize(NUM_JOINTS);
-                joint_state.joint_names.resize(NUM_JOINTS);
+                joint_state.joint_pos.resize(NUM_CONTROL_INPUTS_SIM);
+                // arm_Feedback doesn't report joint velocities, so default
+                // them to 0.
+                joint_state.joint_vel.resize(NUM_CONTROL_INPUTS_SIM, 0.0);
+                joint_state.joint_names.resize(NUM_CONTROL_INPUTS_SIM);
                 
                 std::string joint_name_hardware;
                 std::string joint_name;
-                Unit joint_unit_hardware;
-                Unit joint_unit;
                 double joint_pos_hardware;
                 double joint_pos;
 
-                for (int i = 0; i < NUM_JOINTS; i++) {
+                // Populate data for joint1 to 6.
+                int i;
+                for (i = 0; i < NUM_JOINTS; i++) {
                     joint_name_hardware = JOINT_NAMES_HARDWARE.at(i);
                     joint_name = JOINT_NAMES.at(i);
                     joint_state.joint_names.at(i) = joint_name;
 
-                    joint_unit_hardware = JOINT_UNITS_HARDWARE.at(i);
-                    joint_unit = JOINT_UNITS.at(i);
-
                     joint_pos_hardware = document["data"][joint_name_hardware.c_str()].GetDouble();
 
                     // Convert the hardware joint positions to the proper units
-                    if (joint_unit_hardware == DEGREES && joint_unit == RADIANS) {
+                    if (JOINT_UNITS_HARDWARE == DEGREES && JOINT_UNITS == RADIANS) {
                         joint_pos = joint_pos_hardware * M_PI / 180;
-                    }
-                    else if (joint_unit_hardware == MILLIMETERS && joint_unit == METERS) {
-                        joint_pos = joint_pos_hardware / 1000;
-                        joint_pos /= 2;
                     }
                     else {
                         RCLCPP_ERROR_STREAM(
@@ -153,45 +151,43 @@ namespace obelisk {
                         return;
                     }
                     joint_state.joint_pos.at(i) = joint_pos;
-
-                    // Set joint6 position to be the negative of the 
-                    // joint6_2 position.
-                    if (i == NUM_JOINTS - 1) {
-                        joint_state.joint_pos.at(i) = -joint_state.joint_pos.at(i - 1);
-                    }
-                    
-                    // arm_Feedback doesn't report joint velocities, so default
-                    // to 0.
-                    joint_state.joint_vel.at(i) = 0; 
                 }
+                // Set the gripper1 state
+                joint_state.joint_names.at(i) = GRIPPER_NAMES.at(0);
+                double gripper_pos_hardware = document["data"][GRIPPER_NAME_HARDWARE.c_str()].GetDouble();
+                double gripper_pos = degrees2meters(gripper_pos_hardware);
+                joint_state.joint_pos.at(i) = gripper_pos;
+
+                // Set gripper2 state
+                joint_state.joint_names.at(i + 1) = GRIPPER_NAMES.at(1);
+                joint_state.joint_pos.at(i + 1) = -gripper_pos;
 
                 this->GetPublisher<d1_sensor_msg>(PUB_SENSOR_SETTING_KEY)->publish(joint_state);
             }
 
             void ApplyControl(const d1_control_msg& control_msg) {
                 /* 
-                Extract joint0 to joint6 positions to command to robot.
-                joint0 to joint5 positions are in radians.
-                joint6 position is in meters and is half of what it is according
-                to the hardware.
+                Extract joint1 to joint6 and gripper1 to gripper2 to command to 
+                robot.
+                joint1 to joint6 positions are in radians.
+                gripper1 to gripper2 positions are in meters.
 
                 The commanded message must contain
-                joint0 to joint5 positions are in degrees and
-                joint6 position in millimeters.
+                joint1 to joint6 positions and the gripper position in degrees.
+                One servo motor controls gripper1 and gripper2, so the 
+                gripper position is the position of this servo motor.
                 */
                 std::vector<double> q_des = control_msg.q_des;
-                std::vector<double> q_des_7(
+                std::vector<double> qd(
                     q_des.begin(), 
-                    q_des.begin() + NUM_JOINTS - 1
+                    q_des.begin() + NUM_JOINTS
                 );
-                std::vector<std::string> joint_names_7(
-                    JOINT_NAMES_HARDWARE.begin(), 
-                    JOINT_NAMES_HARDWARE.begin() + NUM_JOINTS - 1
-                );
-
-                AllJointCtrl ctrl = { 
-                    q_des_7, 
-                    joint_names_7,
+                double gripper_pos = -q_des.back();
+                AllServoCtrl ctrl = { 
+                    qd, 
+                    gripper_pos,
+                    JOINT_NAMES_HARDWARE,
+                    GRIPPER_NAME_HARDWARE,
                     JOINT_UNITS_HARDWARE,
                     JOINT_UNITS
                 };
@@ -200,7 +196,6 @@ namespace obelisk {
                 // Create message
                 ArmString_ msg{};
                 msg.data_() = ctrl_str;
-                
                 // Publish message
                 lowcmd_publisher_->Write(msg);
             }
@@ -217,25 +212,39 @@ namespace obelisk {
             const std::string STATE_TOPIC = "rt/arm_Feedback";
             
 
-            const int NUM_JOINTS = 8;
+            static const int NUM_JOINTS = 6;
+            static const int NUM_CONTROL_INPUTS_HARDWARE = 7; 
+            static const int NUM_CONTROL_INPUTS_SIM = 8; 
+
+            /*
+            Software parameters:
+            --------------------
+            These parameters are used in the D1 interface, controller,
+            estimator, and robot models.  
+            */
             const std::vector<std::string> JOINT_NAMES = {
-                "joint0", "joint1", "joint2", "joint3", 
-                "joint4", "joint5", "joint6", "joint6_2"
+                "joint1", "joint2", "joint3", "joint4", 
+                "joint5", "joint6", 
             };
-            /* Below are the joint names the hardware uses, 
-            but they are confusing because joint 6 and joint 6_2 are not angles.
+            const std::vector<std::string> GRIPPER_NAMES = {
+                "gripper1", "gripper2",
+            };
+            const Unit JOINT_UNITS = RADIANS;
+
+            /* 
+            Hardware parameters:
+            --------------------
+            These are used when sending and processing messages directly
+            from the D1 arm. 
+            These differ from the naming convention of the Unitree Z1 Arm. 
+            Since the Z1 Arm has an SDK for joystick control, we'll use the Z1 
+            Arm naming convention. 
             */
             const std::vector<std::string> JOINT_NAMES_HARDWARE = {
                 "angle0", "angle1", "angle2", "angle3", 
-                "angle4", "angle5", "angle6", "angle6_2"
+                "angle4", "angle5",
             };
-            const std::vector<Unit> JOINT_UNITS = {
-                RADIANS, RADIANS, RADIANS, RADIANS,
-                RADIANS, RADIANS, METERS, METERS
-            };
-            const std::vector<Unit> JOINT_UNITS_HARDWARE = {
-                DEGREES, DEGREES, DEGREES, DEGREES,
-                DEGREES, DEGREES, MILLIMETERS, MILLIMETERS
-            };
+            const std::string GRIPPER_NAME_HARDWARE = "angle6";
+            const Unit JOINT_UNITS_HARDWARE = DEGREES;
     };
 } // namespace obelisk

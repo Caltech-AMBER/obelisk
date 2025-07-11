@@ -2,7 +2,5 @@
 
 enum Unit {
     RADIANS,
-    DEGREES,
-    METERS,
-    MILLIMETERS
+    DEGREES
 };

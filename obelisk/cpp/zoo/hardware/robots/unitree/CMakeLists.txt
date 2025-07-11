@@ -27,7 +27,7 @@ FetchContent_MakeAvailable(unitree_sdk)
 # Get the .cpp files in msg and store it into the `UNITREE_ARM_MSGS`. A library should include
 # solely .cpp files.
 set(UNITREE_ARM_MSGS
-  msg/ArmString_.cpp
+  d1/msg/ArmString_.cpp
 )
 
 # Creates a library called `unitree_arm_msgs` containing all files in `UNITREE_ARM_MSGS`

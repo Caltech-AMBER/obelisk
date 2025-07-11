@@ -1,21 +1,26 @@
+#pragma once
+
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include <Unit.hpp>
+#include <d1/utils/Unit.hpp>
+#include <d1/utils/GripperUtils.hpp>
 
 using namespace rapidjson;
 
-struct AllJointCtrl {
+struct AllServoCtrl {
     static const int SEQ = 4;
     static const int ADDRESS = 1;
     static const int FUNCODE = 2;
     static const int MODE = 1;
 
-    std::vector<double> q_des;
+    std::vector<double> qd; // desired joint positions (radians)
+    double gripper_pos; // desired gripper1 position (meters)
     std::vector<std::string> joint_names_hardware;
-    std::vector<Unit> joint_units_hardware;
-    std::vector<Unit> joint_units;
+    std::string gripper_name_hardware;
+    Unit joint_units_hardware;
+    Unit joint_units;
     
     std::string str() {
         /* Format the struct into a string that can be stored in the 
@@ -29,32 +34,21 @@ struct AllJointCtrl {
 
         data.AddMember("mode", MODE, allocator);
 
-        Unit joint_unit_hardware;
-        Unit joint_unit;
         double joint_pos_hardware;
         double joint_pos;
 
         // Add joint positions to data with the proper units
-        for (size_t i = 0; i < q_des.size(); i++) {
-            joint_unit_hardware = joint_units_hardware.at(i);
-            joint_unit = joint_units.at(i);
-            joint_pos = q_des.at(i);
+        size_t i; 
+        for (i = 0; i < qd.size(); i++) {
+            joint_pos = qd.at(i);
 
-            if (joint_unit_hardware == DEGREES && joint_unit == RADIANS) {
+            if (joint_units_hardware == DEGREES && joint_units == RADIANS) {
                 joint_pos_hardware = joint_pos * 180 / M_PI;
-            }
-            else if (joint_unit_hardware == MILLIMETERS && joint_unit == METERS) {
-                joint_pos_hardware = joint_pos * 1000;
-                // This joint6 position is half of what it is on the hardware
-                joint_pos_hardware *= 2;
             }
             else {
                 std::cerr << "Didn't implement unit conversion yet.\n";
                 return "";
             }
-
-            // Round to two decimal places
-            joint_pos_hardware = std::round(joint_pos_hardware * 100) / 100;
             
             data.AddMember(
                 GenericStringRef(joint_names_hardware.at(i).c_str()), 
@@ -63,6 +57,15 @@ struct AllJointCtrl {
             );
         }
 
+        // Add gripper position to data with the proper units
+        double gripper_pos_hardware = meters2degrees(gripper_pos);
+
+        data.AddMember(
+            GenericStringRef(gripper_name_hardware.c_str()),
+            gripper_pos_hardware,
+            allocator
+        );
+        
         document.AddMember("seq", SEQ, allocator);
         document.AddMember("address", ADDRESS, allocator);
         document.AddMember("funcode", FUNCODE, allocator);
