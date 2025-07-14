@@ -1,6 +1,6 @@
-import numpy as np
 from math import pi
 
+import numpy as np
 from obelisk_control_msgs.msg import PositionSetpoint
 from obelisk_estimator_msgs.msg import EstimatedState
 from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
@@ -8,22 +8,21 @@ from rclpy.lifecycle import LifecycleState, TransitionCallbackReturn
 from obelisk_py.core.control import ObeliskController
 from obelisk_py.core.obelisk_typing import ObeliskControlMsg, ObeliskEstimatorMsg, is_in_bound
 
-PUB_CONTROL_TOPIC = "pub_ctrl"
+PUB_CONTROL_NAME = "pub_ctrl"
 
 NUM_JOINTS = 6
 
-# Units: radians
+# Unit: radians
 JOINT_LIMITS = np.array([
     [-135, 135],
     [-90, 90],
     [-90, 90],
     [-135, 135],
     [-90, 90],
-    [-135, 135],
-    [-35, 60],
+    [-135, 135]
 ]) * pi / 180
 
-# Units: meters
+# Unit: meters
 GRIPPER_LIMITS = np.array([0, 0.03])
 
 class D1Controller(ObeliskController):
@@ -52,14 +51,13 @@ class D1Controller(ObeliskController):
 
     def compute_control(self) -> ObeliskControlMsg:
         """
-        Compute the joint positions for the 6-DOF+1 robot. 
+        Compute the joint and gripper positions for the 6-DOF+1 robot. 
         
         joint1 to joint6 positions are in radians.
-        gripper1 and gripper2 are in meters. 
-        They control the physical gripper.
-        The position of gripper1 is positive. 
-        The position of gripper2 is the negative of that of `gripper.`
-        The control message contains eight joints for Mujoco to simulate the 
+        gripper1 and gripper2 positions are in meters. 
+        The gripper1 position is positive. 
+        The gripper2 position is the negative of that of gripper1.
+        The control message consists of eight inputs for Mujoco to simulate the 
         robot.
         
         Returns:
@@ -74,7 +72,7 @@ class D1Controller(ObeliskController):
             u_joints = [0.0 for i in range(NUM_JOINTS)]
             u_grippers = [0.0, 0.0]
         else:
-            u_joints = [(0.3 * np.sin(w * t)) for _ in range(6)]
+            u_joints = [(0.3 * np.sin(w * t)) for _ in range(NUM_JOINTS)]
             u_gripper1 = 0.015 * np.sin(w * t) + 0.015
             u_grippers = [u_gripper1, -u_gripper1]
 
@@ -86,7 +84,7 @@ class D1Controller(ObeliskController):
         position_setpoint_msg = PositionSetpoint()
         position_setpoint_msg.u_mujoco = u_joints
         position_setpoint_msg.q_des = u_joints
-        self.obk_publishers[PUB_CONTROL_TOPIC].publish(position_setpoint_msg)
+        self.obk_publishers[PUB_CONTROL_NAME].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg # ignore type checking for now
     

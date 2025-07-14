@@ -32,7 +32,7 @@ namespace obelisk {
                 : ObeliskRobot<d1_control_msg>(node_name) {
                 // Register additional publishers
                 this->RegisterObkPublisher<d1_sensor_msg>(
-                    PUB_SENSOR_SETTING_TOPIC, PUB_SENSOR_SETTING_KEY
+                    PUB_SENSOR_SETTING_NAME, PUB_SENSOR_SETTING_KEY
                 );
 
                 // Get network interface name as a parameter
@@ -205,7 +205,7 @@ namespace obelisk {
             ChannelPublisherPtr<ArmString_> lowcmd_publisher_;
             ChannelSubscriberPtr<ArmString_> lowstate_subscriber_;
 
-            const std::string PUB_SENSOR_SETTING_TOPIC = "pub_sensor_setting";
+            const std::string PUB_SENSOR_SETTING_NAME = "pub_sensor_setting";
             const std::string PUB_SENSOR_SETTING_KEY = "joint_state_pub";
             
             const std::string CMD_TOPIC = "rt/arm_Command";
