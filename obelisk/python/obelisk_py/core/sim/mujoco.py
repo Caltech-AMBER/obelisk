@@ -25,11 +25,8 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
     def __init__(self, node_name: str = "obelisk_mujoco_robot", ctrl_msg_type: Type = PositionSetpoint) -> None:
         """Initialize the mujoco simulator."""
         super().__init__(node_name, ctrl_msg_type)
-        self.logger = self.get_logger()
-        self.logger.info("Initializing mujoco robot")
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
         self.declare_parameter("ic_keyframe", "ic")
-        self.logger.info("Finished initializing mujoco robot")
 
     def _get_msg_type_from_string(self, msg_type_str: str) -> Type:
         """Get the message type from a string.
@@ -297,9 +294,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:  # noqa: PLR0915
         """Configure the simulator."""
-        # self.logger.info("Configuring basic mujoco controller")
         super().on_configure(state)
-        self.logger.info("Configuring mujoco controller")
         try:
             self.mujoco_setting = self.get_parameter("mujoco_setting").get_parameter_value().string_value
         except Exception as e:
@@ -315,7 +310,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         config_dict = dict(zip(field_names, value_names))
 
         # load mujoco model
-        self.logger.info("Loading mujoco model")
         self.model_xml_path = config_dict["model_xml_path"]
         self.robot_pkg = config_dict.get("robot_pkg", None)
         assert isinstance(self.model_xml_path, str), "Model XML path must be a string!"
@@ -334,7 +328,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             model_xml_path = self.model_xml_path
 
         # initialize the mujoco model and data
-        self.logger.info("Loading mujoco model")
         try:
             self.mj_model = MjModel.from_xml_path(model_xml_path)
             self.mj_data = MjData(self.mj_model)
@@ -413,7 +406,6 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 timer_sensor.cancel()
                 self.obk_publishers[f"sensor_group_{i}"] = pub_sensor
                 self.obk_timers[f"sensor_group_{i}"] = timer_sensor
-        self.logger.info("Configured mujoco")
         return TransitionCallbackReturn.SUCCESS
 
     def apply_control(self, control_msg: Type) -> None:
