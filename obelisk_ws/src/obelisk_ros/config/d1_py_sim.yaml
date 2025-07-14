@@ -1,0 +1,114 @@
+config: d1
+onboard:
+  control:
+    - pkg: obelisk_d1_py
+      executable: d1_example_controller
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/d1/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/d1/est
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    # The two lines below work as well.
+    # - pkg: obelisk_unitree_cpp
+    #   executable: unitree_example_estimator
+    - pkg: obelisk_d1_py
+      executable: d1_example_estimator
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/d1/est
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          topic: /obelisk/d1/joint_encoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  robot:
+    # === simulation ===
+    - is_simulated: True
+      pkg: obelisk_sim_py
+      executable: obelisk_mujoco_robot
+      params:
+        ic_keyframe: zero
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_unitree_cpp
+    #   executable: unitree_d1_hardware
+    #   params:
+    #       network_interface_name: enx001cc24ce09a
+    # ===============
+      publishers: # for hardware only
+        - ros_parameter: pub_sensor_setting
+          topic: /obelisk/d1/joint_encoders
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          topic: /obelisk/d1/ctrl
+          history_depth: 10
+          callback_group: None
+      sim: 
+        - ros_parameter: mujoco_setting
+          n_u: 8 # Number of joint positions for visualization.
+          time_step: 0.002
+          num_steps_per_viz: 5
+          robot_pkg: d1_description
+          model_xml_path: scene.xml
+          sensor_settings:
+          - topic: /obelisk/d1/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+              joint1_sensor: jointpos
+              joint2_sensor: jointpos
+              joint3_sensor: jointpos
+              joint4_sensor: jointpos
+              joint5_sensor: jointpos
+              joint6_sensor: jointpos
+              gripper1_sensor: jointpos
+              gripper2_sensor: jointpos
+      timers:
+        - ros_parameter: timer_sensor_setting
+          timer_period_sec: 0.02
+          callback_group: None
+  viz:
+    on: True
+    viz_tool: foxglove
+    # viz_tool: rviz
+    # rviz_pkg: obelisk_ros
+    # rviz_config: basic_obk_config.rviz
+    viz_nodes:
+      - pkg: obelisk_viz_cpp
+        executable: default_robot_viz
+        robot_pkg: d1_description
+        urdf: d1.urdf
+        robot_topic: robot_description
+        subscribers:
+          - ros_parameter: sub_viz_est_setting
+            topic: /obelisk/d1/est
+            history_depth: 10
+            callback_group: None
+            non_obelisk: False
+        publishers:
+          - ros_parameter: pub_viz_joint_setting
+            topic: /obelisk/d1/joint_states
+            history_depth: 10
+            callback_group: None
+        timers:
+          - ros_parameter: timer_viz_joint_setting
+            timer_period_sec: 0.01
+            callback_group: None
