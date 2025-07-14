@@ -297,7 +297,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:  # noqa: PLR0915
         """Configure the simulator."""
-        self.logger.info("Configuring basic mujoco controller")
+        # self.logger.info("Configuring basic mujoco controller")
         super().on_configure(state)
         self.logger.info("Configuring mujoco controller")
         try:
