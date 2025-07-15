@@ -39,17 +39,17 @@ onboard:
           callback_group: None
   robot:
     # === simulation ===
-    # - is_simulated: True
-    #   pkg: obelisk_sim_py
-    #   executable: obelisk_mujoco_robot
-    #   params:
-    #     ic_keyframe: zero
-    # === hardware ===
-    - is_simulated: False
-      pkg: obelisk_unitree_cpp
-      executable: unitree_d1_hardware
+    - is_simulated: True
+      pkg: obelisk_sim_cpp # obelisk_sim_py is deprecated
+      executable: obelisk_mujoco_robot
       params:
-          network_interface_name: enx001cc24ce09a
+        ic_keyframe: zero
+    # === hardware ===
+    # - is_simulated: False
+    #   pkg: obelisk_unitree_cpp
+    #   executable: unitree_d1_hardware
+    #   params:
+    #       network_interface_name: enx001cc24ce09a
     # ===============
       publishers: # for hardware only
         - ros_parameter: pub_sensor_setting

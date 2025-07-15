@@ -18,12 +18,16 @@ from rclpy.publisher import Publisher
 from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
+class DeprecationError(Exception):
+    """Raised when a deprecated class is initializing."""
+    pass
 
 class ObeliskMujocoRobot(ObeliskSimRobot):
     """Simulator that runs Mujoco."""
 
     def __init__(self, node_name: str = "obelisk_mujoco_robot", ctrl_msg_type: Type = PositionSetpoint) -> None:
         """Initialize the mujoco simulator."""
+        raise DeprecationError("The Python Mujoco simulator is deprecated. Use the C++ simulator instead.")
         super().__init__(node_name, ctrl_msg_type)
         self.declare_parameter("mujoco_setting", rclpy.Parameter.Type.STRING)
         self.declare_parameter("ic_keyframe", "ic")

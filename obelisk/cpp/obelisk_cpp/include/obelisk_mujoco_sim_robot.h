@@ -224,9 +224,9 @@ namespace obelisk {
                 }
                 
                 {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "1 shared_data_.size()" << shared_data_.size());
+                    // RCLCPP_INFO_STREAM(this->get_logger(), "1 shared_data_.size()" << shared_data_.size());
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
-                    RCLCPP_INFO_STREAM(this->get_logger(), "2 shared_data_.size()" << shared_data_.size());
+                    // RCLCPP_INFO_STREAM(this->get_logger(), "2 shared_data_.size()" << shared_data_.size());
                     mj_step(model_, data_);
                 }
 
