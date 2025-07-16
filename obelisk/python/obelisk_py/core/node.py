@@ -502,6 +502,7 @@ class ObeliskNode(LifecycleNode):
         Raises:
             AssertionError: If the configuration string is invalid.
         """
+        self.info("super().on_configure(state)")
         super().on_configure(state)
 
         # parsing config strings
