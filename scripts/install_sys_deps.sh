@@ -100,9 +100,9 @@ if [ "$basic" = true ]; then
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
+        pin \
         mujoco \
-        urdf-parser-py \
-        
+    
     if [ -d $OBELISK_ROOT ]; then
         pip install -e $OBELISK_ROOT/obelisk/python
         echo -e "\033[1;32mOBELISK_ROOT exists, obelisk_py installed as editable!\033[0m"
