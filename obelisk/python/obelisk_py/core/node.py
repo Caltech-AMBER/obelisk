@@ -10,7 +10,7 @@ MsgType = TypeVar("MsgType")  # hack to denote any message type
 
 class ObeliskNode(LifecycleNode):
     """A lifecycle node that automatically performs component registration according to Obelisk standards.
-
+    
     By convention, the initialization function should only declare ROS parameters and define stateful quantities.
     Some guidelines for the on_configure, on_activate, and on_deactivate callbacks are provided below.
 
@@ -49,6 +49,7 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
+        self.info = self.get_logger().info
         self.declare_parameter("callback_group_settings", "")
         # ROS parameter designed to let the user feed a file path for their own code
         self.declare_parameter("params_path", "")
@@ -504,14 +505,17 @@ class ObeliskNode(LifecycleNode):
         super().on_configure(state)
 
         # parsing config strings
+        self.info("parsing config strings")
         callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
 
         # create callback groups
+        self.info("create callback groups")
         self.obk_callback_groups = ObeliskNode._create_callback_groups_from_config_str(callback_group_settings)
         for callback_group_name, callback_group in self.obk_callback_groups.items():
             setattr(self, callback_group_name, callback_group)
 
         # create components
+        self.info("create pub components")
         for pub_dict in self._obk_pub_settings:
             key = pub_dict["key"]
             ros_parameter = pub_dict["ros_parameter"]
@@ -524,6 +528,7 @@ class ObeliskNode(LifecycleNode):
             final_key = self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
             pub_dict["key"] = final_key  # if no key passed, use value from config file
 
+        self.info("create sub components")
         for sub_dict in self._obk_sub_settings:
             key = sub_dict["key"]
             ros_parameter = sub_dict["ros_parameter"]
@@ -539,6 +544,7 @@ class ObeliskNode(LifecycleNode):
             )
             sub_dict["key"] = final_key  # if no key passed, use value from config file
 
+        self.info("create timer components")
         for timer_dict in self._obk_timer_settings:
             key = timer_dict["key"]
             ros_parameter = timer_dict["ros_parameter"]
