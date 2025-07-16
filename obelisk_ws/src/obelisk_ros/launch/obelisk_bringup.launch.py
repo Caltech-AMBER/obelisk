@@ -101,18 +101,21 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     # If auto_start is anything else, then no configuration or activation
     if auto_start in ["true", "activate"]:
         # Configure and activate all nodes
+        logger.info("Configure event")
         configure_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
                 transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
             )
         )
+        logger.info("Activate event")
         activate_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
                 transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
             )
         )
+        logger.info("activate_upon_configure_handler")
         activate_upon_configure_handler = RegisterEventHandler(
             launch_ros.event_handlers.on_state_transition.OnStateTransition(
                 target_lifecycle_node=global_state_node,
@@ -121,6 +124,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
                 entities=[activate_event],
             )
         )  # once the node is configured, it will be activated automatically
+        logger.info("obelisk_launch_actions")
         obelisk_launch_actions += [configure_event, activate_upon_configure_handler]
     elif auto_start == "configure":
         # Just configure all nodes
@@ -133,11 +137,13 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         obelisk_launch_actions += [configure_event]
 
     # generate all launch actions
+    logger.info("Adding control launch actions")
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["control"],
         "control",
         global_state_node,
     )
+    logger.info("Adding estimation launch actions")
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["estimation"],
         "estimation",
