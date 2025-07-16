@@ -50,6 +50,7 @@ class ObeliskNode(LifecycleNode):
         """Initialize the Obelisk node."""
         super().__init__(node_name)
         self.info = self.get_logger().info
+        self.info("node_name: %s" % node_name)
         self.declare_parameter("callback_group_settings", "")
         # ROS parameter designed to let the user feed a file path for their own code
         self.declare_parameter("params_path", "")
