@@ -128,7 +128,8 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
                 target_lifecycle_node=global_state_node,
                 start_state="configuring",
                 goal_state="inactive",
-                entities=[activate_event],
+                entities=[activate_event,
+                          LogInfo(msg="on_configure succeeded - activating")],
             )
         )  # once the node is configured, it will be activated automatically
         logger.info("failed to configure")
