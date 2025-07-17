@@ -14,6 +14,8 @@ from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
 
+from launch.event_handlers import OnProcessStart
+from launch_ros.event_handlers.on_state_transition import OnStateTransition
 
 def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
     """Loads an Obelisk configuration file.
@@ -428,6 +430,12 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
             transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CLEANUP,
         )
     )
+    shutdown_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=lambda action: action == component_node,
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVE_SHUTDOWN,
+        )
+    )
     unconfigured_shutdown_event = EmitEvent(
         event=ChangeState(
             lifecycle_node_matcher=launch.events.matches_action(component_node),
@@ -447,7 +455,58 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
         )
     )
 
-    # making event handlers
+    # Event handlers that depend solely on the component_node.
+    on_start_handler = RegisterEventHandler(
+        OnProcessStart(
+            target_action=component_node,
+            on_start=[configure_event],
+        )
+    )
+    on_configure_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=component_node,
+            start_state="configuring",
+            goal_state="inactive",
+            entities=[activate_event],
+        )
+    )
+    # Optional: Add more handlers for teardown
+    on_deactivate_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=component_node,
+            start_state="active",
+            goal_state="deactivating",
+            entities=[deactivate_event],
+        )
+    )
+    on_cleanup_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=component_node,
+            start_state="inactive",
+            goal_state="cleaningup",
+            entities=[cleanup_event],
+        )
+    )
+    on_shutdown_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=component_node,
+            start_state="active",
+            goal_state="shuttingdown",
+            entities=[shutdown_event],
+        )
+    )
+    launch_actions = [
+        on_start_handler,
+        on_configure_handler,
+        on_deactivate_handler,
+        on_cleanup_handler,
+        on_shutdown_handler,
+    ]
+    return launch_actions
+    """
+    # MAKING EVENT HANDLERS
+    # When the global state node transitions from configuring to inactive,
+    # emit the event that configures the component node.
     configure_handler = RegisterEventHandler(
         launch_ros.event_handlers.on_state_transition.OnStateTransition(
             target_lifecycle_node=global_state_node,
@@ -456,6 +515,10 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
             entities=[configure_event],
         )
     )
+    # When the global state node transitions from activating to active,
+    # emit the event that activates the component node.
+    # FIXME: If the global state node does this before one of the component nodes
+    # is configured, we get a "transition is not registered" error.
     activate_handler = RegisterEventHandler(
         launch_ros.event_handlers.on_state_transition.OnStateTransition(
             target_lifecycle_node=global_state_node,
@@ -514,6 +577,7 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
         active_shutdown_handler,
     ]
     return launch_actions
+    """
 
 
 def setup_logging_dir(config_name: str) -> str:

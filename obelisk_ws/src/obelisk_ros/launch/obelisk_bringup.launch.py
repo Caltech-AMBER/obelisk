@@ -115,36 +115,32 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
                 transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE, # 1
             )
         )
-        logger.info("Activate event")
-        activate_event = EmitEvent(
-            event=ChangeState(
-                lifecycle_node_matcher=launch.events.matches_action(global_state_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE, # 3
-            )
-        )
-        logger.info("activate_upon_configure_handler")
-        activate_upon_configure_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="configuring",
-                goal_state="inactive",
-                entities=[activate_event,
-                          LogInfo(msg="on_configure succeeded - activating")],
-            )
-        )  # once the node is configured, it will be activated automatically
-        logger.info("failed to configure")
-        failed_configure_handler = RegisterEventHandler(
-            launch_ros.event_handlers.on_state_transition.OnStateTransition(
-                target_lifecycle_node=global_state_node,
-                start_state="configuring",
-                goal_state="unconfigured",
-                entities=[LogInfo(msg="on_configure failed - not activating")],
-            )
-        ) 
+        # logger.info("Activate event")
+        # activate_event = EmitEvent(
+        #     event=ChangeState(
+        #         lifecycle_node_matcher=launch.events.matches_action(global_state_node),
+        #         transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE, # 3
+        #     )
+        # )
+        # logger.info("activate_upon_configure_handler")
+        # activate_upon_configure_handler = RegisterEventHandler(
+        #     launch_ros.event_handlers.on_state_transition.OnStateTransition(
+        #         target_lifecycle_node=global_state_node,
+        #         start_state="configuring",
+        #         goal_state="inactive",
+        #         entities=[activate_event,
+        #                   LogInfo(msg="on_configure succeeded - activating")],
+        #     )
+        # )  # once the global_state_node is configured, it will be activated automatically.
+        # This will trigger the event handlers to activate all the other nodes.
+        # FIXME: If the global state node does this before one of the component nodes
+        # is configured, we get a "transition is not registered" error.
         logger.info("obelisk_launch_actions")
-        obelisk_launch_actions += [activate_upon_configure_handler,
-                                   failed_configure_handler,
-                                   configure_event]
+        obelisk_launch_actions += [configure_event]
+        # obelisk_launch_actions += [activate_upon_configure_handler,
+        #                            failed_configure_handler,
+        #                            configure_event]
+        # FIXME: this if-statement is redundant with the following one
     elif auto_start == "configure":
         # Just configure all nodes
         configure_event = EmitEvent(
