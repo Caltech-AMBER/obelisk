@@ -538,7 +538,6 @@ class ObeliskNode(LifecycleNode):
             pub_dict["key"] = final_key  # if no key passed, use value from config file
 
         for sub_dict in self._obk_sub_settings:
-            self.info("sub_dict: %s" % sub_dict)
             key = sub_dict["key"]
             ros_parameter = sub_dict["ros_parameter"]
             msg_type = sub_dict["msg_type"]
