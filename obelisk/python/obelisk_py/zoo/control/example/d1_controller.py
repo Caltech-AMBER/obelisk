@@ -44,7 +44,7 @@ class D1Controller(ObeliskController):
         Update the state estimate.
         
         Args:
-            x_hat_msg (ObeliskEstimatorMsg): The Obelisk message containing the 
+            x_hat_msg: The Obelisk message containing the 
             state estimate.
         """
         pass
@@ -61,7 +61,7 @@ class D1Controller(ObeliskController):
         robot.
         
         Returns:
-            obelisk_control_msg (ObeliskControlMsg): The control message.
+            obelisk_control_msg: The control message.
         """
         # Computing the control input
         # Grab the current time.

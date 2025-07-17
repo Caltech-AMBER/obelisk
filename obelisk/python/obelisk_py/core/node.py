@@ -52,8 +52,6 @@ class ObeliskNode(LifecycleNode):
         self.info = self.get_logger().info
         self.warn = self.get_logger().warn
         self.error = self.get_logger().error
-
-        self.info("node_name: %s" % node_name)
         
         self.declare_parameter("callback_group_settings", "")
         # ROS parameter designed to let the user feed a file path for their own code
@@ -516,21 +514,17 @@ class ObeliskNode(LifecycleNode):
         Raises:
             AssertionError: If the configuration string is invalid.
         """
-        self.info("super().on_configure(state)")
         super().on_configure(state)
 
         # parsing config strings
-        self.info("parsing config strings")
         callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
 
         # create callback groups
-        self.info("create callback groups")
         self.obk_callback_groups = ObeliskNode._create_callback_groups_from_config_str(callback_group_settings)
         for callback_group_name, callback_group in self.obk_callback_groups.items():
             setattr(self, callback_group_name, callback_group)
 
         # create components
-        self.info("create pub components")
         for pub_dict in self._obk_pub_settings:
             key = pub_dict["key"]
             ros_parameter = pub_dict["ros_parameter"]
@@ -543,7 +537,6 @@ class ObeliskNode(LifecycleNode):
             final_key = self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
             pub_dict["key"] = final_key  # if no key passed, use value from config file
 
-        self.info("create sub components")
         for sub_dict in self._obk_sub_settings:
             self.info("sub_dict: %s" % sub_dict)
             key = sub_dict["key"]
@@ -552,17 +545,14 @@ class ObeliskNode(LifecycleNode):
             callback = sub_dict["callback"]
 
             sub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
-            self.info("sub_config_str: %s" % sub_config_str)
             if sub_config_str == "":
                 self.warn(f"Subscription {key} has no configuration string!")
                 continue
             final_key = self._create_subscription_from_config_str(
                 sub_config_str, callback=callback, key=key, msg_type=msg_type
             )
-            self.info("final_key: %s" % final_key)
             sub_dict["key"] = final_key  # if no key passed, use value from config file
 
-        self.info("create timer components")
         for timer_dict in self._obk_timer_settings:
             key = timer_dict["key"]
             ros_parameter = timer_dict["ros_parameter"]
