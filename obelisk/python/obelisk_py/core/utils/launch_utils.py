@@ -464,9 +464,6 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
             make_handler("configuring", "inactive", "activate", target),
             make_handler("active", "deactivating", "deactivate", target),
             make_handler("inactive", "cleaningup", "cleanup", target),
-            make_handler("unconfigured", "shuttingdown", "unconfigured_shutdown", target),
-            make_handler("inactive", "shuttingdown", "inactive_shutdown", target),
-            make_handler("active", "shuttingdown", "active_shutdown", target),
         ]
     else:
         # Event handlers will transition the component node's state to match 
@@ -477,10 +474,14 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
             make_handler("activating", "active", "activate", target),
             make_handler("deactivating", "inactive", "deactivate", target),
             make_handler("cleaningup", "unconfigured", "cleanup", target),
-            make_handler("unconfigured", "shuttingdown", "unconfigured_shutdown", target),
-            make_handler("inactive", "shuttingdown", "inactive_shutdown", target),
-            make_handler("active", "shuttingdown", "active_shutdown", target),
+            
         ]
+    # Add shutting down handlers
+    handlers += [
+        make_handler("unconfigured", "shuttingdown", "unconfigured_shutdown", target),
+        make_handler("inactive", "shuttingdown", "inactive_shutdown", target),
+        make_handler("active", "shuttingdown", "active_shutdown", target),
+    ]
     return handlers
 
 
