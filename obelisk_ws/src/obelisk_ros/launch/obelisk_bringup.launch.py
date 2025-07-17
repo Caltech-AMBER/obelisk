@@ -4,7 +4,14 @@ import launch
 import launch_ros
 import lifecycle_msgs.msg
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, EmitEvent, ExecuteProcess, OpaqueFunction, RegisterEventHandler
+from launch.actions import (
+    DeclareLaunchArgument, 
+    EmitEvent, 
+    ExecuteProcess, 
+    OpaqueFunction, 
+    RegisterEventHandler, 
+    LogInfo
+)
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
@@ -124,8 +131,19 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
                 entities=[activate_event],
             )
         )  # once the node is configured, it will be activated automatically
+        logger.info("failed to configure")
+        failed_configure_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="configuring",
+                goal_state="unconfigured",
+                entities=[LogInfo(msg="on_configure failed - not activating")],
+            )
+        ) 
         logger.info("obelisk_launch_actions")
-        obelisk_launch_actions += [configure_event, activate_upon_configure_handler]
+        obelisk_launch_actions += [configure_event, 
+                                   activate_upon_configure_handler,
+                                   failed_configure_handler]
     elif auto_start == "configure":
         # Just configure all nodes
         configure_event = EmitEvent(
