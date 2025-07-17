@@ -105,14 +105,14 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         configure_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE, # 1
             )
         )
         logger.info("Activate event")
         activate_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
-                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE, # 3
             )
         )
         logger.info("activate_upon_configure_handler")
@@ -143,6 +143,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         "control",
         global_state_node,
     )
+    logger.info("obelisk_config['control'] %r" % obelisk_config["control"])
     logger.info("Adding estimation launch actions")
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["estimation"],

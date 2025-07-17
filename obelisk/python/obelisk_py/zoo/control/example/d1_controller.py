@@ -31,7 +31,7 @@ class D1Controller(ObeliskController):
     def __init__(self, node_name: str="d1_controller") -> None:
         """Initialize controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
-        self.logger = self.get_logger()
+        self.info = self.get_logger().info # useful for logging
         
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
