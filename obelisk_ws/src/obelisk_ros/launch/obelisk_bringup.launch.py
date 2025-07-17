@@ -142,9 +142,9 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             )
         ) 
         logger.info("obelisk_launch_actions")
-        obelisk_launch_actions += [configure_event, 
-                                   activate_upon_configure_handler,
-                                   failed_configure_handler]
+        obelisk_launch_actions += [activate_upon_configure_handler,
+                                   failed_configure_handler,
+                                   configure_event]
     elif auto_start == "configure":
         # Just configure all nodes
         configure_event = EmitEvent(
