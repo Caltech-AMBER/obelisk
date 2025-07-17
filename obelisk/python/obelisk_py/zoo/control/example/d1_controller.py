@@ -28,7 +28,7 @@ GRIPPER_LIMITS = np.array([0, 0.03])
 class D1Controller(ObeliskController):
     """Example position setpoint controller for the Unitree D1 Arm."""
 
-    def __init__(self, node_name: str="d1_controller") -> None:
+    def __init__(self, node_name: str) -> None:
         """Initialize controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.info = self.get_logger().info # useful for logging
