@@ -213,7 +213,7 @@ def get_launch_actions_from_node_settings(
         node_type: the type of the node.
         global_state_node: the global state node. All Obelisk nodes' lifecycle 
         states match this node's state. If `global_state_node` is None, the nodes
-        will automatically go through the lifecycle after configuration.
+        will automatically go through the lifecycle.
 
     Returns:
         A list of launch actions.

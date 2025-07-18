@@ -107,6 +107,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     # If auto_start is "configure" then only configure the nodes
     # If auto_start is anything else, then no configuration or activation
     if auto_start in ["true", "activate"]:
+        # ignore the global_state_node
         global_state_node = None
         """
         # Configure all nodes
@@ -146,7 +147,7 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         #                           ]
         """
     elif auto_start == "configure":
-        # Just configure all nodes
+        # Configure all nodes
         configure_event = EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=launch.events.matches_action(global_state_node),
