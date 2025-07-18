@@ -157,14 +157,11 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         obelisk_launch_actions += [configure_event]
 
     # generate all launch actions
-    logger.info("Adding control launch actions")
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["control"],
         "control",
         global_state_node,
     )
-    logger.info("obelisk_config['control'] %r" % obelisk_config["control"])
-    logger.info("Adding estimation launch actions")
     obelisk_launch_actions += get_launch_actions_from_node_settings(
         obelisk_config["estimation"],
         "estimation",
