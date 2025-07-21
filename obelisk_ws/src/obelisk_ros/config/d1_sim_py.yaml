@@ -40,7 +40,7 @@ onboard:
   robot:
     # === simulation ===
     - is_simulated: True
-      pkg: obelisk_sim_py
+      pkg: obelisk_sim_cpp
       executable: obelisk_mujoco_robot
       params:
         ic_keyframe: zero

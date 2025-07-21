@@ -42,15 +42,19 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
+            RCLCPP_INFO_STREAM(this->get_logger(), "Attempting to configure mujoco robot");
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
+            RCLCPP_INFO_STREAM(this->get_logger(), "Reading in config stream");
             std::string mujoco_setting = this->get_parameter("mujoco_setting").as_string();
             auto mujoco_config_map     = this->ParseConfigStr(mujoco_setting);
 
             // Get config params
+            RCLCPP_INFO_STREAM(this->get_logger(), "Getting config params");
             xml_path_             = GetXMLPath(mujoco_config_map);      // Required
             std::string robot_pkg = GetRobotPackage(mujoco_config_map); // Optional
+
             // Search for the model
             if (!std::filesystem::exists(xml_path_)) {
                 if (robot_pkg != "None" && robot_pkg != "none") {
