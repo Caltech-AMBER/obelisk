@@ -42,7 +42,10 @@ class D1Estimator(ObeliskEstimator):
         msg.joint_names = self.joint_names
         msg.base_link_name = BASE_LINK_NAME
         msg.header.stamp = self.get_clock().now().to_msg()
-        self.obk_publishers[PUB_ESTIMATOR_NAME].publish(msg)
+
+        # Publish the joint state if there's joint data
+        if len(self.joint_pos) != 0:
+            self.obk_publishers[PUB_ESTIMATOR_NAME].publish(msg)
         return msg
 
 

@@ -30,8 +30,11 @@ namespace obelisk {
             msg.joint_names    = joint_names_; // Joint Names
             msg.base_link_name = "base_link";
 
-            this->GetPublisher<obelisk_estimator_msgs::msg::EstimatedState>(this->est_pub_key_)->publish(msg);
-
+            // If there are values stored in the joint encoders, publish them
+            // the estimated message
+            if (joint_encoders_.size() != 0) {
+                this->GetPublisher<obelisk_estimator_msgs::msg::EstimatedState>(this->est_pub_key_)->publish(msg);
+            }
             return msg;
         };
 

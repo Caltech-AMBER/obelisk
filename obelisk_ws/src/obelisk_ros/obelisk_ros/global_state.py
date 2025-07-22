@@ -4,6 +4,7 @@ import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.lifecycle import LifecycleNode
 
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor, SingleThreadedExecutor
 
 class GlobalStateNode(LifecycleNode):
     """A dummy class whose only purpose is to store the global state of the system.
@@ -19,14 +20,21 @@ class GlobalStateNode(LifecycleNode):
 
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
-    rclpy.init(args=args)
-    obelisk_mujoco_robot = GlobalStateNode()
+    # rclpy may already be initialized when the other nodes have been launched
+    if not rclpy.ok(): # check if rclpy is not initialized
+        rclpy.init(args=args)
+    node = GlobalStateNode()
     executor = SingleThreadedExecutor()
-    executor.add_node(obelisk_mujoco_robot)
-    executor.spin()
-    obelisk_mujoco_robot.destroy_node()
-    rclpy.shutdown()
-
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        executor.remove_node(node)
+        node.destroy_node()
+        if rclpy.ok(): # Only shutdown if context is still valid
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()
