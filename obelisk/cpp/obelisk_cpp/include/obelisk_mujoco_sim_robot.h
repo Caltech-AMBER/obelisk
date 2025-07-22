@@ -42,7 +42,7 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
-            RCLCPP_INFO_STREAM(this->get_logger(), "Attempting to configure mujoco robot");
+            RCLCPP_INFO_STREAM(this->get_logger(), "Configuring the ObeliskSimRobot robot");
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
@@ -88,7 +88,7 @@ namespace obelisk {
             } catch (const std::exception& e) {
                 RCLCPP_INFO_STREAM(this->get_logger(), "No geoms to visualize in the simulator.");
             }
-
+            RCLCPP_INFO_STREAM(this->get_logger(), "Configured Obelisk mujoco sim robot");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -99,10 +99,11 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) {
+            RCLCPP_INFO_STREAM(this->get_logger(), "Activating the ObeliskSimRobot robot");
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
             activation_complete_ = true;
-
+            RCLCPP_INFO_STREAM(this->get_logger(), "Activated the mujoco robot");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 

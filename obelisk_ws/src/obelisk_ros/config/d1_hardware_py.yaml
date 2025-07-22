@@ -15,14 +15,15 @@ onboard:
           callback_group: None
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.001
+          timer_period_sec: 0.01 # if you ssh into the arm, you'll see the delay time is 40 ms
           callback_group: None
   estimation:
     # The two lines below work as well.
-    # - pkg: obelisk_unitree_cpp
-    #   executable: unitree_example_estimator
-    - pkg: obelisk_d1_py
-      executable: d1_example_estimator
+    - pkg: obelisk_unitree_cpp
+      executable: unitree_example_estimator
+    # The two lines below work as well but they are slower
+    # - pkg: obelisk_d1_py
+    #   executable: d1_example_estimator
       publishers:
         - ros_parameter: pub_est_setting
           topic: /obelisk/d1/est
@@ -43,7 +44,7 @@ onboard:
     #   pkg: obelisk_sim_cpp # obelisk_sim_py is deprecated
     #   executable: obelisk_mujoco_robot
     #   params:
-    #     ic_keyframe: zero
+    #     ic_keyframe: home
     # === hardware ===
     - is_simulated: False
       pkg: obelisk_unitree_cpp
