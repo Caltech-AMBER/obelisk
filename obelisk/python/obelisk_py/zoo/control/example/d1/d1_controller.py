@@ -51,9 +51,10 @@ class D1Controller(ObeliskController):
             state estimate.
         """
         # Update the state
-        servo_state = np.array(x_hat_msg.q_joints) # (7,)-shape np.ndarray
+        state = np.array(x_hat_msg.q_joints) # (8,)-shape np.ndarray
+        servo_state = state[:-1]
         self._q = servo_state[:NUM_JOINTS]
-        self._gripper = servo_state[-2]  # gripper position is positive
+        self._gripper = servo_state[-1]  # gripper position is positive
 
         if self.q0 is None:
             self.init_kinematic_parameters(self._q, self._gripper)

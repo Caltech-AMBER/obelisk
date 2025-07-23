@@ -41,4 +41,4 @@ TIME_STR = time.strftime("%Y%m%d-%H%M%S")
 FOLDER_PATH = f"obelisk/python/obelisk_py/zoo/control/example/d1/data/{TIME_STR}"
 SERVO_COMMAND_FILE_PATH = f"{FOLDER_PATH}/servo_command.csv"
 SERVO_STATE_FILE_PATH = f"{FOLDER_PATH}/servo_state.csv"
-HEADER = ['time'] + [f"servo_{i}" for i in range(NUM_SERVOS)]
+HEADER = ['time'] + [f"servo{i + 1}" for i in range(NUM_SERVOS)]

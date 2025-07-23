@@ -4,7 +4,7 @@ onboard:
     - pkg: obelisk_d1_py
       executable: d1_example_controller
       params:
-        recording: False
+        recording: True
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/d1/ctrl
