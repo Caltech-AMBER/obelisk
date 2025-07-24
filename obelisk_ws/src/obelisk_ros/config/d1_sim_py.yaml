@@ -4,7 +4,7 @@ onboard:
     - pkg: obelisk_d1_py
       executable: d1_example_controller
       params:
-        recording: True
+        recording: False
       publishers:
         - ros_parameter: pub_ctrl_setting
           topic: /obelisk/d1/ctrl
@@ -17,7 +17,7 @@ onboard:
           callback_group: None
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.001
+          timer_period_sec: 0.001 # if this is 0.1 like in d1_hardware_py, then the mujoco simulator goes crazy
           callback_group: None
   estimation:
     - pkg: obelisk_unitree_cpp

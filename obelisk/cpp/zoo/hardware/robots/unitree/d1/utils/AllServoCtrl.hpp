@@ -15,7 +15,8 @@ struct AllServoCtrl {
     static const int FUNCODE = 2;
     // mode 0 is the small smoothing of 10Hz data
     // mode 1 is the large smoothing of trajectory use
-    static const int MODE = 0; 
+    // Even for 10 Hz data, however, mode 1 creates smoother trajectories.
+    static const int MODE = 1; 
 
     std::vector<double> qd; // desired joint positions (radians)
     double gripper_pos; // desired gripper1 position (meters)

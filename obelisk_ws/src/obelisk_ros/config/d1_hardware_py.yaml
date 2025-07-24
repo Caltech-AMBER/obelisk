@@ -17,10 +17,9 @@ onboard:
           callback_group: None
       timers:
         - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.01 # if you ssh into the arm, you'll see the delay time is 40 ms
+          timer_period_sec: 0.1 # Control cycle of the D1 Arm
           callback_group: None
   estimation:
-    # The two lines below work as well.
     - pkg: obelisk_unitree_cpp
       executable: unitree_example_estimator
     # The two lines below work as well but they are slower

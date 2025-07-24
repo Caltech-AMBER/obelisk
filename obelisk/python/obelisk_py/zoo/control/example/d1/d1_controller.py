@@ -20,6 +20,8 @@ class D1Controller(ObeliskController):
         """Initialize controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.info = self.get_logger().info # useful for logging
+
+        self.start_time  = None
    
         self.q0 = None # initialize the starting joint positions
         self.gripper0 = None # initialize the starting gripper position
@@ -38,7 +40,6 @@ class D1Controller(ObeliskController):
         if self.recording:
             initialize_folder()
 
-        self.start_time = self.get_clock().now().nanoseconds * 1e-9 # .seconds isn't supported in rclpy
         self.dt = self.get_timer_period_sec(TIMER_CTRL_NAME)
         return TransitionCallbackReturn.SUCCESS
     
@@ -78,13 +79,10 @@ class D1Controller(ObeliskController):
         Returns:
             obelisk_control_msg: The control message.
         """
-        if self.q0 is None:
+        if self.start_time is None:
             return
         
-        # Computing the control input
-        # Grab the current time.
         t = self.t - self.start_time
-    
         if t < INIT_TIME:
             # Compute the desired servo positions
             (self.qd, _) = goto(t, INIT_TIME, self.q0, QG_INIT) # set desired joint positions
@@ -94,6 +92,7 @@ class D1Controller(ObeliskController):
             self.gripperd = 0.015 * np.sin(W * t) + 0.015
 
         control_inputs = self.control_inputs.tolist()
+        self.info("t: %f, control inputs: %s" % (t, control_inputs))
         # self.info("Control_inputs: %s" % control_inputs)
         
         # Create the message
@@ -139,7 +138,10 @@ class D1Controller(ObeliskController):
         self.gripperd = gripper0 # the desired gripper position
 
         self.info("Control inputs: %s" % self.control_inputs)
-    
+
+        # Time since robot is ready to receive control inputs
+        self.start_time = self.get_clock().now().nanoseconds * 1e-9 # .seconds isn't supported in rclpy
+
     @property
     def qd(self) -> Optional[np.ndarray]:
         """The desired joint positions (radians)."""
