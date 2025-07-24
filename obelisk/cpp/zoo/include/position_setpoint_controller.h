@@ -10,11 +10,11 @@
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
 
-class PositionSetpointController : public obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
+class PositionSetpointController : public obelisk::ObeliskController<obelisk_control_msgs::msg::PDFeedForward,
                                                                      obelisk_estimator_msgs::msg::EstimatedState> {
   public:
     PositionSetpointController(const std::string& name)
-        : obelisk::ObeliskController<obelisk_control_msgs::msg::PositionSetpoint,
+        : obelisk::ObeliskController<obelisk_control_msgs::msg::PDFeedForward,
                                      obelisk_estimator_msgs::msg::EstimatedState>(name) {
         // Example of params_path
         std::string file_string = this->get_parameter("params_path").as_string();
@@ -52,18 +52,29 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
   protected:
     void UpdateXHat(__attribute__((unused)) const obelisk_estimator_msgs::msg::EstimatedState& msg) override {}
 
-    obelisk_control_msgs::msg::PositionSetpoint ComputeControl() override {
-        obelisk_control_msgs::msg::PositionSetpoint msg;
+    obelisk_control_msgs::msg::PDFeedForward ComputeControl() override {
+        obelisk_control_msgs::msg::PDFeedForward msg;
 
         msg.u_mujoco.clear();
-        msg.q_des.clear();
+        msg.pos_target.clear();
         rclcpp::Time time = this->get_clock()->now();
         double time_sec   = time.seconds();
 
         msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
-        msg.q_des.emplace_back(amplitude_ * sin(time_sec));
+        msg.pos_target.emplace_back(amplitude_ * sin(time_sec));
+        msg.kp.clear();
+        msg.kp.emplace_back(100.0);  // Example gain
 
-        this->GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>(this->ctrl_key_)->publish(msg);
+        msg.joint_names.clear();
+        msg.joint_names.emplace_back("joint1");  // Example joint name
+
+        if (msg.u_mujoco.size() != msg.joint_names.size()) {
+            throw std::runtime_error("The size of the control message does not match the number of joint names!");
+        }
+        // std::cerr << "Publisher ctrl size: " << msg.u_mujoco.size() << std::endl;
+        // std::cerr << "Publisher joint names size: " << msg.joint_names.size() << std::endl;
+
+        this->GetPublisher<obelisk_control_msgs::msg::PDFeedForward>(this->ctrl_key_)->publish(msg);
 
         return msg;
     };
