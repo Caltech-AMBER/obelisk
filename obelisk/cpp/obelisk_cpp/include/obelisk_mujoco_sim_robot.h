@@ -19,6 +19,13 @@
 #include "obelisk_sim_robot.h"
 
 namespace obelisk {
+    enum class ActuatorType {
+        Position,
+        Velocity,
+        Torque,
+        Unknown
+    };
+
     template <typename ControlMessageT> class ObeliskMujocoRobot : public ObeliskSimRobot<ControlMessageT> {
       public:
         explicit ObeliskMujocoRobot(const std::string& name)
@@ -155,7 +162,20 @@ namespace obelisk {
          * We assume that the control message is a vector of control inputs and is fully compatible with the data.ctrl
          * field of a mujoco model. YOU MUST CHECK THIS YOURSELF!
          */
-        void ApplyControl(const ControlMessageT& msg) override { SetSharedData(msg.u_mujoco); }
+        void ApplyControl(const ControlMessageT& msg) override {
+
+
+            if (msg.kp.size() != 1) {
+                throw std::runtime_error("kp gains is not size 1");
+            }
+
+            if (msg.u_mujoco.size() != msg.joint_names.size()) {
+                throw std::runtime_error("The size of the control message does not match the number of joint names!");
+            }
+             
+    
+            SetSharedData(msg.u_mujoco, msg.kp, msg.kd, msg.joint_names);
+        }
 
         // -----------------------------------------//
         // ----------- Simulation Entry ----------- //
@@ -179,8 +199,12 @@ namespace obelisk {
 
             nu_ = model_->nu;
             RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << nu_ << " inputs.");
-            shared_data_.resize(nu_);
 
+            {
+                std::lock_guard<std::mutex> lock(shared_data_mut_);
+                shared_ctrl_.resize(nu_);
+            }
+            
             if (!model_) {
                 throw std::runtime_error("Could not load Mujoco model from the XML!");
             }
@@ -205,11 +229,13 @@ namespace obelisk {
                     RCLCPP_INFO_STREAM(this->get_logger(),
                                        "Setting initial condition to keyframe: " << potential_keyframe);
                     mj_resetDataKeyframe(model_, data_, i);
-                    std::vector<double> shared_data_tmp;
+                    std::vector<double> shared_data_tmp, kp_gains, kd_gains;
                     for (int i = 0; i < model_->nu; i++) {
                         shared_data_tmp.push_back(data_->ctrl[i]);
                     }
-                    SetSharedData(shared_data_tmp);
+
+                    std::vector<std::string> joint_names;
+                    SetSharedData(shared_data_tmp, kp_gains, kd_gains, joint_names);
                 }
             }
 
@@ -219,7 +245,38 @@ namespace obelisk {
                     // Get the data from the shared vector safely
                     std::lock_guard<std::mutex> lock(shared_data_mut_);
                     for (int i = 0; i < nu_; i++) {
-                        data_->ctrl[i] = shared_data_.at(i);
+                        data_->ctrl[i] = shared_ctrl_.at(i);
+                    }
+
+                    // Grab the gains only if they are set
+                    if (static_cast<int>(shared_kp_gains_.size()) == nu_) {
+                        // Adjust the gains in the model
+                        // Get the actuators associated with each joint
+                        for (int i = 0; i < nu_; i++) {
+                            std::vector<int> act_ids = GetActuatorsForJoint(shared_joint_names_[i]);
+                            for (size_t j = 0; j < act_ids.size(); j++) {
+                                ActuatorType act_type = getActuatorType(model_, act_ids[j]);
+                                if (act_type == ActuatorType::Position) {
+                                    model_->actuator_gainprm[3 * act_ids[j]] = shared_kp_gains_.at(i);
+                                    model_->actuator_biasprm[3 * act_ids[j] + 1] = -shared_kp_gains_.at(i);
+                                    
+                                    bool is_vel_actuator = true;
+                                    for (size_t k = 0; k < act_ids.size(); k++) {
+                                        ActuatorType act_type_sub = getActuatorType(model_, act_ids[j]);
+                                        if (act_type_sub == ActuatorType::Velocity) {
+                                            is_vel_actuator = false;
+                                            break;
+                                        }
+                                    }
+                                    if (static_cast<int>(shared_kd_gains_.size()) == nu_ && !is_vel_actuator) {
+                                        model_->actuator_biasprm[3 * act_ids[j] + 2] = -shared_kd_gains_.at(i);
+                                    }
+                                } else if (act_type == ActuatorType::Velocity) {
+                                    model_->actuator_gainprm[3 * act_ids[j]] = shared_kd_gains_.at(i);
+                                    model_->actuator_biasprm[3 * act_ids[j] + 2] = -shared_kd_gains_.at(i);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -243,6 +300,62 @@ namespace obelisk {
         }
 
       protected:
+        std::vector<int> GetActuatorsForJoint(std::string joint_name) {
+            std::vector<int> result;
+
+            int joint_id = mj_name2id(model_, mjOBJ_JOINT, joint_name.c_str());
+            for (int i = 0; i < model_->nu; ++i) {
+                int trn_joint_id = model_->actuator_trnid[2 * i];
+                if (trn_joint_id == joint_id) {
+                    result.push_back(i);
+                }
+            }
+
+            return result;
+        }
+
+        ActuatorType getActuatorType(const mjModel* m, int actuator_id) {
+
+            if (actuator_id < 0 || actuator_id >= m->nu) {
+                return ActuatorType::Unknown;
+            }
+        
+            int gaintype = m->actuator_gaintype[actuator_id];
+            int biastype = m->actuator_biastype[actuator_id];
+        
+            const mjtGain gain = static_cast<mjtGain>(gaintype);
+            const mjtBias bias = static_cast<mjtBias>(biastype);
+        
+            // const mjtNum* gainprm = &m->actuator_gainprm[actuator_id * mjNGAIN];
+            const mjtNum* biasprm = &m->actuator_biasprm[actuator_id * mjNBIAS];
+        
+            if (gain == mjGAIN_FIXED && bias == mjBIAS_AFFINE) {
+                // std::cout << "actuator_id: " << actuator_id << std::endl;
+                // std::cout << "actuator_name: " << m->names + m->name_actuatoradr[actuator_id] << std::endl;
+                // std::cout << "gain: " << gainprm[0] << " " << gainprm[1] << " " << gainprm[2] << std::endl;
+                // std::cout << " bias: " << biasprm[0] << " " << biasprm[1] << " " << biasprm[2] << std::endl;
+                constexpr double eps = 1e-6;
+                bool has_kp = std::abs(biasprm[1]) > eps;
+                bool has_kv = std::abs(biasprm[2]) > eps;
+        
+                if (has_kp && !has_kv) {
+                    return ActuatorType::Position;
+                } else if (!has_kp && has_kv) {
+                    return ActuatorType::Velocity;
+                } else if (has_kp && has_kv) {
+                    return ActuatorType::Position;  // Position with damping (PD style)
+                } else {
+                    throw std::runtime_error("Unsupported actuator type or configuration for actuator ID: " + std::to_string(actuator_id));
+                    return ActuatorType::Unknown;
+                }
+            } else if (gain == mjGAIN_FIXED && bias == mjBIAS_NONE) {
+                return ActuatorType::Torque;
+            }
+            
+            throw std::runtime_error("Unsupported actuator type or configuration for actuator ID: " + std::to_string(actuator_id));
+            // return ActuatorType::Unknown;
+        }
+
         void SimRender() {
             // Create the window
             if (!glfwInit()) {
@@ -376,7 +489,7 @@ namespace obelisk {
             std::lock_guard<std::mutex> lock(shared_data_mut_);
 
             // Copy data out
-            data = shared_data_;
+            data = shared_ctrl_;
         }
 
         /**
@@ -384,11 +497,27 @@ namespace obelisk {
          *
          * @param data the data to put into shared_data_
          */
-        void SetSharedData(const std::vector<double>& data) {
+        void SetSharedData(const std::vector<double>& ctrl, const std::vector<double>& kp_gains, const std::vector<double>& kd_gains,
+            const std::vector<std::string>& joint_names) {
+
             std::lock_guard<std::mutex> lock(shared_data_mut_);
 
             // Copy data in
-            shared_data_ = data;
+            shared_ctrl_ = ctrl;
+            // std::cerr << "ctrl msg size: " << ctrl.size() << std::endl;
+            // std::cerr << "SHARED ctrl msg size: " << shared_ctrl_.size() << std::endl;
+
+            shared_kp_gains_ = kp_gains;
+            // std::cerr << "kp gain msg size: " << kp_gains.size() << std::endl;
+            // std::cerr << "SHARED kp gain msg size: " << shared_kp_gains_.size() << std::endl;
+
+            shared_kd_gains_ = kd_gains;
+            // std::cerr << "kd gain msg size: " << kd_gains.size() << std::endl;
+            // std::cerr << "SHARED kd gain msg size: " << shared_kd_gains_.size() << std::endl;
+
+            shared_joint_names_ = joint_names;
+            // std::cerr << "joint names msg size: " << joint_names.size() << std::endl;
+            // std::cerr << "SHARED joint names msg size: " << shared_joint_names_.size() << std::endl;
         }
 
         // Helper (see
@@ -1491,7 +1620,10 @@ namespace obelisk {
         std::vector<int> viz_geoms_;
 
         // Shared data between the main thread and the sim thread
-        std::vector<double> shared_data_;
+        std::vector<double> shared_ctrl_;
+        std::vector<double> shared_kp_gains_;
+        std::vector<double> shared_kd_gains_;
+        std::vector<std::string> shared_joint_names_;
 
         // Mutex to manage access to the shared data
         std::mutex shared_data_mut_;

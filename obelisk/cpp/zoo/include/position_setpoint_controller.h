@@ -63,7 +63,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec));
         msg.pos_target.emplace_back(amplitude_ * sin(time_sec));
         msg.kp.clear();
-        msg.kp.emplace_back(100.0);  // Example gain
+        msg.kp.emplace_back(10000.0);  // Example gain
 
         msg.joint_names.clear();
         msg.joint_names.emplace_back("joint1");  // Example joint name
