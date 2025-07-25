@@ -89,6 +89,8 @@ class D1Controller(ObeliskController):
             (self.gripperd, _) = goto(t, INIT_TIME, self.gripper0, GRIPPERG_INIT) # set desired gripper position
         else:
             self.qd = np.array([(0.3 * np.sin(W * t)) for _ in range(NUM_JOINTS)])
+            # self.qd = np.zeros(NUM_JOINTS)
+            # self.qd[0] = 0.3 * np.sin(W * t)
             self.gripperd = 0.015 * np.sin(W * t) + 0.015
 
         control_inputs = self.control_inputs.tolist()

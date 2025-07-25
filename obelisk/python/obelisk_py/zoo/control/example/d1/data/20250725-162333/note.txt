@@ -1,0 +1,3 @@
+I ran the same code that was used in the the previous recording 
+(which used the c++ mujoco simulator).
+This time I used the python mujoco simulator.
