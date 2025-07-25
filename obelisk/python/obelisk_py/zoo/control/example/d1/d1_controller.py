@@ -92,8 +92,7 @@ class D1Controller(ObeliskController):
             self.gripperd = 0.015 * np.sin(W * t) + 0.015
 
         control_inputs = self.control_inputs.tolist()
-        self.info("t: %f, control inputs: %s" % (t, control_inputs))
-        # self.info("Control_inputs: %s" % control_inputs)
+        # self.info("t: %f, control inputs: %s" % (t, control_inputs))
         
         # Create the message
         position_setpoint_msg = PositionSetpoint()
