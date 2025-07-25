@@ -102,6 +102,7 @@ class D1Controller(ObeliskController):
         self.obk_publishers[PUB_CONTROL_NAME].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
 
+        # Record the servo command
         if self.recording:
             servo_command = control_inputs[:-1]
             record_data(SERVO_COMMAND_FILE_PATH, t, servo_command)
