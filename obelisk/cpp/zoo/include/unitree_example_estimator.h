@@ -58,7 +58,7 @@ namespace obelisk {
         };
 
     private:
-        const double MAX_TIME_WITHOUT_UPDATE = 0.5; // seconds
+        const double MAX_TIME_WITHOUT_UPDATE = 1; // seconds
         const std::string BASE_LINK_NAME = "base_link";
 
         double t_last_update_; // defaults to 0
