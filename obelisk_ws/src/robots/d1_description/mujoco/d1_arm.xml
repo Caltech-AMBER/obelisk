@@ -88,7 +88,7 @@
 
   <!-- Switch to position actuators -->
   <actuator>
-    <position class="d1" name="motor1" joint="joint1" ctrlrange="-2.35 2.35" kp="100000" kv="10"/>
+    <position class="d1" name="motor1" joint="joint1" ctrlrange="-2.35 2.35" kp="10000" kv="10"/>
     <position class="d1" name="motor2" joint="joint2" ctrlrange="-1.57 1.57" kp="10" kv="10"/>
     <position class="d1" name="motor3" joint="joint3" ctrlrange="-1.57 1.57" kp="10" kv="10"/>
     <position class="d1" name="motor4" joint="joint4" ctrlrange="-2.35 2.35" kp="1000" kv="10"/>
