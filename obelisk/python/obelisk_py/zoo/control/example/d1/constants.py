@@ -18,7 +18,7 @@ QG_INIT = np.zeros(NUM_JOINTS)
 GRIPPERG_INIT = 0 # goal gripper position (meters)
 
 """Control Inputs"""
-W = 1
+W = 1 # angular frequency
 INIT_TIME = 2 * pi / W
 
 """Control Limits"""
@@ -36,9 +36,9 @@ JOINT_LIMITS = np.array([
 GRIPPER_LIMITS = np.array([0, 0.03])
 
 """Recording data"""
-RECORDING_STR = "recording"
-TIME_STR = time.strftime("%Y%m%d-%H%M%S")
+RECORDING_STR = "recording" # ROS2 parameter name specified in the .yaml config file
+TIME_STR = time.strftime("%Y%m%d-%H%M%S") # The current time as a string
 FOLDER_PATH = f"obelisk/python/obelisk_py/zoo/control/example/d1/data/{TIME_STR}"
 SERVO_COMMAND_FILE_PATH = f"{FOLDER_PATH}/servo_command.csv"
 SERVO_STATE_FILE_PATH = f"{FOLDER_PATH}/servo_state.csv"
-HEADER = ['time'] + [f"servo{i + 1}" for i in range(NUM_SERVOS)]
+HEADER = ['time'] + [f"servo{i + 1}" for i in range(NUM_SERVOS)] # The header of the CSV files

@@ -32,14 +32,17 @@ class D1Controller(ObeliskController):
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller."""
         super().on_configure(state)
-        # Declare ros2 parameter
+
+        # Declare ROS2 parameter
         self.declare_parameter(RECORDING_STR, False)
         self.recording = self.get_parameter(RECORDING_STR).get_parameter_value().bool_value
         self.info("Recording data: %s" % self.recording)
+        
         # Initialize folder for storing data
         if self.recording:
             initialize_folder()
 
+        # Get the period at which the controller is called
         self.dt = self.get_timer_period_sec(TIMER_CTRL_NAME)
         return TransitionCallbackReturn.SUCCESS
     
@@ -57,6 +60,7 @@ class D1Controller(ObeliskController):
         self._q = servo_state[:NUM_JOINTS]
         self._gripper = servo_state[-1]  # gripper position is positive
 
+        # Initialize the parameters for computing the kinematics
         if self.q0 is None:
             self.init_kinematic_parameters(self._q, self._gripper)
 
@@ -82,19 +86,16 @@ class D1Controller(ObeliskController):
         if self.start_time is None:
             return
         
+        # Compute the desired servo positions
         t = self.t - self.start_time
         if t < INIT_TIME:
-            # Compute the desired servo positions
             (self.qd, _) = goto(t, INIT_TIME, self.q0, QG_INIT) # set desired joint positions
             (self.gripperd, _) = goto(t, INIT_TIME, self.gripper0, GRIPPERG_INIT) # set desired gripper position
         else:
             self.qd = np.array([(0.3 * np.sin(W * t)) for _ in range(NUM_JOINTS)])
-            # self.qd = np.zeros(NUM_JOINTS)
-            # self.qd[0] = 0.3 * np.sin(W * t)
             self.gripperd = 0.015 * np.sin(W * t) + 0.015
 
         control_inputs = self.control_inputs.tolist()
-        # self.info("t: %f, control inputs: %s" % (t, control_inputs))
         
         # Create the message
         position_setpoint_msg = PositionSetpoint()
@@ -116,6 +117,14 @@ class D1Controller(ObeliskController):
 
         The `timer_period_sec` is the duration in seconds between consecutive
         invocations of the timer with the parameter `name`. 
+
+        Args:
+            name (str): The ROS2 parameter name specified in the .yaml config file.
+            key (str, Optional): The key in the dictionary parsed from the parameter's 
+            string value to access the timer period. Defaults to `TIMER_PERIOD_SEC_KEY`.
+
+        Returns:
+            float: The duration in seconds between consecutive invocations of the timer.
         """
         string = self.get_parameter(name).get_parameter_value().string_value
         pairs = dict(pair.split(':') for pair in string.split(','))
@@ -138,8 +147,6 @@ class D1Controller(ObeliskController):
         
         self.qd = q0 # the desired joint positions
         self.gripperd = gripper0 # the desired gripper position
-
-        self.info("Control inputs: %s" % self.control_inputs)
 
         # Time since robot is ready to receive control inputs
         self.start_time = self.get_clock().now().nanoseconds * 1e-9 # .seconds isn't supported in rclpy
@@ -183,7 +190,7 @@ class D1Controller(ObeliskController):
         Sets the private variables for computing the control input.
 
         Args:
-            value ((8,) np.ndarray): first six values are the joint positions.
+            value ((8,)-shape np.ndarray): first six values are the joint positions.
             Last two values are the gripper positions.
         """
         self.qd = value[:NUM_JOINTS]

@@ -29,7 +29,6 @@ namespace obelisk {
             // If too many seconds has passed without an update, throw an error.
             double current_time = this->now().nanoseconds() / std::pow(10, 9); // time since 1970
             double t_without_update = current_time - t_last_update_;
-            // RCLCPP_INFO_STREAM(this->get_logger(), "t_without_update " << t_without_update);
 
             if (t_last_update_ != 0
                 && t_without_update > MAX_TIME_WITHOUT_UPDATE) {
