@@ -65,6 +65,8 @@ namespace obelisk {
                 std::filesystem::create_directories(session_dir);
                 log_dir_path_ = session_dir.string();
                 RCLCPP_INFO_STREAM(this->get_logger(), "Created logging directory: " << session_dir);
+
+                log_count_ = 0;
             }
 
             // Register Execution FSM Subscriber
@@ -311,6 +313,7 @@ namespace obelisk {
         // Logging
         bool logging_;
         std::string log_dir_path_;
+        long log_count_;
     
     private:
     };

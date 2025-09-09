@@ -260,7 +260,7 @@ namespace obelisk {
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
             // Log motor data if logging is enabled
-            if (logging_) {
+            if (logging_ && this->log_count_ % 1000 == 0) { // Log at 1 Hz assuming 1kHz low state rate
                 LogMotorData(low_state);
             }
 
@@ -420,6 +420,8 @@ namespace obelisk {
                                << "," << motor.motorstate();
             }
             motor_data_log_ << "\n";
+
+            this->log_count_++;
         }
 
     private:
