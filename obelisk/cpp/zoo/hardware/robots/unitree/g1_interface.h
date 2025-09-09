@@ -11,6 +11,10 @@
 #include <unitree/idl/hg/MainBoardState_.hpp>
 #include <unitree/idl/hg/IMUState_.hpp>
 
+#include <fstream>
+#include <chrono>
+#include <iomanip>
+
 
 namespace obelisk {
 
@@ -71,6 +75,12 @@ namespace obelisk {
 
             VerifyParameters();
             CreateUnitreePublishers();
+
+            // Initialize logging files if logging is enabled
+            if (logging_) {
+                startup_time_ = this->now();
+                InitializeLogging();
+            }
 
             loco_client_.SetTimeout(10.0f);
             loco_client_.Init();
@@ -249,6 +259,11 @@ namespace obelisk {
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
+            // Log motor data if logging is enabled
+            if (logging_) {
+                LogMotorData(low_state);
+            }
+
             // update mode machine
             if (mode_machine_ != low_state.mode_machine()) {
                 if (mode_machine_ == 0) std::cout << "G1 type: " << unsigned(low_state.mode_machine()) << std::endl;
@@ -344,6 +359,68 @@ namespace obelisk {
 
         // Locomotion Client
         g1::LocoClient loco_client_;
+
+        // Logging
+        std::ofstream motor_data_log_;
+        rclcpp::Time startup_time_;
+
+        void InitializeLogging() {
+            // Create and open motor data log file in the existing log directory
+            std::string motor_data_file = log_dir_path_ + "/motor_data.csv";
+            motor_data_log_.open(motor_data_file);
+            
+            if (motor_data_log_.is_open()) {
+                // Write CSV header with startup time info
+                motor_data_log_ << "# Logging started at ROS time: " << startup_time_.nanoseconds() << " ns\n";
+                motor_data_log_ << "# Timestamps below are relative to startup in seconds\n";
+                motor_data_log_ << "timestamp_sec";
+                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
+                    motor_data_log_ << ",temp1_" << G1_FULL_JOINT_NAMES[i] 
+                                   << ",temp2_" << G1_FULL_JOINT_NAMES[i]
+                                   << ",tau_est_" << G1_FULL_JOINT_NAMES[i]
+                                   << ",motorstate_" << G1_FULL_JOINT_NAMES[i];
+                }
+                motor_data_log_ << "\n";
+                motor_data_log_.flush();
+                
+                RCLCPP_INFO_STREAM(this->get_logger(), "Motor data logging initialized: " << motor_data_file);
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to open motor data log file: " << motor_data_file);
+            }
+            
+            // Create joint names file
+            std::string joint_names_file = log_dir_path_ + "/joint_names.txt";
+            std::ofstream joint_names_log(joint_names_file);
+            if (joint_names_log.is_open()) {
+                joint_names_log << "Joint order for logged data:\n";
+                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
+                    joint_names_log << i << ": " << G1_FULL_JOINT_NAMES[i] << "\n";
+                }
+                joint_names_log.close();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Joint names file created: " << joint_names_file);
+            }
+        }
+        
+        void LogMotorData(const LowState_& low_state) {
+            if (!motor_data_log_.is_open()) return;
+            
+            // Get current time relative to startup in seconds
+            auto current_time = this->now();
+            auto elapsed_duration = current_time - startup_time_;
+            double timestamp_sec = elapsed_duration.seconds();
+                
+            motor_data_log_ << std::fixed << std::setprecision(6) << timestamp_sec;
+            
+            // Log data for each motor
+            for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
+                const auto& motor = low_state.motor_state()[i];
+                motor_data_log_ << "," << motor.temperature()[0]
+                               << "," << motor.temperature()[1]
+                               << "," << motor.tau_est()
+                               << "," << motor.motorstate();
+            }
+            motor_data_log_ << "\n";
+        }
 
     private:
         // ---------- Robot Specific ---------- //
