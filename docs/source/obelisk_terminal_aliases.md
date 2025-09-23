@@ -31,6 +31,7 @@ Configure all Obelisk nodes.
 ```
 obk-configure <config_name>
 ```
+For example, the config_name is `d1` for d1_py.yaml.
 
 ### `obk-activate`
 Activate all Obelisk nodes.

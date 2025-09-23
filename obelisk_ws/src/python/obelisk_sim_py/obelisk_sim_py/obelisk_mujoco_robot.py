@@ -10,7 +10,7 @@ from obelisk_py.core.utils.ros import spin_obelisk
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
     ctrl_msg_type = PositionSetpoint
-    spin_obelisk(args, ObeliskMujocoRobot, MultiThreadedExecutor, {"ctrl_msg_type": ctrl_msg_type})
+    spin_obelisk(args, ObeliskMujocoRobot, MultiThreadedExecutor, node_kwargs={"ctrl_msg_type": ctrl_msg_type})
 
 
 if __name__ == "__main__":

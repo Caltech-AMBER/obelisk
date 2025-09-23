@@ -24,6 +24,10 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
     add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
     target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Zoo)
 
+    # obelisk_unitree_d1_hardware
+    add_executable(unitree_d1_hardware src/unitree_d1_hardware.cpp)
+    target_link_libraries(unitree_d1_hardware PUBLIC Obelisk::Core UnitreeInterface)
+
     # obelisk_unitree_g1_hardware
     add_executable(obelisk_unitree_g1_hardware src/unitree_g1_hardware_robot.cpp)
     target_link_libraries(obelisk_unitree_g1_hardware PUBLIC Obelisk::Core UnitreeInterface)
@@ -57,6 +61,10 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
 
     install(TARGETS
         obelisk_unitree_sim
+        DESTINATION lib/${PROJECT_NAME})
+
+    install(TARGETS
+        unitree_d1_hardware
         DESTINATION lib/${PROJECT_NAME})
 
     install(TARGETS

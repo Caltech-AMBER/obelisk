@@ -10,7 +10,7 @@ MsgType = TypeVar("MsgType")  # hack to denote any message type
 
 class ObeliskNode(LifecycleNode):
     """A lifecycle node that automatically performs component registration according to Obelisk standards.
-
+    
     By convention, the initialization function should only declare ROS parameters and define stateful quantities.
     Some guidelines for the on_configure, on_activate, and on_deactivate callbacks are provided below.
 
@@ -49,6 +49,10 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
+        self.info = self.get_logger().info
+        self.warn = self.get_logger().warn
+        self.error = self.get_logger().error
+        
         self.declare_parameter("callback_group_settings", "")
         # ROS parameter designed to let the user feed a file path for their own code
         self.declare_parameter("params_path", "")
@@ -301,7 +305,7 @@ class ObeliskNode(LifecycleNode):
             else:
                 cbg = self.obk_callback_groups.get(config_dict["callback_group"], None)
                 if cbg is None:
-                    self.get_logger().warn(
+                    self.warn(
                         f"Callback group {config_dict['callback_group']} not found in node. Using None instead."
                     )
                 return cbg
@@ -344,9 +348,12 @@ class ObeliskNode(LifecycleNode):
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+               self.error("Failed to extract key from publisher config dict: %s" % e)
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this publisher, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -407,9 +414,12 @@ class ObeliskNode(LifecycleNode):
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+               self.error("Failed to extract key from subscription config dict: %s" % e)
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this subscription, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -464,9 +474,12 @@ class ObeliskNode(LifecycleNode):
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+               self.error("Failed to extract key from timer config: %s" % e)
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this timer, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -519,7 +532,7 @@ class ObeliskNode(LifecycleNode):
 
             pub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
             if pub_config_str == "":
-                self.get_logger().warn(f"Publisher {key} has no configuration string!")
+                self.warn(f"Publisher {key} has no configuration string!")
                 continue
             final_key = self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
             pub_dict["key"] = final_key  # if no key passed, use value from config file
@@ -532,7 +545,7 @@ class ObeliskNode(LifecycleNode):
 
             sub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
             if sub_config_str == "":
-                self.get_logger().warn(f"Subscription {key} has no configuration string!")
+                self.warn(f"Subscription {key} has no configuration string!")
                 continue
             final_key = self._create_subscription_from_config_str(
                 sub_config_str, callback=callback, key=key, msg_type=msg_type
@@ -546,12 +559,12 @@ class ObeliskNode(LifecycleNode):
 
             timer_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
             if timer_config_str == "":
-                self.get_logger().warn(f"Timer {key} has no configuration string!")
+                self.warn(f"Timer {key} has no configuration string!")
                 continue
             final_key = self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
             timer_dict["key"] = final_key  # if no key passed, use value from config file
 
-        self.get_logger().info(f"{self.get_name()} configured.")
+        self.info(f"{self.get_name()} configured.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -560,7 +573,7 @@ class ObeliskNode(LifecycleNode):
         for timer in self.obk_timers.values():
             timer.reset()  # activate timers
 
-        self.get_logger().info(f"{self.get_name()} activated.")
+        self.info(f"{self.get_name()} activated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -569,7 +582,7 @@ class ObeliskNode(LifecycleNode):
         for timer in self.obk_timers.values():
             timer.cancel()  # deactivate timers
 
-        self.get_logger().info(f"{self.get_name()} deactivated.")
+        self.info(f"{self.get_name()} deactivated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -595,12 +608,12 @@ class ObeliskNode(LifecycleNode):
             for subscription in self.subscriptions:
                 self.destroy_subscription(subscription)
 
-        self.get_logger().info(f"{self.get_name()} cleaned up")
+        self.info(f"{self.get_name()} cleaned up")
         return TransitionCallbackReturn.SUCCESS
 
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Shut down the controller."""
         super().on_shutdown(state)
         self.on_cleanup(state)
-        self.get_logger().info(f"{self.get_name()} shut down.")
+        self.info(f"{self.get_name()} shut down.")
         return TransitionCallbackReturn.SUCCESS
