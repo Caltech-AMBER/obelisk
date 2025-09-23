@@ -24,44 +24,18 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
 
 FetchContent_MakeAvailable(unitree_sdk)
 
-# Get the .cpp files in msg and store it into the `UNITREE_ARM_MSGS`. A library should include
-# solely .cpp files.
-set(UNITREE_ARM_MSGS
-  d1/msg/ArmString_.cpp
-)
-
-# Creates a library called `unitree_arm_msgs` containing all files in `UNITREE_ARM_MSGS`
-add_library(unitree_arm_msgs SHARED ${UNITREE_ARM_MSGS})
-
-target_include_directories(unitree_arm_msgs PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/msg # The compiler needs ${CMAKE_CURRENT_SOURCE_DIR}/msg 
-  # in the include path to find ArmString_.hpp when compiling ArmString_.cpp
-  /usr/local/include/ddscxx 
-  /usr/local/include/iceoryx/v2.0.2 # FIXME: not sure if this is necessary. 
-  # It's in d1_sdk's CMakeLists.txt, but I can't find the folder on the computer.
-)
-
-# Link `unitree_arm_msgs` to other libraries that d1_sdk depends on. These other libraries
-# are listed in d1_sdk's CMakeLists.txt.
-target_link_libraries(unitree_arm_msgs PUBLIC
-  unitree_sdk2 ddsc ddscxx rt pthread
-)
-
 # Adds an Object Library to compile source files without linking their 
 # object files into a library
 add_library(UnitreeInterface INTERFACE)
 
 # Adds the current directory (.) to the include path for the UnitreeInterface library
-target_include_directories(UnitreeInterface INTERFACE .
-${CMAKE_CURRENT_SOURCE_DIR}/msg
-)
+target_include_directories(UnitreeInterface INTERFACE .)
 
 # Specifies that UnitreeInterface depends on two libraries: Obelisk::Core and unitree_sdk2.
 # unitree_sdk2 is the CMake target name defined by unitree_sdk2 repo's CMakeLists.txt.
 target_link_libraries(UnitreeInterface INTERFACE 
   Obelisk::Core 
   unitree_sdk2 
-  unitree_arm_msgs
 )
 
 # Adds ROS 2 dependencies to UnitreeInterface

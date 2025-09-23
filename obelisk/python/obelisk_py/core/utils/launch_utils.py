@@ -246,7 +246,7 @@ def get_launch_actions_from_node_settings(
 def get_launch_actions_from_viz_settings(
         settings: Dict, 
         global_state_node: Optional[LifecycleNode]
-    ) -> List[LifecycleNode]:
+) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to viz given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
