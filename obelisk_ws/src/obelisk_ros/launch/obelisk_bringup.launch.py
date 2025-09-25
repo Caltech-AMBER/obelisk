@@ -5,12 +5,12 @@ import launch_ros
 import lifecycle_msgs.msg
 from launch import LaunchDescription
 from launch.actions import (
-    DeclareLaunchArgument, 
-    EmitEvent, 
-    ExecuteProcess, 
-    OpaqueFunction, 
-    RegisterEventHandler, 
-    LogInfo
+    DeclareLaunchArgument,
+    EmitEvent,
+    ExecuteProcess,
+    OpaqueFunction,
+    RegisterEventHandler,
+    LogInfo,
 )
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode

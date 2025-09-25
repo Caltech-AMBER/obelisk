@@ -6,6 +6,7 @@ from rclpy.lifecycle import LifecycleNode
 
 from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor, SingleThreadedExecutor
 
+
 class GlobalStateNode(LifecycleNode):
     """A dummy class whose only purpose is to store the global state of the system.
 
@@ -21,7 +22,7 @@ class GlobalStateNode(LifecycleNode):
 def main(args: Optional[List] = None) -> None:
     """Main entrypoint."""
     # rclpy may already be initialized when the other nodes have been launched
-    if not rclpy.ok(): # check if rclpy is not initialized
+    if not rclpy.ok():  # check if rclpy is not initialized
         rclpy.init(args=args)
     node = GlobalStateNode()
     executor = SingleThreadedExecutor()
@@ -33,8 +34,9 @@ def main(args: Optional[List] = None) -> None:
     finally:
         executor.remove_node(node)
         node.destroy_node()
-        if rclpy.ok(): # Only shutdown if context is still valid
+        if rclpy.ok():  # Only shutdown if context is still valid
             rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

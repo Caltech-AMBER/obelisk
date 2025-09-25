@@ -1,7 +1,12 @@
 import sys
 from typing import Iterable
 
-from dynamixel_sdk import GroupBulkRead, GroupBulkWrite, PacketHandler, PortHandler
+from dynamixel_sdk import (
+    GroupBulkRead,
+    GroupBulkWrite,
+    PacketHandler,
+    PortHandler,
+)
 
 PACKET_HANDLER = PacketHandler(protocol_version=2.0)
 PORT_HANDLER = PortHandler(port_name="/dev/ttyUSB0")
@@ -79,7 +84,9 @@ def toggle_motor_torque(id: int, mode: int) -> None:
     print(f"Motor {id} enabled")
 
 
-def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> None:
+def sync_pid(
+    motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50
+) -> None:
     """Write PID values to multiple motors.
 
     Args:

@@ -34,7 +34,9 @@ class ObeliskLeapRobot(ObeliskRobot):
 
     @staticmethod
     def _radians_to_dxl_pos(radians: float) -> int:
-        return int((radians + math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS))
+        return int(
+            (radians + math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS)
+        )
 
     @staticmethod
     def _dxl_pos_to_radians(dxl_pos: int) -> float:

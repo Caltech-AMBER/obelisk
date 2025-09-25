@@ -28,7 +28,7 @@ class ObeliskSensor(ObeliskNode):
             if msg_type in get_classes_in_module(osm):
                 self._has_sensor_publisher = True
                 break
-        assert (
-            self._has_sensor_publisher
-        ), "At least one sensor publisher is required in an ObeliskSensor!"
+        assert self._has_sensor_publisher, (
+            "At least one sensor publisher is required in an ObeliskSensor!"
+        )
         return TransitionCallbackReturn.SUCCESS

@@ -5,7 +5,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import (
+    EmitEvent,
+    IncludeLaunchDescription,
+    RegisterEventHandler,
+)
 from launch.event_handlers import OnProcessStart
 from launch.events import matches_action
 from launch.launch_description_sources import FrontendLaunchDescriptionSource
@@ -55,7 +59,9 @@ def load_config_file(
         ) from e
 
 
-def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Dict:
+def get_component_settings_subdict(
+    node_settings: Dict, subdict_name: str
+) -> Dict:
     """Returns a subdictionary of the component settings associated with an Obelisk node.
 
     Parameters:
@@ -69,7 +75,10 @@ def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Di
 
     # iterate over the settings for each component - if doesn't exist, make a new dict entry, else append it
     for component_settings in node_settings[subdict_name]:
-        if component_settings["ros_parameter"] not in component_settings_subdict:
+        if (
+            component_settings["ros_parameter"]
+            not in component_settings_subdict
+        ):
             component_settings_subdict[component_settings["ros_parameter"]] = [
                 ",".join(
                     [
@@ -80,7 +89,9 @@ def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Di
                 )
             ]
         else:
-            component_settings_subdict[component_settings["ros_parameter"]].append(
+            component_settings_subdict[
+                component_settings["ros_parameter"]
+            ].append(
                 ",".join(
                     [
                         f"{k}:{v}"
@@ -125,16 +136,20 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
             open_brace = dollar_str.find("{")
             close_brace = dollar_str.rfind("}")
 
-            if open_brace != -1 and close_brace != -1 and open_brace < close_brace:
+            if (
+                open_brace != -1
+                and close_brace != -1
+                and open_brace < close_brace
+            ):
                 # keep content before the first brace and after the last brace
                 prefix = dollar_str[: open_brace + 1]
                 suffix = dollar_str[close_brace:]
 
                 # remove braces from the inner content
                 inner_content = dollar_str[open_brace + 1 : close_brace]
-                inner_content_no_braces = inner_content.replace("{", "").replace(
-                    "}", ""
-                )
+                inner_content_no_braces = inner_content.replace(
+                    "{", ""
+                ).replace("}", "")
 
                 return f"{prefix}{inner_content_no_braces}{suffix}"
             else:
@@ -149,7 +164,12 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
         # replace commas in 'sensor_names':{...} with '&', remove outermost braces
         def _replace_commas_delete_outer_braces(match: re.Match) -> str:
-            return match.group(0).replace(",", "&").replace("{", "").replace("}", "")
+            return (
+                match.group(0)
+                .replace(",", "&")
+                .replace("{", "")
+                .replace("}", "")
+            )
 
         sim_settings_str = re.sub(
             r"'sensor_names':\{[^\}]*\}",
@@ -165,7 +185,9 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
             return match.group(0).replace(",", "|")
 
         sim_settings_str = re.sub(
-            r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str
+            r"\{[^{}]*\}",
+            _replace_commas_between_curly_braces,
+            sim_settings_str,
         )
 
         # replace commas in 'sensor_settings':[...,...] with "+"
@@ -182,7 +204,9 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
         def _replace_colons_in_sensor_settings(match: re.Match) -> str:
             content = match.group(0)
             return re.sub(
-                r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content
+                r"(?<=\[).*?(?=\])",
+                lambda m: m.group(0).replace(":", "="),
+                content,
             )
 
         sim_settings_str = re.sub(
@@ -300,7 +324,9 @@ def get_launch_actions_from_node_settings(
 
     node_launch_actions = []
     for i, node_setting in enumerate(node_settings):
-        node_launch_actions += _single_component_launch_actions(node_setting, suffix=i)
+        node_launch_actions += _single_component_launch_actions(
+            node_setting, suffix=i
+        )
     return node_launch_actions
 
 
@@ -321,7 +347,8 @@ def get_launch_actions_from_viz_settings(
             # Get the other viz specific params
             urdf_file_name = "urdf/" + settings["urdf"]
             urdf_path = os.path.join(
-                get_package_share_directory(settings["robot_pkg"]), urdf_file_name
+                get_package_share_directory(settings["robot_pkg"]),
+                urdf_file_name,
             )
             parameters_dict["urdf_path_param"] = urdf_path
             if "tf_prefix" in settings:
@@ -333,7 +360,9 @@ def get_launch_actions_from_viz_settings(
             launch_actions = []
             component_node = LifecycleNode(
                 namespace="",
-                name="obelisk_viz" if suffix is None else f"obelisk_viz_{suffix}",
+                name="obelisk_viz"
+                if suffix is None
+                else f"obelisk_viz_{suffix}",
                 package=package,
                 executable=executable,
                 output="both",
@@ -397,7 +426,8 @@ def get_launch_actions_from_viz_settings(
             # Setup Rviz
             rviz_file_name = "rviz/" + settings["rviz_config"]
             rviz_config_path = os.path.join(
-                get_package_share_directory(settings["rviz_pkg"]), rviz_file_name
+                get_package_share_directory(settings["rviz_pkg"]),
+                rviz_file_name,
             )
             launch_actions += [
                 Node(
@@ -431,7 +461,9 @@ def get_launch_actions_from_viz_settings(
     return launch_actions
 
 
-def get_launch_actions_from_joystick_settings(settings: Dict) -> List[LifecycleNode]:
+def get_launch_actions_from_joystick_settings(
+    settings: Dict,
+) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to joystick given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
@@ -439,16 +471,22 @@ def get_launch_actions_from_joystick_settings(settings: Dict) -> List[LifecycleN
         # is supplied.
         device_id = settings["device_id"] if "device_id" in settings else 0
 
-        device_name = settings["device_name"] if "device_name" in settings else ""
+        device_name = (
+            settings["device_name"] if "device_name" in settings else ""
+        )
 
         deadzone = settings["deadzone"] if "deadzone" in settings else 0.05
 
         autorepeat_rate = (
-            settings["autorepeat_rate"] if "autorepeat_rate" in settings else 20.0
+            settings["autorepeat_rate"]
+            if "autorepeat_rate" in settings
+            else 20.0
         )
 
         sticky_buttons = (
-            settings["sticky_buttons"] if "sticky_buttons" in settings else False
+            settings["sticky_buttons"]
+            if "sticky_buttons" in settings
+            else False
         )
 
         coalesce_interval_ms = (
@@ -460,7 +498,9 @@ def get_launch_actions_from_joystick_settings(settings: Dict) -> List[LifecycleN
         pub_topic = settings["pub_topic"] if "pub_topic" in settings else "/joy"
 
         sub_topic = (
-            settings["sub_topic"] if "sub_topic" in settings else "/joy/set_feedback"
+            settings["sub_topic"]
+            if "sub_topic" in settings
+            else "/joy/set_feedback"
         )
 
         launch_actions += [
@@ -565,7 +605,9 @@ def get_handlers(
         ]
     # Add shutting down handlers
     handlers += [
-        make_handler("unconfigured", "shuttingdown", "unconfigured_shutdown", target),
+        make_handler(
+            "unconfigured", "shuttingdown", "unconfigured_shutdown", target
+        ),
         make_handler("inactive", "shuttingdown", "inactive_shutdown", target),
         make_handler("active", "shuttingdown", "active_shutdown", target),
     ]
@@ -597,7 +639,9 @@ def setup_logging_dir(config_name: str) -> str:
     curr_date_time = now.strftime("%Y%m%d_%H%M%S")
 
     # Now make a folder for this specific run
-    run_log_file_path = general_log_file_path + "/" + config_name + "_" + curr_date_time
+    run_log_file_path = (
+        general_log_file_path + "/" + config_name + "_" + curr_date_time
+    )
     os.makedirs(run_log_file_path)
 
     # Set the ROS environment variable

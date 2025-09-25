@@ -13,7 +13,9 @@ from obelisk_py.core.node import ObeliskNode
 def spin_obelisk(
     args: Optional[List],
     node_type: Type[ObeliskNode],
-    executor_type: Union[Type[SingleThreadedExecutor], Type[MultiThreadedExecutor]],
+    executor_type: Union[
+        Type[SingleThreadedExecutor], Type[MultiThreadedExecutor]
+    ],
     node_name: str = "obelisk_node",
     node_kwargs: Optional[dict] = None,
 ) -> None:

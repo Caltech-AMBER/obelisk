@@ -103,14 +103,21 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         if msg_type == osm.ObkJointEncoders:
             # verify that all joints are hinge or slider joints
             for sensor_name in mj_sensor_names:
-                sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)  # type: ignore
+                sensor_id = mj_name2id(
+                    self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name
+                )  # type: ignore
 
                 joint_id = self.mj_model.sensor_objid[sensor_id]
                 joint_name = self.mj_model.joint(joint_id).name
                 joint_type = self.mj_model.jnt_type[joint_id]
 
-                if joint_type not in [mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE]:  # type: ignore
-                    self.error(f"Joint {joint_name} should be a hinge or slide joint!")
+                if joint_type not in [
+                    mujoco.mjtJoint.mjJNT_HINGE,
+                    mujoco.mjtJoint.mjJNT_SLIDE,
+                ]:  # type: ignore
+                    self.error(
+                        f"Joint {joint_name} should be a hinge or slide joint!"
+                    )
                     raise ValueError(
                         f"Joint {joint_name} should be a hinge or slide joint!"
                     )
@@ -126,7 +133,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     mj_sensor_names, obk_sensor_fields
                 ):
                     # get the sensor id and address
-                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)  # type: ignore
+                    sensor_id = mj_name2id(
+                        self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name
+                    )  # type: ignore
                     sensor_adr = self.mj_model.sensor_adr[sensor_id]
                     if sensor_id == -1:
                         self.error(f"Sensor {sensor_name} not found!")
@@ -172,7 +181,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     mj_sensor_names, obk_sensor_fields
                 ):
                     # get the sensor id and address
-                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)  # type: ignore
+                    sensor_id = mj_name2id(
+                        self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name
+                    )  # type: ignore
                     sensor_adr = self.mj_model.sensor_adr[sensor_id]
                     if sensor_id == -1:
                         self.error(f"Sensor {sensor_name} not found!")
@@ -195,7 +206,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                             # accelerometers should always be mounted to sites
                             site_id = self.mj_model.sensor_objid[sensor_id]
-                            msg.header.frame_id = self.mj_model.site(site_id).name
+                            msg.header.frame_id = self.mj_model.site(
+                                site_id
+                            ).name
                             has_acc = True
                         else:
                             self.error(
@@ -221,10 +234,18 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.w = self.shared_sensordata[sensor_adr + 0]
-                            msg.orientation.x = self.shared_sensordata[sensor_adr + 1]
-                            msg.orientation.y = self.shared_sensordata[sensor_adr + 2]
-                            msg.orientation.z = self.shared_sensordata[sensor_adr + 3]
+                            msg.orientation.w = self.shared_sensordata[
+                                sensor_adr + 0
+                            ]
+                            msg.orientation.x = self.shared_sensordata[
+                                sensor_adr + 1
+                            ]
+                            msg.orientation.y = self.shared_sensordata[
+                                sensor_adr + 2
+                            ]
+                            msg.orientation.z = self.shared_sensordata[
+                                sensor_adr + 3
+                            ]
                             has_framequat = True
                         else:
                             self.error(
@@ -259,7 +280,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     mj_sensor_names, obk_sensor_fields
                 ):
                     # get the sensor id and address
-                    sensor_id = mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)  # type: ignore
+                    sensor_id = mj_name2id(
+                        self.mj_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name
+                    )  # type: ignore
                     sensor_adr = self.mj_model.sensor_adr[sensor_id]
                     if sensor_id == -1:
                         self.error(f"Sensor {sensor_name} not found!")
@@ -267,16 +290,24 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     if obk_sensor_field == "framepos":
                         if not has_framepos:
-                            msg.position.x = self.shared_sensordata[sensor_adr + 0]
-                            msg.position.y = self.shared_sensordata[sensor_adr + 1]
-                            msg.position.z = self.shared_sensordata[sensor_adr + 2]
+                            msg.position.x = self.shared_sensordata[
+                                sensor_adr + 0
+                            ]
+                            msg.position.y = self.shared_sensordata[
+                                sensor_adr + 1
+                            ]
+                            msg.position.z = self.shared_sensordata[
+                                sensor_adr + 2
+                            ]
 
                             # framepos sensors can be mounted onto different mujoco objects (the frame we measure)
                             obj_type = self.mj_model.sensor_objtype[sensor_id]
                             obj_id = self.mj_model.sensor_objid[sensor_id]
                             if obj_type == mujoco.mjtObj.mjOBJ_SITE:  # type: ignore
                                 msg.frame_name = self.mj_model.site(obj_id).name
-                                msg.header.frame_id = self.mj_model.site(obj_id).name
+                                msg.header.frame_id = self.mj_model.site(
+                                    obj_id
+                                ).name
                             elif obj_type == mujoco.mjtObj.mjOBJ_BODY:  # type: ignore
                                 msg.frame_name = self.mj_model.body(obj_id).name
                             elif obj_type == mujoco.mjtObj.mjOBJ_GEOM:  # type: ignore
@@ -293,11 +324,11 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                             # now we also populate the reference frame of the sensor
                             if self.mj_model.sensor_refid[sensor_id] == -1:
-                                msg.header.frame_id = (
-                                    "world"  # TODO: consider not hardcoding this
-                                )
+                                msg.header.frame_id = "world"  # TODO: consider not hardcoding this
                             else:
-                                ref_type = self.mj_model.sensor_reftype[sensor_id]
+                                ref_type = self.mj_model.sensor_reftype[
+                                    sensor_id
+                                ]
                                 ref_id = self.mj_model.sensor_refid[sensor_id]
                                 if ref_type == mujoco.mjtObj.mjOBJ_SITE:  # type: ignore
                                     msg.header.frame_id = self.mj_model.site(
@@ -312,7 +343,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                                         ref_id
                                     ).name
                                 elif ref_type == mujoco.mjtObj.mjOBJ_CAMERA:  # type: ignore
-                                    msg.header.frame_id = self.mj_model.cam(ref_id).name
+                                    msg.header.frame_id = self.mj_model.cam(
+                                        ref_id
+                                    ).name
                                 else:
                                     err_msg = (
                                         f"Framepos sensor {sensor_name} has an unsupported reference object type! "
@@ -330,10 +363,18 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
                     elif obk_sensor_field == "framequat":
                         if not has_framequat:
-                            msg.orientation.w = self.shared_sensordata[sensor_adr + 0]
-                            msg.orientation.x = self.shared_sensordata[sensor_adr + 1]
-                            msg.orientation.y = self.shared_sensordata[sensor_adr + 2]
-                            msg.orientation.z = self.shared_sensordata[sensor_adr + 3]
+                            msg.orientation.w = self.shared_sensordata[
+                                sensor_adr + 0
+                            ]
+                            msg.orientation.x = self.shared_sensordata[
+                                sensor_adr + 1
+                            ]
+                            msg.orientation.y = self.shared_sensordata[
+                                sensor_adr + 2
+                            ]
+                            msg.orientation.z = self.shared_sensordata[
+                                sensor_adr + 3
+                            ]
                             has_framequat = True
                         else:
                             self.error(
@@ -362,14 +403,14 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
         return timer_callback
 
-    def on_configure(
-        self, state: LifecycleState
-    ) -> TransitionCallbackReturn:  # noqa: PLR0915
+    def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:  # noqa: PLR0915
         """Configure the simulator."""
         super().on_configure(state)
         try:
             self.mujoco_setting = (
-                self.get_parameter("mujoco_setting").get_parameter_value().string_value
+                self.get_parameter("mujoco_setting")
+                .get_parameter_value()
+                .string_value
             )
         except Exception as e:
             self.error(f"Could not get the mujoco setting parameter!\n{e}")
@@ -395,10 +436,12 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
         # load mujoco model
         self.model_xml_path = config_dict["model_xml_path"]
         self.robot_pkg = config_dict.get("robot_pkg", None)
-        assert isinstance(self.model_xml_path, str), "Model XML path must be a string!"
-        assert (
-            isinstance(self.robot_pkg, str) or self.robot_pkg is None
-        ), "Robot package must be a string or None!"
+        assert isinstance(self.model_xml_path, str), (
+            "Model XML path must be a string!"
+        )
+        assert isinstance(self.robot_pkg, str) or self.robot_pkg is None, (
+            "Robot package must be a string or None!"
+        )
         if not os.path.exists(self.model_xml_path):
             if self.robot_pkg is not None and self.robot_pkg.lower() != "none":
                 share_directory = get_package_share_directory(self.robot_pkg)
@@ -461,10 +504,15 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             ).replace("}", "")
 
             # the internal delimiter between different sensor group settings is a plus sign
-            for i, sensor_setting in enumerate(stripped_sensor_settings.split("+")):
+            for i, sensor_setting in enumerate(
+                stripped_sensor_settings.split("+")
+            ):
                 # individual settings are separated by pipes
                 sensor_setting_dict = dict(
-                    [setting.split("=") for setting in sensor_setting.split("|")]
+                    [
+                        setting.split("=")
+                        for setting in sensor_setting.split("|")
+                    ]
                 )
 
                 assert "topic" in sensor_setting_dict and isinstance(
@@ -484,7 +532,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 msg_type_str = sensor_setting_dict["msg_type"]
 
                 # the mujoco sensor names and the correspond Obelisk message field types are delimited by "$"
-                sensor_names_and_fields = sensor_setting_dict["sensor_names"].split("&")
+                sensor_names_and_fields = sensor_setting_dict[
+                    "sensor_names"
+                ].split("&")
                 mj_sensor_names = [
                     name_and_type.split("$")[0]
                     for name_and_type in sensor_names_and_fields
@@ -529,9 +579,7 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
 
     def publish_true_sim_state(self) -> osm.TrueSimState:
         """Publish the true simulator state."""
-        return (
-            osm.TrueSimState()
-        )  # TODO(ahl): no-op, haven't decided on what goes in here yet until later PR
+        return osm.TrueSimState()  # TODO(ahl): no-op, haven't decided on what goes in here yet until later PR
 
     def run_simulator(self) -> None:
         """Run the mujoco simulator."""
@@ -541,7 +589,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
             potential_keyframe = self.mj_model.key(keyframe_id).name
             if (
                 potential_keyframe
-                == self.get_parameter("ic_keyframe").get_parameter_value().string_value
+                == self.get_parameter("ic_keyframe")
+                .get_parameter_value()
+                .string_value
             ):
                 self.info(
                     f"Setting initial condition to keyframe: {potential_keyframe}"
@@ -560,7 +610,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                 self.mj_data.time = self.mj_model.key_time[keyframe_id]
                 break
 
-        with mujoco.viewer.launch_passive(self.mj_model, self.mj_data) as viewer:
+        with mujoco.viewer.launch_passive(
+            self.mj_model, self.mj_data
+        ) as viewer:
             while viewer.is_running() and self.is_sim_running.value:
                 # simulate at realtime rate
                 # TODO(ahl): allow non-realtime rates
@@ -575,7 +627,9 @@ class ObeliskMujocoRobot(ObeliskSimRobot):
                     mj_step(self.mj_model, self.mj_data)
                     if hasattr(self, "lock"):
                         with self.lock:
-                            self.shared_sensordata[:] = list(self.mj_data.sensordata)
+                            self.shared_sensordata[:] = list(
+                                self.mj_data.sensordata
+                            )
                             self.shared_time.value = self.mj_data.time
                 viewer.sync()
                 self.t_last.value = t

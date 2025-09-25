@@ -12,7 +12,9 @@ from obelisk_py.core.obelisk_typing import ObeliskControlMsg, is_in_bound
 class ExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
+    def __init__(
+        self, node_name: str = "example_position_setpoint_controller"
+    ) -> None:
         """Initialize the example position setpoint controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.declare_parameter("test_param", "default_value")
