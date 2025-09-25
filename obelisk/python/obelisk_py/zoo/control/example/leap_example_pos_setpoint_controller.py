@@ -12,7 +12,9 @@ from obelisk_py.core.obelisk_typing import ObeliskControlMsg, is_in_bound
 class LeapExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self, node_name: str = "leap_example_position_setpoint_controller") -> None:
+    def __init__(
+        self, node_name: str = "leap_example_position_setpoint_controller"
+    ) -> None:
         """Initialize the example position setpoint controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
 
@@ -38,8 +40,12 @@ class LeapExamplePositionSetpointController(ObeliskController):
         """
         # setting the message
         position_setpoint_msg = PositionSetpoint()
-        position_setpoint_msg.u_mujoco = [(0.3 * np.sin(self.t)) for _ in range(16)]  # example state-independent input
-        position_setpoint_msg.q_des = [(0.3 * np.sin(self.t)) for _ in range(16)]  # example state-independent input
+        position_setpoint_msg.u_mujoco = [
+            (0.3 * np.sin(self.t)) for _ in range(16)
+        ]  # example state-independent input
+        position_setpoint_msg.q_des = [
+            (0.3 * np.sin(self.t)) for _ in range(16)
+        ]  # example state-independent input
         self.obk_publishers["pub_ctrl"].publish(position_setpoint_msg)
         assert is_in_bound(type(position_setpoint_msg), ObeliskControlMsg)
         return position_setpoint_msg  # type: ignore

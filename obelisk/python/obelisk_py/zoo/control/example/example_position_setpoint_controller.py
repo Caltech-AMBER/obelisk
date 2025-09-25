@@ -16,7 +16,9 @@ class ExamplePositionSetpointController(ObeliskController):
         """Initialize the example position setpoint controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.declare_parameter("test_param", "default_value")
-        self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
+        self.get_logger().info(
+            f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}"
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Configure the controller. I.e. Declare all variables required to compute the control input."""

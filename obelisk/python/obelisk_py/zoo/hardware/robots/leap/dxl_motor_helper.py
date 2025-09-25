@@ -72,7 +72,9 @@ def toggle_motor_torque(id: int, mode: int) -> None:
         id: The motor ID.
         mode: The mode to set the motor to.
     """
-    dxl_comm_result, dxl_error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, id, MsgAddrs.TOGGLE_TORQUE, mode)
+    dxl_comm_result, dxl_error = PACKET_HANDLER.write1ByteTxRx(
+        PORT_HANDLER, id, MsgAddrs.TOGGLE_TORQUE, mode
+    )
     comm_error_check(dxl_comm_result, dxl_error, id)
     print(f"Motor {id} enabled")
 
@@ -87,11 +89,17 @@ def sync_pid(motors: Iterable, kp: int = 500, ki: int = 10, kd: int = 50) -> Non
         kd: The derivative gain.
     """
     for motor in motors:
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KP, kp)
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(
+            PORT_HANDLER, motor, MsgAddrs.KP, kp
+        )
         comm_error_check(dxl_comm_result, dxl_error, motor)
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KI, ki)
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(
+            PORT_HANDLER, motor, MsgAddrs.KI, ki
+        )
         comm_error_check(dxl_comm_result, dxl_error, motor)
-        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(PORT_HANDLER, motor, MsgAddrs.KD, kd)
+        dxl_comm_result, dxl_error = PACKET_HANDLER.write2ByteTxRx(
+            PORT_HANDLER, motor, MsgAddrs.KD, kd
+        )
         comm_error_check(dxl_comm_result, dxl_error, motor)
 
 

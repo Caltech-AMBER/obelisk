@@ -16,7 +16,9 @@ from lifecycle_msgs.msg import Transition
 from ruamel.yaml import YAML
 
 
-def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
+def load_config_file(
+    file_path: Union[str, Path], package_name: Optional[str] = None
+) -> Dict:
     """Loads an Obelisk configuration file.
 
     Parameters:
@@ -31,7 +33,9 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
     file_path = str(file_path)
     if not file_path.startswith("/"):
         try:
-            obk_ros_dir = get_package_share_directory("obelisk_ros" if package_name is None else package_name)
+            obk_ros_dir = get_package_share_directory(
+                "obelisk_ros" if package_name is None else package_name
+            )
             abs_file_path = Path(obk_ros_dir) / "config" / file_path
         except Exception as e:
             raise FileNotFoundError(
@@ -46,7 +50,9 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
     try:
         return yaml.load(abs_file_path)
     except Exception as e:
-        raise FileNotFoundError(f"Could not load a configuration file at {abs_file_path}!") from e
+        raise FileNotFoundError(
+            f"Could not load a configuration file at {abs_file_path}!"
+        ) from e
 
 
 def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Dict:
@@ -65,11 +71,23 @@ def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Di
     for component_settings in node_settings[subdict_name]:
         if component_settings["ros_parameter"] not in component_settings_subdict:
             component_settings_subdict[component_settings["ros_parameter"]] = [
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
+                ",".join(
+                    [
+                        f"{k}:{v}"
+                        for k, v in component_settings.items()
+                        if k != "ros_parameter"
+                    ]
+                )
             ]
         else:
             component_settings_subdict[component_settings["ros_parameter"]].append(
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
+                ",".join(
+                    [
+                        f"{k}:{v}"
+                        for k, v in component_settings.items()
+                        if k != "ros_parameter"
+                    ]
+                )
             )
 
     # if there is only one setting, don't return a list, just a single element
@@ -114,20 +132,30 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
 
                 # remove braces from the inner content
                 inner_content = dollar_str[open_brace + 1 : close_brace]
-                inner_content_no_braces = inner_content.replace("{", "").replace("}", "")
+                inner_content_no_braces = inner_content.replace("{", "").replace(
+                    "}", ""
+                )
 
                 return f"{prefix}{inner_content_no_braces}{suffix}"
             else:
                 # if we can't find matching outermost braces, return the original string (SHOULD NEVER HAPPEN)
                 return dollar_str
 
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_colons_delete_inner_braces, sim_settings_str)
+        sim_settings_str = re.sub(
+            r"'sensor_names':\{[^\}]*\}",
+            _replace_colons_delete_inner_braces,
+            sim_settings_str,
+        )
 
         # replace commas in 'sensor_names':{...} with '&', remove outermost braces
         def _replace_commas_delete_outer_braces(match: re.Match) -> str:
             return match.group(0).replace(",", "&").replace("{", "").replace("}", "")
 
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_commas_delete_outer_braces, sim_settings_str)
+        sim_settings_str = re.sub(
+            r"'sensor_names':\{[^\}]*\}",
+            _replace_commas_delete_outer_braces,
+            sim_settings_str,
+        )
 
         # remove single quotes
         sim_settings_str = sim_settings_str.replace("'", "")
@@ -136,20 +164,32 @@ def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
         def _replace_commas_between_curly_braces(match: re.Match) -> str:
             return match.group(0).replace(",", "|")
 
-        sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
+        sim_settings_str = re.sub(
+            r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str
+        )
 
         # replace commas in 'sensor_settings':[...,...] with "+"
         def _replace_commas_in_sensor_settings(match: re.Match) -> str:
             return match.group(0).replace(",", "+")
 
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_commas_in_sensor_settings, sim_settings_str)
+        sim_settings_str = re.sub(
+            r"sensor_settings:\[.*?\]",
+            _replace_commas_in_sensor_settings,
+            sim_settings_str,
+        )
 
         # replace colons inside 'sensor_settings':[...:...] with "="
         def _replace_colons_in_sensor_settings(match: re.Match) -> str:
             content = match.group(0)
-            return re.sub(r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content)
+            return re.sub(
+                r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content
+            )
 
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_colons_in_sensor_settings, sim_settings_str)
+        sim_settings_str = re.sub(
+            r"sensor_settings:\[.*?\]",
+            _replace_colons_in_sensor_settings,
+            sim_settings_str,
+        )
 
         # add the formatted string to the dictionary with the ROS parameter as the key
         sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
@@ -171,21 +211,37 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
 
     # parse settings for each component
     if "callback_groups" in node_settings:
-        callback_group_settings = ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
+        callback_group_settings = ",".join(
+            [f"{k}:{v}" for k, v in node_settings["callback_groups"].items()]
+        )
     else:
         callback_group_settings = None
     pub_settings_dict = (
-        get_component_settings_subdict(node_settings, "publishers") if "publishers" in node_settings else {}
+        get_component_settings_subdict(node_settings, "publishers")
+        if "publishers" in node_settings
+        else {}
     )
     sub_settings_dict = (
-        get_component_settings_subdict(node_settings, "subscribers") if "subscribers" in node_settings else {}
+        get_component_settings_subdict(node_settings, "subscribers")
+        if "subscribers" in node_settings
+        else {}
     )
-    timer_settings_dict = get_component_settings_subdict(node_settings, "timers") if "timers" in node_settings else {}
-    sim_settings_dict = get_component_sim_settings_subdict(node_settings) if "sim" in node_settings else {}
+    timer_settings_dict = (
+        get_component_settings_subdict(node_settings, "timers")
+        if "timers" in node_settings
+        else {}
+    )
+    sim_settings_dict = (
+        get_component_sim_settings_subdict(node_settings)
+        if "sim" in node_settings
+        else {}
+    )
 
     # create parameters dictionary for a node by combining all the settings
     parameters_dict = (
-        {"callback_group_settings": callback_group_settings} if callback_group_settings is not None else {}
+        {"callback_group_settings": callback_group_settings}
+        if callback_group_settings is not None
+        else {}
     )
     if "params_path" in node_settings:
         parameters_dict["params_path"] = node_settings["params_path"]
@@ -208,7 +264,7 @@ def get_launch_actions_from_node_settings(
     Parameters:
         node_settings: the settings dictionary of an Obelisk node.
         node_type: the type of the node.
-        global_state_node: the global state node. All Obelisk nodes' lifecycle 
+        global_state_node: the global state node. All Obelisk nodes' lifecycle
         states match this node's state. If `global_state_node` is None, the nodes
         will automatically go through the lifecycle.
 
@@ -217,21 +273,29 @@ def get_launch_actions_from_node_settings(
     """
     assert node_type in ["control", "estimation", "robot", "sensing", "viz"]
 
-    def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
+    def _single_component_launch_actions(
+        node_settings: Dict, suffix: Optional[int] = None
+    ) -> List:
         package = node_settings["pkg"]
         executable = node_settings["executable"]
         parameters_dict = get_parameters_dict(node_settings)
         launch_actions = []
         component_node = LifecycleNode(
             namespace="",
-            name=f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}",
+            name=(
+                f"obelisk_{node_type}"
+                if suffix is None
+                else f"obelisk_{node_type}_{suffix}"
+            ),
             package=package,
             executable=executable,
             output="both",
             parameters=[parameters_dict],
         )
         launch_actions += [component_node]
-        launch_actions += get_handlers(component_node, global_state_node=global_state_node)
+        launch_actions += get_handlers(
+            component_node, global_state_node=global_state_node
+        )
         return launch_actions
 
     node_launch_actions = []
@@ -241,21 +305,24 @@ def get_launch_actions_from_node_settings(
 
 
 def get_launch_actions_from_viz_settings(
-        settings: Dict, 
-        global_state_node: Optional[LifecycleNode]
+    settings: Dict, global_state_node: Optional[LifecycleNode]
 ) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to viz given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
 
-        def _single_viz_node_launch_actions(settings: Dict, suffix: Optional[int] = None) -> List:
+        def _single_viz_node_launch_actions(
+            settings: Dict, suffix: Optional[int] = None
+        ) -> List:
             package = settings["pkg"]
             executable = settings["executable"]
             parameters_dict = get_parameters_dict(settings)
 
             # Get the other viz specific params
             urdf_file_name = "urdf/" + settings["urdf"]
-            urdf_path = os.path.join(get_package_share_directory(settings["robot_pkg"]), urdf_file_name)
+            urdf_path = os.path.join(
+                get_package_share_directory(settings["robot_pkg"]), urdf_file_name
+            )
             parameters_dict["urdf_path_param"] = urdf_path
             if "tf_prefix" in settings:
                 tf_prefix = settings["tf_prefix"] + "/"
@@ -273,8 +340,9 @@ def get_launch_actions_from_viz_settings(
                 parameters=[parameters_dict],
             )
             launch_actions += [component_node]
-            launch_actions += get_handlers(component_node, 
-                                           global_state_node=global_state_node)
+            launch_actions += get_handlers(
+                component_node, global_state_node=global_state_node
+            )
 
             # Read the URDF for the robot_state_publisher
             with open(urdf_path, "r") as urdf:
@@ -299,7 +367,8 @@ def get_launch_actions_from_viz_settings(
                             "use_sim_time": False,
                             "robot_description": robot_desc,
                             "frame_prefix": tf_prefix,
-                            "publish_frequency": 1.0 / timer_settings[0]["timer_period_sec"],
+                            "publish_frequency": 1.0
+                            / timer_settings[0]["timer_period_sec"],
                         }
                     ],
                     remappings=[
@@ -320,12 +389,16 @@ def get_launch_actions_from_viz_settings(
         # Get the launch actions for each ObeliskViz node
         node_settings = settings["viz_nodes"]
         for i, viz_node_settings in enumerate(node_settings):
-            launch_actions += _single_viz_node_launch_actions(viz_node_settings, suffix=i)
+            launch_actions += _single_viz_node_launch_actions(
+                viz_node_settings, suffix=i
+            )
 
         if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
             # Setup Rviz
             rviz_file_name = "rviz/" + settings["rviz_config"]
-            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+            rviz_config_path = os.path.join(
+                get_package_share_directory(settings["rviz_pkg"]), rviz_file_name
+            )
             launch_actions += [
                 Node(
                     package="rviz2",
@@ -338,7 +411,9 @@ def get_launch_actions_from_viz_settings(
         elif settings["viz_tool"] == "foxglove":
             # setup fox glove
             xml_launch_file = os.path.join(
-                get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
+                get_package_share_directory("foxglove_bridge"),
+                "launch",
+                "foxglove_bridge_launch.xml",
             )
             launch_actions += [
                 IncludeLaunchDescription(
@@ -349,7 +424,9 @@ def get_launch_actions_from_viz_settings(
                 )
             ]
         else:
-            raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
+            raise RuntimeError(
+                "Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`."
+            )
 
     return launch_actions
 
@@ -366,15 +443,25 @@ def get_launch_actions_from_joystick_settings(settings: Dict) -> List[LifecycleN
 
         deadzone = settings["deadzone"] if "deadzone" in settings else 0.05
 
-        autorepeat_rate = settings["autorepeat_rate"] if "autorepeat_rate" in settings else 20.0
+        autorepeat_rate = (
+            settings["autorepeat_rate"] if "autorepeat_rate" in settings else 20.0
+        )
 
-        sticky_buttons = settings["sticky_buttons"] if "sticky_buttons" in settings else False
+        sticky_buttons = (
+            settings["sticky_buttons"] if "sticky_buttons" in settings else False
+        )
 
-        coalesce_interval_ms = settings["coalesce_interval_ms"] if "coalesce_interval_ms" in settings else 1
+        coalesce_interval_ms = (
+            settings["coalesce_interval_ms"]
+            if "coalesce_interval_ms" in settings
+            else 1
+        )
 
         pub_topic = settings["pub_topic"] if "pub_topic" in settings else "/joy"
 
-        sub_topic = settings["sub_topic"] if "sub_topic" in settings else "/joy/set_feedback"
+        sub_topic = (
+            settings["sub_topic"] if "sub_topic" in settings else "/joy/set_feedback"
+        )
 
         launch_actions += [
             Node(
@@ -408,7 +495,9 @@ def get_launch_actions_from_joystick_settings(settings: Dict) -> List[LifecycleN
     return launch_actions
 
 
-def get_handlers(component_node: LifecycleNode, global_state_node: Optional[LifecycleNode]) -> List:
+def get_handlers(
+    component_node: LifecycleNode, global_state_node: Optional[LifecycleNode]
+) -> List:
     """Gets all the handlers for the Lifecycle node."""
     lifecycle_node_matcher = matches_action(component_node)
 
@@ -427,13 +516,15 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
         name: EmitEvent(
             event=ChangeState(
                 lifecycle_node_matcher=lifecycle_node_matcher,
-                transition_id=transition_id
+                transition_id=transition_id,
             )
         )
         for name, transition_id in transitions.items()
     }
 
-    def make_handler(start: str, goal: str, event_name: str, target: LifecycleNode) -> RegisterEventHandler:
+    def make_handler(
+        start: str, goal: str, event_name: str, target: LifecycleNode
+    ) -> RegisterEventHandler:
         """
         When the `target_lifecycle_node` transitions from `start` to `goal`,
         emit the event `event_name` to the component node.
@@ -443,11 +534,11 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
                 target_lifecycle_node=target,
                 start_state=start,
                 goal_state=goal,
-                entities=[events[event_name]]
+                entities=[events[event_name]],
             )
         )
-    
-    # Event handlers for the component node depend solely on the state of the 
+
+    # Event handlers for the component node depend solely on the state of the
     # component node
     if not global_state_node:
         target = component_node
@@ -463,7 +554,7 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
             make_handler("inactive", "cleaningup", "cleanup", target),
         ]
     else:
-        # Event handlers will transition the component node's state to match 
+        # Event handlers will transition the component node's state to match
         # that of the global state node
         target = global_state_node
         handlers = [
@@ -471,7 +562,6 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
             make_handler("activating", "active", "activate", target),
             make_handler("deactivating", "inactive", "deactivate", target),
             make_handler("cleaningup", "unconfigured", "cleanup", target),
-            
         ]
     # Add shutting down handlers
     handlers += [

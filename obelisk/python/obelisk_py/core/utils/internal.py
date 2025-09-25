@@ -12,11 +12,17 @@ def get_classes_in_module(module: ModuleType) -> list[Type]:
     Returns:
         A list of classes in the module.
     """
-    classes = [getattr(module, member) for member in dir(module) if inspect.isclass(getattr(module, member))]
+    classes = [
+        getattr(module, member)
+        for member in dir(module)
+        if inspect.isclass(getattr(module, member))
+    ]
     return classes
 
 
-def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar]) -> Type:
+def check_and_get_obelisk_msg_type(
+    msg_type_name: str, msg_module_or_type: Union[ModuleType, TypeVar]
+) -> Type:
     """Check if a message type is in a module and add it as an attribute to a node in place.
 
     Parameters:
@@ -34,27 +40,39 @@ def check_and_get_obelisk_msg_type(msg_type_name: str, msg_module_or_type: Union
 
     if isinstance(msg_module_or_type, TypeVar):
         if get_origin(msg_module_or_type.__bound__) is Union:
-            msg_module_type_names = [a.__name__ for a in get_args(msg_module_or_type.__bound__)]
-            assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
+            msg_module_type_names = [
+                a.__name__ for a in get_args(msg_module_or_type.__bound__)
+            ]
+            assert (
+                msg_type_name in msg_module_type_names
+            ), f"{msg_type_name} must be one of {msg_module_type_names}"
             for a in get_args(msg_module_or_type.__bound__):
                 if msg_type_name == a.__name__:
                     msg_type = a
                     break
         else:
-            assert msg_module_or_type.__bound__ is not None, "The TypeVar does not have a bound."
+            assert (
+                msg_module_or_type.__bound__ is not None
+            ), "The TypeVar does not have a bound."
             assert (
                 msg_type_name == msg_module_or_type.__bound__.__name__
             ), f"{msg_type_name} must be {msg_module_or_type.__bound__.__name__}"
             msg_type = msg_module_or_type.__bound__
 
     else:
-        msg_module_type_names = [t.__name__ for t in get_classes_in_module(msg_module_or_type)]
-        assert msg_type_name in msg_module_type_names, f"{msg_type_name} must be one of {msg_module_type_names}"
+        msg_module_type_names = [
+            t.__name__ for t in get_classes_in_module(msg_module_or_type)
+        ]
+        assert (
+            msg_type_name in msg_module_type_names
+        ), f"{msg_type_name} must be one of {msg_module_type_names}"
 
         for msg_module_type_name in msg_module_type_names:
             if msg_type_name == msg_module_type_name:
                 msg_type = getattr(msg_module_or_type, msg_type_name)
                 break
 
-    assert msg_type is not None, f"Could not find {msg_type_name} in {msg_module_or_type}!"
+    assert (
+        msg_type is not None
+    ), f"Could not find {msg_type_name} in {msg_module_or_type}!"
     return msg_type
