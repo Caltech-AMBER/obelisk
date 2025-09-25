@@ -18,6 +18,7 @@ from rclpy.publisher import Publisher
 from obelisk_py.core.obelisk_typing import ObeliskSensorMsg, is_in_bound
 from obelisk_py.core.robot import ObeliskSimRobot
 
+
 class DeprecationError(Exception):
     """Raised when a deprecated class is initializing."""
     pass

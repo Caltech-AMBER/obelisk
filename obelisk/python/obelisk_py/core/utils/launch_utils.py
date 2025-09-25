@@ -4,20 +4,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-import launch
-import launch_ros
-import lifecycle_msgs.msg
+
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessStart
+from launch.events import matches_action
 from launch.launch_description_sources import FrontendLaunchDescriptionSource
 from launch_ros.actions import LifecycleNode, Node
+from launch_ros.event_handlers.on_state_transition import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
+from lifecycle_msgs.msg import Transition
 from ruamel.yaml import YAML
 
-from launch.events import matches_action
-from launch.event_handlers import OnProcessStart
-from launch_ros.event_handlers.on_state_transition import OnStateTransition
-from lifecycle_msgs.msg import Transition
 
 def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
     """Loads an Obelisk configuration file.
@@ -436,7 +434,7 @@ def get_handlers(component_node: LifecycleNode, global_state_node: Optional[Life
         for name, transition_id in transitions.items()
     }
 
-    def make_handler(start: str, goal: str, event_name: str, target: LifecycleNode):
+    def make_handler(start: str, goal: str, event_name: str, target: LifecycleNode) -> RegisterEventHandler:
         """
         When the `target_lifecycle_node` transitions from `start` to `goal`,
         emit the event `event_name` to the component node.

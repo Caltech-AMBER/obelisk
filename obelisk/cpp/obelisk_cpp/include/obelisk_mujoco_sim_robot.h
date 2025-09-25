@@ -99,7 +99,6 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_activate(const rclcpp_lifecycle::State& prev_state) {
-            RCLCPP_INFO_STREAM(this->get_logger(), "Activating the ObeliskSimRobot robot");
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
             activation_complete_ = true;
@@ -229,9 +228,7 @@ namespace obelisk {
                 }
                 
                 {
-                    // RCLCPP_INFO_STREAM(this->get_logger(), "1 shared_data_.size()" << shared_data_.size());
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
-                    // RCLCPP_INFO_STREAM(this->get_logger(), "2 shared_data_.size()" << shared_data_.size());
                     mj_step(model_, data_);
                 }
 

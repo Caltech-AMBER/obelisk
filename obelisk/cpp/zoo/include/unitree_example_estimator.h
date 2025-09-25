@@ -16,7 +16,6 @@ namespace obelisk {
 
     protected:
         void JointEncoderCallback(const obelisk_sensor_msgs::msg::ObkJointEncoders& msg) {
-            // t_last_update_ = msg.header.stamp.nanosec / std::pow(10, 9); // time since node started
             t_last_update_ = this->now().nanoseconds() / std::pow(10, 9); // time since 1970
             joint_encoders_ = msg.joint_pos;
             joint_vels_ = msg.joint_vel;

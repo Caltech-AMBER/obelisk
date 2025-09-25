@@ -100,10 +100,7 @@ if [ "$basic" = true ]; then
     pip install -U \
         colcon-common-extensions \
         "ruamel.yaml" \
-        mujoco \
-        pin \
-        matplotlib \
-        pandas \
+        mujoco
     
     # if [ -d $OBELISK_ROOT ]; then
     pip install -e $OBELISK_ROOT/obelisk/python

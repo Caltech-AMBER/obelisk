@@ -75,6 +75,7 @@ Some guidance/recommendations on choosing flags:
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
+sudo usermod -aG docker $USER
 newgrp docker
 ```
 
