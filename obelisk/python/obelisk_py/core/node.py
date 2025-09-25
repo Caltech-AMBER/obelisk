@@ -1,7 +1,21 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)  # noqa: I001
 
 import rclpy
-from rclpy.callback_groups import CallbackGroup, MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.callback_groups import (
+    CallbackGroup,
+    MutuallyExclusiveCallbackGroup,
+    ReentrantCallbackGroup,
+)
 from rclpy.lifecycle import LifecycleNode
 from rclpy.lifecycle.node import LifecycleState, TransitionCallbackReturn
 
@@ -49,6 +63,10 @@ class ObeliskNode(LifecycleNode):
     def __init__(self, node_name: str) -> None:
         """Initialize the Obelisk node."""
         super().__init__(node_name)
+        self.info = self.get_logger().info
+        self.warn = self.get_logger().warn
+        self.error = self.get_logger().error
+
         self.declare_parameter("callback_group_settings", "")
         # ROS parameter designed to let the user feed a file path for their own code
         self.declare_parameter("params_path", "")
@@ -100,7 +118,9 @@ class ObeliskNode(LifecycleNode):
             self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
-        self._obk_pub_settings.append({"key": key, "ros_parameter": ros_parameter, "msg_type": msg_type})
+        self._obk_pub_settings.append(
+            {"key": key, "ros_parameter": ros_parameter, "msg_type": msg_type}
+        )
 
     def register_obk_subscription(
         self,
@@ -128,7 +148,12 @@ class ObeliskNode(LifecycleNode):
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
         self._obk_sub_settings.append(
-            {"key": key, "ros_parameter": ros_parameter, "callback": callback, "msg_type": msg_type}
+            {
+                "key": key,
+                "ros_parameter": ros_parameter,
+                "callback": callback,
+                "msg_type": msg_type,
+            }
         )
 
     def register_obk_timer(
@@ -153,14 +178,18 @@ class ObeliskNode(LifecycleNode):
             self.declare_parameter(ros_parameter, rclpy.Parameter.Type.STRING)
         else:
             self.declare_parameter(ros_parameter, value=default_config_str)
-        self._obk_timer_settings.append({"key": key, "ros_parameter": ros_parameter, "callback": callback})
+        self._obk_timer_settings.append(
+            {"key": key, "ros_parameter": ros_parameter, "callback": callback}
+        )
 
     # ############## #
     # STATIC METHODS #
     # ############## #
 
     @staticmethod
-    def _parse_config_str(config_str: str) -> Tuple[List[str], List[Union[str, float, int]]]:
+    def _parse_config_str(
+        config_str: str,
+    ) -> Tuple[List[str], List[Union[str, float, int]]]:
         """Parse a configuration string into a list of field names and a list of values.
 
         Parameters:
@@ -190,9 +219,13 @@ class ObeliskNode(LifecycleNode):
                 return value
 
         try:
-            field_names, value_names = list(zip(*[pair.split(":") for pair in field_value_pairs]))  # split by colon
+            field_names, value_names = list(
+                zip(*[pair.split(":") for pair in field_value_pairs])
+            )  # split by colon
             field_names = list(field_names)  # Convert to list
-            value_names = [_convert_values(value) for value in value_names]  # convert ints/floats
+            value_names = [
+                _convert_values(value) for value in value_names
+            ]  # convert ints/floats
         except ValueError as e:
             raise ValueError(
                 "Each field-value pair in the configuration string must be separated by a colon!\n"
@@ -202,7 +235,11 @@ class ObeliskNode(LifecycleNode):
         return field_names, value_names
 
     @staticmethod
-    def _check_fields(field_names: List[str], required_field_names: List[str], optional_field_names: List[str]) -> None:
+    def _check_fields(
+        field_names: List[str],
+        required_field_names: List[str],
+        optional_field_names: List[str],
+    ) -> None:
         """Check if a configuration string is valid.
 
         Parameters:
@@ -213,18 +250,26 @@ class ObeliskNode(LifecycleNode):
         Raises:
             AssertionError: If the configuration string is invalid.
         """
+        assert all([field in field_names for field in required_field_names]), (
+            f"config_str must contain the following fields: {required_field_names}"
+        )
         assert all(
-            [field in field_names for field in required_field_names]
-        ), f"config_str must contain the following fields: {required_field_names}"
-        assert all([field in required_field_names + optional_field_names for field in field_names]), (
+            [
+                field in required_field_names + optional_field_names
+                for field in field_names
+            ]
+        ), (
             f"""The following fields in the config_str are invalid: {
-                set(field_names) - set(required_field_names + optional_field_names)
+                set(field_names)
+                - set(required_field_names + optional_field_names)
             }""",
             f"Currently-supported fields in Obelisk are: {required_field_names + optional_field_names}",
         )
 
     @staticmethod
-    def _check_values(value_names: List[str], allowable_value_names: List[str]) -> None:
+    def _check_values(
+        value_names: List[str], allowable_value_names: List[str]
+    ) -> None:
         """Check if the values in a configuration string are valid.
 
         Parameters:
@@ -245,11 +290,15 @@ class ObeliskNode(LifecycleNode):
     def _get_key_from_config_dict(config_dict: Dict) -> str:
         """Get the key from a configuration dictionary."""
         assert "key" in config_dict, "No key supplied!"
-        assert isinstance(config_dict["key"], str), "The 'key' field must be a string!"
+        assert isinstance(config_dict["key"], str), (
+            "The 'key' field must be a string!"
+        )
         return config_dict["key"]
 
     @staticmethod
-    def _create_callback_groups_from_config_str(config_str: str) -> Dict[str, CallbackGroup]:
+    def _create_callback_groups_from_config_str(
+        config_str: str,
+    ) -> Dict[str, CallbackGroup]:
         """Create callback groups from a configuration string.
 
         Parameters:
@@ -271,7 +320,10 @@ class ObeliskNode(LifecycleNode):
         if not field_names and not value_names:
             return {}  # case: no callback groups to create
 
-        allowable_value_names = ["MutuallyExclusiveCallbackGroup", "ReentrantCallbackGroup"]
+        allowable_value_names = [
+            "MutuallyExclusiveCallbackGroup",
+            "ReentrantCallbackGroup",
+        ]
         ObeliskNode._check_values(value_names, allowable_value_names)
         config_dict = dict(zip(field_names, value_names))
 
@@ -283,7 +335,9 @@ class ObeliskNode(LifecycleNode):
             elif callback_group_type == "ReentrantCallbackGroup":
                 callback_group = ReentrantCallbackGroup()
             else:
-                raise ValueError(f"Invalid callback group type: {callback_group_type}")
+                raise ValueError(
+                    f"Invalid callback group type: {callback_group_type}"
+                )
             callback_group_dict[callback_group_name] = callback_group
 
         return callback_group_dict
@@ -292,16 +346,22 @@ class ObeliskNode(LifecycleNode):
     # INSTANCE-SPECIFIC UTILS #
     # ####################### #
 
-    def _get_callback_group_from_config_dict(self, config_dict: Dict) -> Optional[CallbackGroup]:
+    def _get_callback_group_from_config_dict(
+        self, config_dict: Dict
+    ) -> Optional[CallbackGroup]:
         """Get the callback group from a configuration dictionary."""
         if "callback_group" in config_dict:
-            assert isinstance(config_dict["callback_group"], str), "The 'callback_group' field must be a string!"
+            assert isinstance(config_dict["callback_group"], str), (
+                "The 'callback_group' field must be a string!"
+            )
             if config_dict["callback_group"].lower() == "none":
                 return None
             else:
-                cbg = self.obk_callback_groups.get(config_dict["callback_group"], None)
+                cbg = self.obk_callback_groups.get(
+                    config_dict["callback_group"], None
+                )
                 if cbg is None:
-                    self.get_logger().warn(
+                    self.warn(
                         f"Callback group {config_dict['callback_group']} not found in node. Using None instead."
                     )
                 return cbg
@@ -338,15 +398,27 @@ class ObeliskNode(LifecycleNode):
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["topic"]
-        optional_field_names = ["key", "msg_type", "history_depth", "callback_group"]
-        ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
+        optional_field_names = [
+            "key",
+            "msg_type",
+            "history_depth",
+            "callback_group",
+        ]
+        ObeliskNode._check_fields(
+            field_names, required_field_names, optional_field_names
+        )
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+                self.error(
+                    "Failed to extract key from publisher config dict: %s" % e
+                )
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this publisher, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -356,16 +428,24 @@ class ObeliskNode(LifecycleNode):
 
         # run type assertions and create the publisher
         history_depth = config_dict.get("history_depth", 10)
-        assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
-        assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
+        assert isinstance(config_dict["topic"], str), (
+            "The 'topic' field must be a string!"
+        )
+        assert isinstance(history_depth, int), (
+            "The 'history_depth' field must be an int!"
+        )
         self.obk_publishers[key] = self.create_publisher(
             msg_type=msg_type,
             topic=config_dict["topic"],
             qos_profile=history_depth,
             callback_group=callback_group,
         )
-        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
-        setattr(self, key + "_key", self.obk_publishers[key])  # create key attribute for publisher
+        assert not hasattr(self, key), (
+            f"Attribute {key} already exists in the node!"
+        )
+        setattr(
+            self, key + "_key", self.obk_publishers[key]
+        )  # create key attribute for publisher
         return key
 
     def _create_subscription_from_config_str(
@@ -401,15 +481,28 @@ class ObeliskNode(LifecycleNode):
         # parse and check the configuration string
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["topic"]
-        optional_field_names = ["key", "msg_type", "history_depth", "callback_group"]
-        ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
+        optional_field_names = [
+            "key",
+            "msg_type",
+            "history_depth",
+            "callback_group",
+        ]
+        ObeliskNode._check_fields(
+            field_names, required_field_names, optional_field_names
+        )
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+                self.error(
+                    "Failed to extract key from subscription config dict: %s"
+                    % e
+                )
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this subscription, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -419,8 +512,12 @@ class ObeliskNode(LifecycleNode):
 
         # run type assertions and return the subscription
         history_depth = config_dict.get("history_depth", 10)
-        assert isinstance(config_dict["topic"], str), "The 'topic' field must be a string!"
-        assert isinstance(history_depth, int), "The 'history_depth' field must be an int!"
+        assert isinstance(config_dict["topic"], str), (
+            "The 'topic' field must be a string!"
+        )
+        assert isinstance(history_depth, int), (
+            "The 'history_depth' field must be an int!"
+        )
 
         self.obk_subscriptions[key] = self.create_subscription(
             msg_type=msg_type,
@@ -429,8 +526,12 @@ class ObeliskNode(LifecycleNode):
             qos_profile=history_depth,
             callback_group=callback_group,
         )
-        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
-        setattr(self, key + "_key", self.obk_subscriptions[key])  # create key attribute for subscription
+        assert not hasattr(self, key), (
+            f"Attribute {key} already exists in the node!"
+        )
+        setattr(
+            self, key + "_key", self.obk_subscriptions[key]
+        )  # create key attribute for subscription
         return key
 
     def _create_timer_from_config_str(
@@ -459,14 +560,19 @@ class ObeliskNode(LifecycleNode):
         field_names, value_names = ObeliskNode._parse_config_str(config_str)
         required_field_names = ["timer_period_sec"]
         optional_field_names = ["key", "callback_group"]
-        ObeliskNode._check_fields(field_names, required_field_names, optional_field_names)
+        ObeliskNode._check_fields(
+            field_names, required_field_names, optional_field_names
+        )
         config_dict = dict(zip(field_names, value_names))
 
         # parse the key
         if key is None:
-            key = ObeliskNode._get_key_from_config_dict(config_dict)
+            try:
+                key = ObeliskNode._get_key_from_config_dict(config_dict)
+            except AssertionError as e:
+                self.error("Failed to extract key from timer config: %s" % e)
         elif "key" in field_names:
-            self.get_logger().warn(
+            self.warn(
                 f"'key'={key} registered for this timer, and 'key'={config_dict['key']} specified in the config "
                 f"string. Using the value 'key'={key}, as hardcoded specifications take precedence!"
             )
@@ -475,9 +581,9 @@ class ObeliskNode(LifecycleNode):
         callback_group = self._get_callback_group_from_config_dict(config_dict)
 
         # run type assertions and return the timer
-        assert isinstance(
-            config_dict["timer_period_sec"], (int, float)
-        ), "The 'timer_period_sec' field must be a number!"
+        assert isinstance(config_dict["timer_period_sec"], (int, float)), (
+            "The 'timer_period_sec' field must be a number!"
+        )
 
         timer = self.create_timer(
             config_dict["timer_period_sec"],
@@ -487,8 +593,12 @@ class ObeliskNode(LifecycleNode):
         )
         timer.cancel()  # initially, the timer should be deactivated, TODO(ahl): remove if distro upgraded
         self.obk_timers[key] = timer
-        assert not hasattr(self, key), f"Attribute {key} already exists in the node!"
-        setattr(self, key + "_key", self.obk_timers[key])  # create key attribute for timer
+        assert not hasattr(self, key), (
+            f"Attribute {key} already exists in the node!"
+        )
+        setattr(
+            self, key + "_key", self.obk_timers[key]
+        )  # create key attribute for timer
         return key
 
     # ################### #
@@ -504,11 +614,22 @@ class ObeliskNode(LifecycleNode):
         super().on_configure(state)
 
         # parsing config strings
-        callback_group_settings = self.get_parameter("callback_group_settings").get_parameter_value().string_value
+        callback_group_settings = (
+            self.get_parameter("callback_group_settings")
+            .get_parameter_value()
+            .string_value
+        )
 
         # create callback groups
-        self.obk_callback_groups = ObeliskNode._create_callback_groups_from_config_str(callback_group_settings)
-        for callback_group_name, callback_group in self.obk_callback_groups.items():
+        self.obk_callback_groups = (
+            ObeliskNode._create_callback_groups_from_config_str(
+                callback_group_settings
+            )
+        )
+        for (
+            callback_group_name,
+            callback_group,
+        ) in self.obk_callback_groups.items():
             setattr(self, callback_group_name, callback_group)
 
         # create components
@@ -517,12 +638,20 @@ class ObeliskNode(LifecycleNode):
             ros_parameter = pub_dict["ros_parameter"]
             msg_type = pub_dict["msg_type"]
 
-            pub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            pub_config_str = (
+                self.get_parameter(ros_parameter)
+                .get_parameter_value()
+                .string_value
+            )
             if pub_config_str == "":
-                self.get_logger().warn(f"Publisher {key} has no configuration string!")
+                self.warn(f"Publisher {key} has no configuration string!")
                 continue
-            final_key = self._create_publisher_from_config_str(pub_config_str, key=key, msg_type=msg_type)
-            pub_dict["key"] = final_key  # if no key passed, use value from config file
+            final_key = self._create_publisher_from_config_str(
+                pub_config_str, key=key, msg_type=msg_type
+            )
+            pub_dict["key"] = (
+                final_key  # if no key passed, use value from config file
+            )
 
         for sub_dict in self._obk_sub_settings:
             key = sub_dict["key"]
@@ -530,28 +659,42 @@ class ObeliskNode(LifecycleNode):
             msg_type = sub_dict["msg_type"]
             callback = sub_dict["callback"]
 
-            sub_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            sub_config_str = (
+                self.get_parameter(ros_parameter)
+                .get_parameter_value()
+                .string_value
+            )
             if sub_config_str == "":
-                self.get_logger().warn(f"Subscription {key} has no configuration string!")
+                self.warn(f"Subscription {key} has no configuration string!")
                 continue
             final_key = self._create_subscription_from_config_str(
                 sub_config_str, callback=callback, key=key, msg_type=msg_type
             )
-            sub_dict["key"] = final_key  # if no key passed, use value from config file
+            sub_dict["key"] = (
+                final_key  # if no key passed, use value from config file
+            )
 
         for timer_dict in self._obk_timer_settings:
             key = timer_dict["key"]
             ros_parameter = timer_dict["ros_parameter"]
             callback = timer_dict["callback"]
 
-            timer_config_str = self.get_parameter(ros_parameter).get_parameter_value().string_value
+            timer_config_str = (
+                self.get_parameter(ros_parameter)
+                .get_parameter_value()
+                .string_value
+            )
             if timer_config_str == "":
-                self.get_logger().warn(f"Timer {key} has no configuration string!")
+                self.warn(f"Timer {key} has no configuration string!")
                 continue
-            final_key = self._create_timer_from_config_str(timer_config_str, callback=callback, key=key)
-            timer_dict["key"] = final_key  # if no key passed, use value from config file
+            final_key = self._create_timer_from_config_str(
+                timer_config_str, callback=callback, key=key
+            )
+            timer_dict["key"] = (
+                final_key  # if no key passed, use value from config file
+            )
 
-        self.get_logger().info(f"{self.get_name()} configured.")
+        self.info(f"{self.get_name()} configured.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -560,7 +703,7 @@ class ObeliskNode(LifecycleNode):
         for timer in self.obk_timers.values():
             timer.reset()  # activate timers
 
-        self.get_logger().info(f"{self.get_name()} activated.")
+        self.info(f"{self.get_name()} activated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -569,7 +712,7 @@ class ObeliskNode(LifecycleNode):
         for timer in self.obk_timers.values():
             timer.cancel()  # deactivate timers
 
-        self.get_logger().info(f"{self.get_name()} deactivated.")
+        self.info(f"{self.get_name()} deactivated.")
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
@@ -595,12 +738,12 @@ class ObeliskNode(LifecycleNode):
             for subscription in self.subscriptions:
                 self.destroy_subscription(subscription)
 
-        self.get_logger().info(f"{self.get_name()} cleaned up")
+        self.info(f"{self.get_name()} cleaned up")
         return TransitionCallbackReturn.SUCCESS
 
     def on_shutdown(self, state: LifecycleState) -> TransitionCallbackReturn:
         """Shut down the controller."""
         super().on_shutdown(state)
         self.on_cleanup(state)
-        self.get_logger().info(f"{self.get_name()} shut down.")
+        self.info(f"{self.get_name()} shut down.")
         return TransitionCallbackReturn.SUCCESS

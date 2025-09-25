@@ -80,7 +80,8 @@ namespace obelisk {
             }
 
             this->GetPublisher<unitree_controller_msg>(this->ctrl_key_)->publish(msg);
-
+            RCLCPP_INFO_STREAM(this->get_logger(), "msg.u_mujoco.size*(): " << msg.u_mujoco.size()); // FIXME: This is 81 but should be 87
+            // because model->nu = 87.
             return msg;
         };
 

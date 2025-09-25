@@ -34,7 +34,9 @@ class ObeliskLeapRobot(ObeliskRobot):
 
     @staticmethod
     def _radians_to_dxl_pos(radians: float) -> int:
-        return int((radians + math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS))
+        return int(
+            (radians + math.pi) / (2 * math.pi) * (dxl.MAX_POS - dxl.MIN_POS)
+        )
 
     @staticmethod
     def _dxl_pos_to_radians(dxl_pos: int) -> float:
@@ -50,7 +52,9 @@ class ObeliskLeapRobot(ObeliskRobot):
                 DXL_LOBYTE(DXL_HIWORD(val)),
                 DXL_HIBYTE(DXL_HIWORD(val)),
             ]
-            if not dxl.BULK_WRITER.addParam(i, dxl.MsgAddrs.GOAL_POSITION, dxl.MsgLens.GOAL_POSITION, arr):
+            if not dxl.BULK_WRITER.addParam(
+                i, dxl.MsgAddrs.GOAL_POSITION, dxl.MsgLens.GOAL_POSITION, arr
+            ):
                 print(f"Motor {i}: failed to add param")
         dxl.BULK_WRITER.txPacket()
         dxl.BULK_WRITER.clearParam()
@@ -59,10 +63,14 @@ class ObeliskLeapRobot(ObeliskRobot):
         """Read the joint encoders and publish a sensor message."""
         joint_encoders = ObkJointEncoders()
         for i in range(self.N_MOTORS):
-            dxl.BULK_READER.addParam(i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION)
+            dxl.BULK_READER.addParam(
+                i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION
+            )
         dxl.BULK_READER.txRxPacket()
         for i in range(self.N_MOTORS):
-            position = dxl.BULK_READER.getData(i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION)
+            position = dxl.BULK_READER.getData(
+                i, dxl.MsgAddrs.PRESENT_POSITION, dxl.MsgLens.PRESENT_POSITION
+            )
             joint_encoders.joint_pos.append(self._dxl_pos_to_radians(position))
         self.obk_publishers["pub_sensor"].publish(joint_encoders)
         return joint_encoders

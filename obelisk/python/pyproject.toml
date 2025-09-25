@@ -17,3 +17,6 @@ dependencies = []
 
 [tool.hatch.build.targets.wheel]
 include = ["obelisk_py*"]
+
+[tool.ruff]
+line-length = 80

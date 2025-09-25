@@ -17,7 +17,9 @@ class ObeliskController(ABC, ObeliskNode):
     the control message should be of type ObeliskControlMsg to be compatible with the Obelisk ecosystem.
     """
 
-    def __init__(self, node_name: str, ctrl_msg_type: Type, est_msg_type: Type) -> None:
+    def __init__(
+        self, node_name: str, ctrl_msg_type: Type, est_msg_type: Type
+    ) -> None:
         """Initialize the Obelisk controller."""
         super().__init__(node_name)
         self.register_obk_timer(

@@ -80,7 +80,9 @@ class ObeliskSimRobot(ObeliskRobot):
         Parameters:
             ctrl: The control array of length n_u.
         """
-        assert self.shared_ctrl is not None, "Shared control array must be initialized in derived class!"
+        assert self.shared_ctrl is not None, (
+            "Shared control array must be initialized in derived class!"
+        )
         if hasattr(self, "lock"):
             with self.lock:
                 self.shared_ctrl[:] = ctrl
@@ -90,10 +92,16 @@ class ObeliskSimRobot(ObeliskRobot):
         super().on_configure(state)
 
         # checking the settings of the true sim state pub/timer
-        if "publisher_true_sim_state" in self.obk_publishers and "timer_true_sim_state" in self.obk_timers:
+        if (
+            "publisher_true_sim_state" in self.obk_publishers
+            and "timer_true_sim_state" in self.obk_timers
+        ):
             assert (
-                self.obk_timers["timer_true_sim_state"].callback == self.publish_true_sim_state
-            ), f"Timer callback must be publish_true_sim_state! Is {self.obk_timers['timer_true_sim_state'].callback}."
+                self.obk_timers["timer_true_sim_state"].callback
+                == self.publish_true_sim_state
+            ), (
+                f"Timer callback must be publish_true_sim_state! Is {self.obk_timers['timer_true_sim_state'].callback}."
+            )
         else:
             self.timer_true_sim_state = None
             self.publisher_true_sim_state = None

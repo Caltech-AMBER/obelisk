@@ -10,7 +10,9 @@ from obelisk_py.core.estimation import ObeliskEstimator
 class JointEncodersPassthroughEstimator(ObeliskEstimator):
     """Passthrough estimator for joint encoder sensors."""
 
-    def __init__(self, node_name: str = "joint_encoders_passthrough_estimator") -> None:
+    def __init__(
+        self, node_name: str = "joint_encoders_passthrough_estimator"
+    ) -> None:
         """Initialize the joint encoders passthrough estimator."""
         super().__init__(node_name, EstimatedState)
         self.register_obk_subscription(

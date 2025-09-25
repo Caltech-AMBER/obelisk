@@ -41,7 +41,7 @@ namespace obelisk {
             msg.joint_names    = joint_names_;      // Joint Names
             msg.q_base         = pose_;             // Quaternion
             msg.v_base         = omega_;            // Angular Velocity
-            // msg.base_link_name = "link0";
+            // msg.base_link_name = "base_link";
 
             this->GetPublisher<obelisk_estimator_msgs::msg::EstimatedState>(this->est_pub_key_)->publish(msg);
 
