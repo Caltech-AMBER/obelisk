@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type, Union  # noqa: I001
 
 import rclpy
 from rclpy.executors import (
