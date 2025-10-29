@@ -11,7 +11,7 @@ include(FetchContent)
 FetchContent_Declare(
     unitree_sdk
     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
-    GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d # NOTE: this isn't the most recent commit for the unitree_sdk2
+    GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d) # NOTE: this isn't the most recent commit for the unitree_sdk2
 
 # Couldn't find `UNITREE_SDK_BUILD_EXAMPLES` being defined in unitree_sdk2.
 # set(UNITREE_SDK_BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
