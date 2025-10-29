@@ -4,7 +4,7 @@ Obelisk is a suite of tools designed to make robotics development simpler. The c
 There are two main options for using Obelisk: (1) use Obelisk from within a docker container, or (2) run Obelisk locally on your system. We strongly recommond option (1) as Obelisk requires a number of complex dependencies. If you choose to take option (2) then there could be installation issues and/or system clutter. Using option (1) also makes your code less suscepitble to issues caused by adjusting your local machine's configuraiton.
 
 ## Setting up Obelisk with Docker
-With this option we suggest that the docker container acts merely as your simulation/hardware interface. The ideal setup has your algorithm code as a seperate library, not dependent on ROS, which can then be added to this docker container. This also helps seperate code relating to running a robot with the algorithms.
+With this option we suggest that the docker container acts merely as your simulation/hardware interface. The ideal setup has your algorithm code as a seperate library, not dependent on ROS, which can then be added to this docker container. This also helps seperate code relating to running a robot with the underlying algorithms.
 
 A sample docker file is as follows:
 ```
@@ -67,7 +67,7 @@ ENV OBELISK_ROOT=/home/${USER}/obelisk
 # you must run the setup script from a directory where the user has permissions
 # run docker setup script in Dockerfile
 WORKDIR /home/${USER}
-RUN source /home/${USER}/obelisk/setup.sh --install-sys-deps --cyclone-perf --obk-aliases --basic
+RUN source /home/${USER}/obelisk/setup.sh --downstream-setup
 
 WORKDIR /home/${USER}
 ```
@@ -76,37 +76,26 @@ This docker file installs a number of basic tools and pulls obelisk and installs
 
 The line
 ```
-RUN source /home/${USER}/obelisk/setup.sh --install-sys-deps --cyclone-perf --obk-aliases --basic
+RUN source /home/${USER}/obelisk/setup.sh --downstream-setup
 ```
 is critical as this runs the Obelisk setup script within the docker container. It is possible that you may need Obelisk to be configured differently, and you can do that by adjusting those flags in the Dockerfile.
 
 The flag options are:
 ```
 Options:
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
+  --dev-setup                  Setup for development of Obelisk.
 
-  --basic                      Enables basic dependencies necessary for Obelisk locally
-  --cyclone-perf               Enables cyclone performance optimizations
-  --leap                       Enables LEAP hand dependencies
+  --downstream-setup           Setup for downstream use of Obelisk - suggested to build this in a docker container.
+
+  Hardware options:
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
 
-  --docker-install             Install Docker and nvidia-container-toolkit
-  --install-sys-deps-docker    Installs system dependencies in Docker
-
-  --config-groups              Configures user groups associated with hardware
-
-  --install-sys-deps           Installs system dependencies
-  --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
-
-  --pixi                       Install pixi
-  --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
-
+  Other options:
   --help                       Display this help message and exit
   ```
 
-Since we are already in the docker container at this point, we want to skip over the `docker-install` and `install-sys-deps-docker` options. We want to treat the docker container as the local machine so that the setup script installs everything within the docker container. `--install-sys-deps --cyclone-perf --obk-aliases --basic` with any hardware interfaces like `--unitree` or `--leap` are the suggested installation flags.
+We only want to use `--dev-setup` if we are preparing to develop core obelisk features, and in that case we want to use the docker container that comes in the Obelisk repo. We can choose hardware interfaces to be installed with `--unitree` or `--zed`.
 
 Now we can enter into the docker container (or even better, this can be setup as a dev container). Within this docker container we can handle all development that interfaces our algorithm with Obelisk.
 

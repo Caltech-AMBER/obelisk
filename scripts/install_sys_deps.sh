@@ -25,10 +25,6 @@ for arg in "$@"; do
             source_ros=true
             shift # Sources base ROS in ~/.bashrc
             ;;
-        --leap)
-            leap=true
-            shift # Installs LEAP hand dependencies
-            ;;
         --zed)
             zed=true
             shift # Installs ZED SDK
@@ -44,7 +40,6 @@ Options:
   --basic              Install basic dependencies
   --cyclone-perf       Enable cyclone performance optimizations
   --source-ros         Source base ROS in ~/.bashrc
-  --leap               Install LEAP hand dependencies
   --zed                Install ZED SDK
   --unitree            Sets up the Unitree interface
 
@@ -147,20 +142,7 @@ if [ "$source_ros" = true ]; then
     fi
 fi
 
-# [4] LEAP Hand dependencies
-if [ "$leap" = true ]; then
-    # system-level deps
-    sudo apt-get install -y \
-        ros-humble-dynamixel-sdk
-
-    # python deps
-    pip install -U \
-        dynamixel-sdk
-
-    echo -e "\033[1;32mLEAP Hand dependencies installed successfully! Run 'newgrp dialout' if serial port access is denied.\033[0m"
-fi
-
-# [5] ZED SDK installation
+# [4] ZED SDK installation
 if [ "$zed" = true ]; then
     # check whether the ZED SDK is already installed
     skip_zed=false
