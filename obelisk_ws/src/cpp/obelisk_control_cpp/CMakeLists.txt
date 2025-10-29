@@ -20,7 +20,7 @@ FetchContent_MakeAvailable(Obelisk)
 
 # example_position_setpoint_controller
 add_executable(example_position_setpoint_controller src/example_position_setpoint_controller.cpp)
-target_link_libraries(example_position_setpoint_controller PUBLIC Obelisk::Core Obelisk::Zoo)
+target_link_libraries(example_position_setpoint_controller PUBLIC Obelisk::Core Obelisk::Hardware)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
