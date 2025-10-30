@@ -20,7 +20,7 @@ FetchContent_MakeAvailable(Obelisk)
 
 # jointencoders_passthrough_estimator
 add_executable(jointencoders_passthrough_estimator src/jointencoders_passthrough_estimator.cpp)
-target_link_libraries(jointencoders_passthrough_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+target_link_libraries(jointencoders_passthrough_estimator PUBLIC Obelisk::Core Obelisk::Hardware)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

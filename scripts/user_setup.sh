@@ -4,7 +4,6 @@
 pixi=false
 obk_aliases=false
 
-leap=false
 zed=false
 unitree=false
 
@@ -21,10 +20,6 @@ for arg in "$@"; do
             ;;
 
         # alias configuration
-        --leap)
-            leap=true
-            shift  # Adds leap ROS packages to colcon build command
-            ;;
         --zed)
             zed=true
             shift  # Adds ZED ROS packages to colcon build command
@@ -74,12 +69,6 @@ fi'
     # creating obelisk aliases
     OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
     OBELISK_BUILD_OPTIONS=""
-    if [ "$leap" = true ]; then
-        OBELISK_BUILD_OPTIONS+="--leap "
-        OBELISK_BUILD_LEAP=true
-    else
-        OBELISK_BUILD_LEAP=false
-    fi
     if [ "$zed" = true ]; then
         OBELISK_BUILD_OPTIONS+="--zed "
         OBELISK_BUILD_ZED=true
@@ -104,7 +93,6 @@ function obk {
 export OBELISK_ROOT=\$OBELISK_ROOT
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export RCUTILS_COLORIZED_OUTPUT=1
-export OBELISK_BUILD_LEAP=$OBELISK_BUILD_LEAP
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
 export ROS_DOMAIN_ID=$ROS_DOMAIN_ID

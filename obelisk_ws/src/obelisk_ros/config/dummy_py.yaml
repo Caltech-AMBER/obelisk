@@ -42,24 +42,33 @@ onboard:
           callback_group: None
   # sensing:
   robot:
-    # `is_simulated` is critical for parsing correct package in the obelisk launch file
     - is_simulated: True
-      pkg: obelisk_sim_py
+      pkg: obelisk_sim_cpp
       executable: obelisk_mujoco_robot
       params:
-        ic_keyframe: other
-      # callback_groups:
-      # publishers:
+        ic_keyframe: ic
+        height_map_grid_size: [1., 1.]
+        height_map_grid_spacing: 0.1
+        height_map_geom_group: [0]
+        # camera_name: "fixed_cam"  # You can select a camera to use here
+      publishers:
+        - ros_parameter: pub_true_sim_state_setting
+          topic: /obelisk/dummy/true_sim_state
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_true_sim_state_setting
+          history_depth: 10
+          timer_period_sec: 0.01
+          callback_group: None
       subscribers:
         - ros_parameter: sub_ctrl_setting
-          # key: sub1
           topic: /obelisk/dummy/ctrl
+          msg_type: PositionSetpoint
           history_depth: 10
           callback_group: None
       sim:
         - ros_parameter: mujoco_setting
-          n_u: 1
-          time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: dummy_bot
           model_xml_path: dummy.xml
@@ -79,7 +88,20 @@ onboard:
               tip_frame_sensor: framequat
           - topic: /obelisk/dummy/framepose
             dt: 0.002
-            msg_type: ObkFramePose
+            msg_type: PoseStamped
             sensor_names:
               tip_pos_sensor: framepos
               tip_orientation_sensor: framequat
+          - topic: /obelisk/dummy/odom
+            dt: 0.005
+            msg_type: Odometry
+            sensor_names:
+              tip_pos_sensor: framepos
+              tip_orientation_sensor: framequat
+              tip_velocimeter: velocimeter
+              tip_gyro_sensor: gyro
+          - topic: /obelisk/dummy/scan_dots
+            dt: 0.1
+            msg_type: GridCells
+            sensor_names:
+              tip_pos_sensor: framepos
