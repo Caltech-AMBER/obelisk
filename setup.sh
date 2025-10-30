@@ -95,13 +95,15 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$basic" = true ] && echo "--docker-basic") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$mujoco" = true ] && echo "--docker-mujoco")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
         $([ "$docker_install" = true ] && echo "--docker-install") \
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
-        $([ "$unitree" = true ] && echo "--docker-unitree")
+        $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$mujoco" = true ] && echo "--docker-mujoco")
 fi
 
 # group configuration on host
