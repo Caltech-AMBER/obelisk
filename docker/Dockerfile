@@ -12,11 +12,9 @@ ARG GID=1000
 ARG OBELISK_ROOT=/
 ARG OBELISK_DOCKER_BASIC=false
 ARG OBELISK_DOCKER_CYCLONE_PERF=false
-ARG OBELISK_DOCKER_LEAP=false
 ARG OBELISK_DOCKER_ZED=false
-ARG OBELISK_DOCKER_PIXI=false
+ARG OBELISK_DOCKER_MUJOCO=false
 
-ARG OBELISK_DOCKER_GROUP_LEAP=false
 ARG OBELISK_DOCKER_GROUP_ZED=false
 
 # accompanying env variables
@@ -27,24 +25,24 @@ ENV GID=$GID
 ENV OBELISK_ROOT=$OBELISK_ROOT
 ENV OBELISK_DOCKER_BASIC=$OBELISK_DOCKER_BASIC
 ENV OBELISK_DOCKER_CYCLONE_PERF=$OBELISK_DOCKER_CYCLONE_PERF
-ENV OBELISK_DOCKER_LEAP=$OBELISK_DOCKER_LEAP
 ENV OBELISK_DOCKER_ZED=$OBELISK_DOCKER_ZED
-ENV OBELISK_DOCKER_PIXI=$OBELISK_DOCKER_PIXI
+ENV OBELISK_DOCKER_MUJOCO=$OBELISK_DOCKER_MUJOCO
 
-ENV OBELISK_DOCKER_GROUP_LEAP=$OBELISK_DOCKER_GROUP_LEAP
 ENV OBELISK_DOCKER_GROUP_ZED=$OBELISK_DOCKER_GROUP_ZED
 
+ENV OBELISK_USE_MUJOCO=$OBELISK_DOCKER_MUJOCO
 ENV XDG_RUNTIME_DIR=/run/user/${UID}
 
 # set timezone (used by ROS dependencies)
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# mandatory dependencies that are not handled by pixi
+# mandatory dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
     git \
+    vim \
     mesa-common-dev \
     locales \
     iputils-ping \
@@ -61,12 +59,12 @@ RUN groupadd --gid $GID $USER && \
     echo "%${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # conditionally install dependencies based on build args
-# source base ROS if basic deps are installed and you are not using pixi
+# source base ROS if basic deps are installed
 COPY install_sys_deps.sh /tmp/install_sys_deps.sh
 RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
     [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
-    [ "$OBELISK_DOCKER_BASIC" = "true" ] && [ "$OBELISK_DOCKER_PIXI" = "false" ] && FLAGS="$FLAGS --source-ros"; \
+    [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --source-ros"; \
     [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     [ "$OBELISK_DOCKER_UNITREE" = "true" ] && FLAGS="$FLAGS --unitree"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \

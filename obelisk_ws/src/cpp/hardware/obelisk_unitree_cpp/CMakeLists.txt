@@ -20,9 +20,19 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
     # Lets us get Obelisk::Core and Obelisk::Hardware
     FetchContent_MakeAvailable(Obelisk)
 
-    # obelisk_unitree_sim
-    add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
-    target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Hardware)
+    if(DEFINED ENV{OBELISK_USE_MUJOCO})
+    set(USE_MUJOCO_DEFAULT $ENV{OBELISK_USE_MUJOCO})
+    else()
+    set(USE_MUJOCO_DEFAULT ON)
+    endif()
+
+    option(USE_MUJOCO "Enable Mujoco support" ${USE_MUJOCO_DEFAULT})
+
+    if(USE_MUJOCO)
+        # obelisk_unitree_sim
+        add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
+        target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Hardware)
+    endif()
 
     # obelisk_unitree_g1_hardware
     add_executable(obelisk_unitree_g1_hardware src/unitree_g1_hardware_robot.cpp)
@@ -55,9 +65,11 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
     ament_lint_auto_find_test_dependencies()
     endif()
 
-    install(TARGETS
-        obelisk_unitree_sim
-        DESTINATION lib/${PROJECT_NAME})
+    if(USE_MUJOCO)
+        install(TARGETS
+            obelisk_unitree_sim
+            DESTINATION lib/${PROJECT_NAME})
+    endif()
 
     install(TARGETS
         obelisk_unitree_g1_hardware

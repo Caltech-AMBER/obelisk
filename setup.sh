@@ -16,6 +16,8 @@ source_ros=false
 
 obk_aliases=false
 
+mujoco=false
+
 for arg in "$@"; do
     case $arg in
         --dev-setup)
@@ -33,6 +35,12 @@ for arg in "$@"; do
             basic=true
             install_sys_deps=true
             shift  # Setup for downstream use of Obelisk - suggested to build this in a docker container.
+            ;;
+        
+        # Simulation options
+        --mujoco)
+            mujoco=true
+            shift  # Enables Mujoco support
             ;;
 
         # Hardware options
@@ -57,6 +65,9 @@ Options:
   Hardware options:
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
+
+  Simulation options:
+  --mujoco                     Enables Mujoco simulation. For now, without this flag there will be no simulation of any type.
 
   Other options:
   --help                       Display this help message and exit
