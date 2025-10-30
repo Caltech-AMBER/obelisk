@@ -1,0 +1,13 @@
+name: obelisk-docs
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.8
+  - sphinx>=5.0
+  - myst-parser
+  - sphinx_rtd_theme
+  - sphinx-tabs
+  - pip
+  - pip:
+    - sphinx-tabs

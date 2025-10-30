@@ -43,6 +43,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # mandatory dependencies that are not handled by pixi
 RUN apt-get update && apt-get install -y \
     curl \
+    wget \
     git \
     mesa-common-dev \
     locales \
@@ -66,7 +67,6 @@ RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
     [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && [ "$OBELISK_DOCKER_PIXI" = "false" ] && FLAGS="$FLAGS --source-ros"; \
-    [ "$OBELISK_DOCKER_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
     [ "$OBELISK_DOCKER_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     [ "$OBELISK_DOCKER_UNITREE" = "true" ] && FLAGS="$FLAGS --unitree"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
@@ -75,7 +75,6 @@ RUN FLAGS=""; \
 # conditional configure groups based on build args
 COPY config_groups.sh /tmp/config_groups.sh
 RUN FLAGS=""; \
-    [ "$OBELISK_DOCKER_GROUP_LEAP" = "true" ] && FLAGS="$FLAGS --leap"; \
     [ "$OBELISK_DOCKER_GROUP_ZED" = "true" ] && FLAGS="$FLAGS --zed"; \
     bash /tmp/config_groups.sh $FLAGS && \
     sudo rm /tmp/config_groups.sh
@@ -88,7 +87,6 @@ USER ${UID}
 # obelisk aliases are mounted, so we don't create them here
 COPY user_setup.sh /tmp/user_setup.sh
 RUN FLAGS=""; \
-    [ "$OBELISK_DOCKER_PIXI" = "true" ] && FLAGS="$FLAGS --pixi"; \
     source /tmp/user_setup.sh $FLAGS && \
     sudo rm /tmp/user_setup.sh
 

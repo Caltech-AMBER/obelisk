@@ -35,22 +35,6 @@ for arg in "$@"; do
             shift  # Setup for downstream use of Obelisk - suggested to build this in a docker container.
             ;;
 
-        # --recommended)
-        #     cyclone_perf=true
-        #     obk_aliases=true
-        #     shift  # Allows recommended system-level changes
-        #     ;;
-
-        # # dependency groups to configure
-        # --basic)
-        #     basic=true
-        #     shift  # Enables basic dependencies necessary for Obelisk locally
-        #     ;;
-        # --cyclone-perf)
-        #     cyclone_perf=true
-        #     shift # Enables cyclone performance optimizations
-        #     ;;
-
         # Hardware options
         --zed)
             zed=true
@@ -60,39 +44,6 @@ for arg in "$@"; do
             unitree=true
             shift
             ;;
-
-
-        # # docker setup
-        # --docker-install)
-        #     docker_install=true
-        #     shift  # Installs Docker and nvidia-container-toolkit
-        #     ;;
-        # --install-sys-deps-docker)
-        #     install_sys_deps_docker=true
-        #     shift  # Installs system dependencies in Docker
-        #     ;;
-
-        # # group configuration
-        # --config-groups)
-        #     config_groups=true
-        #     shift  # Configures user groups associated with hardware
-        #     ;;
-
-        # # system-level deps
-        # --install-sys-deps)
-        #     install_sys_deps=true
-        #     shift  # Installs system dependencies
-        #     ;;
-        # --source-ros)
-        #     source_ros=true
-        #     shift # Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
-        #     ;;
-
-        # # user setup
-        # --obk-aliases)
-        #     obk_aliases=true
-        #     shift # Adds obelisk aliases to the ~/.bash_aliases file
-        #     ;;
 
         # help
         --help)
@@ -109,27 +60,6 @@ Options:
 
   Other options:
   --help                       Display this help message and exit
-
-
-  ===== DEPRECATED OPTIONS =====
-  --recommended                Apply recommended system-level changes
-                               (cyclone performance optimizations, pixi, obelisk aliases)
-
-  --basic                      Enables basic dependencies necessary for Obelisk locally
-  --cyclone-perf               Enables cyclone performance optimizations
-  --zed                        Enables ZED SDK
-  --unitree                    Enables the unitree interfaces
-
-  --docker-install             Install Docker and nvidia-container-toolkit
-  --install-sys-deps-docker    Installs system dependencies in Docker
-
-  --config-groups              Configures user groups associated with hardware
-
-  --install-sys-deps           Installs system dependencies
-  --source-ros                 Sources base ROS in ~/.bashrc (only used if --install-sys-deps)
-
-  --obk-aliases                Add obelisk aliases to the ~/.bash_aliases file
-
 "
             shift
             return

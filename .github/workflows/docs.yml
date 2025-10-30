@@ -2,7 +2,7 @@ name: Deploy Sphinx documentation to Pages
 
 on:
   push:
-    branches: [main, api-docs]
+    branches: [main, api-docs, zolkin-cleanup]
 
 jobs:
   pages:
@@ -14,17 +14,30 @@ jobs:
       pages: write
       id-token: write
     steps:
-    - name: install myst-parser
-      run: |
-        pip install myst-parser
-    - name: install sphinx-rtd-theme
-      run: |
-        pip install sphinx_rtd_theme
-    - name: install sphinx_tabs
-      run: |
-        pip install sphinx-tabs
-    - id: deployment
-      uses: sphinx-notes/pages@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
       with:
-        python_version: 3.11
-        documentation_path: ./docs/source
+        environment-file: docs/environment.yml
+        activate-environment: obelisk-docs
+        auto-activate-base: false
+
+    - name: Build Sphinx documentation
+      shell: bash -el {0}
+      run: |
+        cd docs
+        sphinx-build -b html source build/html
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: 'docs/build/html'
+
+    - id: deployment
+      name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
