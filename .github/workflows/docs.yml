@@ -2,7 +2,7 @@ name: Deploy Sphinx documentation to Pages
 
 on:
   push:
-    branches: [main, api-docs, zolkin-cleanup]
+    branches: [main, api-docs]
 
 jobs:
   pages:
@@ -38,6 +38,6 @@ jobs:
       with:
         path: 'docs/build/html'
 
-    # - id: deployment
-    #   name: Deploy to GitHub Pages
-    #   uses: actions/deploy-pages@v4
+    - id: deployment
+      name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
