@@ -277,7 +277,7 @@ function obk-launch {
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config:=\${config} device:=\${device} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} device_name:=\${device} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command
