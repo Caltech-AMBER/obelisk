@@ -98,7 +98,7 @@ This docker file installs a number of basic tools and pulls obelisk and installs
 
 The line
 ```
-RUN source /home/${USER}/obelisk/setup.sh --downstream-setup
+RUN source /home/${USER}/obelisk/setup.sh --downstream-setup --mujoco
 ```
 is critical as this runs the Obelisk setup script within the docker container. It is possible that you may need Obelisk to be configured differently, and you can do that by adjusting those flags in the `Dockerfile`.
 

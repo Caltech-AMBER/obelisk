@@ -21,10 +21,10 @@ To work in Obelisk, both as a dev and as a user, we suggest working in a docker 
 First, we need to setup obelisk. The following commands will (1) make sure docker is installed (2) set flags to make sure that the docker build script grabs the correct dependencies (these will NOT be installed on your local machine, only in the docker) (3) tell Obelisk what other options you want and (4) setup obelisk aliases. Please note that the aliases file will be modified on your local machine then mounted into docker.
 
 ```
-source setup.sh --dev-setup --unitree
+source setup.sh --dev-setup --unitree --mujoco
 ```
 
-Technically the `--unitree` flag is optional, but it is required to interface with the Unitree SDK.
+Technically the `--unitree` flag is optional, but it is required to interface with the Unitree SDK. The `--mujoco` flag is needed to run simulations.
 
 Sometimes we have found that .bash_aliases is a folder. For this to work, you will need to delete that and make sure that a single file is created.
 
