@@ -1,3 +1,8 @@
+#ifndef OBELISK_MUJOCO_SIM_ROBOT_H
+#define OBELISK_MUJOCO_SIM_ROBOT_H
+
+#ifdef OBELISK_USE_MUJOCO
+
 #pragma once
 
 #include <cmath>
@@ -1524,3 +1529,9 @@ namespace obelisk {
     template <typename T> ObeliskMujocoRobot<T>* ObeliskMujocoRobot<T>::mujoco_sim_instance_ = nullptr;
 
 } // namespace obelisk
+
+#else
+// #error "Mujoco support is disabled. Build with USE_MUJOCO=ON to use this header."
+#endif
+
+#endif

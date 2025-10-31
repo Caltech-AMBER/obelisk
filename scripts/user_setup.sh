@@ -239,20 +239,20 @@ function obk-kill {
 
 # convenience function for ros2 launch command
 function obk-launch {
-    local config_file_path=""
-    local device_name=""
+    local config=""
+    local device=""
     local auto_start="True"
     local bag="True"
 
     while [[ \$# -gt 0 ]]; do
         key="\$1"
         case \$key in
-            config_file_path=*)
-            config_file_path="\${key#*=}"
+            config=*)
+            config="\${key#*=}"
             shift
             ;;
-            device_name=*)
-            device_name="\${key#*=}"
+            device=*)
+            device="\${key#*=}"
             shift
             ;;
             auto_start=*)
@@ -271,13 +271,13 @@ function obk-launch {
     done
 
     # Check if any of the required arguments are empty
-    if [[ -z "\$config_file_path" || -z "\$device_name" ]]; then
+    if [[ -z "\$config" || -z "\$device" ]]; then
         echo -e "\033[1;34mError: Missing required arguments.\033[0m"
-        echo -e "\033[1;34mUsage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False>\033[0m"
+        echo -e "\033[1;34mUsage: obk-launch config=<path> device=<name> auto_start=<True|False>\033[0m"
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config_file_path} device_name:=\${device_name} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} device_name:=\${device} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command
@@ -294,8 +294,8 @@ obk-build:\n\
 Builds Obelisk nodes after you have activated a pixi environment.\n\n\
 obk-launch:\n\
 Launches the obelisk_bringup.launch.py with specified arguments.\n\
-Usage: obk-launch config_file_path=<path> device_name=<name> auto_start=<True|False> bag=<True|False>\n\
-Example:\n  obk-launch config_file_path=example.yaml device_name=onboard auto_start=True bag=True\n\n\
+Usage: obk-launch config=<path> device=<name> auto_start=<True|False> bag=<True|False>\n\
+Example:\n  obk-launch config=example.yaml device=onboard auto_start=True bag=True\n\n\
 State Transitions:\n\
 obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
 obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\

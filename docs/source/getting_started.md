@@ -89,7 +89,7 @@ ENV OBELISK_ROOT=/home/${USER}/obelisk
 # you must run the setup script from a directory where the user has permissions
 # run docker setup script in Dockerfile
 WORKDIR /home/${USER}
-RUN source /home/${USER}/obelisk/setup.sh --downstream-setup
+RUN source /home/${USER}/obelisk/setup.sh --downstream-setup --mujoco
 
 WORKDIR /home/${USER}
 ```
@@ -98,7 +98,7 @@ This docker file installs a number of basic tools and pulls obelisk and installs
 
 The line
 ```
-RUN source /home/${USER}/obelisk/setup.sh --downstream-setup
+RUN source /home/${USER}/obelisk/setup.sh --downstream-setup --mujoco
 ```
 is critical as this runs the Obelisk setup script within the docker container. It is possible that you may need Obelisk to be configured differently, and you can do that by adjusting those flags in the `Dockerfile`.
 
@@ -113,11 +113,14 @@ Options:
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
 
+  Simulation options:
+  --mujoco                     Enables Mujoco simulation. For now, without this flag there will be no simulation of any type.
+
   Other options:
   --help                       Display this help message and exit
-  ```
+```
 
-We only want to use `--dev-setup` if we are preparing to develop core obelisk features, and in that case we want to use the docker container that comes in the Obelisk repo. We can choose hardware interfaces to be installed with `--unitree` or `--zed`.
+We only want to use `--dev-setup` if we are preparing to develop core obelisk features, and in that case we want to use the docker container that comes in the Obelisk repo. We can choose hardware interfaces to be installed with `--unitree` or `--zed`. When deploying on a robot, you may not want a simulation environment, so you can not pass `--mujoco`.
 
 ### Sample `docker-compose.yml`
 Below is a sample `docker-compose.yml` that assumes you want to use an Nvidia GPU with Obelisk.
@@ -230,7 +233,7 @@ If you are using a stable version of Obelisk, you should only need to run this o
 
 Once Obelisk is activated and built we can run a basic example to make sure everything is working as expected.
 ```
-obk-launch config_file_path=dummy_cpp.yaml device_name=onboard
+obk-launch config=dummy_cpp.yaml device=onboard
 ```
 At this point you should see a Mujoco simulation running.
 

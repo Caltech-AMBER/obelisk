@@ -1,39 +1,50 @@
 cmake_minimum_required(VERSION 3.16)
-project(obelisk_sim_cpp)
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+# Read from environment variable, default to ON if not set
+if(DEFINED ENV{OBELISK_USE_MUJOCO})
+  set(USE_MUJOCO_DEFAULT $ENV{OBELISK_USE_MUJOCO})
+else()
+  set(USE_MUJOCO_DEFAULT ON)
 endif()
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
+option(USE_MUJOCO "Enable Mujoco support" ${USE_MUJOCO_DEFAULT})
 
-# Get the Obelisk library
-include(FetchContent)
-FetchContent_Declare(
-  Obelisk
-  SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
-)
+if(USE_MUJOCO)
+  project(obelisk_sim_cpp)
 
-# Lets us Get Obelisk::Core and Obelisk::Zoo
-FetchContent_MakeAvailable(Obelisk)
+  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+  endif()
 
-# obelisk_mujoco_robot
-add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
-target_link_libraries(obelisk_mujoco_robot PUBLIC Obelisk::Core)
+  # find dependencies
+  find_package(ament_cmake REQUIRED)
+  find_package(rclcpp REQUIRED)
 
-ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
+  # Get the Obelisk library
+  include(FetchContent)
+  FetchContent_Declare(
+    Obelisk
+    SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
+  )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  # Lets us Get Obelisk::Core and Obelisk::Zoo
+  FetchContent_MakeAvailable(Obelisk)
+
+  # obelisk_mujoco_robot
+  add_executable(obelisk_mujoco_robot src/obelisk_mujoco_robot.cpp)
+  target_link_libraries(obelisk_mujoco_robot PUBLIC Obelisk::Core)
+
+  ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
+
+  if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    set(ament_cmake_copyright_FOUND TRUE)
+    set(ament_cmake_cpplint_FOUND TRUE)
+    ament_lint_auto_find_test_dependencies()
+  endif()
+
+  install(TARGETS
+    obelisk_mujoco_robot
+    DESTINATION lib/${PROJECT_NAME})
+
+  ament_package()
 endif()
-
-install(TARGETS
-  obelisk_mujoco_robot
-  DESTINATION lib/${PROJECT_NAME})
-
-ament_package()
