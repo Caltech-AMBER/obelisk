@@ -118,12 +118,12 @@ This will delete cached build files associated with Obelisk. If you have tried b
 
 To run a ROS stack, run
 ```
-obk-launch config_file_path=<config file> device_name=<device>
+obk-launch config=<config file> device=<name> auto_start=<True|False>
 ```
 
 For the dummy examples this looks like:
 ```
-obk-launch config_file_path=dummy_cpp.yaml device_name=onboard
+obk-launch config=dummy_cpp.yaml device=onboard
 ```
 
 ## Building Docs
