@@ -6,6 +6,10 @@
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
 #include "obelisk_control_msgs/msg/execution_fsm.hpp"
 #include "obelisk_control_msgs/msg/velocity_command.hpp"
+#include <filesystem>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 
 // DDS
@@ -43,6 +47,27 @@ namespace obelisk {
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", pub_imu_state_key_);
+
+            // Optional low level logging
+            this->declare_parameter<bool>("logging", false);
+            logging_ = this->get_parameter("logging").as_bool();
+
+            // Create logging directory if logging is enabled
+            if (logging_) {
+                auto now = std::chrono::system_clock::now();
+                auto time_t = std::chrono::system_clock::to_time_t(now);
+                std::stringstream ss;
+                ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d_%H-%M-%S");
+                
+                std::filesystem::path unitree_logs_dir = "unitree_logs";
+                std::filesystem::path session_dir = unitree_logs_dir / ss.str();
+                
+                std::filesystem::create_directories(session_dir);
+                log_dir_path_ = session_dir.string();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Created logging directory: " << session_dir);
+
+                log_count_ = 0;
+            }
 
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
@@ -284,6 +309,11 @@ namespace obelisk {
         const std::string sub_high_level_ctrl_key_ = "sub_high_level_ctrl_key";
         const std::string pub_joint_state_key_ = "joint_state_pub";
         const std::string pub_imu_state_key_ = "imu_state_pub";
+
+        // Logging
+        bool logging_;
+        std::string log_dir_path_;
+        long log_count_;
     
     private:
     };

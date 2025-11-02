@@ -7,6 +7,7 @@ docker_leap=false
 docker_zed=false
 docker_pixi=false
 docker_unitree=false
+docker_mujoco=false
 
 docker_group_leap=false
 docker_group_zed=false
@@ -26,28 +27,20 @@ for arg in "$@"; do
             docker_cyclone_perf=true
             shift # Sets OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
             ;;
-        --docker-leap)
-            docker_leap=true
-            shift  # Sets OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
-            ;;
         --docker-zed)
             docker_zed=true
             shift  # Sets OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
-            ;;
-        --docker-pixi)
-            docker_pixi=true
-            shift  # Sets OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
             ;;
         --docker-unitree)
             docker_unitree=true
             shift   # Sets OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
             ;;
+        --docker-mujoco)
+            docker_mujoco=true
+            shift  # Sets OBELISK_DOCKER_MUJOCO=true for docker, which enables Mujoco simulation
+            ;;
 
         # docker group additions
-        --docker-group-leap)
-            docker_group_leap=true
-            shift  # Adds user to the dialout group
-            ;;
         --docker-group-zed)
             docker_group_zed=true
             shift  # Adds user to the video group
@@ -61,12 +54,10 @@ Options:
 
   --docker-basic         Set OBELISK_DOCKER_BASIC=true for docker, which installs basic dependencies
   --docker-cyclone-perf  Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
-  --docker-leap          Set OBELISK_DOCKER_LEAP=true for docker, which installs LEAP hand dependencies
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
-  --docker-pixi          Set OBELISK_DOCKER_PIXI=true for docker, which installs Pixi
   --docker-unitree       Set OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
+  --docker-mujoco        Set OBELISK_DOCKER_MUJOCO=true for docker, which enables Mujoco simulation
 
-  --docker-group-leap    Adds user to the dialout group
   --docker-group-zed     Adds user to the video group
 
   --help                 Display this help message and exit
@@ -179,16 +170,6 @@ else
     export OBELISK_DOCKER_CYCLONE_PERF=false
 fi
 
-if [ "$docker_leap" = true ]; then
-    echo -e "\033[1;32mSetting OBELISK_DOCKER_LEAP=true!\033[0m"
-    echo "OBELISK_DOCKER_LEAP=true" >> $env_file
-    export OBELISK_DOCKER_LEAP=true
-else
-    echo -e "\033[1;33mSetting OBELISK_DOCKER_LEAP=false!\033[0m"
-    echo "OBELISK_DOCKER_LEAP=false" >> $env_file
-    export OBELISK_DOCKER_LEAP=false
-fi
-
 if [ "$docker_zed" = true ]; then
     echo -e "\033[1;32mSetting OBELISK_DOCKER_ZED=true!\033[0m"
     echo "OBELISK_DOCKER_ZED=true" >> $env_file
@@ -197,16 +178,6 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_ZED=false!\033[0m"
     echo "OBELISK_DOCKER_ZED=false" >> $env_file
     export OBELISK_DOCKER_ZED=false
-fi
-
-if [ "$docker_pixi" = true ]; then
-    echo -e "\033[1;32mSetting OBELISK_DOCKER_PIXI=true!\033[0m"
-    echo "OBELISK_DOCKER_PIXI=true" >> $env_file
-    export OBELISK_DOCKER_PIXI=true
-else
-    echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
-    echo "OBELISK_DOCKER_PIXI=false" >> $env_file
-    export OBELISK_DOCKER_PIXI=false
 fi
 
 if [ "$docker_unitree" = true ]; then
@@ -219,14 +190,14 @@ else
     export OBELISK_DOCKER_PIXI=false
 fi
 
-if [ "$docker_group_leap" = true ]; then
-    echo -e "\033[1;32mSetting OBELISK_DOCKER_GROUP_LEAP=true!\033[0m"
-    echo "OBELISK_DOCKER_GROUP_LEAP=true" >> $env_file
-    export OBELISK_DOCKER_GROUP_LEAP=true
+if [ "$docker_mujoco" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_MUJOCO=true!\033[0m"
+    echo "OBELISK_DOCKER_MUJOCO=true" >> $env_file
+    export OBELISK_DOCKER_MUJOCO=true
 else
-    echo -e "\033[1;33mSetting OBELISK_DOCKER_GROUP_LEAP=false!\033[0m"
-    echo "OBELISK_DOCKER_GROUP_LEAP=false" >> $env_file
-    export OBELISK_DOCKER_GROUP_LEAP=false
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_MUJOCO=false!\033[0m"
+    echo "OBELISK_DOCKER_MUJOCO=false" >> $env_file
+    export OBELISK_DOCKER_MUJOCO=false
 fi
 
 if [ "$docker_group_zed" = true ]; then

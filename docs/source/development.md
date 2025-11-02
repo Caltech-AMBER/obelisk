@@ -1,12 +1,13 @@
-# Development
+# Development of Obelisk
 
 This page concerns details about developing the core of Obelisk, not how to use Obelisk in a downstream project.
+
+-- This page is a work in progress as we continue to update Obelisk --
 
 ## Overview
 We use the following tools for development:
 * Bash shell (some of the scripts will modify your `.bashrc`)
 * Docker and Docker Compose for isolating system states and for development containers
-* [`pixi`](https://pixi.sh/latest/) for package-level dependency management across platforms
 * [`ruff`](https://docs.astral.sh/ruff/) and [`pyright`](https://github.com/microsoft/pyright) for linting, code-style enforcement, and type checking of Python code
 * [`clang-tidy`](https://clang.llvm.org/extra/clang-tidy/) and [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) for C++ code
 * [`pre-commit`](https://pre-commit.com/) for registering code checks as commit hooks
@@ -20,8 +21,10 @@ To work in Obelisk, both as a dev and as a user, we suggest working in a docker 
 First, we need to setup obelisk. The following commands will (1) make sure docker is installed (2) set flags to make sure that the docker build script grabs the correct dependencies (these will NOT be installed on your local machine, only in the docker) (3) tell Obelisk what other options you want and (4) setup obelisk aliases. Please note that the aliases file will be modified on your local machine then mounted into docker.
 
 ```
-source setup.sh --docker-install --install-sys-deps-docker --basic --obk-aliases --unitree
+source setup.sh --dev-setup --unitree --mujoco
 ```
+
+Technically the `--unitree` flag is optional, but it is required to interface with the Unitree SDK. The `--mujoco` flag is needed to run simulations.
 
 Sometimes we have found that .bash_aliases is a folder. For this to work, you will need to delete that and make sure that a single file is created.
 
@@ -81,29 +84,15 @@ To launch a ROS stack we can use the following commands.
 
 In a seperate terminal, we can run a ROS stack with:
 ```
-obk-launch config_file_path=<config file> device_name=<device>
+obk-launch config=<config file> device=<device>
 ```
 
 Specifically, for the dummy examples this looks like:
 ```
-obk-launch config_file_path=dummy_cpp.yaml device_name=onboard
+obk-launch config=dummy_cpp.yaml device=onboard
 ```
 
 All the documentation for the Obelisk terminal aliases can be found [here](obelisk_terminal_aliases.md).
-
-## Building and Running C++ Code
-We can easily run C++ code using `pixi`. From within the `dev` enviroment, the available commands are:
-- `cpp-ctest` will run all tests registered with `CTest`. This is the command used in the CI to verify unit tests, so every test should be registered with CTest - see [below](#testing).
-- `cpp-test-node` will run all the tests for the main Obelisk library and will do so using the Catch2 framework.
-- `cmake` which will re-build the cmake.
-- `cpp-build` which will compile the code.
-
-<!-- TODO (@zolkin): move this to a generic pixi section.  -->
-Note that all the commands will automatically run the commands they depend on. For this reason, to re-build the cmake, compile the code, and run the tests, all we need to do is run `cpp-ctest`.
-
-We can enter the `dev` enviroment with `pixi shell -e dev` or we can run those commands from the normal shell by pre-pending with `pixi run -e dev`. For example, to run the ctests, `pixi run -e dev cpp-ctest`.
-
-In the future we will add more commands to run other parts of the code.
 
 ## C++ Code Structure
 The C++ libraries in `obelisk/cpp` are built with CMake.

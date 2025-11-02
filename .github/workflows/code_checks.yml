@@ -1,52 +1,54 @@
-name: Core Tests
+# Removed for now because pixi has been removed
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+# name: Core Tests
 
-permissions:
-  contents: read
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
 
-jobs:
-  code-checks:
-    runs-on: ubuntu-22.04
+# permissions:
+#   contents: read
 
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12.4'
-      - uses: prefix-dev/setup-pixi@v0.8.1
-        with:
-          pixi-version: v0.26.1
-          cache: true
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
-      - name: Set Up Development Environment
-        run: |
-          source setup.sh --recommended --leap
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
-      - name: Build Obelisk ROS2 messages
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build-ci"
-      - name: Build and Source Obelisk ROS2 Packages
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ros-build-ci"
-      - name: Run Ruff Linter
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
-      - name: Run Ruff Formatter
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff"
-      - name: Run Pyright
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu pyright"
-      - name: Test with pytest and ctest
-        run: |
-          docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu all-tests"
+# jobs:
+#   code-checks:
+#     runs-on: ubuntu-22.04
+
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Set up Python 3.12
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.12.4'
+#       - uses: prefix-dev/setup-pixi@v0.8.1
+#         with:
+#           pixi-version: v0.26.1
+#           cache: true
+#       - uses: actions/cache@v4
+#         with:
+#           path: ${{ env.pythonLocation }}
+#           key: ${{ env.pythonLocation }}-${{ hashFiles('pixi.toml') }}
+#       - name: Set Up Development Environment
+#         run: |
+#           source setup.sh --recommended --leap
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml up -d
+#       - name: Build Obelisk ROS2 messages
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu messages-build-ci"
+#       - name: Build and Source Obelisk ROS2 Packages
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ros-build-ci"
+#       - name: Run Ruff Linter
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff check docs/ obelisk/ tests/ --output-format=github"
+#       - name: Run Ruff Formatter
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu ruff format docs/ obelisk/ tests/ --diff"
+#       - name: Run Pyright
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu pyright"
+#       - name: Test with pytest and ctest
+#         run: |
+#           docker compose -f $GITHUB_WORKSPACE/docker/docker-compose-ci.yml exec -T obelisk bash -c "$HOME/.pixi/bin/pixi run --environment dev-no-gpu all-tests"

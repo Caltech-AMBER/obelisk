@@ -17,12 +17,22 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
     SOURCE_DIR $ENV{OBELISK_ROOT}/obelisk/cpp
     )
 
-    # Lets us get Obelisk::Core and Obelisk::Zoo
+    # Lets us get Obelisk::Core and Obelisk::Hardware
     FetchContent_MakeAvailable(Obelisk)
 
-    # obelisk_unitree_sim
-    add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
-    target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Zoo)
+    if(DEFINED ENV{OBELISK_USE_MUJOCO})
+    set(USE_MUJOCO_DEFAULT $ENV{OBELISK_USE_MUJOCO})
+    else()
+    set(USE_MUJOCO_DEFAULT ON)
+    endif()
+
+    option(USE_MUJOCO "Enable Mujoco support" ${USE_MUJOCO_DEFAULT})
+
+    if(USE_MUJOCO)
+        # obelisk_unitree_sim
+        add_executable(obelisk_unitree_sim src/unitree_sim_robot.cpp)
+        target_link_libraries(obelisk_unitree_sim PUBLIC Obelisk::Core Obelisk::Hardware)
+    endif()
 
     # obelisk_unitree_g1_hardware
     add_executable(obelisk_unitree_g1_hardware src/unitree_g1_hardware_robot.cpp)
@@ -34,19 +44,19 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
 
     # unitree_example_controller
     add_executable(unitree_example_controller src/g1_example_controller.cpp)
-    target_link_libraries(unitree_example_controller PUBLIC Obelisk::Core Obelisk::Zoo)
+    target_link_libraries(unitree_example_controller PUBLIC Obelisk::Core Obelisk::Hardware)
 
     # unitree_go2_estimator
     add_executable(unitree_go2_estimator src/unitree_go2_estimator.cpp)
-    target_link_libraries(unitree_go2_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+    target_link_libraries(unitree_go2_estimator PUBLIC Obelisk::Core Obelisk::Hardware)
 
     # unitree_example_estimator
     add_executable(unitree_example_estimator src/g1_example_estimator.cpp)
-    target_link_libraries(unitree_example_estimator PUBLIC Obelisk::Core Obelisk::Zoo)
+    target_link_libraries(unitree_example_estimator PUBLIC Obelisk::Core Obelisk::Hardware)
 
     # unitree_joystick
     add_executable(obelisk_unitree_joystick src/unitree_joystick.cpp)
-    target_link_libraries(obelisk_unitree_joystick PUBLIC Obelisk::Core Obelisk::Zoo)
+    target_link_libraries(obelisk_unitree_joystick PUBLIC Obelisk::Core Obelisk::Hardware)
 
     if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
@@ -55,9 +65,11 @@ if(DEFINED ENV{OBELISK_BUILD_UNITREE} AND "$ENV{OBELISK_BUILD_UNITREE}" STREQUAL
     ament_lint_auto_find_test_dependencies()
     endif()
 
-    install(TARGETS
-        obelisk_unitree_sim
-        DESTINATION lib/${PROJECT_NAME})
+    if(USE_MUJOCO)
+        install(TARGETS
+            obelisk_unitree_sim
+            DESTINATION lib/${PROJECT_NAME})
+    endif()
 
     install(TARGETS
         obelisk_unitree_g1_hardware
