@@ -61,6 +61,7 @@ RUN groupadd --gid $GID $USER && \
 # conditionally install dependencies based on build args
 # source base ROS if basic deps are installed
 COPY install_sys_deps.sh /tmp/install_sys_deps.sh
+
 RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_BASIC" = "true" ] && FLAGS="$FLAGS --basic"; \
     [ "$OBELISK_DOCKER_CYCLONE_PERF" = "true" ] && FLAGS="$FLAGS --cyclone-perf"; \
@@ -69,6 +70,11 @@ RUN FLAGS=""; \
     [ "$OBELISK_DOCKER_UNITREE" = "true" ] && FLAGS="$FLAGS --unitree"; \
     bash /tmp/install_sys_deps.sh $FLAGS && \
     sudo rm /tmp/install_sys_deps.sh
+
+# Install obelisk_py as editable.
+# Copy obelisk code from docker/obelisk/python into the container at .
+COPY obelisk/python ./obelisk/python
+RUN pip install -e ./obelisk/python
 
 # conditional configure groups based on build args
 COPY config_groups.sh /tmp/config_groups.sh
