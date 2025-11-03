@@ -96,13 +96,9 @@ if [ "$basic" = true ]; then
         colcon-common-extensions \
         "ruamel.yaml" \
         mujoco
-    if [ -d $OBELISK_ROOT ]; then
-        pip install -e $OBELISK_ROOT/obelisk/python
-        echo -e "\033[1;32mOBELISK_ROOT exists, obelisk_py installed as editable!\033[0m"
-    else
-        pip install git+https://github.com/Caltech-AMBER/obelisk.git#subdirectory=obelisk/python
-        echo -e "\033[1;33mOBELISK_ROOT directory does not exist! Installing obelisk_py from GitHub...\033[0m"
-    fi
+
+    # Install an uneditable version of obelisk_py
+    pip install git+https://github.com/Caltech-AMBER/obelisk.git#subdirectory=obelisk/python
 
     echo -e "\033[1;32mSystem dependencies installed successfully!\033[0m"
 else

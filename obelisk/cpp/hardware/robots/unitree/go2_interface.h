@@ -55,7 +55,7 @@ namespace obelisk {
         }
     protected:
         void CreateUnitreePublishers() override {
-            // create low level command publisher
+            // Create low level command publisher
             lowcmd_publisher_.reset(new ChannelPublisher<LowCmd_>(CMD_TOPIC_));
             lowcmd_publisher_->InitChannel();
 
@@ -63,7 +63,7 @@ namespace obelisk {
         }
 
         void CreateUnitreeSubscribers() override {
-            // Dreate unitree subscriber
+            // Create unitree subscriber
             // Need to create after the publishers have been activated
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&Go2Interface::LowStateHandler, this, std::placeholders::_1), 1);
@@ -72,7 +72,7 @@ namespace obelisk {
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
-            // Only execute of in Low Level Control or Home modes
+            // Only execute if in Low Level Control or Home modes
             if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
@@ -306,7 +306,7 @@ namespace obelisk {
 
         std::string ODOM_TOPIC_;
 
-        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
+        ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
         // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
 

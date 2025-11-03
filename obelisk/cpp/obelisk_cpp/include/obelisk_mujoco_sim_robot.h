@@ -47,15 +47,19 @@ namespace obelisk {
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) {
+            RCLCPP_INFO_STREAM(this->get_logger(), "Configuring the ObeliskSimRobot robot");
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
             // Read in the config string
+            RCLCPP_INFO_STREAM(this->get_logger(), "Reading in config stream");
             std::string mujoco_setting = this->get_parameter("mujoco_setting").as_string();
             auto mujoco_config_map     = this->ParseConfigStr(mujoco_setting);
 
             // Get config params
+            RCLCPP_INFO_STREAM(this->get_logger(), "Getting config params");
             xml_path_             = GetXMLPath(mujoco_config_map);      // Required
             std::string robot_pkg = GetRobotPackage(mujoco_config_map); // Optional
+
             // Search for the model
             if (!std::filesystem::exists(xml_path_)) {
                 if (robot_pkg != "None" && robot_pkg != "none") {
@@ -89,7 +93,7 @@ namespace obelisk {
             } catch (const std::exception& e) {
                 RCLCPP_INFO_STREAM(this->get_logger(), "No geoms to visualize in the simulator.");
             }
-
+            RCLCPP_INFO_STREAM(this->get_logger(), "Configured Obelisk mujoco sim robot");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -103,7 +107,7 @@ namespace obelisk {
             this->ObeliskSimRobot<ControlMessageT>::on_activate(prev_state);
 
             activation_complete_ = true;
-
+            RCLCPP_INFO_STREAM(this->get_logger(), "Activated the mujoco robot");
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
@@ -185,7 +189,6 @@ namespace obelisk {
             nu_ = model_->nu;
             RCLCPP_INFO_STREAM(this->get_logger(), "Mujoco model loaded with " << nu_ << " inputs.");
             shared_data_.resize(nu_);
-
             if (!model_) {
                 throw std::runtime_error("Could not load Mujoco model from the XML!");
             }
@@ -215,9 +218,10 @@ namespace obelisk {
                         shared_data_tmp.push_back(data_->ctrl[i]);
                     }
                     SetSharedData(shared_data_tmp);
+                    break;
                 }
             }
-
+            
             while (!this->stop_thread_) {
                 auto start_time = this->now();
                 {
@@ -227,7 +231,7 @@ namespace obelisk {
                         data_->ctrl[i] = shared_data_.at(i);
                     }
                 }
-
+                
                 {
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
                     mj_step(model_, data_);
@@ -238,12 +242,10 @@ namespace obelisk {
                 while ((this->now() - start_time).nanoseconds() < time_step_ * 1e9) {
                 }
             }
-
             RCLCPP_WARN_STREAM(this->get_logger(), "Cleaning up simulation data and model...");
             // free MuJoCo model and data
             mj_deleteData(data_);
             mj_deleteModel(model_);
-
             rendering_thread_.join();
         }
 

@@ -30,6 +30,7 @@ Sometimes we have found that .bash_aliases is a folder. For this to work, you wi
 
 If you have just installed docker for the first time, you may need to run
 ```
+sudo usermod -aG docker $USER
 newgrp docker
 ```
 

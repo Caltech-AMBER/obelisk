@@ -12,14 +12,18 @@ from obelisk_py.core.obelisk_typing import ObeliskControlMsg, is_in_bound
 class ExamplePositionSetpointController(ObeliskController):
     """Example position setpoint controller."""
 
-    def __init__(self, node_name: str = "example_position_setpoint_controller") -> None:
+    def __init__(
+        self, node_name: str = "example_position_setpoint_controller"
+    ) -> None:
         """Initialize the example position setpoint controller."""
         super().__init__(node_name, PositionSetpoint, EstimatedState)
         self.declare_parameter("test_param", "default_value")
-        self.get_logger().info(f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}")
+        self.get_logger().info(
+            f"test_param: {self.get_parameter('test_param').get_parameter_value().string_value}"
+        )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        """Configure the controller."""
+        """Configure the controller. I.e. Declare all variables required to compute the control input."""
         super().on_configure(state)
         self.joint_pos = None
         return TransitionCallbackReturn.SUCCESS

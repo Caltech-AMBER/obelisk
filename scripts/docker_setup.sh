@@ -214,3 +214,7 @@ fi
 cp $OBELISK_ROOT/scripts/install_sys_deps.sh $OBELISK_ROOT/docker/install_sys_deps.sh
 cp $OBELISK_ROOT/scripts/config_groups.sh $OBELISK_ROOT/docker/config_groups.sh
 cp $OBELISK_ROOT/scripts/user_setup.sh $OBELISK_ROOT/docker/user_setup.sh
+
+# Copy obelisk/python directory into docker directory
+mkdir -p $OBELISK_ROOT/docker/obelisk 
+cp -r $OBELISK_ROOT/obelisk/python $OBELISK_ROOT/docker/obelisk 

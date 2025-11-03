@@ -34,7 +34,9 @@ def multiarray_to_np(msg: MultiArray) -> np.ndarray:
 
     shape = [dim.size for dim in msg.layout.dim]
     strides = [dim.stride * flat_data.itemsize for dim in msg.layout.dim]
-    return np.lib.stride_tricks.as_strided(flat_data, shape=shape, strides=strides)
+    return np.lib.stride_tricks.as_strided(
+        flat_data, shape=shape, strides=strides
+    )
 
 
 def np_to_multiarray(arr: np.ndarray) -> MultiArray:
@@ -66,7 +68,9 @@ def np_to_multiarray(arr: np.ndarray) -> MultiArray:
     for i, (size, stride) in enumerate(zip(arr.shape, arr.strides)):
         dim = MultiArrayDimension()
         dim.size = size
-        dim.stride = stride // arr.itemsize  # convert byte strides to element strides
+        dim.stride = (
+            stride // arr.itemsize
+        )  # convert byte strides to element strides
         dim.label = f"dim_{i}"
         dimensions.append(dim)
 

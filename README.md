@@ -75,6 +75,7 @@ Some guidance/recommendations on choosing flags:
 
 If you're installing `docker` for the first time using this script, you also need to run afterwards
 ```
+sudo usermod -aG docker $USER
 newgrp docker
 ```
 
@@ -114,6 +115,16 @@ To clean Obelisk directories, run
 obk-clean
 ```
 This will delete cached build files associated with Obelisk. If you have tried building the Obelisk source code multiple times or from different environments/local filesystems, it may be corrupted, and cleaning the installation can help fix issues.
+
+To run a ROS stack, run
+```
+obk-launch config=<config file> device=<name> auto_start=<True|False>
+```
+
+For the dummy examples this looks like:
+```
+obk-launch config=dummy_cpp.yaml device=onboard
+```
 
 ## Building Docs
 In the repository root, to build the docs locally, run `sphinx-build -M html docs/source/ docs/build/`.
