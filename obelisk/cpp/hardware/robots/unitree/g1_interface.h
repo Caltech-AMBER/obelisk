@@ -1,8 +1,9 @@
 #include "unitree_interface.h"
 
-// Locomotion Client
+// Unitree Clients
 #include <unitree/robot/g1/loco/g1_loco_api.hpp>
 #include <unitree/robot/g1/loco/g1_loco_client.hpp>
+#include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 // IDL
 #include <unitree/idl/hg/IMUState_.hpp>
@@ -27,6 +28,10 @@ namespace obelisk {
 
             this->declare_parameter<bool>("use_hands", false);
             use_hands_ = this->get_parameter("use_hands").as_bool();
+
+            if (use_hands_) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "use_hands_ = True not supported for g1 interface.");
+            }
 
             this->declare_parameter<bool>("fixed_waist", true);
             fixed_waist_ = this->get_parameter("fixed_waist").as_bool();
@@ -59,10 +64,13 @@ namespace obelisk {
 
             this->declare_parameter<std::vector<double>>("user_pose", user_pose_);
             user_pose_ = this->get_parameter("user_pose").as_double_array();
+
+            // Expose command timeout as a ros parameter
+            this->declare_parameter<float>("command_timeout", 2.0f);
+            command_timeout_ = this->get_parameter("command_timeout").as_double();
             
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
-            ODOM_TOPIC_ = "rt/odommodestate";
             MAIN_BOARD_STATE_TOPIC_ = "rt/lf/mainboardstate";
 
             // TODO: Add support for rt/lowstate_doubleimu
@@ -82,8 +90,11 @@ namespace obelisk {
                 InitializeLogging();
             }
 
-            loco_client_.SetTimeout(10.0f);
+            loco_client_.SetTimeout(command_timeout_);
             loco_client_.Init();
+            motion_switcher_client_ = std::make_shared<unitree::robot::b2::MotionSwitcherClient>();
+            motion_switcher_client_->SetTimeout(command_timeout_);
+            motion_switcher_client_->Init();
         }
     protected:
         void CreateUnitreePublishers() override {
@@ -100,9 +111,6 @@ namespace obelisk {
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&G1Interface::LowStateHandler, this, std::placeholders::_1), 10);
 
-            // odom_subscriber_.reset(new ChannelSubscriber<IMUState_>(HG_ODOM_TOPIC));
-            // odom_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::OdomHandler, this, std::placeholders::_1), 10);
-
             main_board_subscriber_.reset(new ChannelSubscriber<MainBoardState_>(MAIN_BOARD_STATE_TOPIC_));
             main_board_subscriber_->InitChannel(std::bind(&G1Interface::MainboardHandler, this, std::placeholders::_1), 10);
         }
@@ -110,7 +118,7 @@ namespace obelisk {
         // TODO: Adjust this function so that we can go to a user pose even when no low level control functions are being sent
         void ApplyControl(const unitree_control_msg& msg) override {
             // Only execute of in Low Level Control or Home modes
-            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
+            if (exec_fsm_state_ != ExecFSMState::USER_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
@@ -121,7 +129,7 @@ namespace obelisk {
             dds_low_command.mode_machine() = mode_machine_;
 
             // ------------------------ Execution FSM: Low Level Control ------------------------ //
-            if (exec_fsm_state_ == ExecFSMState::LOW_LEVEL_CTRL) {
+            if (exec_fsm_state_ == ExecFSMState::USER_CTRL) {
                 // ---------- Verify message ---------- //
                 if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
                     RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
@@ -190,16 +198,15 @@ namespace obelisk {
             // ------------------------ Execution FSM: Home ------------------------ //
             } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
                 // Compute time that robot has been in HOME
-                // float t = std::chrono::duration<double>(
-                    // std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
-                // Compute proportion of time relative to transition duration 
-                // TODO this is not working
-                //float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
+                float t = std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
+                // Compute proportion of time relative to transition duration
+                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
-                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; i++) {    // Sending the extra waist commands while in fixed waist should have no effect
+                for (size_t i = 0; i < num_motors_; i++) {
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = 0.;
-                    dds_low_command.motor_cmd().at(i).q() = user_pose_[i];//(1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
+                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
                     dds_low_command.motor_cmd().at(i).dq() = 0.;
                     dds_low_command.motor_cmd().at(i).kp() = kp_[i];
                     dds_low_command.motor_cmd().at(i).kd() = kd_[i];
@@ -284,12 +291,11 @@ namespace obelisk {
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board value: " << board_state.value()[0] << ", " << board_state.value()[1] << ", " << board_state.value()[2] << ", " << board_state.value()[3] << ", " << board_state.value()[4] << ", " << board_state.value()[5] );
         }
 
-        void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
-            if (exec_fsm_state_ != ExecFSMState::HIGH_LEVEL_CTRL) {
+        void ApplyVelCmd(const unitree_vel_cmd_msg& msg) override {
+            if (exec_fsm_state_ != ExecFSMState::UNITREE_VEL_CTRL) {
                 return;
             }
-
-            loco_client_.SetVelocity(msg.v_x, msg.v_y, msg.w_z);
+            loco_client_.Move(msg.v_x, msg.v_y, msg.w_z);
         }
 
         bool CheckDampingToUnitreeHomeTransition() {
@@ -299,70 +305,50 @@ namespace obelisk {
 
         void TransitionToUserPose() override{
             // First, save current position
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO user_pose!");
             {
-                std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-                joint_pos_ = start_user_pose_;
+                std::lock_guard<std::mutex> lock(joint_mutex_);
+                start_user_pose_ = joint_pos_;
             }
             user_pose_transition_start_time_ = std::chrono::steady_clock::now();  // Save start time
         }
 
         void TransitionToUnitreeHome() override{
+            loco_client_.StopMove();
             loco_client_.BalanceStand();
         }
 
-        // void OdomHandler(const void *message) {
-        //     RCLCPP_INFO_STREAM(this->get_logger(), "IN ODOM");
-        //     IMUState_ imu_state = *(const IMUState_ *)message;
-        //     // if (imu_state.crc() != Crc32Core((uint32_t *)&imu_state, (sizeof(imu_state) >> 2) - 1)) {
-        //     //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
-        //     //     return;
-        //     // }
+        void TransitionToDamp() override{
+            loco_client_.StopMove();
+            loco_client_.Damp();
+        }
 
-        //     // IMU
-        //     obelisk_sensor_msgs::msg::ObkImu obk_imu_state;
-        //     obk_imu_state.header.stamp = this->now();
-        //     obk_imu_state.angular_velocity.x = imu_state.gyroscope()[0];
-        //     obk_imu_state.angular_velocity.y = imu_state.gyroscope()[1];
-        //     obk_imu_state.angular_velocity.z = imu_state.gyroscope()[2];
+        bool ReleaseUnitreeMotionControl() {
+            std::string robot_form, motion_mode;
+            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
+            if (ret != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
 
-        //     obk_imu_state.orientation.w = imu_state.quaternion()[0];
-        //     obk_imu_state.orientation.x = imu_state.quaternion()[1];
-        //     obk_imu_state.orientation.y = imu_state.quaternion()[2];
-        //     obk_imu_state.orientation.z = imu_state.quaternion()[3];
+            if (!motion_mode.empty()) {
+                return motion_switcher_client_->ReleaseMode() == 0;
+            }
+            return true;
+        }
 
-        //     obk_imu_state.linear_acceleration.x = imu_state.accelerometer()[0];
-        //     obk_imu_state.linear_acceleration.y= imu_state.accelerometer()[1];
-        //     obk_imu_state.linear_acceleration.z = imu_state.accelerometer()[2];
-
-        //     this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("odom_state_pub")->publish(obk_imu_state);
-        // }
-
-        bool use_hands_;
-        bool fixed_waist_;
-
-        std::string ODOM_TOPIC_;
-        std::string MAIN_BOARD_STATE_TOPIC_;
-
-        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
-        ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
-        ChannelSubscriberPtr<MainBoardState_> main_board_subscriber_;
-        // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
-
-
-        enum class AnkleMode {
-            PR = 0,  // Series Control for Ptich/Roll Joints
-            AB = 1   // Parallel Control for A/B Joints
-        };
-
-        AnkleMode mode_pr_;
-        uint8_t mode_machine_;
-
-        // Locomotion Client
-        g1::LocoClient loco_client_;
-
-        // Logging
-        std::ofstream motor_data_log_;
-        rclcpp::Time startup_time_;
+        bool EngageUnitreeMotionControl() {
+            std::string robot_form, motion_mode;
+            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
+            if (ret != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
+            if (motion_mode.empty()) {
+                return motion_switcher_client_->SelectMode("normal") == 0;
+            }
+            return true;
+        }
 
         void InitializeLogging() {
             // Create and open motor data log file in the existing log directory
@@ -424,6 +410,27 @@ namespace obelisk {
             this->log_count_++;
         }
 
+        bool use_hands_;
+        bool fixed_waist_;
+
+        std::string MAIN_BOARD_STATE_TOPIC_;
+
+        ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
+        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
+        ChannelSubscriberPtr<MainBoardState_> main_board_subscriber_;
+
+        enum class AnkleMode {
+            PR = 0,  // Series Control for Ptich/Roll Joints
+            AB = 1   // Parallel Control for A/B Joints
+        };
+
+        AnkleMode mode_pr_;
+        uint8_t mode_machine_;
+
+        // Logging
+        std::ofstream motor_data_log_;
+        rclcpp::Time startup_time_;
+
     private:
         // ---------- Robot Specific ---------- //
         // G1
@@ -431,19 +438,19 @@ namespace obelisk {
         static constexpr int G1_EXTRA_WAIST = 2;
         static constexpr int G1_HAND_MOTOR_NUM = 14;
 
-        float user_pose_transition_duration_;                     // Duration of the transition to home position
+        float user_pose_transition_duration_;                                     // Duration of the transition to home position
+        std::chrono::steady_clock::time_point user_pose_transition_start_time_;   // Timing variable for transition to stand
+        float command_timeout_;                                                   // How long to wait before timing out unitree commands.
 
-        std::vector<double> joint_pos_; // Local copy of joint positions
-        std::vector<double> joint_vel_; // Local copy of joint positions
-        std::vector<double> start_user_pose_; // For transitioning to home position
-        std::vector<double> user_pose_; // home position
-        // float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  
-        // float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
-        // float start_user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];     // For transitioning to home position
-        // float user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];           // home position
+        std::vector<double> joint_pos_;         // Local copy of joint positions
+        std::vector<double> joint_vel_;         // Local copy of joint positions
+        std::vector<double> start_user_pose_;   // For transitioning to home position
+        std::vector<double> user_pose_;         // home position
 
-        std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
-        std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
+        std::mutex joint_mutex_;                      // mutex for copying joint positions and velocities
+        g1::LocoClient loco_client_;                  // Locomotion Client for high level control
+        std::shared_ptr<unitree::robot::b2::MotionSwitcherClient> motion_switcher_client_;  // Robot State Client for high level/low level handoff
+
         std::vector<double> default_user_pose_ = {
             0.3, 0, 0, 0.52, -0.23, 0,   // Left Leg
             -0.3, 0, 0, 0.52, -0.23, 0,  // Right Leg
@@ -551,44 +558,6 @@ namespace obelisk {
             "right_hand_index_0_joint",
             "right_hand_index_1_joint"
         };
-
-        // enum G1JointIndex {
-        //     LeftHipPitch = 0,
-        //     LeftHipRoll = 1,
-        //     LeftHipYaw = 2,
-        //     LeftKnee = 3,
-        //     LeftAnklePitch = 4,
-        //     LeftAnkleB = 4,
-        //     LeftAnkleRoll = 5,
-        //     LeftAnkleA = 5,
-        //     RightHipPitch = 6,
-        //     RightHipRoll = 7,
-        //     RightHipYaw = 8,
-        //     RightKnee = 9,
-        //     RightAnklePitch = 10,
-        //     RightAnkleB = 10,
-        //     RightAnkleRoll = 11,
-        //     RightAnkleA = 11,
-        //     WaistYaw = 12,
-        //     WaistRoll = 13,        // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistA = 13,           // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistPitch = 14,       // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistB = 14,           // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     LeftShoulderPitch = 15,
-        //     LeftShoulderRoll = 16,
-        //     LeftShoulderYaw = 17,
-        //     LeftElbow = 18,
-        //     LeftWristRoll = 19,
-        //     LeftWristPitch = 20,   // NOTE INVALID for g1 23dof
-        //     LeftWristYaw = 21,     // NOTE INVALID for g1 23dof
-        //     RightShoulderPitch = 22,
-        //     RightShoulderRoll = 23,
-        //     RightShoulderYaw = 24,
-        //     RightElbow = 25,
-        //     RightWristRoll = 26,
-        //     RightWristPitch = 27,  // NOTE INVALID for g1 23dof
-        //     RightWristYaw = 28     // NOTE INVALID for g1 23dof
-        // };
 
         const std::map<std::string, int> G1_JOINT_MAPPINGS = {
             {"left_hip_pitch_joint", 0},
