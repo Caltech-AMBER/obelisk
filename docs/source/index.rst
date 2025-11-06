@@ -20,6 +20,7 @@ Documentation for ``obelisk``
    logging.md
    joystick.rst
    obelisk_terminal_aliases.md
+   unitree_interfaces.md
    faq.md
 
 Overview
