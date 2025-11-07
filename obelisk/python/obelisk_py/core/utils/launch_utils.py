@@ -347,27 +347,22 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
     return launch_actions
 
 
+JOYSTICK_PARAMS = ["device_id", "device_name", "deadzone", "autorepeat_rate", "sticky_buttons", "coalesce_interval_ms"]
+JOYSTICK_REMAPPINGS = {"pub_topic": "\joy", "sub_topic": "/joy/set_feedback"}
+
 def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to joystick given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
-        # TODO: I think there is a better way to handle these defaults, i.e., not even passing the parameter if nothing
-        # is supplied.
-        device_id = settings["device_id"] if "device_id" in settings else 0
-
-        device_name = settings["device_name"] if "device_name" in settings else ""
-
-        deadzone = settings["deadzone"] if "deadzone" in settings else 0.05
-
-        autorepeat_rate = settings["autorepeat_rate"] if "autorepeat_rate" in settings else 20.0
-
-        sticky_buttons = settings["sticky_buttons"] if "sticky_buttons" in settings else False
-
-        coalesce_interval_ms = settings["coalesce_interval_ms"] if "coalesce_interval_ms" in settings else 1
-
-        pub_topic = settings["pub_topic"] if "pub_topic" in settings else "/joy"
-
-        sub_topic = settings["sub_topic"] if "sub_topic" in settings else "/joy/set_feedback"
+        joystick_params = {}
+        joystick_remappings = JOYSTICK_REMAPPINGS.copy()
+        for setting_key, setting_val in settings.items():
+            if setting_key in JOYSTICK_PARAMS:
+                joystick_params[setting_key] = setting_val
+            elif setting_key in JOYSTICK_REMAPPINGS.keys():
+                joystick_remappings[setting_key] = setting_val
+            else:
+                raise ValueError(f"Unknown joystick setting {setting_key}")
 
         launch_actions += [
             Node(
@@ -376,23 +371,16 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
                 name="joy",
                 output="screen",
                 parameters=[
-                    {
-                        "device_id": device_id,
-                        "device_name": device_name,
-                        "deadzone": deadzone,
-                        "autorepeat_rate": autorepeat_rate,
-                        "sticky_buttons": sticky_buttons,
-                        "coalesce_interval_ms": coalesce_interval_ms,
-                    }
+                    joystick_params
                 ],
                 remappings=[
                     (
                         "/joy",
-                        pub_topic,
+                        joystick_remappings["pub_topic"],
                     ),  # remap the topic that the joystick publishes to
                     (
                         "/joy/set_feedback",
-                        sub_topic,
+                        joystick_remappings["sub_topic"],
                     ),  # remap the topic where the joystick listens
                 ],
             )
