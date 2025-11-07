@@ -117,4 +117,3 @@ onboard:
     on: True
     pub_topic: /obelisk/dummy/joy
     sub_topic: /obelisk/dummy/joy_feedback
-    asdf: True

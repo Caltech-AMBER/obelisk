@@ -317,17 +317,27 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
 
         if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
             # Setup Rviz
-            rviz_file_name = "rviz/" + settings["rviz_config"]
-            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
-            launch_actions += [
-                Node(
-                    package="rviz2",
-                    executable="rviz2",
-                    name="rviz2",
-                    output="screen",
-                    arguments=["-d", rviz_config_path],
-                )
-            ]
+            if "rviz_config" not in settings.keys():
+                launch_actions += [
+                    Node(
+                        package="rviz2",
+                        executable="rviz2",
+                        name="rviz2",
+                        output="screen",
+                    )
+                ]
+            else:
+                rviz_file_name = "rviz/" + settings["rviz_config"]
+                rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+                launch_actions += [
+                    Node(
+                        package="rviz2",
+                        executable="rviz2",
+                        name="rviz2",
+                        output="screen",
+                        arguments=["-d", rviz_config_path],
+                    )
+                ]
         elif settings["viz_tool"] == "foxglove":
             # setup fox glove
             xml_launch_file = os.path.join(
@@ -357,6 +367,8 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
         joystick_params = {}
         joystick_remappings = JOYSTICK_REMAPPINGS.copy()
         for setting_key, setting_val in settings.items():
+            if setting_key == "on":
+                continue
             if setting_key in JOYSTICK_PARAMS:
                 joystick_params[setting_key] = setting_val
             elif setting_key in JOYSTICK_REMAPPINGS.keys():
