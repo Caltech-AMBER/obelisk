@@ -17,7 +17,7 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
 FetchContent_MakeAvailable(unitree_sdk)
 
 add_library(UnitreeInterface INTERFACE)
-target_include_directories(UnitreeInterface INTERFACE .)
+target_include_directories(UnitreeInterface INTERFACE . ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 
 target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core unitree_sdk2)
 

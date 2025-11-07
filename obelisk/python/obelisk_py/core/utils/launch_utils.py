@@ -358,7 +358,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
 
 
 JOYSTICK_PARAMS = ["device_id", "device_name", "deadzone", "autorepeat_rate", "sticky_buttons", "coalesce_interval_ms"]
-JOYSTICK_REMAPPINGS = {"pub_topic": "\joy", "sub_topic": "/joy/set_feedback"}
+JOYSTICK_REMAPPINGS = {"pub_topic": "/joy", "sub_topic": "/joy/set_feedback"}
 
 def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to joystick given the settings from the yaml."""

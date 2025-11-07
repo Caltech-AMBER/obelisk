@@ -69,9 +69,10 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
     logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
 
     # checks - we must at least have these 3 components
-    assert "control" in obelisk_config
-    assert "estimation" in obelisk_config
-    assert "robot" in obelisk_config
+    # New -> no longer require control/estimation/robot
+    # assert "control" in obelisk_config
+    # assert "estimation" in obelisk_config
+    # assert "robot" in obelisk_config
     obelisk_launch_actions = []
 
     # Setup logging
@@ -133,21 +134,24 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
         obelisk_launch_actions += [configure_event]
 
     # generate all launch actions
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["control"],
-        "control",
-        global_state_node,
-    )
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["estimation"],
-        "estimation",
-        global_state_node,
-    )
-    obelisk_launch_actions += get_launch_actions_from_node_settings(
-        obelisk_config["robot"],
-        "robot",
-        global_state_node,
-    )
+    if "control" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["control"],
+            "control",
+            global_state_node,
+        )
+    if "estimation" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["estimation"],
+            "estimation",
+            global_state_node,
+        )
+    if "robot" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["robot"],
+            "robot",
+            global_state_node,
+        )
     if "sensing" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["sensing"],

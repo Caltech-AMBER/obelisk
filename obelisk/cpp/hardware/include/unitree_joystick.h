@@ -9,6 +9,7 @@
 #include "sensor_msgs/msg/joy.hpp"
 #include "obelisk_control_msgs/msg/execution_fsm.hpp"
 #include "obelisk_control_msgs/msg/velocity_command.hpp"
+#include "unitree_fsm.h"
 
 
 namespace obelisk {
@@ -59,8 +60,8 @@ namespace obelisk {
             v_x_scale_ = this->get_parameter("v_x_scale").as_double();
             v_y_scale_ = this->get_parameter("v_y_scale").as_double();
             w_z_scale_ = this->get_parameter("w_z_scale").as_double();
-            this->declare_parameter<int>("axis_threshold", 15000);
-            axis_threshold_ = this->get_parameter("axis_threshold").as_int();
+            this->declare_parameter<float>("axis_threshold", -0.1);
+            axis_threshold_ = this->get_parameter("axis_threshold").as_double();
 
             // Handle Execution FSM buttons
             // Buttons with negative values will corrospond to the DPAD
@@ -233,30 +234,42 @@ namespace obelisk {
             }
 
             // Trigger FSM
+            // First, check for damping or estop
+            bool commanded = false;
+            unitree_fsm_msg fsm_msg;
+            fsm_msg.header.stamp = this->now();
+            if (getEstopButton(msg)) {
+                fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::ESTOP);             // ESTOP
+                commanded = true;
+            } else if (getDampingButton(msg)) {
+                fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::DAMPING);           // Damping
+                commanded = true;
+            }
+
             static rclcpp::Time last_fsm_msg = this->now();
-            if ((this->now() - last_fsm_msg).seconds() > 1) {
-                unitree_fsm_msg fsm_msg;
-                fsm_msg.header.stamp = this->now();
-                
-                if (getEstopButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // ESTOP
-                } else if (getDampingButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // Damping
-                } else if (getUserPoseButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // User Pose
+            if ((this->now() - last_fsm_msg).seconds() > 0.5) {
+                if (getUserPoseButton(msg)) {
+                    fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::USER_POSE);         // User Pose
+                    commanded = true;
                 } else if (getUnitreeHomeButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // Unitree Stand
+                    fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::UNITREE_HOME);      // Unitree Stand
+                    commanded = true;
                 } else if (getUserCtrlButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // User Control
+                    fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::USER_CTRL);         // User Control
+                    commanded = true;
                 } else if (getUnitreeCtrlButton(msg)) {
-                    fsm_msg.cmd_exec_fsm_state = 5;    // Unitree Control
-                } else {
-                    return;
+                    fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::UNITREE_VEL_CTRL);  // Unitree Control
+                    commanded = true;
                 }
-                last_fsm_msg = this->now();
+                if (commanded) {
+                    last_fsm_msg = this->now();
+                }
+            }
+            if (commanded){
                 this->GetPublisher<unitree_fsm_msg>(pub_exec_fsm_key_)->publish(fsm_msg);
                 RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick sent Execution FSM Command.");
             }
+            
         }
 
         bool recognizeButton(int btn) {
@@ -294,7 +307,7 @@ namespace obelisk {
                 btn -= LAYER_OFFSET;
             }
             if (on_axis) {
-                return msg.axes[btn - AXIS_OFFSET] > axis_threshold_;
+                return msg.axes[btn - AXIS_OFFSET] < axis_threshold_;
             }
             if (on_dpad) {
                 int sgn = 1;
@@ -333,7 +346,7 @@ namespace obelisk {
         float v_x_scale_;
         float v_y_scale_; 
         float w_z_scale_;
-        uint32_t axis_threshold_;
+        float axis_threshold_;
 
         // Hold button locations for execution fsm
         int damping_button_;

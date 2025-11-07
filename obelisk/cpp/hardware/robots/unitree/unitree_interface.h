@@ -1,4 +1,5 @@
 # pragma once
+#include "unitree_fsm.h"
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
@@ -11,13 +12,10 @@
 #include <iomanip>
 #include <sstream>
 
-
 // DDS
 #include <unitree/robot/channel/channel_publisher.hpp>
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
-// IDL
-#include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>  // Get rid of this??
 
 namespace obelisk {
     using unitree_control_msg = obelisk_control_msgs::msg::PDFeedForward;
@@ -99,16 +97,6 @@ namespace obelisk {
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
-
-        enum class ExecFSMState : uint8_t {
-            INIT = 0,
-            UNITREE_HOME = 1,
-            USER_POSE = 2,
-            USER_CTRL = 3,
-            UNITREE_VEL_CTRL = 4,
-            DAMPING = 5,
-            ESTOP = 6
-        };
 
         const std::unordered_map<ExecFSMState, std::string> TRANSITION_STRINGS = {
             {ExecFSMState::INIT, "INIT"},
@@ -270,7 +258,6 @@ namespace obelisk {
         std::string STATE_TOPIC_;
 
         std::string network_interface_name_;
-        std::shared_ptr<b2::MotionSwitcherClient> mode_switch_manager_;
 
         size_t num_motors_;
         std::vector<std::string> joint_names_;

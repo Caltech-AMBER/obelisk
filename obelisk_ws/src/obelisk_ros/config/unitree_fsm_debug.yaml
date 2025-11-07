@@ -1,0 +1,30 @@
+config: unitree_fsm_debug
+onboard:
+  control:
+  # ----- High Level/Execution FSM Controller ----- #
+    - pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_joystick
+      # callback_groups:
+      publishers:
+      # ----- Execution FSM ----- #
+        - ros_parameter: pub_exec_fsm_setting
+          topic: /obelisk/fsm_test/exec_fsm
+          history_depth: 10
+          callback_group: None
+      # ----- High Level Control ----- #
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/fsm_test/high_level_ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+      # ----- Joystick subscriber ----- #
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/fsm_test/joy
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 100  # Control callback is not being used
+          callback_group: None
+  joystick:
+    on: True
+    pub_topic: /obelisk/fsm_test/joy
+    sub_topic: /obelisk/fsm_test/joy_feedback
