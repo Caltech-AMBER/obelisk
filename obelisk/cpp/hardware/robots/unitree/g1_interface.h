@@ -6,13 +6,11 @@
 #include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 // IDL
-#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowCmd_.hpp>
+#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowState_.hpp>
-#include <unitree/idl/hg/MainBoardState_.hpp>
 #include <unitree/idl/hg/IMUState_.hpp>
 
-#include <fstream>
 #include <chrono>
 #include <iomanip>
 
@@ -21,10 +19,10 @@ namespace obelisk {
 
     using namespace unitree_hg::msg::dds_;
     
-    class G1Interface : public ObeliskUnitreeInterface {
+    class G1Interface : public ObeliskUnitreeInterface<unitree_hg::msg::dds_::MotorState_, 35> {
     public:
         G1Interface(const std::string& node_name)
-            : ObeliskUnitreeInterface(node_name), use_hands_(false), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
+            : ObeliskUnitreeInterface(node_name, "g1"), use_hands_(false), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
 
             this->declare_parameter<bool>("use_hands", false);
             use_hands_ = this->get_parameter("use_hands").as_bool();
@@ -71,7 +69,6 @@ namespace obelisk {
             
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
-            MAIN_BOARD_STATE_TOPIC_ = "rt/lf/mainboardstate";
 
             // TODO: Add support for rt/lowstate_doubleimu
 
@@ -83,12 +80,6 @@ namespace obelisk {
 
             VerifyParameters();
             CreateUnitreePublishers();
-
-            // Initialize logging files if logging is enabled
-            if (logging_) {
-                startup_time_ = this->now();
-                InitializeLogging();
-            }
 
             loco_client_.SetTimeout(command_timeout_);
             loco_client_.Init();
@@ -110,9 +101,6 @@ namespace obelisk {
             // Need to create after the publishers have been activated
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&G1Interface::LowStateHandler, this, std::placeholders::_1), 10);
-
-            main_board_subscriber_.reset(new ChannelSubscriber<MainBoardState_>(MAIN_BOARD_STATE_TOPIC_));
-            main_board_subscriber_->InitChannel(std::bind(&G1Interface::MainboardHandler, this, std::placeholders::_1), 10);
         }
 
         // TODO: Adjust this function so that we can go to a user pose even when no low level control functions are being sent
@@ -241,9 +229,6 @@ namespace obelisk {
                 joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
                 joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
-                // RCLCPP_INFO_STREAM(this->get_logger(), "Joint: " << joint_state.joint_names.at(i) << " motor state: " << low_state.motor_state()[i].motorstate());
-                // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
-                // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
@@ -267,8 +252,9 @@ namespace obelisk {
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
             // Log motor data if logging is enabled
-            if (logging_ && this->log_count_ % 1000 == 0) { // Log at 1 Hz assuming 1kHz low state rate
-                LogMotorData(low_state);
+            if (logging_) {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state_ = low_state.motor_state();
             }
 
             // update mode machine
@@ -276,19 +262,6 @@ namespace obelisk {
                 if (mode_machine_ == 0) std::cout << "G1 type: " << unsigned(low_state.mode_machine()) << std::endl;
                 mode_machine_ = low_state.mode_machine();
             }
-        }
-
-        void MainboardHandler(const void *message) {
-            MainBoardState_ board_state = *(const MainBoardState_ *)message;
-
-            // if (board_state.crc() != Crc32Core((uint32_t *)&board_state, (sizeof(MainBoardState_) >> 2) - 1)) {
-            //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] MainBoardState CRC Error");
-            //     return;
-            // }
-
-            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board state: " << board_state.state()[0] << ", " << board_state.state()[1] << ", " << board_state.state()[2] << ", " << board_state.state()[3] << ", " << board_state.state()[4] << ", " << board_state.state()[5] );
-
-            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board value: " << board_state.value()[0] << ", " << board_state.value()[1] << ", " << board_state.value()[2] << ", " << board_state.value()[3] << ", " << board_state.value()[4] << ", " << board_state.value()[5] );
         }
 
         void ApplyVelCmd(const unitree_vel_cmd_msg& msg) override {
@@ -350,11 +323,7 @@ namespace obelisk {
             return true;
         }
 
-        void InitializeLogging() {
-            // Create and open motor data log file in the existing log directory
-            std::string motor_data_file = log_dir_path_ + "/motor_data.csv";
-            motor_data_log_.open(motor_data_file);
-            
+        void WriteMotorLogHeader() override{
             if (motor_data_log_.is_open()) {
                 // Write CSV header with startup time info
                 motor_data_log_ << "# Logging started at ROS time: " << startup_time_.nanoseconds() << " ns\n";
@@ -368,12 +337,12 @@ namespace obelisk {
                 }
                 motor_data_log_ << "\n";
                 motor_data_log_.flush();
-                
-                RCLCPP_INFO_STREAM(this->get_logger(), "Motor data logging initialized: " << motor_data_file);
             } else {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to open motor data log file: " << motor_data_file);
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed write motor data log file header");
             }
-            
+        }
+
+        void WriteJointNameFile() override{
             // Create joint names file
             std::string joint_names_file = log_dir_path_ + "/joint_names.txt";
             std::ofstream joint_names_log(joint_names_file);
@@ -387,8 +356,14 @@ namespace obelisk {
             }
         }
         
-        void LogMotorData(const LowState_& low_state) {
+        void WriteMotorData() {
             if (!motor_data_log_.is_open()) return;
+            std::array<unitree_hg::msg::dds_::MotorState_, 35> motor_state;
+            {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state = motor_state_;
+            }
+            
             
             // Get current time relative to startup in seconds
             auto current_time = this->now();
@@ -399,7 +374,7 @@ namespace obelisk {
             
             // Log data for each motor
             for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                const auto& motor = low_state.motor_state()[i];
+                const auto& motor = motor_state[i];
                 motor_data_log_ << "," << motor.temperature()[0]
                                << "," << motor.temperature()[1]
                                << "," << motor.tau_est()
@@ -410,14 +385,14 @@ namespace obelisk {
             this->log_count_++;
         }
 
+        inline static const std::string ROBOT_NAME = "g1";
+        const std::string& RobotName() const override { return ROBOT_NAME; }
+
         bool use_hands_;
         bool fixed_waist_;
 
-        std::string MAIN_BOARD_STATE_TOPIC_;
-
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
         unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
-        ChannelSubscriberPtr<MainBoardState_> main_board_subscriber_;
 
         enum class AnkleMode {
             PR = 0,  // Series Control for Ptich/Roll Joints
@@ -426,10 +401,6 @@ namespace obelisk {
 
         AnkleMode mode_pr_;
         uint8_t mode_machine_;
-
-        // Logging
-        std::ofstream motor_data_log_;
-        rclcpp::Time startup_time_;
 
     private:
         // ---------- Robot Specific ---------- //

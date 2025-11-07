@@ -12,10 +12,10 @@ namespace obelisk {
 
     using namespace unitree_go::msg::dds_;
 
-    class Go2Interface : public ObeliskUnitreeInterface {
+    class Go2Interface : public ObeliskUnitreeInterface<unitree_go::msg::dds_::MotorState_, 20> {
     public:
         Go2Interface(const std::string& node_name)
-            : ObeliskUnitreeInterface(node_name) {
+            : ObeliskUnitreeInterface(node_name, "go2") {
 
             // Expose duration of transition to home position as ros parameter
             this->declare_parameter<float>("user_pose_transition_duration", 1.);
@@ -215,6 +215,11 @@ namespace obelisk {
             imu_state.linear_acceleration.z = low_state.imu_state().accelerometer()[2];
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
+
+            if (logging_) {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state_ = low_state.motor_state();
+            }
         }
 
         void ApplyVelCmd(const unitree_vel_cmd_msg& msg) override {
@@ -268,6 +273,66 @@ namespace obelisk {
             robot_state_client_.ServiceSwitch("mcf", 0, ret);  // Turn the Unitree motion control off
             return ret == 0;
         }
+
+                void WriteMotorLogHeader() override{
+            if (motor_data_log_.is_open()) {
+                // Write CSV header with startup time info
+                motor_data_log_ << "# Logging started at ROS time: " << startup_time_.nanoseconds() << " ns\n";
+                motor_data_log_ << "# Timestamps below are relative to startup in seconds\n";
+                motor_data_log_ << "timestamp_sec";
+                for (size_t i = 0; i < num_motors_; ++i) {
+                    motor_data_log_ << ",temp_" << joint_names_[i] 
+                                   << ",tau_est_" << joint_names_[i];
+                }
+                motor_data_log_ << "\n";
+                motor_data_log_.flush();
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed write motor data log file header");
+            }
+        }
+
+        void WriteJointNameFile() override{
+            // Create joint names file
+            std::string joint_names_file = log_dir_path_ + "/joint_names.txt";
+            std::ofstream joint_names_log(joint_names_file);
+            if (joint_names_log.is_open()) {
+                joint_names_log << "Joint order for logged data:\n";
+                for (size_t i = 0; i < num_motors_; ++i) {
+                    joint_names_log << i << ": " << joint_names_[i] << "\n";
+                }
+                joint_names_log.close();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Joint names file created: " << joint_names_file);
+            }
+        }
+        
+        void WriteMotorData() {
+            if (!motor_data_log_.is_open()) return;
+            std::array<unitree_go::msg::dds_::MotorState_, 20> motor_state;
+            {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state = motor_state_;
+            }
+            
+            // Get current time relative to startup in seconds
+            auto current_time = this->now();
+            auto elapsed_duration = current_time - startup_time_;
+            double timestamp_sec = elapsed_duration.seconds();
+                
+            motor_data_log_ << std::fixed << std::setprecision(6) << timestamp_sec;
+            
+            // Log data for each motor
+            for (size_t i = 0; i < num_motors_; ++i) {
+                const auto& motor = motor_state[i];
+                motor_data_log_ << "," << motor.temperature()
+                               << "," << motor.tau_est();
+            }
+            motor_data_log_ << "\n";
+
+            this->log_count_++;
+        }
+
+        inline static const std::string ROBOT_NAME = "go2";
+        const std::string& RobotName() const override { return ROBOT_NAME; }
 
         unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
         ChannelSubscriberPtr<LowState_> lowstate_subscriber_;

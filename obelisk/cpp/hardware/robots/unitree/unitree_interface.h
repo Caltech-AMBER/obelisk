@@ -11,6 +11,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 
 // DDS
 #include <unitree/robot/channel/channel_publisher.hpp>
@@ -28,10 +29,11 @@ namespace obelisk {
     /**
      * @brief Obelisk robot interface for the Unitree robots
      */
+    template<typename MotorStateType, size_t N>
     class ObeliskUnitreeInterface : public ObeliskRobot<unitree_control_msg> {
 
     public:
-        ObeliskUnitreeInterface(const std::string& node_name)
+        ObeliskUnitreeInterface(const std::string& node_name, const std::string& robot_name)
             : ObeliskRobot<unitree_control_msg>(node_name) {
 
             // Get network interface name as a parameter
@@ -46,27 +48,6 @@ namespace obelisk {
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", pub_imu_state_key_);
 
-            // Optional low level logging
-            this->declare_parameter<bool>("logging", false);
-            logging_ = this->get_parameter("logging").as_bool();
-
-            // Create logging directory if logging is enabled
-            if (logging_) {
-                auto now = std::chrono::system_clock::now();
-                auto time_t = std::chrono::system_clock::to_time_t(now);
-                std::stringstream ss;
-                ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d_%H-%M-%S");
-                
-                std::filesystem::path unitree_logs_dir = "unitree_logs";
-                std::filesystem::path session_dir = unitree_logs_dir / ss.str();
-                
-                std::filesystem::create_directories(session_dir);
-                log_dir_path_ = session_dir.string();
-                RCLCPP_INFO_STREAM(this->get_logger(), "Created logging directory: " << session_dir);
-
-                log_count_ = 0;
-            }
-
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
                 "sub_fsm_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::TransitionFSM, this, std::placeholders::_1));
@@ -80,13 +61,34 @@ namespace obelisk {
             kp_ = this->get_parameter("default_kp").as_double_array();
             kd_ = this->get_parameter("default_kd").as_double_array();
 
-            // TODO: User defined safety maybe
+            // Init the channel factor for hardware coms
             ChannelFactory::Instance()->Init(0, network_interface_name_);
 
-            // Try to shutdown motion control-related service
-            // mode_switch_manager_ = std::make_shared<b2::MotionSwitcherClient>();
-            // mode_switch_manager_->SetTimeout(5.0f);
-            // mode_switch_manager_->Init();
+            // Optional low level logging
+            this->declare_parameter<bool>("logging", false);
+            logging_ = this->get_parameter("logging").as_bool();
+
+            if (logging_) {
+                auto now = std::chrono::system_clock::now();
+                auto time_t = std::chrono::system_clock::to_time_t(now);
+                std::stringstream ss;
+                ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d_%H-%M-%S");
+                
+                std::filesystem::path unitree_logs_dir = "unitree_" + robot_name + "_logs";
+                std::filesystem::path session_dir = unitree_logs_dir / ss.str();
+                
+                std::filesystem::create_directories(session_dir);
+                log_dir_path_ = session_dir.string();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Created logging directory: " << session_dir);
+
+                log_count_ = 0;
+
+                startup_time_ = this->now();
+                InitializeLogging();
+                // TODO: Tie timer callback to WriteMotorData()
+                this->RegisterObkTimer("timer_logging_setting", timer_logging_key_,
+                                   std::bind(&ObeliskUnitreeInterface<MotorStateType, N>::WriteMotorData, this));
+            }
         }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
@@ -139,6 +141,10 @@ namespace obelisk {
         virtual void TransitionToDamp() = 0;
         virtual bool EngageUnitreeMotionControl() = 0;
         virtual bool ReleaseUnitreeMotionControl() = 0;
+        virtual void WriteMotorData() = 0;
+        virtual void WriteMotorLogHeader() = 0;
+        virtual void WriteJointNameFile() = 0;
+        virtual const std::string& RobotName() const = 0;
 
         void TransitionFSM(const unitree_fsm_msg& msg) {
             // Extract commanded FSM state from the message
@@ -249,11 +255,26 @@ namespace obelisk {
             return std::find(transitions[state].begin(), transitions[state].end(), next_state) != transitions[state].end();
         }
 
+        void InitializeLogging() {
+            // Create and open motor data log file in the existing log directory
+            std::string motor_data_file = log_dir_path_ + "/motor_data.csv";
+            motor_data_log_.open(motor_data_file);
+            
+            if (motor_data_log_.is_open()) {
+                WriteMotorLogHeader();
+                motor_data_log_.flush();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Motor data logging initialized: " << motor_data_file);
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to open motor data log file: " << motor_data_file);
+            }
+            
+            WriteJointNameFile();
+        }
+
         // Execution FSM state variable
         ExecFSMState exec_fsm_state_;
 
         // ---------- Topics ---------- //
-        // TODO: Verify these are the same of the G1 and the Go2
         std::string CMD_TOPIC_;
         std::string STATE_TOPIC_;
 
@@ -261,6 +282,12 @@ namespace obelisk {
 
         size_t num_motors_;
         std::vector<std::string> joint_names_;
+
+        // For motor logging
+        std::ofstream motor_data_log_;
+        rclcpp::Time startup_time_;
+        std::array<MotorStateType, N> motor_state_;
+        mutable std::mutex motor_state_mtx_;
 
         // ---------- Gains ---------- //
         std::vector<double> kp_;
@@ -271,11 +298,13 @@ namespace obelisk {
         const std::string sub_UNITREE_VEL_CTRL_key_ = "sub_vel_cmd_key";
         const std::string pub_joint_state_key_ = "joint_state_pub";
         const std::string pub_imu_state_key_ = "imu_state_pub";
+        const std::string timer_logging_key_ = "timer_logging_key";
 
         // Logging
         bool logging_;
         std::string log_dir_path_;
         long log_count_;
+        
     
     private:
     };
