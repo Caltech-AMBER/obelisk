@@ -75,35 +75,35 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    - is_simulated: True
-      pkg: obelisk_unitree_cpp
-      executable: obelisk_unitree_sim
-      params:
-        ic_keyframe: standing
-    # === hardware ===
-    # - is_simulated: False
+    # - is_simulated: True
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_unitree_go2_hardware
+    #   executable: obelisk_unitree_sim
     #   params:
-    #     network_interface_name: enp4s0 #enx001cc24ce09a
-    #     default_kp: [
-    #                 60., 60., 60.,    # FR
-    #                 60., 60., 60.,    # FL
-    #                 60., 60., 60.,    # RR
-    #                 60., 60., 60.,    # RL
-    #                 ]
-    #     default_kd: [
-    #                 5., 5., 5.,    # FR
-    #                 5., 5., 5.,    # FL
-    #                 5., 5., 5.,    # RR
-    #                 5., 5., 5.,    # RL
-    #     ]
-    #     default_kd_damping: [
-    #                 15., 15., 15.,    # FR
-    #                 15., 15., 15.,    # FL
-    #                 15., 15., 15.,    # RR
-    #                 15., 15., 15.,    # RL
-    #     ]
+    #     ic_keyframe: standing
+    # === hardware ===
+    - is_simulated: False
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_go2_hardware
+      params:
+        network_interface_name: enp4s0 #enx001cc24ce09a
+        default_kp: [
+                    60., 60., 60.,    # FR
+                    60., 60., 60.,    # FL
+                    60., 60., 60.,    # RR
+                    60., 60., 60.,    # RL
+                    ]
+        default_kd: [
+                    5., 5., 5.,    # FR
+                    5., 5., 5.,    # FL
+                    5., 5., 5.,    # RR
+                    5., 5., 5.,    # RL
+        ]
+        default_kd_damping: [
+                    15., 15., 15.,    # FR
+                    15., 15., 15.,    # FL
+                    15., 15., 15.,    # RR
+                    15., 15., 15.,    # RL
+        ]
     # ==================
       # callback_groups:
       publishers:

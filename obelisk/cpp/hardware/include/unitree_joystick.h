@@ -209,9 +209,9 @@ namespace obelisk {
         void UpdateXHat(__attribute__((unused)) const sensor_msgs::msg::Joy& msg) override {
             vel_cmd_msg vel_msg;
             vel_msg.header.stamp = this->now();
-            vel_msg.v_x = msg.axes[static_cast<size_t>(ButtonMap::LY)] * v_x_scale_;
-            vel_msg.v_y = msg.axes[static_cast<size_t>(ButtonMap::LX)] * v_y_scale_;
-            vel_msg.w_z = msg.axes[static_cast<size_t>(ButtonMap::RX)] * w_z_scale_;
+            vel_msg.v_x = getAxisValue(msg, vel_cmd_x_ - AXIS_OFFSET) * v_x_scale_;
+            vel_msg.v_y = getAxisValue(msg, vel_cmd_y_ - AXIS_OFFSET) * v_y_scale_;
+            vel_msg.w_z = getAxisValue(msg, vel_cmd_yaw_ - AXIS_OFFSET) * w_z_scale_;
 
             this->GetPublisher<vel_cmd_msg>(this->ctrl_key_)->publish(vel_msg);
             
@@ -307,7 +307,7 @@ namespace obelisk {
                 btn -= LAYER_OFFSET;
             }
             if (on_axis) {
-                return msg.axes[btn - AXIS_OFFSET] < axis_threshold_;
+                return getAxisValue(msg, btn - AXIS_OFFSET) < axis_threshold_;
             }
             if (on_dpad) {
                 int sgn = 1;
@@ -318,6 +318,10 @@ namespace obelisk {
                 return msg.axes[btn - AXIS_OFFSET] * sgn > 0.5;
             }
             return msg.buttons[btn];
+        }
+
+        float getAxisValue(const sensor_msgs::msg::Joy& msg, int ax) {
+            return msg.axes[ax];
         }
 
         bool isOnLayer(int btn) {
