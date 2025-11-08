@@ -324,6 +324,10 @@ namespace obelisk {
             
         }
 
+        void TransitionToUnitreeVel() override{
+            return;
+        }
+
         bool ReleaseUnitreeMotionControl() {
             loco_client_.StopMove();
             std::string robot_form, motion_mode;
@@ -342,7 +346,6 @@ namespace obelisk {
             if (ret_b) {
                 high_level_ctrl_engaged_ = false;
             }
-
             return ret_b;
         }
 
@@ -361,6 +364,7 @@ namespace obelisk {
             }
             if (ret_b) {
                 high_level_ctrl_engaged_ = true;
+                loco_client_.StopMove();
             }
             return ret_b;
         }

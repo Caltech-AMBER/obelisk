@@ -11,3 +11,14 @@ enum class ExecFSMState : uint8_t {
     DAMPING = 5,
     ESTOP = 6
 };
+
+
+const std::unordered_map<ExecFSMState, std::string> TRANSITION_STRINGS = {
+    {ExecFSMState::INIT, "INIT"},
+    {ExecFSMState::UNITREE_HOME, "UNITREE_HOME"},
+    {ExecFSMState::USER_POSE, "USER_POSE"},
+    {ExecFSMState::USER_CTRL, "LOW_LEVEL_CONTROL"},
+    {ExecFSMState::UNITREE_VEL_CTRL, "HIGH_LEVEL_CONTROL"},
+    {ExecFSMState::DAMPING, "DAMPING"},
+    {ExecFSMState::ESTOP, "ESTOP"}
+};

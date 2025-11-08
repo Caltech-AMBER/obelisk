@@ -227,7 +227,12 @@ namespace obelisk {
             if (exec_fsm_state_ != ExecFSMState::UNITREE_VEL_CTRL) {
                 return;
             }
-            sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
+            // RCLCPP_INFO_STREAM(this->get_logger(), "Sending Move Command: " << msg.v_x << ", " << msg.v_y << ", " << msg.w_z);
+            int32_t ret;
+            ret = sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Move Command Failed: ret = " << ret);
+            }
         }
 
         bool CheckDampingToUnitreeHomeTransition() {
@@ -254,7 +259,18 @@ namespace obelisk {
         }
 
         void TransitionToUnitreeHome() override{
-            sport_client_.BalanceStand();
+            // TODO: mutex these so that we don't call 'move' after 'stopmove' here if we are publishing messages?
+            sport_client_.StopMove();
+            int32_t ret;
+            ret = sport_client_.StandUp();
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (stand up) Failed: ret = " << ret);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            ret = sport_client_.BalanceStand();
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (balanced stand) Failed: ret = " << ret);
+            }
         }
 
         void TransitionToDamp() override{
@@ -278,25 +294,35 @@ namespace obelisk {
             }
         }
 
+        void TransitionToUnitreeVel() override{
+            sport_client_.ClassicWalk(false);
+        }
+
         bool EngageUnitreeMotionControl() override{
-            int32_t ret;
-            robot_state_client_.ServiceSwitch("mcf", 1, ret);  // Turn the Unitree motion control on
+            int32_t ret, status;
+            ret = robot_state_client_.ServiceSwitch("mcf", 1, status);  // Turn the Unitree motion control on
             if (ret == 0) {
                 high_level_ctrl_engaged_ = true;
+                sport_client_.StopMove();
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING UNITREE MOTION CONTROL FAILED! ret = " << ret);
             }
             return ret == 0;
         }
 
         bool ReleaseUnitreeMotionControl() override{
-            int32_t ret;
-            robot_state_client_.ServiceSwitch("mcf", 0, ret);  // Turn the Unitree motion control off
+            sport_client_.StopMove();
+            int32_t ret, status;
+            ret = robot_state_client_.ServiceSwitch("mcf", 0, status);  // Turn the Unitree motion control off
             if (ret == 0) {
                 high_level_ctrl_engaged_ = false;
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "RELEASING UNITREE MOTION CONTROL FAILED! ret = " << ret);
             }
             return ret == 0;
         }
 
-                void WriteMotorLogHeader() override{
+        void WriteMotorLogHeader() override{
             if (motor_data_log_.is_open()) {
                 // Write CSV header with startup time info
                 motor_data_log_ << "# Logging started at ROS time: " << startup_time_.nanoseconds() << " ns\n";
