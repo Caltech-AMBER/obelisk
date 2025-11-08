@@ -269,7 +269,6 @@ namespace obelisk {
                 this->GetPublisher<unitree_fsm_msg>(pub_exec_fsm_key_)->publish(fsm_msg);
                 RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick sent Execution FSM Command.");
             }
-            
         }
 
         bool recognizeButton(int btn) {
