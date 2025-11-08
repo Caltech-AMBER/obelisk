@@ -150,7 +150,9 @@ onboard:
           time_step: 0.002
           num_steps_per_viz: 5
           robot_pkg: g1_description
-          model_xml_path: g1_fixed_base.xml
+          # model_xml_path: g1_27dof_fixed_base.xml
+          # model_xml_path: g1_27dof.xml
+          model_xml_path: g1_basic_scene.xml
           sensor_settings:
           - topic: /obelisk/g1/joint_encoders
             dt: 0.002
@@ -172,8 +174,6 @@ onboard:
               right_ankle_roll_joint_pos_sensor: jointpos
 
               waist_yaw_joint_pos_sensor: jointpos
-              waist_roll_joint_pos_sensor: jointpos
-              waist_pitch_joint_pos_sensor: jointpos
 
               left_shoulder_pitch_joint_pos_sensor: jointpos
               left_shoulder_roll_joint_pos_sensor: jointpos
@@ -183,14 +183,6 @@ onboard:
               left_wrist_pitch_joint_pos_sensor: jointpos
               left_wrist_yaw_joint_pos_sensor: jointpos
 
-              left_hand_thumb_0_joint_pos_sensor: jointpos
-              left_hand_thumb_1_joint_pos_sensor: jointpos
-              left_hand_thumb_2_joint_pos_sensor: jointpos
-              left_hand_middle_0_joint_pos_sensor: jointpos
-              left_hand_middle_1_joint_pos_sensor: jointpos
-              left_hand_index_0_joint_pos_sensor: jointpos
-              left_hand_index_1_joint_pos_sensor: jointpos
-
               right_shoulder_pitch_joint_pos_sensor: jointpos
               right_shoulder_roll_joint_pos_sensor: jointpos
               right_shoulder_yaw_joint_pos_sensor: jointpos
@@ -199,13 +191,6 @@ onboard:
               right_wrist_pitch_joint_pos_sensor: jointpos
               right_wrist_yaw_joint_pos_sensor: jointpos
 
-              right_hand_thumb_0_joint_pos_sensor: jointpos
-              right_hand_thumb_1_joint_pos_sensor: jointpos
-              right_hand_thumb_2_joint_pos_sensor: jointpos
-              right_hand_middle_0_joint_pos_sensor: jointpos
-              right_hand_middle_1_joint_pos_sensor: jointpos
-              right_hand_index_0_joint_pos_sensor: jointpos
-              right_hand_index_1_joint_pos_sensor: jointpos
             # ---------- Joint Velocities ---------- #
               left_hip_pitch_joint_vel_sensor: jointvel
               left_hip_roll_joint_vel_sensor: jointvel
@@ -222,8 +207,6 @@ onboard:
               right_ankle_roll_joint_vel_sensor: jointvel
 
               waist_yaw_joint_vel_sensor: jointvel
-              waist_roll_joint_vel_sensor: jointvel
-              waist_pitch_joint_vel_sensor: jointvel
 
               left_shoulder_pitch_joint_vel_sensor: jointvel
               left_shoulder_roll_joint_vel_sensor: jointvel
@@ -233,14 +216,6 @@ onboard:
               left_wrist_pitch_joint_vel_sensor: jointvel
               left_wrist_yaw_joint_vel_sensor: jointvel
 
-              left_hand_thumb_0_joint_vel_sensor: jointvel
-              left_hand_thumb_1_joint_vel_sensor: jointvel
-              left_hand_thumb_2_joint_vel_sensor: jointvel
-              left_hand_middle_0_joint_vel_sensor: jointvel
-              left_hand_middle_1_joint_vel_sensor: jointvel
-              left_hand_index_0_joint_vel_sensor: jointvel
-              left_hand_index_1_joint_vel_sensor: jointvel
-
               right_shoulder_pitch_joint_vel_sensor: jointvel
               right_shoulder_roll_joint_vel_sensor: jointvel
               right_shoulder_yaw_joint_vel_sensor: jointvel
@@ -248,14 +223,6 @@ onboard:
               right_wrist_roll_joint_vel_sensor: jointvel
               right_wrist_pitch_joint_vel_sensor: jointvel
               right_wrist_yaw_joint_vel_sensor: jointvel
-
-              right_hand_thumb_0_joint_vel_sensor: jointvel
-              right_hand_thumb_1_joint_vel_sensor: jointvel
-              right_hand_thumb_2_joint_vel_sensor: jointvel
-              right_hand_middle_0_joint_vel_sensor: jointvel
-              right_hand_middle_1_joint_vel_sensor: jointvel
-              right_hand_index_0_joint_vel_sensor: jointvel
-              right_hand_index_1_joint_vel_sensor: jointvel
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
