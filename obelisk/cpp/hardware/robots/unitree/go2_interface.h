@@ -258,19 +258,41 @@ namespace obelisk {
         }
 
         void TransitionToDamp() override{
-            sport_client_.StopMove();
-            sport_client_.Damp();
+            if (high_level_ctrl_engaged_) {
+                // Use high level damping
+                sport_client_.StopMove();
+                sport_client_.Damp();
+            } else {
+                // Use low level damping
+                LowCmd_ dds_low_command;
+                for (size_t i = 0; i < num_motors_; i++) {     // Only go through the non-hand motors
+                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = 0;
+                    dds_low_command.motor_cmd().at(i).q() = 0;
+                    dds_low_command.motor_cmd().at(i).dq() = 0;
+                    dds_low_command.motor_cmd().at(i).kp() = 0;
+                    dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
+                }
+                dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+                lowcmd_publisher_->Write(dds_low_command);
+            }
         }
 
         bool EngageUnitreeMotionControl() override{
             int32_t ret;
             robot_state_client_.ServiceSwitch("mcf", 1, ret);  // Turn the Unitree motion control on
+            if (ret == 0) {
+                high_level_ctrl_engaged_ = true;
+            }
             return ret == 0;
         }
 
         bool ReleaseUnitreeMotionControl() override{
             int32_t ret;
             robot_state_client_.ServiceSwitch("mcf", 0, ret);  // Turn the Unitree motion control off
+            if (ret == 0) {
+                high_level_ctrl_engaged_ = false;
+            }
             return ret == 0;
         }
 

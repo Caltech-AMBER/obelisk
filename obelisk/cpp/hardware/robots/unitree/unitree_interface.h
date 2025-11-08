@@ -43,6 +43,7 @@ namespace obelisk {
 
             // Set the Execution FSM into INIT
             exec_fsm_state_ = ExecFSMState::INIT;
+            high_level_ctrl_engaged_ = true;
 
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
@@ -58,8 +59,10 @@ namespace obelisk {
             // ---------- Default PD gains ---------- //
             this->declare_parameter<std::vector<double>>("default_kp");
             this->declare_parameter<std::vector<double>>("default_kd");
+            this->declare_parameter<std::vector<double>>("default_kd_damping");
             kp_ = this->get_parameter("default_kp").as_double_array();
             kd_ = this->get_parameter("default_kd").as_double_array();
+            kd_damping_ = this->get_parameter("default_kd_damping").as_double_array();
 
             // Init the channel factor for hardware coms
             ChannelFactory::Instance()->Init(0, network_interface_name_);
@@ -123,7 +126,7 @@ namespace obelisk {
 
         // Set of transitions on which motion control must be released
         const std::vector<ExecFSMState> RELEASE_MC_STATES = {
-            ExecFSMState::USER_POSE, ExecFSMState::USER_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP
+            ExecFSMState::USER_POSE, ExecFSMState::USER_CTRL, ExecFSMState::ESTOP
         };
 
         // Set of transitions on which motion control must be engaged
@@ -273,6 +276,7 @@ namespace obelisk {
 
         // Execution FSM state variable
         ExecFSMState exec_fsm_state_;
+        bool high_level_ctrl_engaged_;
 
         // ---------- Topics ---------- //
         std::string CMD_TOPIC_;
@@ -292,6 +296,7 @@ namespace obelisk {
         // ---------- Gains ---------- //
         std::vector<double> kp_;
         std::vector<double> kd_;
+        std::vector<double> kd_damping_;
 
         // Keys
         const std::string sub_fsm_key_ = "sub_exec_fsm_key";

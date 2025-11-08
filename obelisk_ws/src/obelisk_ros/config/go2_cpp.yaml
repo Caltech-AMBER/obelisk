@@ -98,6 +98,12 @@ onboard:
                     5., 5., 5.,    # RR
                     5., 5., 5.,    # RL
         ]
+        default_kd_damping: [
+                    15., 15., 15.,    # FR
+                    15., 15., 15.,    # FL
+                    15., 15., 15.,    # RR
+                    15., 15., 15.,    # RL
+        ]
     # ==================
       # callback_groups:
       publishers:

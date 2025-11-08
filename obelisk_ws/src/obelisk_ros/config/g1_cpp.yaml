@@ -102,6 +102,17 @@ onboard:
     #                 1., 1., 1.,       # R shoulder
     #                 1., 1., 1., 1.,   # R elbow, wrist
     #     ]
+    #     default_kd_damping: [
+    #                 10., 10., 10.,       # L hip
+    #                 10., 10., 10.,       # L knee, ankle
+    #                 10., 10., 10.,       # R hip
+    #                 10., 10., 10.,       # R knee, ankle
+    #                 10., #10., 10.,       # Waist
+    #                 10., 10., 10.,       # L shoulder
+    #                 10., 10., 10., 10.,   # L elbow, wrist
+    #                 10., 10., 10.,       # R shoulder
+    #                 10., 10., 10., 10.,   # R elbow, wrist
+    #     ]
     # ==================
       # callback_groups:
       publishers:

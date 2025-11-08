@@ -292,11 +292,40 @@ namespace obelisk {
         }
 
         void TransitionToDamp() override{
-            loco_client_.StopMove();
-            loco_client_.Damp();
+            if (high_level_ctrl_engaged_) {
+                // use high level damping
+                loco_client_.Damp();
+            } else {
+                // use low level damping
+                LowCmd_ dds_low_command;
+                for (size_t j = 0; j < G1_27DOF; j++) {     // Only go through the non-hand motors
+                    int i = G1_JOINT_MAPPINGS.at(joint_names_[j]);
+                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = 0;
+                    dds_low_command.motor_cmd().at(i).q() = 0;
+                    dds_low_command.motor_cmd().at(i).dq() = 0;
+                    dds_low_command.motor_cmd().at(i).kp() = 0;
+                    dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
+                }
+                if (fixed_waist_) {
+                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
+                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
+                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(i).tau() = 0;
+                        dds_low_command.motor_cmd().at(i).q() = 0;
+                        dds_low_command.motor_cmd().at(i).dq() = 0;
+                        dds_low_command.motor_cmd().at(i).kp() = 0;
+                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    }
+                }
+                dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+                lowcmd_publisher_->Write(dds_low_command);
+            }
+            
         }
 
         bool ReleaseUnitreeMotionControl() {
+            loco_client_.StopMove();
             std::string robot_form, motion_mode;
             int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
             if (ret != 0) {
@@ -304,10 +333,17 @@ namespace obelisk {
                 return false;
             }
 
+            bool ret_b;
             if (!motion_mode.empty()) {
-                return motion_switcher_client_->ReleaseMode() == 0;
+                ret_b = motion_switcher_client_->ReleaseMode() == 0;
+            } else {
+                ret_b = true;
             }
-            return true;
+            if (ret_b) {
+                high_level_ctrl_engaged_ = false;
+            }
+
+            return ret_b;
         }
 
         bool EngageUnitreeMotionControl() {
@@ -317,10 +353,16 @@ namespace obelisk {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
                 return false;
             }
+            bool ret_b;
             if (motion_mode.empty()) {
-                return motion_switcher_client_->SelectMode("normal") == 0;
+                ret_b = motion_switcher_client_->SelectMode("normal") == 0;
+            } else {
+                ret_b = true;
             }
-            return true;
+            if (ret_b) {
+                high_level_ctrl_engaged_ = true;
+            }
+            return ret_b;
         }
 
         void WriteMotorLogHeader() override{
