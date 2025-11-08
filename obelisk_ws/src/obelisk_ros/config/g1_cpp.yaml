@@ -260,6 +260,9 @@ onboard:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
           callback_group: None
+        - ros_parameter: timer_logging_setting
+          timer_period_sec: 0.2
+          callback_group: None
   viz:
     on: True
     viz_tool: foxglove
