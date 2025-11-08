@@ -299,6 +299,9 @@ namespace obelisk {
         }
 
         bool EngageUnitreeMotionControl() override{
+            if (high_level_ctrl_engaged_) {
+                return true;
+            }
             int32_t ret, status;
             ret = robot_state_client_.ServiceSwitch("mcf", 1, status);  // Turn the Unitree motion control on
             if (ret == 0) {
@@ -311,6 +314,9 @@ namespace obelisk {
         }
 
         bool ReleaseUnitreeMotionControl() override{
+            if (!high_level_ctrl_engaged_) {
+                return true;
+            }
             sport_client_.StopMove();
             int32_t ret, status;
             ret = robot_state_client_.ServiceSwitch("mcf", 0, status);  // Turn the Unitree motion control off
