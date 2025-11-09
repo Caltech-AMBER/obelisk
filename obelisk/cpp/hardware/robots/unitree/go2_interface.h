@@ -21,13 +21,9 @@ namespace obelisk {
             this->declare_parameter<float>("user_pose_transition_duration", 1.);
             user_pose_transition_duration_ = this->get_parameter("user_pose_transition_duration").as_double();
 
-            // Expose high level velocity deadzone as a ros parameter
-            this->declare_parameter<float>("velocity_deadzone", 0.01);
-            vel_deadzone_ = this->get_parameter("velocity_deadzone").as_double();
-
             // Expose home position as a ros parameter
-            this->declare_parameter<std::vector<double>>("home_position", default_user_pose_);
-            auto user_pose_vector = this->get_parameter("home_position").as_double_array(); // Get as vector
+            this->declare_parameter<std::vector<double>>("user_pose", default_user_pose_);
+            auto user_pose_vector = this->get_parameter("user_pose").as_double_array(); // Get as vector
             std::copy(user_pose_vector.begin(), user_pose_vector.end(), user_pose_);
 
             // Expose command timeout as a ros parameter
@@ -227,7 +223,6 @@ namespace obelisk {
             if (exec_fsm_state_ != ExecFSMState::UNITREE_VEL_CTRL) {
                 return;
             }
-            // RCLCPP_INFO_STREAM(this->get_logger(), "Sending Move Command: " << msg.v_x << ", " << msg.v_y << ", " << msg.w_z);
             int32_t ret;
             ret = sport_client_.Move(msg.v_x, msg.v_y, msg.w_z);      // Command velocity
             if (ret != 0) {
@@ -398,7 +393,6 @@ namespace obelisk {
         float joint_vel_[GO2_MOTOR_NUM];          // Local copy of joint velocities
         float start_user_pose_[GO2_MOTOR_NUM];    // For transitioning to home position
         float user_pose_transition_duration_;     // Duration of the transition to home position
-        float vel_deadzone_;                      // Deadzone for high level velocity commands
         float command_timeout_;                   // How long to wait before timing out unitree commands.
         std::vector<double> default_user_pose_ = {0.0, 0.9, -1.8, 0.0, 0.9, -1.8,
                                                   0.0, 0.9, -1.8, 0.0, 0.9, -1.8};   // Default home position

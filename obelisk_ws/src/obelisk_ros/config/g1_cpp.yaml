@@ -35,7 +35,7 @@ onboard:
           callback_group: None
       # ----- High Level Control ----- #
         - ros_parameter: pub_ctrl_setting
-          topic: /obelisk/g1/high_level_ctrl
+          topic: /obelisk/g1/vel_cmd
           history_depth: 10
           callback_group: None
       subscribers:
@@ -69,50 +69,50 @@ onboard:
   # sensing:
   robot:
     # === simulation ===
-    - is_simulated: True
-      pkg: obelisk_unitree_cpp
-      executable: obelisk_unitree_sim
-      params:
-        ic_keyframe: standing
-    # === hardware ===
-    # - is_simulated: False
+    # - is_simulated: True
     #   pkg: obelisk_unitree_cpp
-    #   executable: obelisk_unitree_g1_hardware
+    #   executable: obelisk_unitree_sim
     #   params:
-    #     network_interface_name: enp4s0
-    #     default_kp: [
-    #                 10., 10., 10.,    # L hip
-    #                 10., 10., 10.,    # L knee, ankle
-    #                 10., 10., 10.,    # R hip
-    #                 10., 10., 10.,    # R knee, ankle
-    #                 10., #10., 10.,    # Waist
-    #                 5., 5., 5.,       # L shoulder
-    #                 5., 5., 5., 5.,   # L elbow, wrist
-    #                 5., 5., 5.,       # R shoulder
-    #                 5., 5., 5., 5.,   # R elbow, wrist
-    #                 ]
-    #     default_kd: [
-    #                 1., 1., 1.,       # L hip
-    #                 1., 1., 1.,       # L knee, ankle
-    #                 1., 1., 1.,       # R hip
-    #                 1., 1., 1.,       # R knee, ankle
-    #                 1., #1., 1.,       # Waist
-    #                 1., 1., 1.,       # L shoulder
-    #                 1., 1., 1., 1.,   # L elbow, wrist
-    #                 1., 1., 1.,       # R shoulder
-    #                 1., 1., 1., 1.,   # R elbow, wrist
-    #     ]
-    #     default_kd_damping: [
-    #                 10., 10., 10.,       # L hip
-    #                 10., 10., 10.,       # L knee, ankle
-    #                 10., 10., 10.,       # R hip
-    #                 10., 10., 10.,       # R knee, ankle
-    #                 10., #10., 10.,       # Waist
-    #                 10., 10., 10.,       # L shoulder
-    #                 10., 10., 10., 10.,   # L elbow, wrist
-    #                 10., 10., 10.,       # R shoulder
-    #                 10., 10., 10., 10.,   # R elbow, wrist
-    #     ]
+    #     ic_keyframe: standing
+    # === hardware ===
+    - is_simulated: False
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_g1_hardware
+      params:
+        network_interface_name: enx6c1ff724e92e
+        default_kp: [
+                    10., 10., 10.,    # L hip
+                    10., 10., 10.,    # L knee, ankle
+                    10., 10., 10.,    # R hip
+                    10., 10., 10.,    # R knee, ankle
+                    10., #10., 10.,    # Waist
+                    5., 5., 5.,       # L shoulder
+                    5., 5., 5., 5.,   # L elbow, wrist
+                    5., 5., 5.,       # R shoulder
+                    5., 5., 5., 5.,   # R elbow, wrist
+                    ]
+        default_kd: [
+                    1., 1., 1.,       # L hip
+                    1., 1., 1.,       # L knee, ankle
+                    1., 1., 1.,       # R hip
+                    1., 1., 1.,       # R knee, ankle
+                    1., #1., 1.,       # Waist
+                    1., 1., 1.,       # L shoulder
+                    1., 1., 1., 1.,   # L elbow, wrist
+                    1., 1., 1.,       # R shoulder
+                    1., 1., 1., 1.,   # R elbow, wrist
+        ]
+        default_kd_damping: [
+                    10., 10., 10.,       # L hip
+                    10., 10., 10.,       # L knee, ankle
+                    10., 10., 10.,       # R hip
+                    10., 10., 10.,       # R knee, ankle
+                    10., #10., 10.,       # Waist
+                    10., 10., 10.,       # L shoulder
+                    10., 10., 10., 10.,   # L elbow, wrist
+                    10., 10., 10.,       # R shoulder
+                    10., 10., 10., 10.,   # R elbow, wrist
+        ]
     # ==================
       # callback_groups:
       publishers:
@@ -140,8 +140,8 @@ onboard:
           history_depth: 10
           callback_group: None
       # ----- High Level Control ----- #
-        - ros_parameter: sub_high_level_ctrl_setting
-          topic: /obelisk/g1/high_level_ctrl
+        - ros_parameter: sub_vel_cmd_setting
+          topic: /obelisk/g1/vel_cmd
           history_depth: 10
           callback_group: None
       sim:

@@ -189,20 +189,19 @@ namespace obelisk {
                         return;
                     }
                 }
-  
+                
+                if (cmd_exec_fsm_state == ExecFSMState::DAMPING) {
+                    TransitionToDamp();
+                } else if (cmd_exec_fsm_state == ExecFSMState::UNITREE_HOME) {
+                    TransitionToUnitreeHome();
+                } else if (cmd_exec_fsm_state == ExecFSMState::UNITREE_VEL_CTRL) {
+                    TransitionToUnitreeVel();
+                } else if (cmd_exec_fsm_state == ExecFSMState::USER_POSE) {
+                    TransitionToUserPose();
+                }
                 // Transition the FSM
                 exec_fsm_state_ = cmd_exec_fsm_state;
                 RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED TO " << TRANSITION_STRINGS.at(exec_fsm_state_));
-                
-                if (exec_fsm_state_ == ExecFSMState::DAMPING) {
-                    TransitionToDamp();
-                } else if (exec_fsm_state_ == ExecFSMState::UNITREE_HOME) {
-                    TransitionToUnitreeHome();
-                } else if (exec_fsm_state_ == ExecFSMState::UNITREE_VEL_CTRL) {
-                    TransitionToUnitreeVel();
-                } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
-                    TransitionToUserPose();
-                }
             } else {
                 if (exec_fsm_state_ == cmd_exec_fsm_state) {
                     RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM AREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));

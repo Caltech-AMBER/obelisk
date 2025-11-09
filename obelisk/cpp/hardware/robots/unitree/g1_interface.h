@@ -24,6 +24,10 @@ namespace obelisk {
         G1Interface(const std::string& node_name)
             : ObeliskUnitreeInterface(node_name, "g1"), use_hands_(false), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
 
+            // Expose duration of transition to home position as ros parameter
+            this->declare_parameter<float>("user_pose_transition_duration", 1.);
+            user_pose_transition_duration_ = this->get_parameter("user_pose_transition_duration").as_double();
+
             this->declare_parameter<bool>("use_hands", false);
             use_hands_ = this->get_parameter("use_hands").as_bool();
 
@@ -268,12 +272,16 @@ namespace obelisk {
             if (exec_fsm_state_ != ExecFSMState::UNITREE_VEL_CTRL) {
                 return;
             }
-            loco_client_.Move(msg.v_x, msg.v_y, msg.w_z);
+            int32_t ret;
+            ret = loco_client_.Move(msg.v_x, msg.v_y, msg.w_z);
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Move Command Failed: ret = " << ret);
+            }
         }
 
         bool CheckDampingToUnitreeHomeTransition() {
-            // TODO: check if system can safely transition to home position
-            return false;
+            // Unitree checks this
+            return true;
         }
 
         void TransitionToUserPose() override{
@@ -288,12 +296,30 @@ namespace obelisk {
 
         void TransitionToUnitreeHome() override{
             loco_client_.StopMove();
-            loco_client_.BalanceStand();
+            int32_t ret;
+            if (exec_fsm_state_ == ExecFSMState::DAMPING) {
+                ret = loco_client_.StandUp();
+                if (ret != 0) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (stand up) Failed: ret = " << ret);
+                    return;
+                }
+                for (int i = 0; i < 10; i++) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Transitioning Robot to stand in " << i << "/" << 10 << " sec");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
+                loco_client_.Start();
+            }
+            
+            ret = loco_client_.BalanceStand();
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (balanced stand) Failed: ret = " << ret);
+            }
         }
 
         void TransitionToDamp() override{
             if (high_level_ctrl_engaged_) {
                 // use high level damping
+                loco_client_.StopMove();
                 loco_client_.Damp();
             } else {
                 // use low level damping
@@ -325,10 +351,39 @@ namespace obelisk {
         }
 
         void TransitionToUnitreeVel() override{
+            // TODO: does this need to be placed in a certain mode?
             return;
         }
 
+        bool EngageUnitreeMotionControl() {
+            if (high_level_ctrl_engaged_) {
+                return true;
+            }
+            std::string robot_form, motion_mode;
+            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
+            if (ret != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
+            bool ret_b;
+            if (motion_mode.empty()) {
+                ret_b = motion_switcher_client_->SelectMode("normal") == 0;
+            } else {
+                ret_b = true;
+            }
+            if (ret_b) {
+                high_level_ctrl_engaged_ = true;
+                loco_client_.StopMove();
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING UNITREE MOTION CONTROL FAILED! ret = " << ret);
+            }
+            return ret_b;
+        }
+
         bool ReleaseUnitreeMotionControl() {
+            if (!high_level_ctrl_engaged_) {
+                return true;
+            }
             loco_client_.StopMove();
             std::string robot_form, motion_mode;
             int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
@@ -345,26 +400,6 @@ namespace obelisk {
             }
             if (ret_b) {
                 high_level_ctrl_engaged_ = false;
-            }
-            return ret_b;
-        }
-
-        bool EngageUnitreeMotionControl() {
-            std::string robot_form, motion_mode;
-            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
-            if (ret != 0) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
-                return false;
-            }
-            bool ret_b;
-            if (motion_mode.empty()) {
-                ret_b = motion_switcher_client_->SelectMode("normal") == 0;
-            } else {
-                ret_b = true;
-            }
-            if (ret_b) {
-                high_level_ctrl_engaged_ = true;
-                loco_client_.StopMove();
             }
             return ret_b;
         }
