@@ -195,13 +195,25 @@ namespace obelisk {
                 // Compute proportion of time relative to transition duration
                 float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
-                for (size_t i = 0; i < num_motors_; i++) {
+                for (size_t j = 0; j < num_motors_; j++) {
+                    int i = G1_JOINT_MAPPINGS.at(msg.joint_names[j]);
                     dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                     dds_low_command.motor_cmd().at(i).tau() = 0.;
                     dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
                     dds_low_command.motor_cmd().at(i).dq() = 0.;
                     dds_low_command.motor_cmd().at(i).kp() = kp_[i];
                     dds_low_command.motor_cmd().at(i).kd() = kd_[i];
+                }
+                if (fixed_waist_) {
+                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
+                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
+                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(i).tau() = 0;
+                        dds_low_command.motor_cmd().at(i).q() = 0;
+                        dds_low_command.motor_cmd().at(i).dq() = 0;
+                        dds_low_command.motor_cmd().at(i).kp() = 0;
+                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    }
                 }
             } else {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "Execution FSM state not recognized in ApplyControl!");
