@@ -43,7 +43,8 @@ namespace obelisk {
 
             // Set the Execution FSM into INIT
             exec_fsm_state_ = ExecFSMState::INIT;
-            high_level_ctrl_engaged_ = true;
+            this->declare_parameter<bool>("init_high_level", false);
+            high_level_ctrl_engaged_ = this->get_parameter("init_high_level").as_bool();
 
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
@@ -104,6 +105,10 @@ namespace obelisk {
             this->ObeliskRobot::on_activate(prev_state);
 
             CreateUnitreeSubscribers();
+
+            if (!high_level_ctrl_engaged_) {
+                ReleaseUnitreeMotionControl();
+            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }

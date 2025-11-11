@@ -525,7 +525,7 @@ namespace obelisk {
                 const std::string param = this->get_parameter(info.ros_param).as_string();
                 if (param == "") {
                     RCLCPP_WARN_STREAM(this->get_logger(),
-                                       "Registered timer was not provided a config string! Skipping creation.");
+                                       "Registered timer was not provided a config string! Skipping creation" << key);
                 } else {
                     timers_[key] = info.creator(param);
                     timers_[key]->cancel(); // Pause the timer

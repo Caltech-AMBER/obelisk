@@ -64,7 +64,15 @@ namespace obelisk {
             axis_threshold_ = this->get_parameter("axis_threshold").as_double();
 
             // Handle Execution FSM buttons
-            // Buttons with negative values will corrospond to the DPAD
+            this->declare_parameter<int>("menu_button", static_cast<int>(ButtonMap::MENU));
+            menu_button_ = this->get_parameter("menu_button").as_int();
+            menu_button_on_layer_ = isOnLayer(menu_button_);
+            menu_button_on_axis_ = isOnAxis(menu_button_);
+            menu_button_on_dpad_ = isOnDpad(menu_button_);
+            if (!recognizeButton(menu_button_)) throw std::runtime_error(
+                std::string("[UnitreeJoystick] Menu Button ") + std::to_string(menu_button_) + std::string(" not recognized!!")
+            );
+
             this->declare_parameter<int>("unitree_home_button", static_cast<int>(ButtonMap::DR1));
             unitree_home_button_ = this->get_parameter("unitree_home_button").as_int();
             unitree_home_button_on_layer_ = isOnLayer(unitree_home_button_);
@@ -174,6 +182,7 @@ namespace obelisk {
 
             // Register publishers
             this->RegisterObkPublisher<unitree_fsm_msg>("pub_exec_fsm_setting", pub_exec_fsm_key_);
+            this->RegisterObkPublisher<sensor_msgs::msg::Joy>("pub_joy_passthrough_setting", pub_joy_passthrough_key_);
             RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick node has been initialized.");
         }
         
@@ -207,32 +216,6 @@ namespace obelisk {
 
       protected:
         void UpdateXHat(__attribute__((unused)) const sensor_msgs::msg::Joy& msg) override {
-            vel_cmd_msg vel_msg;
-            vel_msg.header.stamp = this->now();
-            vel_msg.v_x = getAxisValue(msg, vel_cmd_x_ - AXIS_OFFSET) * v_x_scale_;
-            vel_msg.v_y = getAxisValue(msg, vel_cmd_y_ - AXIS_OFFSET) * v_y_scale_;
-            vel_msg.w_z = getAxisValue(msg, vel_cmd_yaw_ - AXIS_OFFSET) * w_z_scale_;
-
-            this->GetPublisher<vel_cmd_msg>(this->ctrl_key_)->publish(vel_msg);
-            
-            // Print control menu
-            static rclcpp::Time last_menu_press = this->now();
-            if ((this->now() - last_menu_press).seconds() > 1 && msg.buttons[static_cast<size_t>(ButtonMap::MENU)]) {
-                RCLCPP_INFO_STREAM(this->get_logger(),
-                    "UnitreeJoystick Button Layout (XBox Controller):\n" <<
-                    "Execution Finite State Machine:\n" << 
-                    "\tHOME:            " << BUTTON_NAMES.at(static_cast<ButtonMap>(unitree_home_button_)) << "\n" << 
-                    "\tDAMPING:         " << BUTTON_NAMES.at(static_cast<ButtonMap>(damping_button_)) << "\n" <<
-                    "\tLOW_LEVEL_CTRL:  " << BUTTON_NAMES.at(static_cast<ButtonMap>(low_level_ctrl_button_)) << "\n" <<
-                    "\tHIGH_LEVEL_CTRL: " << BUTTON_NAMES.at(static_cast<ButtonMap>(high_level_ctrl_button_)) << "\n" <<
-                    "High Level Velocity Commands:\n" <<
-                    "\tFront/Back: " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_x_)) << "\n" <<
-                    "\tSide/Side:  " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_y_)) << "\n" <<
-                    "\tYaw Rate:   " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_yaw_))
-                );
-                last_menu_press = this->now();
-            }
-
             // Trigger FSM
             // First, check for damping or estop
             bool commanded = false;
@@ -269,6 +252,104 @@ namespace obelisk {
                 this->GetPublisher<unitree_fsm_msg>(pub_exec_fsm_key_)->publish(fsm_msg);
                 RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick sent Execution FSM Command " << TRANSITION_STRINGS.at(static_cast<ExecFSMState>(fsm_msg.cmd_exec_fsm_state)));
             }
+
+            // Handle printing menu
+            static rclcpp::Time last_menu_press = this->now();
+            if ((this->now() - last_menu_press).seconds() > 1 && msg.buttons[static_cast<size_t>(ButtonMap::MENU)]) {
+                RCLCPP_INFO_STREAM(this->get_logger(),
+                    "UnitreeJoystick Button Layout (XBox Controller):\n" <<
+                    "Execution Finite State Machine:\n" << 
+                    "\tHOME:            " << BUTTON_NAMES.at(static_cast<ButtonMap>(unitree_home_button_)) << "\n" << 
+                    "\tDAMPING:         " << BUTTON_NAMES.at(static_cast<ButtonMap>(damping_button_)) << "\n" <<
+                    "\tLOW_LEVEL_CTRL:  " << BUTTON_NAMES.at(static_cast<ButtonMap>(low_level_ctrl_button_)) << "\n" <<
+                    "\tHIGH_LEVEL_CTRL: " << BUTTON_NAMES.at(static_cast<ButtonMap>(high_level_ctrl_button_)) << "\n" <<
+                    "High Level Velocity Commands:\n" <<
+                    "\tFront/Back: " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_x_)) << "\n" <<
+                    "\tSide/Side:  " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_y_)) << "\n" <<
+                    "\tYaw Rate:   " << BUTTON_NAMES.at(static_cast<ButtonMap>(vel_cmd_yaw_))
+                );
+                last_menu_press = this->now();
+            }
+
+            // Publish velocity
+            vel_cmd_msg vel_msg;
+            vel_msg.header.stamp = this->now();
+            vel_msg.v_x = getAxisValue(msg, vel_cmd_x_ - AXIS_OFFSET) * v_x_scale_;
+            vel_msg.v_y = getAxisValue(msg, vel_cmd_y_ - AXIS_OFFSET) * v_y_scale_;
+            vel_msg.w_z = getAxisValue(msg, vel_cmd_yaw_ - AXIS_OFFSET) * w_z_scale_;
+
+            this->GetPublisher<vel_cmd_msg>(this->ctrl_key_)->publish(vel_msg);
+
+            // Pass through the joystick message
+            sensor_msgs::msg::Joy passthrough_msg = msg;
+
+            auto zero_axis_idx = [&](int ax_idx){
+                if (ax_idx >= 0 && ax_idx < static_cast<int>(passthrough_msg.axes.size())) {
+                    if ((ax_idx == static_cast<int>(ButtonMap::RT) - AXIS_OFFSET) | (ax_idx == static_cast<int>(ButtonMap::LT) - AXIS_OFFSET)) {
+                        passthrough_msg.axes[ax_idx] = 1.0f;
+                    } else {
+                        passthrough_msg.axes[ax_idx] = 0.0f;
+                    }
+                }                    
+            };
+            auto zero_button_idx = [&](int bt_idx){
+                if (bt_idx >= 0 && bt_idx < static_cast<int>(passthrough_msg.buttons.size()))
+                    passthrough_msg.buttons[bt_idx] = 0;
+            };
+
+            auto clear_binding = [&](int code, bool on_layer, bool on_axis, bool on_dpad){
+                // If binding is layered, zero the layer button as well (prevents combo)
+                if (on_layer) {
+                    if (!getButton(msg, layer_button_, false, layer_button_on_axis_, layer_button_on_dpad_)) {
+                        return;
+                    }
+                    // clear the physical layer button
+                    if (layer_button_on_axis_) {
+                        zero_axis_idx(layer_button_ - AXIS_OFFSET);
+                    } else if (layer_button_on_dpad_) {
+                        zero_axis_idx(layer_button_ - AXIS_OFFSET); // dpad also lives in axes
+                    } else {
+                        zero_button_idx(layer_button_);
+                    }
+                    // reduce code to base (match how getButton() reduces)
+                    code -= LAYER_OFFSET;
+                }
+
+                if (on_axis) {
+                    // axis/trigger input lives in axes[]
+                    zero_axis_idx(code - AXIS_OFFSET);
+                    return;
+                }
+
+                if (on_dpad) {
+                    // DPAD lives in axes; positive/negative handled via sign in detection
+                    int ax = code - AXIS_OFFSET;
+                    // For negative variants (Left/Down), normalize like getButton() does
+                    if (code == static_cast<int>(ButtonMap::DL) ||
+                        code == static_cast<int>(ButtonMap::DD) ||
+                        code == static_cast<int>(ButtonMap::DL1) ||
+                        code == static_cast<int>(ButtonMap::DD1)) {
+                        ax -= NEG_OFFSET; // mirror your detection
+                    }
+                    zero_axis_idx(ax);
+                    return;
+                }
+
+                // Plain digital button
+                zero_button_idx(code);
+            };
+
+            // Clear ONLY the FSM-triggering controls (leave velocity axes intact)
+            clear_binding(estop_,                 estop_on_layer_,                 estop_on_axis_,                 estop_on_dpad_);
+            clear_binding(menu_button_,           menu_button_on_layer_,           menu_button_on_axis_,           menu_button_on_dpad_);
+            clear_binding(damping_button_,        damping_button_on_layer_,        damping_button_on_axis_,        damping_button_on_dpad_);
+            clear_binding(user_pose_button_,      user_pose_button_on_layer_,      user_pose_button_on_axis_,      user_pose_button_on_dpad_);
+            clear_binding(unitree_home_button_,   unitree_home_button_on_layer_,   unitree_home_button_on_axis_,   unitree_home_button_on_dpad_);
+            clear_binding(low_level_ctrl_button_, low_level_ctrl_button_on_layer_, low_level_ctrl_button_on_axis_, low_level_ctrl_button_on_dpad_);
+            clear_binding(high_level_ctrl_button_,high_level_ctrl_button_on_layer_,high_level_ctrl_button_on_axis_,high_level_ctrl_button_on_dpad_);
+
+            // Publish the sanitized passthrough
+            this->GetPublisher<sensor_msgs::msg::Joy>(this->pub_joy_passthrough_key_)->publish(passthrough_msg);
         }
 
         bool recognizeButton(int btn) {
@@ -344,6 +425,7 @@ namespace obelisk {
 
         // Publisher key
         const std::string pub_exec_fsm_key_ = "pub_exec_fsm_key";
+        const std::string pub_joy_passthrough_key_ = "pub_joy_passthrough_key";
 
         // Hold velocity bounds
         float v_x_scale_;
@@ -379,6 +461,10 @@ namespace obelisk {
         bool layer_button_on_dpad_;
         bool layer_button_on_axis_;
         bool estop_on_dpad_;
+        int menu_button_;
+        bool menu_button_on_layer_;
+        bool menu_button_on_axis_;
+        bool menu_button_on_dpad_;
 
         int vel_cmd_x_;
         int vel_cmd_y_;
