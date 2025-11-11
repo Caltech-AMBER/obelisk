@@ -85,38 +85,60 @@ onboard:
       executable: obelisk_unitree_g1_hardware
       params:
         network_interface_name: enx6c1ff724e92e
+        default_joint_names: [
+          "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
+          "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
+          "right_hip_pitch_joint", "right_hip_roll_joint", "right_hip_yaw_joint",
+          "right_knee_joint", "right_ankle_pitch_joint", "right_ankle_roll_joint",
+          "waist_yaw_joint",
+          "left_shoulder_pitch_joint", "left_shoulder_roll_joint", "left_shoulder_yaw_joint", "left_elbow_joint",
+          "left_wrist_roll_joint", "left_wrist_pitch_joint", "left_wrist_yaw_joint",
+          "right_shoulder_pitch_joint", "right_shoulder_roll_joint", "right_shoulder_yaw_joint", "right_elbow_joint",
+          "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint",
+        ]
+        user_pose: [
+          -0.25,  0,  0,
+          0.46, -0.25, 0,
+          -0.25,  0,  0,
+          0.46, -0.25, 0,
+          0,
+          0.07,  0.24, 0, 1.39,
+          0, 0, 0,
+          0.07, -0.24, 0, 1.39,
+          0, 0, 0
+        ]
         default_kp: [
-                    10., 10., 10.,    # L hip
-                    10., 10., 10.,    # L knee, ankle
-                    10., 10., 10.,    # R hip
-                    10., 10., 10.,    # R knee, ankle
-                    10., #10., 10.,    # Waist
-                    5., 5., 5.,       # L shoulder
-                    5., 5., 5., 5.,   # L elbow, wrist
-                    5., 5., 5.,       # R shoulder
-                    5., 5., 5., 5.,   # R elbow, wrist
-                    ]
+          30., 30., 30.,    # L hip
+          30., 30., 30.,    # L knee, ankle
+          30., 30., 30.,    # R hip
+          30., 30., 30.,    # R knee, ankle
+          30.,              # Waist
+          10., 10., 10., 10.,   # L shoulder, elbow
+          10., 10., 10.,       # L wrist
+          10., 10., 10., 10.,   # R shoulder, elbow
+          10., 10., 10.,       # R wrist
+        ]
         default_kd: [
-                    1., 1., 1.,       # L hip
-                    1., 1., 1.,       # L knee, ankle
-                    1., 1., 1.,       # R hip
-                    1., 1., 1.,       # R knee, ankle
-                    1., #1., 1.,       # Waist
-                    1., 1., 1.,       # L shoulder
-                    1., 1., 1., 1.,   # L elbow, wrist
-                    1., 1., 1.,       # R shoulder
-                    1., 1., 1., 1.,   # R elbow, wrist
+          3., 3., 3.,       # L hip
+          3., 3., 3.,       # L knee, ankle
+          3., 3., 3.,       # R hip
+          3., 3., 3.,       # R knee, ankle
+          3.,               # Waist
+          2., 2., 2., 2.,   # L shoulder, elbow
+          2., 2., 2.,       # L wrist
+          2., 2., 2., 2.,   # R shoulder, elbow
+          2., 2., 2.,       # R wrist
         ]
         default_kd_damping: [
-                    10., 10., 10.,       # L hip
-                    10., 10., 10.,       # L knee, ankle
-                    10., 10., 10.,       # R hip
-                    10., 10., 10.,       # R knee, ankle
-                    10., #10., 10.,       # Waist
-                    10., 10., 10.,       # L shoulder
-                    10., 10., 10., 10.,   # L elbow, wrist
-                    10., 10., 10.,       # R shoulder
-                    10., 10., 10., 10.,   # R elbow, wrist
+          10., 10., 10.,       # L hip
+          10., 10., 10.,       # L knee, ankle
+          10., 10., 10.,       # R hip
+          10., 10., 10.,       # R knee, ankle
+          10.,                 # Waist
+          10., 10., 10., 10.,  # L shoulder, elbow
+          10., 10., 10.,       # L wrist
+          10., 10., 10., 10.,  # R shoulder,  elbow
+          10., 10., 10.,       # R wrist
         ]
     # ==================
       # callback_groups:

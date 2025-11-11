@@ -67,6 +67,97 @@ namespace obelisk {
             this->declare_parameter<std::vector<double>>("user_pose", user_pose_);
             user_pose_ = this->get_parameter("user_pose").as_double_array();
 
+            // Handle default joint names
+            std::vector<std::string> tmp_default_names;
+            if (fixed_waist_) {
+                tmp_default_names.assign(
+                    G1_27DOF_JOINT_NAMES.begin(),
+                    G1_27DOF_JOINT_NAMES.end()
+                );
+            } else {
+                // Use only first num_motors_ entries
+                tmp_default_names.assign(
+                    G1_FULL_JOINT_NAMES.begin(),
+                    G1_FULL_JOINT_NAMES.begin() + num_motors_
+                );
+            }
+            this->declare_parameter<std::vector<std::string>>("default_joint_names", tmp_default_names);
+            default_joint_names_ = this->get_parameter("default_joint_names").as_string_array();
+            std::unordered_set<std::string> expected;
+            if (fixed_waist_) {
+                expected.reserve(G1_27DOF_JOINT_NAMES.size());
+                for (const auto& name : G1_27DOF_JOINT_NAMES) {
+                    expected.insert(name);
+                }
+            } else {
+                expected.reserve(G1_27DOF_JOINT_NAMES.size() + G1_EXTRA_WAIST_JOINT_NAMES.size());
+                for (const auto& name : G1_27DOF_JOINT_NAMES) {
+                    expected.insert(name);
+                }
+                for (const auto& name : G1_EXTRA_WAIST_JOINT_NAMES) {
+                    expected.insert(name);
+                }
+            }
+            
+            if (default_joint_names_.size() != expected.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), 
+                    "[UnitreeInterface] default_joint_names has size " +
+                    std::to_string(default_joint_names_.size()) +
+                    ", but expected " + std::to_string(expected.size()));
+                throw std::runtime_error(
+                    "[UnitreeInterface] default_joint_names has size " +
+                    std::to_string(default_joint_names_.size()) +
+                    ", but expected " + std::to_string(expected.size()));
+            }
+            for (const auto& name : default_joint_names_) {
+                if (expected.count(name) == 0) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Unknown joint in default_joint_names: " + name);
+                    throw std::runtime_error(
+                        "[UnitreeInterface] Unknown joint in default_joint_names: " + name);
+                }
+            }
+            default_joint_mapping_.clear();
+            for (size_t i = 0; i < default_joint_names_.size(); ++i) {
+                default_joint_mapping_.emplace(default_joint_names_[i], static_cast<int>(i));
+            }
+
+            if (kp_.size() != default_joint_names_.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), 
+                    "[UnitreeInterface] default kp has size " +
+                    std::to_string(kp_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+                throw std::runtime_error("[UnitreeInterface] default kp has size " +
+                    std::to_string(kp_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+            }
+            if (kd_.size() != default_joint_names_.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), 
+                    "[UnitreeInterface] default kd has size " +
+                    std::to_string(kd_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+                throw std::runtime_error("[UnitreeInterface] default kd has size " +
+                    std::to_string(kd_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+            }
+            if (kd_damping_.size() != default_joint_names_.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), 
+                    "[UnitreeInterface] default kd_damping_ has size " +
+                    std::to_string(kd_damping_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+                throw std::runtime_error("[UnitreeInterface] default kd_damping_ has size " +
+                    std::to_string(kd_damping_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+            }
+            if (user_pose_.size() != default_joint_names_.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), 
+                    "[UnitreeInterface] user_pose_ has size " +
+                    std::to_string(user_pose_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+                throw std::runtime_error("[UnitreeInterface] user_pose_ has size " +
+                    std::to_string(user_pose_.size()) +
+                    ", but expected " + std::to_string(default_joint_names_.size()));
+            }
+
             // Expose command timeout as a ros parameter
             this->declare_parameter<float>("command_timeout", 2.0f);
             command_timeout_ = this->get_parameter("command_timeout").as_double();
@@ -167,24 +258,25 @@ namespace obelisk {
                     use_default_gains = false;
                 }
 
-                for (size_t j = 0; j < G1_27DOF; j++) {     // Only go through the non-hand motors
-                    int i = G1_JOINT_MAPPINGS.at(msg.joint_names[j]);
-                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
-                    dds_low_command.motor_cmd().at(i).q() = msg.pos_target[j];
-                    dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
-                    dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
-                    dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
+                for (size_t msg_ind = 0; msg_ind < G1_27DOF; msg_ind++) {     // Only go through the non-hand motors
+                    int uni_ind = G1_JOINT_MAPPINGS.at(msg.joint_names[msg_ind]);
+                    int def_ind = default_joint_mapping_.at(msg.joint_names[msg_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = msg.feed_forward[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).q() = msg.pos_target[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = msg.vel_target[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = use_default_gains ? kp_[def_ind] : msg.kp[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = use_default_gains ? kd_[def_ind] : msg.kd[msg_ind];
                 }
                 if (fixed_waist_) {
-                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
-                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
-                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
-                        dds_low_command.motor_cmd().at(i).tau() = 0;
-                        dds_low_command.motor_cmd().at(i).q() = 0;
-                        dds_low_command.motor_cmd().at(i).dq() = 0;
-                        dds_low_command.motor_cmd().at(i).kp() = 0;
-                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
                     }
                 }
             // ------------------------ Execution FSM: Home ------------------------ //
@@ -195,13 +287,25 @@ namespace obelisk {
                 // Compute proportion of time relative to transition duration
                 float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
-                for (size_t i = 0; i < num_motors_; i++) {
-                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau() = 0.;
-                    dds_low_command.motor_cmd().at(i).q() = (1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
-                    dds_low_command.motor_cmd().at(i).dq() = 0.;
-                    dds_low_command.motor_cmd().at(i).kp() = kp_[i];
-                    dds_low_command.motor_cmd().at(i).kd() = kd_[i];
+                for (size_t def_ind = 0; def_ind < default_joint_names_.size(); def_ind++) {     // Only go through the non-hand motors
+                    int uni_ind = G1_JOINT_MAPPINGS.at(default_joint_names_[def_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = 0.;
+                    dds_low_command.motor_cmd().at(uni_ind).q() = (1 - proportion) * start_user_pose_[uni_ind] + proportion * user_pose_[def_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = 0.;
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = kp_[def_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = kd_[def_ind];
+                }
+                if (fixed_waist_) {
+                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
+                    }
                 }
             } else {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "Execution FSM state not recognized in ApplyControl!");
@@ -233,6 +337,11 @@ namespace obelisk {
                 joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
                 joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
+                {
+                    std::lock_guard<std::mutex> lock(joint_mutex_);
+                    joint_pos_[i] = low_state.motor_state()[i].q();
+                    joint_vel_[i] = low_state.motor_state()[i].dq();
+                }
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
@@ -498,6 +607,8 @@ namespace obelisk {
         std::vector<double> joint_vel_;         // Local copy of joint positions
         std::vector<double> start_user_pose_;   // For transitioning to home position
         std::vector<double> user_pose_;         // home position
+        std::vector<std::string> default_joint_names_;
+        std::unordered_map<std::string, int> default_joint_mapping_;
 
         std::mutex joint_mutex_;                      // mutex for copying joint positions and velocities
         g1::LocoClient loco_client_;                  // Locomotion Client for high level control
