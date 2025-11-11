@@ -38,6 +38,11 @@ onboard:
           topic: /obelisk/g1/vel_cmd
           history_depth: 10
           callback_group: None
+      # ----- Joystick Passthrough ----- #
+        - ros_parameter: pub_joy_passthrough_setting
+          topic: /obelisk/fsm_test/joy_passthrough
+          history_depth: 10
+          callback_group: None
       subscribers:
       # ----- Joystick subscriber ----- #
         - ros_parameter: sub_est_setting

@@ -107,6 +107,7 @@ namespace obelisk {
             CreateUnitreeSubscribers();
 
             if (!high_level_ctrl_engaged_) {
+                high_level_ctrl_engaged_ = true;  // Forcing Unitree state machine to transition (see ReleaseUnitreeMotionControl)
                 ReleaseUnitreeMotionControl();
             }
 

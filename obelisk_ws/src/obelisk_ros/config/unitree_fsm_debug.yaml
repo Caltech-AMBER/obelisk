@@ -16,6 +16,7 @@ onboard:
           topic: /obelisk/fsm_test/high_level_ctrl
           history_depth: 10
           callback_group: None
+      # ----- Joystick Passthrough ----- #
         - ros_parameter: pub_joy_passthrough_setting
           topic: /obelisk/fsm_test/joy_passthrough
           history_depth: 10
