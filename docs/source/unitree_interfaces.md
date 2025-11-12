@@ -26,7 +26,7 @@ To avoid having the default FSM conflict with any user-specified FSM operating o
  - DPad Up (L1): UNITREE VEL CTRL
  - DPad Down (L1): USER CTRL
 
-where L1 refers to Layer 1, i.e. the layer button must be held down. 
+where L1 refers to Layer 1, i.e. the layer button must be held down. Additionally, all buttons not passed to the fsm are passed through on a separate joystick node (`/obelisk/g1/joy_passthrough` by default). It is recommended that the user subscribe to this topic to use the controller, rather than the joystick topic (default `/obelisk/g1/joy`), to avoid interference with the fsm. 
 
 All of these buttons can be remapped as desired in the setup yaml. Here is a complete yaml, with all available options (omitted options will take default values): 
 
@@ -39,8 +39,8 @@ joystick:
         v_x_scale: 0.5
         v_y_scale: 0.5
         w_z_scale: 0.5
-        unitree_home_button:    116  // DR1
-        user_pose_button:       127  // DL1
+        unitree_home_button:    116  // DL1
+        user_pose_button:       127  // DR1
         low_level_ctrl_button:  128  // DD1
         high_level_ctrl_button: 117  // DU1
         damping_button:          12  // LT
@@ -61,8 +61,8 @@ X = 3,
 Y = 2,
 A = 0,
 B = 1,
-DL = 27     // 6 + AXIS_OFFSET + NEG_OFFSET,
-DR = 16     // 6 + AXIS_OFFSET,
+DR = 27     // 6 + AXIS_OFFSET + NEG_OFFSET,
+DL = 16     // 6 + AXIS_OFFSET,
 DU = 17     // 7 + AXIS_OFFSET,
 DD = 28     // 7 + AXIS_OFFSET + NEG_OFFSET,
 LX = 10     // 0 + AXIS_OFFSET,
@@ -76,10 +76,25 @@ X1 = 103    // X + LAYER_OFFSET,
 Y1 = 102    // Y + LAYER_OFFSET,
 A1 = 100    // A + LAYER_OFFSET,
 B1 = 101    // B + LAYER_OFFSET,
-DL1 = 127   // DL + LAYER_OFFSET,
-DR1 = 116   // DR + LAYER_OFFSET,
+DR1 = 127   // DL + LAYER_OFFSET,
+DL1 = 116   // DR + LAYER_OFFSET,
 DU1 = 117   // DU + LAYER_OFFSET,
 DD1 = 128   // DD + LAYER_OFFSET,
 ```
 
-Note that to avoid conflicts between `button` indices and `axis` indices (and issues with the DPad), we have added offsets `LAYER_OFFSET = 100`, to buttons on Layer 1, `AXIS_OFFSET = 10` to axes, and `NEG_OFFSET = 11` to elements of the DPad which report negative values when pressed.   
+Note that to avoid conflicts between `button` indices and `axis` indices (and issues with the DPad), we have added offsets `LAYER_OFFSET = 100`, to buttons on Layer 1, `AXIS_OFFSET = 10` to axes, and `NEG_OFFSET = 11` to elements of the DPad which report negative values when pressed. 
+
+
+## Standard Pipeline for High Level Control
+1. Ensure the relevant flag is `robot -> is simulated: False -> params: -> init_high_level: True`.
+2. Turn the robot on.
+3. Once robot signifies ready state (zero torque mode on G1 humanoid, standing up on Go2 quadruped), run fsm.
+4. Start with INIT -> DAMPING, and follow up with DAMPING -> UNITREE_HOME (for the G1), or proceed directly with INIT -> UNITREE_HOME (for the Go2).
+5. Proceed with UNITREE_HOME -> UNITREE_VEL for velocity control with the unitree default locomotion controllers.
+
+## Standard Pipeline for Low Level Control
+1. Either omit or ensure the relevant flag is `robot -> is simulated: False -> params: -> init_high_level: False`.
+2. Turn the robot on.
+3. Once robot signifies ready state (zero torque mode on G1 humanoid, standing up on Go2 quadruped), run fsm.
+4. Start with INIT -> DAMPING, and follow up with DAMPING -> USER_POSE (for the G1), or proceed directly with INIT -> USER_POSE (for the Go2).
+5. Proceed with USER_POSE -> USER_CTRL for user defined controllers.
