@@ -108,22 +108,22 @@ onboard:
           0, 0, 0
         ]
         default_kp: [
-          30., 30., 30.,    # L hip
-          30., 30., 30.,    # L knee, ankle
-          30., 30., 30.,    # R hip
-          30., 30., 30.,    # R knee, ankle
-          30.,              # Waist
-          10., 10., 10., 10.,   # L shoulder, elbow
-          10., 10., 10.,       # L wrist
-          10., 10., 10., 10.,   # R shoulder, elbow
-          10., 10., 10.,       # R wrist
+          100., 100., 100.,       # L hip
+          150., 100., 100.,       # L knee, ankle
+          100., 100., 100.,       # R hip
+          150., 100., 100.,       # R knee, ankle
+          100.,                   # Waist
+          50., 50., 40., 40.,  # L shoulder, elbow
+          30., 30., 30.,       # L wrist
+          50., 50., 40., 40.,  # R shoulder, elbow
+          30., 30., 30.,       # R wrist
         ]
         default_kd: [
-          3., 3., 3.,       # L hip
-          3., 3., 3.,       # L knee, ankle
-          3., 3., 3.,       # R hip
-          3., 3., 3.,       # R knee, ankle
-          3.,               # Waist
+          2., 2., 2.,       # L hip
+          4., 2., 2.,       # L knee, ankle
+          2., 2., 2.,       # R hip
+          4., 2., 2.,       # R knee, ankle
+          2.,               # Waist
           2., 2., 2., 2.,   # L shoulder, elbow
           2., 2., 2.,       # L wrist
           2., 2., 2., 2.,   # R shoulder, elbow

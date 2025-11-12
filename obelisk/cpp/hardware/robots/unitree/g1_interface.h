@@ -59,6 +59,10 @@ namespace obelisk {
             std::vector<std::string> default_names_vec(G1_27DOF_JOINT_NAMES.begin(), G1_27DOF_JOINT_NAMES.end());
             this->declare_parameter<std::vector<std::string>>("default_joint_names", default_names_vec);
             default_joint_names_ = this->get_parameter("default_joint_names").as_string_array();
+            default_joint_mapping_.clear();
+            for (size_t i = 0; i < default_joint_names_.size(); ++i) {
+                default_joint_mapping_.emplace(default_joint_names_[i], static_cast<int>(i));
+            }
 
             // Expose command timeout as a ros parameter
             this->declare_parameter<float>("command_timeout", 2.0f);
@@ -189,7 +193,7 @@ namespace obelisk {
                     dds_low_command.motor_cmd().at(uni_ind).tau() = 0.;
                     dds_low_command.motor_cmd().at(uni_ind).q() = (1 - proportion) * start_user_pose_[uni_ind] + proportion * user_pose_[def_ind];
                     dds_low_command.motor_cmd().at(uni_ind).dq() = 0.;
-                    dds_low_command.motor_cmd().at(uni_ind).kp() = kp_[def_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = (1 - proportion) * 10 + proportion * kp_[def_ind];
                     dds_low_command.motor_cmd().at(uni_ind).kd() = kd_[def_ind];
                 }
                 if (fixed_waist_) {
@@ -513,7 +517,7 @@ namespace obelisk {
         std::vector<double> start_user_pose_;   // For transitioning to home position
         std::vector<double> user_pose_;         // home position
         std::vector<std::string> default_joint_names_;
-        std::unordered_map<std::string, int> default_joint_mapping_;
+        std::map<std::string, int> default_joint_mapping_;
 
         std::mutex joint_mutex_;                      // mutex for copying joint positions and velocities
         g1::LocoClient loco_client_;                  // Locomotion Client for high level control
