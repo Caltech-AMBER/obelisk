@@ -333,15 +333,23 @@ namespace obelisk {
             joint_state.joint_vel.resize(G1_27DOF + G1_EXTRA_WAIST);
             joint_state.joint_names.resize(G1_27DOF + G1_EXTRA_WAIST);
 
+            size_t ind = 0;
             for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
-                joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
-                joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
+                if (fixed_waist_ && std::find(
+                        G1_EXTRA_WAIST_JOINT_NAMES.begin(),
+                        G1_EXTRA_WAIST_JOINT_NAMES.end(),
+                        G1_FULL_JOINT_NAMES[i]) != G1_EXTRA_WAIST_JOINT_NAMES.end()) {
+                    continue;  // if the waist is fixed, don't publish the two waist joints (like mujoco...)
+                }
+                joint_state.joint_names.at(ind) = G1_FULL_JOINT_NAMES[i];
+                joint_state.joint_pos.at(ind) = low_state.motor_state()[i].q();
+                joint_state.joint_vel.at(ind) = low_state.motor_state()[i].dq();
                 {
                     std::lock_guard<std::mutex> lock(joint_mutex_);
                     joint_pos_[i] = low_state.motor_state()[i].q();
                     joint_vel_[i] = low_state.motor_state()[i].dq();
                 }
+                ind++;
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
