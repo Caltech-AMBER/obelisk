@@ -480,7 +480,7 @@ namespace obelisk {
             this->log_count_++;
         }
 
-        void VerifyParameters() override {
+        void VerifyParameters() {
             ObeliskUnitreeInterface::VerifyParameters();
 
             // --- helpers ---
@@ -518,7 +518,6 @@ namespace obelisk {
 
             // Build name -> index map
             default_joint_mapping_.clear();
-            default_joint_mapping_.reserve(N);
             for (size_t i = 0; i < N; ++i) {
                 default_joint_mapping_.emplace(default_joint_names_[i], static_cast<int>(i));
             }
