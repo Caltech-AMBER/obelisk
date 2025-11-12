@@ -39,6 +39,12 @@ namespace obelisk {
             // Get network interface name as a parameter
             this->declare_parameter<std::string>("network_interface_name", "");
             network_interface_name_ = this->get_parameter("network_interface_name").as_string();
+            if (network_interface_name_ == "") {
+                this->declare_parameter<std::string>("target_ip", "192.168.123.222");
+                std::string target_ip = this->get_parameter("target_ip").as_string();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Target IP: " << target_ip);
+                GetInterfaceName(target_ip, network_interface_name_);
+            }
             RCLCPP_INFO_STREAM(this->get_logger(), "Network interface: " << network_interface_name_);
 
             // Set the Execution FSM into INIT
@@ -114,16 +120,6 @@ namespace obelisk {
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
 
-        // Set of legal transitions for the execution FSM
-        // const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
-        //     {ExecFSMState::INIT, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                                    // Init -> Home, Init -> Damp
-        //     {ExecFSMState::UNITREE_HOME, {ExecFSMState::USER_POSE, ExecFSMState::USER_CTRL, ExecFSMState::UNITREE_VEL_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},  // Home -> Pose, Home -> Low,  Home -> High, Home -> Damp
-        //     {ExecFSMState::USER_POSE, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                 // Pose -> Home, Pose -> Low,  Pose -> Damp
-        //     {ExecFSMState::USER_CTRL, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_POSE, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                 // Low  -> Home, Low  -> Pose, Low  -> Damp
-        //     {ExecFSMState::UNITREE_VEL_CTRL, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                         // High -> Home, High -> Damp
-        //     {ExecFSMState::DAMPING, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_POSE, ExecFSMState::ESTOP}},                                                              // Damp -> Home, Damp -> Pose
-        //     {ExecFSMState::ESTOP, {}}                                                                                                                                          // Estop (None)
-        // };
         const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
             {ExecFSMState::INIT, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                                    // Init -> Home, Init -> Damp
             {ExecFSMState::UNITREE_HOME, {ExecFSMState::USER_POSE, ExecFSMState::USER_CTRL, ExecFSMState::UNITREE_VEL_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},  // Home -> Pose, Home -> Low,  Home -> High, Home -> Damp
@@ -324,5 +320,34 @@ namespace obelisk {
         
     
     private:
+        void GetInterfaceName(const std::string& target_ip, std::string& network_interface_name_) {
+            struct ifaddrs *ifaddr = nullptr;
+            if (getifaddrs(&ifaddr) == -1) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "if_addr error.");
+                throw std::runtime_error("ifadd error.");
+            }
+
+            bool found = false;
+            for (auto *ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+                if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
+                    continue;
+
+                char addr[INET_ADDRSTRLEN];
+                auto *sa = reinterpret_cast<sockaddr_in*>(ifa->ifa_addr);
+                inet_ntop(AF_INET, &sa->sin_addr, addr, sizeof(addr));
+
+                if (target_ip == addr) {
+                    network_interface_name_ = ifa->ifa_name;
+                    found = true;
+                    break;
+                }
+            }
+
+            freeifaddrs(ifaddr);
+            if (!found) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "No interface found with IP: " + target_ip);
+                throw std::runtime_error("No interface found with IP: " + target_ip);
+            }
+        }
     };
 } // namespace obelisk

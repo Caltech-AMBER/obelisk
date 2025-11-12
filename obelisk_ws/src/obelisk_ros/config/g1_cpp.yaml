@@ -84,7 +84,7 @@ onboard:
       pkg: obelisk_unitree_cpp
       executable: obelisk_unitree_g1_hardware
       params:
-        network_interface_name: enx6c1ff724e92e
+        # network_interface_name: enx6c1ff724e92e
         default_joint_names: [
           "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
           "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
