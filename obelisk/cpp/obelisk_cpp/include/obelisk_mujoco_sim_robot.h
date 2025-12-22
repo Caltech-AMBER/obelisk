@@ -1,7 +1,7 @@
 #ifndef OBELISK_MUJOCO_SIM_ROBOT_H
 #define OBELISK_MUJOCO_SIM_ROBOT_H
 
-#ifdef OBELISK_USE_MUJOCO
+// #ifdef OBELISK_USE_MUJOCO
 
 #pragma once
 
@@ -326,46 +326,6 @@ namespace obelisk {
             // free visualization storage
             mjv_freeScene(&scn);
             mjr_freeContext(&con);
-        }
-
-        obelisk_sensor_msgs::msg::TrueSimState PublishTrueSimState() override {
-            RCLCPP_WARN_STREAM_ONCE(this->get_logger(),
-                                    "The true sim state currently only works for floating base robots!");
-            static constexpr int DIM_FLOATING_BASE = 7;
-            static constexpr int DIM_FLOATING_VEL  = 6;
-
-            obelisk_sensor_msgs::msg::TrueSimState msg;
-
-            std::lock_guard<std::mutex> lock(sensor_data_mut_);
-
-            msg.header.frame_id = "world";
-            msg.header.stamp    = this->now();
-
-            // TODO: Base link name
-            // TODO: Joint names
-            // TODO: Handle both floating and fixed base
-
-            // Configuration
-            for (int i = 0; i < DIM_FLOATING_BASE; i++) {
-                msg.q_base.emplace_back(this->data_->qpos[i]);
-            }
-
-            for (int i = DIM_FLOATING_BASE; i < this->model_->nq; i++) {
-                msg.q_joints.emplace_back(this->data_->qpos[i]);
-            }
-
-            // Velocity
-            for (int i = 0; i < DIM_FLOATING_VEL; i++) {
-                msg.v_base.emplace_back(this->data_->qvel[i]);
-            }
-
-            for (int i = DIM_FLOATING_VEL; i < this->model_->nv; i++) {
-                msg.v_joints.emplace_back(this->data_->qvel[i]);
-            }
-
-            this->template GetPublisher<obelisk_sensor_msgs::msg::TrueSimState>(this->state_pub_key_)->publish(msg);
-
-            return msg;
         }
 
       private:
@@ -1534,4 +1494,4 @@ namespace obelisk {
 // #error "Mujoco support is disabled. Build with USE_MUJOCO=ON to use this header."
 #endif
 
-#endif
+// #endif

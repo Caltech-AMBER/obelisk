@@ -20,14 +20,8 @@ namespace obelisk {
         using TrueSimState = obelisk_sensor_msgs::msg::TrueSimState;
 
       public:
-        explicit ObeliskSimRobot(const std::string& name, const std::string& state_timer_key = "timer_true_sim_state",
-                                 const std::string& state_pub_key = "pub_true_sim_state")
-            : ObeliskRobot<ControlMessageT>(name), state_timer_key_(state_timer_key), state_pub_key_(state_pub_key) {
-
-            // Register Components
-            this->RegisterObkTimer("timer_true_sim_state_setting", state_timer_key_,
-                                   std::bind(&ObeliskSimRobot::PublishTrueSimState, this));
-            this->template RegisterObkPublisher<TrueSimState>("pub_true_sim_state_setting", state_pub_key_);
+        explicit ObeliskSimRobot(const std::string& name)
+            : ObeliskRobot<ControlMessageT>(name) {
 
             stop_thread_ = false;
         }
@@ -123,18 +117,6 @@ namespace obelisk {
         }
 
         /**
-         * @brief Publish the TrueSimState of the simulator.
-         *
-         * This is the timer callback that publishes the TrueSimState and is expected to call
-         * self.publisher_true_sim_state internally. Note that the true sim state message is still returned afterwards,
-         * mostly for logging/debugging purposes. The publish call is the important part, NOT the returned value, since
-         * the topic is what the ObeliskEstimator subscribes to.
-         *
-         * @return obelisk_true_sim_state_msg: An Obelisk message type containing the true sim state.
-         */
-        virtual TrueSimState PublishTrueSimState() = 0;
-
-        /**
          * @brief Run the simulator
          *
          * The control input into the simulator is accessed through the shared control array. If any simulator
@@ -160,9 +142,6 @@ namespace obelisk {
 
         // Flag to signal stopping the thread
         std::atomic<bool> stop_thread_;
-
-        std::string state_timer_key_;
-        std::string state_pub_key_;
 
       private:
     };
