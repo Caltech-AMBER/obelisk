@@ -1,7 +1,7 @@
 #ifndef OBELISK_MUJOCO_SIM_ROBOT_H
 #define OBELISK_MUJOCO_SIM_ROBOT_H
 
-// #ifdef OBELISK_USE_MUJOCO
+#ifdef OBELISK_USE_MUJOCO
 
 #pragma once
 
@@ -1494,4 +1494,4 @@ namespace obelisk {
 // #error "Mujoco support is disabled. Build with USE_MUJOCO=ON to use this header."
 #endif
 
-// #endif
+#endif
