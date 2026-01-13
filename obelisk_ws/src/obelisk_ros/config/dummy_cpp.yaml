@@ -59,16 +59,6 @@ onboard:
         height_map_grid_spacing: 0.1
         height_map_geom_group: [0]
         # camera_name: "fixed_cam"  # You can select a camera to use here
-      publishers:
-        - ros_parameter: pub_true_sim_state_setting
-          topic: /obelisk/dummy/true_sim_state
-          history_depth: 10
-          callback_group: None
-      timers:
-        - ros_parameter: timer_true_sim_state_setting
-          history_depth: 10
-          timer_period_sec: 0.01
-          callback_group: None
       subscribers:
         - ros_parameter: sub_ctrl_setting
           topic: /obelisk/dummy/ctrl
