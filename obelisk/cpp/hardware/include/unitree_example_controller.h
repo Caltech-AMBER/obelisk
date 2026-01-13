@@ -1,8 +1,10 @@
+#include <map>
 #include "sensor_msgs/msg/joy.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #include "obelisk_controller.h"
 #include "obelisk_ros_utils.h"
+
 
 namespace obelisk {
     using unitree_controller_msg = obelisk_control_msgs::msg::PDFeedForward;
@@ -14,16 +16,18 @@ namespace obelisk {
             : ObeliskController<unitree_controller_msg, unitree_estimator_msg>(name), joint_idx_(0) {
 
             this->declare_parameter<std::string>("robot_str", "");
-            std::string robot_str = this->get_parameter("robot_str").as_string();
+            robot_str_ = this->get_parameter("robot_str").as_string();
 
-            if (robot_str == "G1") {
+            if (robot_str_ == "G1") {
                 motor_num_ = G1_MOTOR_NUM;
                 joint_names_ = G1_JOINT_NAMES;
-            } else if (robot_str == "Go2") {
+                joint_defaults_ = G1_JOINT_DEFAULTS;
+            } else if (robot_str_ == "Go2") {
                 motor_num_ = GO2_MOTOR_NUM;
                 joint_names_ = GO2_JOINT_NAMES;
+                joint_defaults_ = GO2_JOINT_DEFAULTS;
             } else {
-                throw std::runtime_error("[UnitreeExampleController] robot_str is invalid!");
+                throw std::runtime_error("[UnitreeExampleController] robot_str is invalid! " + std::string(robot_str_) + "  --  Must be G1 or Go2");
             }
             // ----- Joystick Subscriber ----- //
             this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
@@ -46,23 +50,16 @@ namespace obelisk {
             msg.kd.clear();
             double time_sec = this->get_clock()->now().seconds();
 
-            // TODO With hands we have 43
-            float offset = 0;
-
             for (int i = 0; i < motor_num_; i++) {
+                float default_joint = joint_defaults_.at(joint_names_[i]);
                 if (i == joint_idx_) {
-                    if (joint_names_[i].find("calf") != std::string::npos) {
-                        offset = -1.5;
-                    } else {
-                        offset = 0;
-                    }
-                    msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec) + offset);
-                    msg.pos_target.emplace_back(amplitude_ * sin(time_sec) + offset);
+                    msg.u_mujoco.emplace_back(amplitude_ * sin(time_sec) + default_joint);
+                    msg.pos_target.emplace_back(amplitude_ * sin(time_sec) + default_joint);
                     msg.kp.push_back(20);
                     msg.kd.push_back(2);
                 } else {
-                    msg.u_mujoco.emplace_back(0);
-                    msg.pos_target.emplace_back(0);
+                    msg.u_mujoco.emplace_back(default_joint);
+                    msg.pos_target.emplace_back(default_joint);
                     msg.kp.push_back(10);
                     msg.kd.push_back(1);
                 }
@@ -101,8 +98,8 @@ namespace obelisk {
             // ----- Buttons ----- //
             // constexpr int A = 0;
             // constexpr int B = 1;
-            constexpr int X = 2;
-            // constexpr int Y = 3;
+            constexpr int X = 3;
+            // constexpr int Y = 2;
 
             // constexpr int LEFT_BUMPER = 4;
             // constexpr int RIGHT_BUMPER = 5;
@@ -132,6 +129,8 @@ namespace obelisk {
         int joint_idx_;
         int motor_num_;
         std::vector<std::string> joint_names_;
+        std::map<std::string, float> joint_defaults_;
+        std::string robot_str_;
 
         static constexpr int G1_MOTOR_NUM = 27;
         const std::vector<std::string> G1_JOINT_NAMES = {
@@ -181,6 +180,53 @@ namespace obelisk {
             "RL_hip_joint",
             "RL_thigh_joint",
             "RL_calf_joint"
+        };
+
+        const std::map<std::string, float> GO2_JOINT_DEFAULTS = {
+            {"FR_hip_joint", 0.},
+            {"FR_thigh_joint", 0.9},
+            {"FR_calf_joint", -1.8},
+            {"FL_hip_joint", 0.},
+            {"FL_thigh_joint", 0.9},
+            {"FL_calf_joint", -1.8},
+            {"RR_hip_joint", 0.},
+            {"RR_thigh_joint", 0.9},
+            {"RR_calf_joint", -1.8},
+            {"RL_hip_joint", 0.},
+            {"RL_thigh_joint", 0.9},
+            {"RL_calf_joint", -1.8},
+        };
+
+        const std::map<std::string, float> G1_JOINT_DEFAULTS = {
+            {"left_hip_pitch_joint", -0.42},
+            {"left_hip_roll_joint", 0.},
+            {"left_hip_yaw_joint", 0.},
+            {"left_knee_joint", 0.81},
+            {"left_ankle_pitch_joint", -0.4},
+            {"left_ankle_roll_joint", 0.},
+            {"right_hip_pitch_joint", -0.42},
+            {"right_hip_roll_joint", 0.},
+            {"right_hip_yaw_joint", 0.},
+            {"right_knee_joint", 0.81},
+            {"right_ankle_pitch_joint", -0.4},
+            {"right_ankle_roll_joint", 0.},
+            {"waist_yaw_joint", 0.0},
+            // {"waist_roll_joint", 0.0},
+            // {"waist_pitch_joint", 0.0},
+            {"left_shoulder_pitch_joint", 0.0},
+            {"left_shoulder_roll_joint", 0.27},
+            {"left_shoulder_yaw_joint", 0.0},
+            {"left_elbow_joint", 0.5},
+            {"left_wrist_roll_joint", 0.0},
+            {"left_wrist_pitch_joint", 0.0},
+            {"left_wrist_yaw_joint", 0.0},
+            {"right_shoulder_pitch_joint", 0.0},
+            {"right_shoulder_roll_joint", -0.27},
+            {"right_shoulder_yaw_joint", 0.0},
+            {"right_elbow_joint", 0.5},
+            {"right_wrist_roll_joint", 0.0},
+            {"right_wrist_pitch_joint", 0.0},
+            {"right_wrist_yaw_joint", 0.0},
         };
     };
 } // namespace obelisk

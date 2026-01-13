@@ -27,6 +27,10 @@ onboard:
   # ----- High Level/Execution FSM Controller ----- #
     - pkg: obelisk_unitree_cpp
       executable: obelisk_unitree_joystick
+      # params:
+      #   v_x_scale: 1.0
+      #   v_y_scale: 0.5
+      #   w_z_scale: 1.0
       # callback_groups:
       publishers:
       # ----- Execution FSM ----- #
@@ -36,7 +40,7 @@ onboard:
           callback_group: None
       # ----- High Level Control ----- #
         - ros_parameter: pub_ctrl_setting
-          topic: /obelisk/go2/high_level_ctrl
+          topic: /obelisk/go2/vel_cmd
           history_depth: 10
           callback_group: None
       subscribers:
@@ -85,7 +89,7 @@ onboard:
       pkg: obelisk_unitree_cpp
       executable: obelisk_unitree_go2_hardware
       params:
-        network_interface_name: enp4s0 #enx001cc24ce09a
+        network_interface_name: enx6c1ff724e92e
         default_kp: [
                     60., 60., 60.,    # FR
                     60., 60., 60.,    # FL
@@ -97,6 +101,12 @@ onboard:
                     5., 5., 5.,    # FL
                     5., 5., 5.,    # RR
                     5., 5., 5.,    # RL
+        ]
+        default_kd_damping: [
+                    15., 15., 15.,    # FR
+                    15., 15., 15.,    # FL
+                    15., 15., 15.,    # RR
+                    15., 15., 15.,    # RL
         ]
     # ==================
       # callback_groups:
@@ -129,8 +139,8 @@ onboard:
           history_depth: 10
           callback_group: None
       # ----- High Level Control ----- #
-        - ros_parameter: sub_high_level_ctrl_setting
-          topic: /obelisk/go2/high_level_ctrl
+        - ros_parameter: sub_vel_cmd_setting
+          topic: /obelisk/go2/vel_cmd
           history_depth: 10
           callback_group: None
       sim:
@@ -189,6 +199,9 @@ onboard:
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02
+          callback_group: None
+        - ros_parameter: timer_logging_setting
+          timer_period_sec: 0.2
           callback_group: None
   viz:
     on: True

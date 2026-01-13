@@ -9,7 +9,7 @@ include(FetchContent)
 FetchContent_Declare(
     unitree_sdk
     GIT_REPOSITORY https://github.com/unitreerobotics/unitree_sdk2.git
-    GIT_TAG 3a4680ae9b00df59e60f7e63cfb0fcc432a9d08d) # main # TODO: Fix the issue here
+    GIT_TAG 2.0.2)      # Pinned to release v2.0.2
  
 set(UNITREE_SDK_BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
 set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
@@ -17,7 +17,7 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
 FetchContent_MakeAvailable(unitree_sdk)
 
 add_library(UnitreeInterface INTERFACE)
-target_include_directories(UnitreeInterface INTERFACE .)
+target_include_directories(UnitreeInterface INTERFACE . ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 
 target_link_libraries(UnitreeInterface INTERFACE Obelisk::Core unitree_sdk2)
 

@@ -1,17 +1,16 @@
 #include "unitree_interface.h"
 
-// Locomotion Client
+// Unitree Clients
 #include <unitree/robot/g1/loco/g1_loco_api.hpp>
 #include <unitree/robot/g1/loco/g1_loco_client.hpp>
+#include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 // IDL
-#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowCmd_.hpp>
+#include <unitree/idl/hg/IMUState_.hpp>
 #include <unitree/idl/hg/LowState_.hpp>
-#include <unitree/idl/hg/MainBoardState_.hpp>
 #include <unitree/idl/hg/IMUState_.hpp>
 
-#include <fstream>
 #include <chrono>
 #include <iomanip>
 
@@ -20,23 +19,20 @@ namespace obelisk {
 
     using namespace unitree_hg::msg::dds_;
     
-    class G1Interface : public ObeliskUnitreeInterface {
+    class G1Interface : public ObeliskUnitreeInterface<unitree_hg::msg::dds_::MotorState_, 35> {
     public:
         G1Interface(const std::string& node_name)
-            : ObeliskUnitreeInterface(node_name), use_hands_(false), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
+            : ObeliskUnitreeInterface(node_name, "g1"), fixed_waist_(true), mode_pr_(AnkleMode::PR), mode_machine_(0) {
 
-            this->declare_parameter<bool>("use_hands", false);
-            use_hands_ = this->get_parameter("use_hands").as_bool();
+            // Expose duration of transition to home position as ros parameter
+            this->declare_parameter<float>("user_pose_transition_duration", 1.);
+            user_pose_transition_duration_ = this->get_parameter("user_pose_transition_duration").as_double();
 
             this->declare_parameter<bool>("fixed_waist", true);
             fixed_waist_ = this->get_parameter("fixed_waist").as_bool();
 
             // Set G1 specific values
             num_motors_ = G1_27DOF;
-            if (use_hands_) {
-                num_motors_ += G1_HAND_MOTOR_NUM;
-            } 
-
             if (!fixed_waist_) {
                 num_motors_ += G1_EXTRA_WAIST;
             }
@@ -50,40 +46,42 @@ namespace obelisk {
                 }
             }
 
-            // Setup local variables
-            // TODO: For now we are not supporting the hands here
+            // Setup local variables (these will have UnitreeInterface ordering)
             joint_pos_.resize(G1_27DOF + G1_EXTRA_WAIST);
             joint_vel_.resize(G1_27DOF + G1_EXTRA_WAIST);
             start_user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
             user_pose_.resize(G1_27DOF + G1_EXTRA_WAIST);
 
+            // Get user pose
             this->declare_parameter<std::vector<double>>("user_pose", user_pose_);
             user_pose_ = this->get_parameter("user_pose").as_double_array();
+
+            // Handle default joint names
+            std::vector<std::string> default_names_vec(G1_27DOF_JOINT_NAMES.begin(), G1_27DOF_JOINT_NAMES.end());
+            this->declare_parameter<std::vector<std::string>>("default_joint_names", default_names_vec);
+            default_joint_names_ = this->get_parameter("default_joint_names").as_string_array();
+            default_joint_mapping_.clear();
+            for (size_t i = 0; i < default_joint_names_.size(); ++i) {
+                default_joint_mapping_.emplace(default_joint_names_[i], static_cast<int>(i));
+            }
+
+            // Expose command timeout as a ros parameter
+            this->declare_parameter<float>("command_timeout", 2.0f);
+            command_timeout_ = this->get_parameter("command_timeout").as_double();
             
             CMD_TOPIC_ = "rt/lowcmd";
             STATE_TOPIC_ = "rt/lowstate";
-            ODOM_TOPIC_ = "rt/odommodestate";
-            MAIN_BOARD_STATE_TOPIC_ = "rt/lf/mainboardstate";
-
-            // TODO: Add support for rt/lowstate_doubleimu
-
-            // TODO: Consider exposing AB mode
-
-            // TODO: Deal with hands
 
             RCLCPP_INFO_STREAM(this->get_logger(), "G1 configured as: \n" << "\tHands: " << use_hands_ << "\n\tFixed waist: " << fixed_waist_);
 
             VerifyParameters();
             CreateUnitreePublishers();
 
-            // Initialize logging files if logging is enabled
-            if (logging_) {
-                startup_time_ = this->now();
-                InitializeLogging();
-            }
-
-            loco_client_.SetTimeout(10.0f);
+            loco_client_.SetTimeout(command_timeout_);
             loco_client_.Init();
+            motion_switcher_client_ = std::make_shared<unitree::robot::b2::MotionSwitcherClient>();
+            motion_switcher_client_->SetTimeout(command_timeout_);
+            motion_switcher_client_->Init();
         }
     protected:
         void CreateUnitreePublishers() override {
@@ -99,18 +97,11 @@ namespace obelisk {
             // Need to create after the publishers have been activated
             lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(STATE_TOPIC_));
             lowstate_subscriber_->InitChannel(std::bind(&G1Interface::LowStateHandler, this, std::placeholders::_1), 10);
-
-            // odom_subscriber_.reset(new ChannelSubscriber<IMUState_>(HG_ODOM_TOPIC));
-            // odom_subscriber_->InitChannel(std::bind(&ObeliskUnitreeInterface::OdomHandler, this, std::placeholders::_1), 10);
-
-            main_board_subscriber_.reset(new ChannelSubscriber<MainBoardState_>(MAIN_BOARD_STATE_TOPIC_));
-            main_board_subscriber_->InitChannel(std::bind(&G1Interface::MainboardHandler, this, std::placeholders::_1), 10);
         }
 
-        // TODO: Adjust this function so that we can go to a user pose even when no low level control functions are being sent
         void ApplyControl(const unitree_control_msg& msg) override {
             // Only execute of in Low Level Control or Home modes
-            if (exec_fsm_state_ != ExecFSMState::LOW_LEVEL_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
+            if (exec_fsm_state_ != ExecFSMState::USER_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
                 return;
             }
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
@@ -121,7 +112,7 @@ namespace obelisk {
             dds_low_command.mode_machine() = mode_machine_;
 
             // ------------------------ Execution FSM: Low Level Control ------------------------ //
-            if (exec_fsm_state_ == ExecFSMState::LOW_LEVEL_CTRL) {
+            if (exec_fsm_state_ == ExecFSMState::USER_CTRL) {
                 // ---------- Verify message ---------- //
                 if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
                     RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
@@ -166,43 +157,55 @@ namespace obelisk {
                     }
                     use_default_gains = false;
                 }
-
-                for (size_t j = 0; j < G1_27DOF; j++) {     // Only go through the non-hand motors
-                    int i = G1_JOINT_MAPPINGS.at(msg.joint_names[j]);
-                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau() = msg.feed_forward[j];
-                    dds_low_command.motor_cmd().at(i).q() = msg.pos_target[j];
-                    dds_low_command.motor_cmd().at(i).dq() = msg.vel_target[j];
-                    dds_low_command.motor_cmd().at(i).kp() = use_default_gains ? kp_[i] : msg.kp[j];
-                    dds_low_command.motor_cmd().at(i).kd() = use_default_gains ? kd_[i] : msg.kd[j];
+                // Write message
+                for (size_t msg_ind = 0; msg_ind < num_motors_; msg_ind++) {
+                    int uni_ind = G1_JOINT_MAPPINGS.at(msg.joint_names[msg_ind]);
+                    int def_ind = default_joint_mapping_.at(msg.joint_names[msg_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = msg.feed_forward[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).q() = msg.pos_target[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = msg.vel_target[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = use_default_gains ? kp_[def_ind] : msg.kp[msg_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = use_default_gains ? kd_[def_ind] : msg.kd[msg_ind];
                 }
                 if (fixed_waist_) {
-                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
-                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
-                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
-                        dds_low_command.motor_cmd().at(i).tau() = 0;
-                        dds_low_command.motor_cmd().at(i).q() = 0;
-                        dds_low_command.motor_cmd().at(i).dq() = 0;
-                        dds_low_command.motor_cmd().at(i).kp() = 0;
-                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
                     }
                 }
-            // ------------------------ Execution FSM: Home ------------------------ //
+            // ------------------------ Execution FSM: USER POSE ------------------------ //
             } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
                 // Compute time that robot has been in HOME
-                // float t = std::chrono::duration<double>(
-                    // std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
-                // Compute proportion of time relative to transition duration 
-                // TODO this is not working
-                //float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
+                float t = std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
+                // Compute proportion of time relative to transition duration
+                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
                 // Write message
-                for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; i++) {    // Sending the extra waist commands while in fixed waist should have no effect
-                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau() = 0.;
-                    dds_low_command.motor_cmd().at(i).q() = user_pose_[i];//(1 - proportion) * start_user_pose_[i] + proportion * user_pose_[i];
-                    dds_low_command.motor_cmd().at(i).dq() = 0.;
-                    dds_low_command.motor_cmd().at(i).kp() = kp_[i];
-                    dds_low_command.motor_cmd().at(i).kd() = kd_[i];
+                for (size_t def_ind = 0; def_ind < num_motors_; def_ind++) {     // Only go through the non-hand motors
+                    int uni_ind = G1_JOINT_MAPPINGS.at(default_joint_names_[def_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = 0.;
+                    dds_low_command.motor_cmd().at(uni_ind).q() = (1 - proportion) * start_user_pose_[uni_ind] + proportion * user_pose_[def_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = 0.;
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = (1 - proportion) * 10 + proportion * kp_[def_ind];
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = kd_[def_ind];
+                }
+                if (fixed_waist_) {
+                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
+                    }
                 }
             } else {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "Execution FSM state not recognized in ApplyControl!");
@@ -211,13 +214,10 @@ namespace obelisk {
             // Write command to the robot
             dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
             lowcmd_publisher_->Write(dds_low_command);
-            
-            // TODO: Deal with the hands
         }
 
         void LowStateHandler(const void *message) {
             LowState_ low_state = *(const LowState_ *)message;
-            // TODO: Right now we always report the full state (minus the hands for now) regardless of the joint mode
             if (low_state.crc() != Crc32Core((uint32_t *)&low_state, (sizeof(LowState_) >> 2) - 1)) {
                 RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
                 return;
@@ -226,17 +226,28 @@ namespace obelisk {
             // Joints
             obelisk_sensor_msgs::msg::ObkJointEncoders joint_state;
             joint_state.header.stamp = this->now();
-            joint_state.joint_pos.resize(G1_27DOF + G1_EXTRA_WAIST);
-            joint_state.joint_vel.resize(G1_27DOF + G1_EXTRA_WAIST);
-            joint_state.joint_names.resize(G1_27DOF + G1_EXTRA_WAIST);
+            joint_state.joint_pos.resize(num_motors_);
+            joint_state.joint_vel.resize(num_motors_);
+            joint_state.joint_names.resize(num_motors_);
 
+            size_t ind = 0;
             for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                joint_state.joint_names.at(i) = G1_FULL_JOINT_NAMES[i];
-                joint_state.joint_pos.at(i) = low_state.motor_state()[i].q();
-                joint_state.joint_vel.at(i) = low_state.motor_state()[i].dq();
-                // RCLCPP_INFO_STREAM(this->get_logger(), "Joint: " << joint_state.joint_names.at(i) << " motor state: " << low_state.motor_state()[i].motorstate());
-                // if (low_state.motor_state()[i].motorstate() && i <= RightAnkleRoll) // TODO: What is this?
-                // std::cout << "[ERROR] motor " << i << " with code " << low_state.motor_state()[i].motorstate() << "\n";
+                {
+                    std::lock_guard<std::mutex> lock(joint_mutex_);
+                    joint_pos_[i] = low_state.motor_state()[i].q();
+                    joint_vel_[i] = low_state.motor_state()[i].dq();
+                }
+                if (fixed_waist_ && std::find(
+                        G1_EXTRA_WAIST_JOINT_NAMES.begin(),
+                        G1_EXTRA_WAIST_JOINT_NAMES.end(),
+                        G1_29DOF_JOINT_NAMES[i]) != G1_EXTRA_WAIST_JOINT_NAMES.end()) {
+                    continue;  // if the waist is fixed, don't publish the two waist joints (like mujoco...)
+                }
+                joint_state.joint_names.at(ind) = G1_29DOF_JOINT_NAMES[i];
+                joint_state.joint_pos.at(ind) = low_state.motor_state()[i].q();
+                joint_state.joint_vel.at(ind) = low_state.motor_state()[i].dq();
+                
+                ind++;
             }
 
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
@@ -260,8 +271,9 @@ namespace obelisk {
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
 
             // Log motor data if logging is enabled
-            if (logging_ && this->log_count_ % 1000 == 0) { // Log at 1 Hz assuming 1kHz low state rate
-                LogMotorData(low_state);
+            if (logging_) {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state_ = low_state.motor_state();
             }
 
             // update mode machine
@@ -271,138 +283,182 @@ namespace obelisk {
             }
         }
 
-        void MainboardHandler(const void *message) {
-            MainBoardState_ board_state = *(const MainBoardState_ *)message;
-
-            // if (board_state.crc() != Crc32Core((uint32_t *)&board_state, (sizeof(MainBoardState_) >> 2) - 1)) {
-            //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] MainBoardState CRC Error");
-            //     return;
-            // }
-
-            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board state: " << board_state.state()[0] << ", " << board_state.state()[1] << ", " << board_state.state()[2] << ", " << board_state.state()[3] << ", " << board_state.state()[4] << ", " << board_state.state()[5] );
-
-            RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Main board value: " << board_state.value()[0] << ", " << board_state.value()[1] << ", " << board_state.value()[2] << ", " << board_state.value()[3] << ", " << board_state.value()[4] << ", " << board_state.value()[5] );
-        }
-
-        void ApplyHighLevelControl(const unitree_high_level_ctrl_msg& msg) override {
-            if (exec_fsm_state_ != ExecFSMState::HIGH_LEVEL_CTRL) {
+        void ApplyVelCmd(const unitree_vel_cmd_msg& msg) override {
+            if (exec_fsm_state_ != ExecFSMState::UNITREE_VEL_CTRL) {
                 return;
             }
-
-            loco_client_.SetVelocity(msg.v_x, msg.v_y, msg.w_z);
+            int32_t ret;
+            ret = loco_client_.Move(msg.v_x, msg.v_y, msg.w_z);
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Move Command Failed: ret = " << ret);
+            }
         }
 
         bool CheckDampingToUnitreeHomeTransition() {
-            // TODO: check if system can safely transition to home position
-            return false;
+            // Unitree checks this for us
+            return true;
         }
 
         void TransitionToUserPose() override{
             // First, save current position
+            RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM TRANSTION TO user_pose!");
             {
-                std::lock_guard<std::mutex> lock(joint_pos_mutex_);
-                joint_pos_ = start_user_pose_;
+                std::lock_guard<std::mutex> lock(joint_mutex_);
+                start_user_pose_ = joint_pos_;
             }
             user_pose_transition_start_time_ = std::chrono::steady_clock::now();  // Save start time
         }
 
         void TransitionToUnitreeHome() override{
-            loco_client_.BalanceStand();
+            loco_client_.StopMove();
+            int32_t ret;
+            if (exec_fsm_state_ == ExecFSMState::DAMPING) {
+                ret = loco_client_.StandUp();
+                if (ret != 0) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (stand up) Failed: ret = " << ret);
+                    return;
+                }
+                for (int i = 0; i < 10; i++) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "Transitioning Robot to stand in " << i << "/" << 10 << " sec");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
+                loco_client_.Start();
+            }
+            
+            ret = loco_client_.BalanceStand();
+            if (ret != 0) {
+                RCLCPP_INFO_STREAM(this->get_logger(), "Transition to Unitree Home (balanced stand) Failed: ret = " << ret);
+            }
         }
 
-        // void OdomHandler(const void *message) {
-        //     RCLCPP_INFO_STREAM(this->get_logger(), "IN ODOM");
-        //     IMUState_ imu_state = *(const IMUState_ *)message;
-        //     // if (imu_state.crc() != Crc32Core((uint32_t *)&imu_state, (sizeof(imu_state) >> 2) - 1)) {
-        //     //     RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeRobotInterface] CRC Error");
-        //     //     return;
-        //     // }
-
-        //     // IMU
-        //     obelisk_sensor_msgs::msg::ObkImu obk_imu_state;
-        //     obk_imu_state.header.stamp = this->now();
-        //     obk_imu_state.angular_velocity.x = imu_state.gyroscope()[0];
-        //     obk_imu_state.angular_velocity.y = imu_state.gyroscope()[1];
-        //     obk_imu_state.angular_velocity.z = imu_state.gyroscope()[2];
-
-        //     obk_imu_state.orientation.w = imu_state.quaternion()[0];
-        //     obk_imu_state.orientation.x = imu_state.quaternion()[1];
-        //     obk_imu_state.orientation.y = imu_state.quaternion()[2];
-        //     obk_imu_state.orientation.z = imu_state.quaternion()[3];
-
-        //     obk_imu_state.linear_acceleration.x = imu_state.accelerometer()[0];
-        //     obk_imu_state.linear_acceleration.y= imu_state.accelerometer()[1];
-        //     obk_imu_state.linear_acceleration.z = imu_state.accelerometer()[2];
-
-        //     this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>("odom_state_pub")->publish(obk_imu_state);
-        // }
-
-        bool use_hands_;
-        bool fixed_waist_;
-
-        std::string ODOM_TOPIC_;
-        std::string MAIN_BOARD_STATE_TOPIC_;
-
-        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
-        ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
-        ChannelSubscriberPtr<MainBoardState_> main_board_subscriber_;
-        // ChannelSubscriberPtr<IMUState_> odom_subscriber_;
-
-
-        enum class AnkleMode {
-            PR = 0,  // Series Control for Ptich/Roll Joints
-            AB = 1   // Parallel Control for A/B Joints
-        };
-
-        AnkleMode mode_pr_;
-        uint8_t mode_machine_;
-
-        // Locomotion Client
-        g1::LocoClient loco_client_;
-
-        // Logging
-        std::ofstream motor_data_log_;
-        rclcpp::Time startup_time_;
-
-        void InitializeLogging() {
-            // Create and open motor data log file in the existing log directory
-            std::string motor_data_file = log_dir_path_ + "/motor_data.csv";
-            motor_data_log_.open(motor_data_file);
+        void TransitionToDamp() override{
+            if (high_level_ctrl_engaged_) {
+                // use high level damping
+                loco_client_.StopMove();
+                loco_client_.Damp();
+            } else {
+                // use low level damping
+                LowCmd_ dds_low_command;
+                for (size_t j = 0; j < num_motors_; j++) {
+                    int i = G1_JOINT_MAPPINGS.at(joint_names_[j]);
+                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = 0;
+                    dds_low_command.motor_cmd().at(i).q() = 0;
+                    dds_low_command.motor_cmd().at(i).dq() = 0;
+                    dds_low_command.motor_cmd().at(i).kp() = 0;
+                    dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
+                }
+                if (fixed_waist_) {
+                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
+                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
+                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
+                        dds_low_command.motor_cmd().at(i).tau() = 0;
+                        dds_low_command.motor_cmd().at(i).q() = 0;
+                        dds_low_command.motor_cmd().at(i).dq() = 0;
+                        dds_low_command.motor_cmd().at(i).kp() = 0;
+                        dds_low_command.motor_cmd().at(i).kd() = 0;
+                    }
+                }
+                dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+                lowcmd_publisher_->Write(dds_low_command);
+            }
             
+        }
+
+        void TransitionToUnitreeVel() override{
+            return;
+        }
+
+        bool EngageUnitreeMotionControl() {
+            if (high_level_ctrl_engaged_) {
+                return true;
+            }
+            std::string robot_form, motion_mode;
+            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
+            if (ret != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
+            bool ret_b;
+            if (motion_mode.empty()) {
+                ret_b = motion_switcher_client_->SelectMode("normal") == 0;
+            } else {
+                ret_b = true;
+            }
+            if (ret_b) {
+                high_level_ctrl_engaged_ = true;
+                loco_client_.StopMove();
+            } else {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "ENGAGING UNITREE MOTION CONTROL FAILED! ret = " << ret);
+            }
+            return ret_b;
+        }
+
+        bool ReleaseUnitreeMotionControl() {
+            if (!high_level_ctrl_engaged_) {
+                return true;
+            }
+            loco_client_.StopMove();
+            std::string robot_form, motion_mode;
+            int32_t ret = motion_switcher_client_->CheckMode(robot_form, motion_mode);
+            if (ret != 0) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "[UnitreeInterface] Check mode failed. Error code: " << ret );
+                return false;
+            }
+
+            bool ret_b;
+            if (!motion_mode.empty()) {
+                ret_b = motion_switcher_client_->ReleaseMode() == 0;
+            } else {
+                ret_b = true;
+            }
+            if (ret_b) {
+                high_level_ctrl_engaged_ = false;
+            }
+            return ret_b;
+        }
+
+        void WriteMotorLogHeader() override{
             if (motor_data_log_.is_open()) {
                 // Write CSV header with startup time info
                 motor_data_log_ << "# Logging started at ROS time: " << startup_time_.nanoseconds() << " ns\n";
                 motor_data_log_ << "# Timestamps below are relative to startup in seconds\n";
                 motor_data_log_ << "timestamp_sec";
                 for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                    motor_data_log_ << ",temp1_" << G1_FULL_JOINT_NAMES[i] 
-                                   << ",temp2_" << G1_FULL_JOINT_NAMES[i]
-                                   << ",tau_est_" << G1_FULL_JOINT_NAMES[i]
-                                   << ",motorstate_" << G1_FULL_JOINT_NAMES[i];
+                    motor_data_log_ << ",temp1_" << G1_29DOF_JOINT_NAMES[i] 
+                                   << ",temp2_" << G1_29DOF_JOINT_NAMES[i]
+                                   << ",tau_est_" << G1_29DOF_JOINT_NAMES[i]
+                                   << ",motorstate_" << G1_29DOF_JOINT_NAMES[i];
                 }
                 motor_data_log_ << "\n";
                 motor_data_log_.flush();
-                
-                RCLCPP_INFO_STREAM(this->get_logger(), "Motor data logging initialized: " << motor_data_file);
             } else {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed to open motor data log file: " << motor_data_file);
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Failed write motor data log file header");
             }
-            
+        }
+
+        void WriteJointNameFile() override{
             // Create joint names file
             std::string joint_names_file = log_dir_path_ + "/joint_names.txt";
             std::ofstream joint_names_log(joint_names_file);
             if (joint_names_log.is_open()) {
                 joint_names_log << "Joint order for logged data:\n";
                 for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                    joint_names_log << i << ": " << G1_FULL_JOINT_NAMES[i] << "\n";
+                    joint_names_log << i << ": " << G1_29DOF_JOINT_NAMES[i] << "\n";
                 }
                 joint_names_log.close();
                 RCLCPP_INFO_STREAM(this->get_logger(), "Joint names file created: " << joint_names_file);
             }
         }
         
-        void LogMotorData(const LowState_& low_state) {
+        void WriteMotorData() {
             if (!motor_data_log_.is_open()) return;
+            std::array<unitree_hg::msg::dds_::MotorState_, 35> motor_state;
+            {
+                std::lock_guard<std::mutex> lk(motor_state_mtx_);
+                motor_state = motor_state_;
+            }
+            
             
             // Get current time relative to startup in seconds
             auto current_time = this->now();
@@ -413,7 +469,7 @@ namespace obelisk {
             
             // Log data for each motor
             for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
-                const auto& motor = low_state.motor_state()[i];
+                const auto& motor = motor_state[i];
                 motor_data_log_ << "," << motor.temperature()[0]
                                << "," << motor.temperature()[1]
                                << "," << motor.tau_est()
@@ -424,6 +480,79 @@ namespace obelisk {
             this->log_count_++;
         }
 
+        void VerifyParameters() {
+            ObeliskUnitreeInterface::VerifyParameters();
+
+            // --- helpers ---
+            auto fail = [&](const std::string& msg) -> void {
+                RCLCPP_ERROR_STREAM(this->get_logger(), msg);
+                throw std::runtime_error(msg);
+            };
+
+            const auto build_expected = [&]() {
+                std::unordered_set<std::string> s;
+                s.reserve(G1_27DOF_JOINT_NAMES.size() +
+                        (fixed_waist_ ? 0 : G1_EXTRA_WAIST_JOINT_NAMES.size()));
+                s.insert(G1_27DOF_JOINT_NAMES.begin(), G1_27DOF_JOINT_NAMES.end());
+                if (!fixed_waist_) {
+                    s.insert(G1_EXTRA_WAIST_JOINT_NAMES.begin(),
+                            G1_EXTRA_WAIST_JOINT_NAMES.end());
+                }
+                return s;
+            };
+
+            const auto expected = build_expected();
+
+            const size_t N = default_joint_names_.size();
+            if (N != expected.size()) {
+                fail("[UnitreeInterface] default_joint_names has size " +
+                    std::to_string(N) + ", but expected " +
+                    std::to_string(expected.size()));
+            }
+
+            for (const auto& name : default_joint_names_) {
+                if (expected.find(name) == expected.end()) {
+                    fail("[UnitreeInterface] Unknown joint in default_joint_names: " + name);
+                }
+            }
+
+            // Build name -> index map
+            default_joint_mapping_.clear();
+            for (size_t i = 0; i < N; ++i) {
+                default_joint_mapping_.emplace(default_joint_names_[i], static_cast<int>(i));
+            }
+
+            // Size checks (collapse repetition)
+            auto check_size = [&](const auto& v, const char* label) {
+                if (v.size() != N) {
+                    fail(std::string("[UnitreeInterface] ") + label + " has size " +
+                        std::to_string(v.size()) + ", but expected " + std::to_string(N));
+                }
+            };
+
+            check_size(kp_,          "default kp");
+            check_size(kd_,          "default kd");
+            check_size(kd_damping_,  "default kd_damping_");
+            check_size(user_pose_,   "user_pose_");
+        }
+
+        inline static const std::string ROBOT_NAME = "g1";
+        const std::string& RobotName() const override { return ROBOT_NAME; }
+
+        bool use_hands_;
+        bool fixed_waist_;
+
+        ChannelSubscriberPtr<LowState_> lowstate_subscriber_;
+        unitree::robot::ChannelPublisherPtr<LowCmd_> lowcmd_publisher_;
+
+        enum class AnkleMode {
+            PR = 0,  // Series Control for Ptich/Roll Joints
+            AB = 1   // Parallel Control for A/B Joints
+        };
+
+        AnkleMode mode_pr_;
+        uint8_t mode_machine_;
+
     private:
         // ---------- Robot Specific ---------- //
         // G1
@@ -431,30 +560,30 @@ namespace obelisk {
         static constexpr int G1_EXTRA_WAIST = 2;
         static constexpr int G1_HAND_MOTOR_NUM = 14;
 
-        float user_pose_transition_duration_;                     // Duration of the transition to home position
+        float user_pose_transition_duration_;                                     // Duration of the transition to home position
+        std::chrono::steady_clock::time_point user_pose_transition_start_time_;   // Timing variable for transition to stand
+        float command_timeout_;                                                   // How long to wait before timing out unitree commands.
 
-        std::vector<double> joint_pos_; // Local copy of joint positions
-        std::vector<double> joint_vel_; // Local copy of joint positions
-        std::vector<double> start_user_pose_; // For transitioning to home position
-        std::vector<double> user_pose_; // home position
-        // float joint_pos_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  
-        // float joint_vel_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];  // Local copy of joint velocities
-        // float start_user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];     // For transitioning to home position
-        // float user_pose_[G1_MOTOR_NUM + G1_HAND_MOTOR_NUM];           // home position
+        std::vector<double> joint_pos_;         // Local copy of joint positions
+        std::vector<double> joint_vel_;         // Local copy of joint positions
+        std::vector<double> start_user_pose_;   // For transitioning to home position
+        std::vector<double> user_pose_;         // home position
+        std::vector<std::string> default_joint_names_;
+        std::map<std::string, int> default_joint_mapping_;
 
-        std::mutex joint_pos_mutex_;              // mutex for copying joint positions and velocities
-        std::chrono::steady_clock::time_point user_pose_transition_start_time_;             // Timing variable for transition to stand
+        std::mutex joint_mutex_;                      // mutex for copying joint positions and velocities
+        g1::LocoClient loco_client_;                  // Locomotion Client for high level control
+        std::shared_ptr<unitree::robot::b2::MotionSwitcherClient> motion_switcher_client_;  // Robot State Client for high level/low level handoff
+
         std::vector<double> default_user_pose_ = {
-            0.3, 0, 0, 0.52, -0.23, 0,   // Left Leg
+            -0.3, 0, 0, 0.52, -0.23, 0,  // Left Leg
             -0.3, 0, 0, 0.52, -0.23, 0,  // Right Leg
-            0, 0, 0.03,                  // Waist
+            0,                           // Waist
             0, 0, 0, 0.2, 0, 0, 0,       // Left arm
             0, 0, 0, 0.2, 0, 0, 0,       // Right arm
-            0, 0, 0, 0, 0, 0, 0,         // Left hand
-            0, 0, 0, 0, 0, 0, 0          // Right hand
         };   // Default home position
             
-        const std::array<std::string, G1_27DOF + G1_EXTRA_WAIST + G1_HAND_MOTOR_NUM> G1_FULL_JOINT_NAMES = {
+        const std::array<std::string, G1_27DOF + G1_EXTRA_WAIST> G1_29DOF_JOINT_NAMES = {
             "left_hip_pitch_joint",
             "left_hip_roll_joint",
             "left_hip_yaw_joint",
@@ -484,20 +613,6 @@ namespace obelisk {
             "right_wrist_roll_joint",
             "right_wrist_pitch_joint",
             "right_wrist_yaw_joint",
-            "left_hand_thumb_0_joint",      // ----- Hand Start ----- //
-            "left_hand_thumb_1_joint",
-            "left_hand_thumb_2_joint",
-            "left_hand_middle_0_joint",
-            "left_hand_middle_1_joint",
-            "left_hand_index_0_joint",
-            "left_hand_index_1_joint",
-            "right_hand_thumb_0_joint",      
-            "right_hand_thumb_1_joint",
-            "right_hand_thumb_2_joint",
-            "right_hand_middle_0_joint",
-            "right_hand_middle_1_joint",
-            "right_hand_index_0_joint",
-            "right_hand_index_1_joint"
         };
 
         const std::array<std::string, G1_27DOF> G1_27DOF_JOINT_NAMES = {
@@ -534,61 +649,6 @@ namespace obelisk {
             "waist_roll_joint",
             "waist_pitch_joint"
         };
-
-        const std::array<std::string, G1_HAND_MOTOR_NUM> G1_HAND_JOINT_NAMES = {
-            "left_hand_thumb_0_joint",
-            "left_hand_thumb_1_joint",
-            "left_hand_thumb_2_joint",
-            "left_hand_middle_0_joint",
-            "left_hand_middle_1_joint",
-            "left_hand_index_0_joint",
-            "left_hand_index_1_joint",
-            "right_hand_thumb_0_joint",      
-            "right_hand_thumb_1_joint",
-            "right_hand_thumb_2_joint",
-            "right_hand_middle_0_joint",
-            "right_hand_middle_1_joint",
-            "right_hand_index_0_joint",
-            "right_hand_index_1_joint"
-        };
-
-        // enum G1JointIndex {
-        //     LeftHipPitch = 0,
-        //     LeftHipRoll = 1,
-        //     LeftHipYaw = 2,
-        //     LeftKnee = 3,
-        //     LeftAnklePitch = 4,
-        //     LeftAnkleB = 4,
-        //     LeftAnkleRoll = 5,
-        //     LeftAnkleA = 5,
-        //     RightHipPitch = 6,
-        //     RightHipRoll = 7,
-        //     RightHipYaw = 8,
-        //     RightKnee = 9,
-        //     RightAnklePitch = 10,
-        //     RightAnkleB = 10,
-        //     RightAnkleRoll = 11,
-        //     RightAnkleA = 11,
-        //     WaistYaw = 12,
-        //     WaistRoll = 13,        // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistA = 13,           // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistPitch = 14,       // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     WaistB = 14,           // NOTE INVALID for g1 23dof/29dof with waist locked
-        //     LeftShoulderPitch = 15,
-        //     LeftShoulderRoll = 16,
-        //     LeftShoulderYaw = 17,
-        //     LeftElbow = 18,
-        //     LeftWristRoll = 19,
-        //     LeftWristPitch = 20,   // NOTE INVALID for g1 23dof
-        //     LeftWristYaw = 21,     // NOTE INVALID for g1 23dof
-        //     RightShoulderPitch = 22,
-        //     RightShoulderRoll = 23,
-        //     RightShoulderYaw = 24,
-        //     RightElbow = 25,
-        //     RightWristRoll = 26,
-        //     RightWristPitch = 27,  // NOTE INVALID for g1 23dof
-        //     RightWristYaw = 28     // NOTE INVALID for g1 23dof
-        // };
 
         const std::map<std::string, int> G1_JOINT_MAPPINGS = {
             {"left_hip_pitch_joint", 0},
