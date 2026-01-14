@@ -206,7 +206,7 @@ namespace obelisk {
                 RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED TO " << TRANSITION_STRINGS.at(exec_fsm_state_));
             } else {
                 if (exec_fsm_state_ == cmd_exec_fsm_state) {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM AREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
+                    RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM ALREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
                 } else {
                     RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID: " <<  TRANSITION_STRINGS.at(exec_fsm_state_) << " -> " <<  TRANSITION_STRINGS.at(cmd_exec_fsm_state));
                 }

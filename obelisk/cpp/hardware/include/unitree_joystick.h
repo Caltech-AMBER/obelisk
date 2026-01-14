@@ -45,8 +45,8 @@ namespace obelisk {
             Y1 = static_cast<int>(Y) + LAYER_OFFSET,
             A1 = static_cast<int>(A) + LAYER_OFFSET,
             B1 = static_cast<int>(B) + LAYER_OFFSET,
-            DR1 = static_cast<int>(DL) + LAYER_OFFSET,
-            DL1 = static_cast<int>(DR) + LAYER_OFFSET,
+            DR1 = static_cast<int>(DR) + LAYER_OFFSET,
+            DL1 = static_cast<int>(DL) + LAYER_OFFSET,
             DU1 = static_cast<int>(DU) + LAYER_OFFSET,
             DD1 = static_cast<int>(DD) + LAYER_OFFSET,
         };
@@ -325,9 +325,9 @@ namespace obelisk {
                     // DPAD lives in axes; positive/negative handled via sign in detection
                     int ax = code - AXIS_OFFSET;
                     // For negative variants (Left/Down), normalize like getButton() does
-                    if (code == static_cast<int>(ButtonMap::DL) ||
+                    if (code == static_cast<int>(ButtonMap::DR) ||
                         code == static_cast<int>(ButtonMap::DD) ||
-                        code == static_cast<int>(ButtonMap::DL1) ||
+                        code == static_cast<int>(ButtonMap::DR1) ||
                         code == static_cast<int>(ButtonMap::DD1)) {
                         ax -= NEG_OFFSET; // mirror your detection
                     }
@@ -391,7 +391,7 @@ namespace obelisk {
             }
             if (on_dpad) {
                 int sgn = 1;
-                if (btn == static_cast<int>(ButtonMap::DL) || btn == static_cast<int>(ButtonMap::DD) || btn == static_cast<int>(ButtonMap::DL1) || btn == static_cast<int>(ButtonMap::DD1)) {
+                if (btn == static_cast<int>(ButtonMap::DR) || btn == static_cast<int>(ButtonMap::DD)) {
                     btn -= NEG_OFFSET;
                     sgn = -1;
                 }
