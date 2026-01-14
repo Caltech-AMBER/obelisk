@@ -98,3 +98,9 @@ Note that to avoid conflicts between `button` indices and `axis` indices (and is
 3. Once robot signifies ready state (zero torque mode on G1 humanoid, standing up on Go2 quadruped), run fsm.
 4. Start with INIT -> DAMPING, and follow up with DAMPING -> USER_POSE (for the G1), or proceed directly with INIT -> USER_POSE (for the Go2).
 5. Proceed with USER_POSE -> USER_CTRL for user defined controllers.
+
+## Debugging
+You can also check what the default button mappings are by running:
+```
+obk-launch config=unitree_fsm_debug.yaml device=onboard
+```
