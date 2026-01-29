@@ -1,0 +1,10 @@
+site_name: "waist_yaw_link"
+geom_groups: [0]
+
+pattern:
+  type: "height_scan"
+  ordering: "xy"
+  resolution: 0.1
+  size: [1.6, 0.8]
+  offset:
+    pos: [0.08, 0.0, 20.0]

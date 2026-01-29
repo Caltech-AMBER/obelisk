@@ -1,0 +1,12 @@
+site_name: "lidar_site"
+geom_groups: [0, 1]
+
+pattern:
+  pattern_name: "lidar"
+  vertical_fov_range: [-25.0, 25.0]
+  horizontal_fov_range: [-25.0, 25.0]
+  channels: 21
+  horizontal_res: 2.5
+  offset:
+    pos: [0.08, 0.0, 0.15]
+    rot: [0.8660, 0.0, 0.5000, 0.0]

@@ -799,6 +799,9 @@ Position and velocity actuators added. -->
     <gyro name="head_lidar_gyro" site="head_lidar_site" noise="0.01"/>
     <velocimeter name="head_lidar_velocimeter" site="head_lidar_site"/>
 
+    <!-- Hieght Scan Location -->
+    <framepos name="scan_pos_sensor" objtype="site" objname="pelvis_mocap_site" noise="0.01"/>
+
   </sensor>
 
   <keyframe>
