@@ -1,8 +1,8 @@
-site_name: "lidar_site"
-geom_groups: [0, 1]
+site_name: "pelvis_mocap_site"
+geom_groups: [0, 1, 2]
 
 pattern:
-  pattern_name: "lidar"
+  type: "lidar_scan"
   vertical_fov_range: [-25.0, 25.0]
   horizontal_fov_range: [-25.0, 25.0]
   channels: 21

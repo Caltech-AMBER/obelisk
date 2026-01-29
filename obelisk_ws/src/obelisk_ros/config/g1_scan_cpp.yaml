@@ -181,10 +181,16 @@ onboard:
           # model_xml_path: g1_27dof.xml
           model_xml_path: g1_basic_scene.xml
           sensor_settings:
+          # - topic: /obelisk/g1/raycast
+          #   dt: 0.1
+          #   msg_type: ObkScan
+          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml
+          #   sensor_names:
+          #     scan_pos_sensor: framepos
           - topic: /obelisk/g1/raycast
             dt: 0.1
             msg_type: ObkScan
-            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml
+            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
             sensor_names:
               scan_pos_sensor: framepos
           - topic: /obelisk/g1/joint_encoders

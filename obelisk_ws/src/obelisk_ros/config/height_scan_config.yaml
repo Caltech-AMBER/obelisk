@@ -1,5 +1,5 @@
-site_name: "waist_yaw_link"
-geom_groups: [0]
+site_name: "pelvis_mocap_site"
+geom_groups: [2]
 
 pattern:
   type: "height_scan"

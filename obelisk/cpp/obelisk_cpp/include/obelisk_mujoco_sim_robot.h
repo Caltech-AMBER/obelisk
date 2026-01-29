@@ -299,6 +299,19 @@ namespace obelisk {
                         std::scoped_lock lock(sensor_data_mut_, shared_data_mut_);
                         time = data_->time;
                         mjv_updateScene(model_, data_, &opt, NULL, &cam, mjCAT_ALL, &scn);
+
+                        mjtNum size[3] = {0.01, 0, 0};
+                        mjtNum mat[9]  = {1,0,0, 0,1,0, 0,0,1};
+                        float  rgba[4] = {1,0,0,1};
+
+                        for (auto &p : scan_viz_points_) {
+                            if (scn.ngeom >= scn.maxgeom) break;
+
+                            mjvGeom g;
+                            mjv_initGeom(&g, mjGEOM_SPHERE, size, p.data(), mat, rgba);
+                            scn.geoms[scn.ngeom++] = g;
+                        }
+
                     }
                     mjr_render(viewport, &scn, &con);
 
@@ -480,6 +493,7 @@ namespace obelisk {
                     sensor_config_path = it->second;
                 }
 
+
                 std::vector<std::string> sensor_names;
                 std::vector<std::string> mj_sensor_types;
                 const std::string name_delim = "&";
@@ -582,18 +596,8 @@ namespace obelisk {
                     } else {
                         RCLCPP_ERROR_STREAM(
                             this->get_logger(),
-                            "Provided RayCaster Scan type " + type_str + "is invalid. Valid types are 'height_scan' and 'lidar_scan'"
+                            "Provided RayCaster Scan type " + type_str + " is invalid. Valid types are 'height_scan' and 'lidar_scan'"
                         );
-                    }
-
-                    scan_dots_idx_ = scn.ngeom;
-                    scn.ngeom += scan_interface_->get_num_rays();
-                    mjtNum size[3] = {0.01, 0, 0};        // sphere uses size[0]
-                    float rgba[4]  = {1, 0, 0, 1};          // red
-                    for (int ii = 0; ii < scan_interface_->get_num_rays(); ++ii) {
-                        mjvGeom g;
-                        mjv_initGeom(&g, mjGEOM_SPHERE, size, nullptr, nullptr, rgba);
-                        scn.geoms[scan_dots_idx_ + ii] = g;
                     }
 
                     // Add the timer to the list
@@ -1195,6 +1199,9 @@ namespace obelisk {
 
                     scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
 
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(scan_interface_->get_num_rays());
+                
                     for (int ii = 0; ii < scan_interface_->get_num_rays(); ++ii) {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
@@ -1210,11 +1217,7 @@ namespace obelisk {
                         };
                         float ret = scan_interface_->get_return(hit_point, dist);
                         msg.data.push_back(ret);
-                        mjvGeom& g = scn.geoms[scan_dots_idx_ + ii];
-                        g.type = mjGEOM_SPHERE;
-                        g.pos[0] = hit_point[0]; g.pos[1] = hit_point[1]; g.pos[2] = hit_point[2];
-                        g.size[0] = 0.01;
-                        g.rgba[0] = 1.f; g.rgba[1] = 0.f; g.rgba[2] = 0.f; g.rgba[3] = 1.f;
+                        scan_viz_points_.push_back({hit_point[0], hit_point[1], hit_point[2]});
                     }
 
                     msg.header.frame_id = "world";
@@ -1372,6 +1375,7 @@ namespace obelisk {
 
         // Geom id's for viz
         std::vector<int> viz_geoms_;
+        std::vector<std::array<mjtNum,3>> scan_viz_points_;
 
         // Shared data between the main thread and the sim thread
         std::vector<double> shared_data_;
