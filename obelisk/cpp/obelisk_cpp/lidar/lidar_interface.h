@@ -108,7 +108,7 @@ class LidarInterface : public RayCasterInterface {
         // Compute horizontal angles
         double horz_span = horz_max_deg - horz_min_deg;
         int num_horizontal =
-            static_cast<int>(std::ceil(horz_span / horz_res_deg)) + 1; // +1 for endpoints
+            static_cast<int>(std::ceil(horz_span / horz_res_deg)); // Isaac doesn't add +1 for endpoints...
 
         // Handle 360-degree wraparound: exclude last point to avoid overlap
         bool is_full_rotation = std::abs(std::abs(horz_span) - 360.0) < 1e-6;
