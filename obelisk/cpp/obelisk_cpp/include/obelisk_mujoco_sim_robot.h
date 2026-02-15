@@ -16,6 +16,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <nav_msgs/msg/grid_cells.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -519,18 +520,18 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == obelisk_sensor_msgs::msg::ObkImu::MESSAGE_NAME) {
+                } else if (sensor_type == "Imu") {
                     // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkImu>(topic, depth);
+                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Imu>(topic, depth);
                     this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkImu>>(pub);
+                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Imu>>(pub);
 
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkImu>(
+                        CreateTimerCallback<sensor_msgs::msg::Imu>(
                             sensor_names, mj_sensor_types,
-                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(sensor_key)),
+                            this->template GetPublisher<sensor_msgs::msg::Imu>(sensor_key)),
                         callback_group_);
                 } else if (sensor_type == "PoseStamped") {
                     // Make a publisher and add it to the list
@@ -827,12 +828,12 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for JointEncoders!");
                 return cb;
-            } else if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkImu>::value) {
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Imu>::value) {
                 // ----------------------------------- //
                 // ---------- IMU call back ---------- //
                 // ----------------------------------- //
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
-                    obelisk_sensor_msgs::msg::ObkImu msg;
+                    sensor_msgs::msg::Imu msg;
 
                     // TODO: For now all the covariances are 0
                     // *** Note *** Mujoco does not support adding noise natively since v3.14.
