@@ -88,10 +88,10 @@ namespace obelisk {
                 auto time_t = std::chrono::system_clock::to_time_t(now);
                 std::stringstream ss;
                 ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d_%H-%M-%S");
-                
+
                 std::filesystem::path unitree_logs_dir = "unitree_" + robot_name + "_logs";
                 std::filesystem::path session_dir = unitree_logs_dir / ss.str();
-                
+
                 std::filesystem::create_directories(session_dir);
                 log_dir_path_ = session_dir.string();
                 RCLCPP_INFO_STREAM(this->get_logger(), "Created logging directory: " << session_dir);
@@ -99,8 +99,8 @@ namespace obelisk {
                 log_count_ = 0;
 
                 startup_time_ = this->now();
-                InitializeLogging();
-                // TODO: Tie timer callback to WriteMotorData()
+                // NOTE: InitializeLogging and timer registration are deferred to on_activate
+                // because they call pure virtual methods that aren't available during construction.
                 this->RegisterObkTimer("timer_logging_setting", timer_logging_key_,
                                    std::bind(&ObeliskUnitreeInterface<MotorStateType, N>::WriteMotorData, this));
             }
@@ -115,6 +115,10 @@ namespace obelisk {
             if (!high_level_ctrl_engaged_) {
                 high_level_ctrl_engaged_ = true;  // Forcing Unitree state machine to transition (see ReleaseUnitreeMotionControl)
                 ReleaseUnitreeMotionControl();
+            }
+
+            if (logging_) {
+                InitializeLogging();
             }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
