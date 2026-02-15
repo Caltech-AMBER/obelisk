@@ -195,7 +195,7 @@ namespace obelisk {
             this->GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_)->publish(joint_state);
 
             // IMU
-            obelisk_sensor_msgs::msg::ObkImu imu_state;
+            sensor_msgs::msg::Imu imu_state;
             imu_state.header.stamp = this->now();
             imu_state.angular_velocity.x = low_state.imu_state().gyroscope()[0];
             imu_state.angular_velocity.y = low_state.imu_state().gyroscope()[1];
@@ -210,7 +210,7 @@ namespace obelisk {
             imu_state.linear_acceleration.y= low_state.imu_state().accelerometer()[1];
             imu_state.linear_acceleration.z = low_state.imu_state().accelerometer()[2];
 
-            this->GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(pub_imu_state_key_)->publish(imu_state);
+            this->GetPublisher<sensor_msgs::msg::Imu>(pub_imu_state_key_)->publish(imu_state);
 
             if (logging_) {
                 std::lock_guard<std::mutex> lk(motor_state_mtx_);

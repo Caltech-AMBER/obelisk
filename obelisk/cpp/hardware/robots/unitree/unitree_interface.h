@@ -7,6 +7,7 @@
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
 #include "obelisk_control_msgs/msg/execution_fsm.hpp"
 #include "obelisk_control_msgs/msg/velocity_command.hpp"
+#include <sensor_msgs/msg/imu.hpp>
 #include <filesystem>
 #include <chrono>
 #include <iomanip>
@@ -54,7 +55,7 @@ namespace obelisk {
 
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
-            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImu>("pub_imu_setting", pub_imu_state_key_);
+            this->RegisterObkPublisher<sensor_msgs::msg::Imu>("pub_imu_setting", pub_imu_state_key_);
 
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
