@@ -573,7 +573,7 @@ namespace obelisk {
                             this->template GetPublisher<nav_msgs::msg::GridCells>(sensor_key)),
                         callback_group_);
                 } else {
-                    throw std::runtime_error("Sensor type not supported!");
+                    throw std::runtime_error("Sensor type not supported: " + sensor_type);
                 }
 
                 this->timers_[sensor_key]->cancel(); // Stop the timer
