@@ -230,6 +230,11 @@ namespace obelisk {
             joint_state.joint_vel.resize(num_motors_);
             joint_state.joint_names.resize(num_motors_);
 
+            if (this->pub_temps_) {
+                joint_state.motor_surface_temps.resize(num_motors_);
+                joint_state.motor_winding_temps.resize(num_motors_);
+            }
+
             size_t ind = 0;
             for (size_t i = 0; i < G1_27DOF + G1_EXTRA_WAIST; ++i) {
                 {
@@ -246,6 +251,12 @@ namespace obelisk {
                 joint_state.joint_names.at(ind) = G1_29DOF_JOINT_NAMES[i];
                 joint_state.joint_pos.at(ind) = low_state.motor_state()[i].q();
                 joint_state.joint_vel.at(ind) = low_state.motor_state()[i].dq();
+
+                if (this->pub_temps_) {
+                    joint_state.motor_surface_temps.at(ind) = low_state.motor_state()[i].temperature()[0];
+                    joint_state.motor_winding_temps.at(ind) = low_state.motor_state()[i].temperature()[1];
+                    
+                }
                 
                 ind++;
             }

@@ -8,4 +8,6 @@ builtin_interfaces/Time stamp   # TODO: remove
 
 float64[] joint_pos
 float64[] joint_vel
+float64[] motor_surface_temps
+float64[] motor_winding_temps
 string[] joint_names

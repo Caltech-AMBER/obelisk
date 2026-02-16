@@ -105,6 +105,10 @@ namespace obelisk {
                 this->RegisterObkTimer("timer_logging_setting", timer_logging_key_,
                                    std::bind(&ObeliskUnitreeInterface<MotorStateType, N>::WriteMotorData, this));
             }
+
+            // Optional motor temperature publisher
+            this->declare_parameter<bool>("pub_motor_temp", false);
+            pub_temps_ = this->get_parameter("pub_motor_temp").as_bool();
         }
 
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn virtual on_activate(
@@ -305,6 +309,9 @@ namespace obelisk {
         rclcpp::Time startup_time_;
         std::array<MotorStateType, N> motor_state_;
         mutable std::mutex motor_state_mtx_;
+
+        // Temp publishing
+        bool pub_temps_;
 
         // ---------- Gains ---------- //
         std::vector<double> kp_;
