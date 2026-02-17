@@ -7,7 +7,9 @@
 
 #include <cmath>
 #include <cstdarg>
+#include <cstring>
 #include <filesystem>
+#include <limits>
 #include <vector>
 
 #include <GLFW/glfw3.h>
@@ -17,6 +19,8 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/grid_cells.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -548,6 +552,19 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkImu>(sensor_key)),
                         callback_group_);
+                } else if (sensor_type == "Imu") {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Imu>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Imu>>(pub);
+
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<sensor_msgs::msg::Imu>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<sensor_msgs::msg::Imu>(sensor_key)),
+                        callback_group_);
                 } else if (sensor_type == "PoseStamped") {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<geometry_msgs::msg::PoseStamped>(topic, depth);
@@ -606,6 +623,40 @@ namespace obelisk {
                         CreateTimerCallback<obelisk_sensor_msgs::msg::ObkScan>(
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkScan>(sensor_key)),
+                        callback_group_);
+                } else if (sensor_type == "DepthImage") {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Image>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Image>>(pub);
+
+                    // Create the scanner interface
+                    YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
+                    const auto type_node = scan_config["pattern"]["type"];
+                    if (!type_node) {
+                        throw std::runtime_error("scan config missing pattern.type");
+                    }
+
+                    const std::string type_str = type_node.as<std::string>();
+                    if (type_str == "lidar_scan") {
+                        depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                    } else {
+                        RCLCPP_ERROR_STREAM(
+                            this->get_logger(),
+                            "DepthImage sensor type only supports 'lidar_scan' pattern, got: " + type_str
+                        );
+                    }
+
+                    if (depth_scan_interface_->get_image_width() < 0 || depth_scan_interface_->get_image_height() < 0) {
+                        throw std::runtime_error("DepthImage sensor requires a scan interface with image dimensions");
+                    }
+
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<sensor_msgs::msg::Image>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<sensor_msgs::msg::Image>(sensor_key)),
                         callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported!");
@@ -944,6 +995,79 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a IMU!");
                 return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Imu>::value) {
+                // ------------------------------------------ //
+                // -------- Standard IMU call back ---------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    sensor_msgs::msg::Imu msg;
+
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    bool has_acc       = false;
+                    bool has_gyro      = false;
+                    bool has_framequat = false;
+
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        }
+
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "accelerometer") {
+                            if (!has_acc) {
+                                msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
+                                msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+
+                                int site_id = this->model_->sensor_objid[sensor_id];
+                                msg.header.frame_id =
+                                    std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+
+                                has_acc = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two accelerometers associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "gyro") {
+                            if (!has_gyro) {
+                                msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
+                                msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                                has_gyro               = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two gyros associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "framequat") {
+                            if (!has_framequat) {
+                                msg.orientation.w = this->data_->sensordata[sensor_addr];
+                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
+                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
+                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                has_framequat     = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framequats associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        msg.header.stamp = this->now();
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a standard IMU!");
+                return cb;
             } else if constexpr (std::is_same<MessageT, geometry_msgs::msg::PoseStamped>::value) {
                 // ------------------------------------------ //
                 // ---------- Frame Pose call back ---------- //
@@ -1227,7 +1351,91 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Scan Dots (ObkScan) sensor!");
                 return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Image>::value) {
+                // ------------------------------------------ //
+                // ------------ Depth Image Sensor ---------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                    std::string site = depth_scan_interface_->get_site();
+                    int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
+                    if (site_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + site);
+                    }
+
+                    // Site position and rotation in world frame
+                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
+                    Eigen::Matrix3d rot;
+                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
+                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
+                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
+
+                    // Camera forward axis (site x-axis, first column of rotation matrix)
+                    Eigen::Vector3d forward = rot.col(0);
+
+                    int img_w = depth_scan_interface_->get_image_width();
+                    int img_h = depth_scan_interface_->get_image_height();
+                    int num_rays = depth_scan_interface_->get_num_rays();
+
+                    // Temp storage for geom id output
+                    int geom_id[1] = { -1 };
+
+                    obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
+                    starts_w.resize(num_rays, 3);
+                    dirs_w.resize(num_rays, 3);
+
+                    depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Build depth image buffer
+                    std::vector<float> depth_buffer(num_rays);
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(num_rays);
+
+                    for (int ii = 0; ii < num_rays; ++ii) {
+                        Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                        Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+
+                        // Perform ray cast
+                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+
+                        if (dist < 0) {
+                            // No hit - set to NaN
+                            depth_buffer[ii] = std::numeric_limits<float>::quiet_NaN();
+                        } else {
+                            // Perpendicular depth: project ray distance onto camera forward axis
+                            depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
+
+                            // Store hit point for visualization
+                            scan_viz_points_.push_back({
+                                ray_origin[0] + direction[0] * dist,
+                                ray_origin[1] + direction[1] * dist,
+                                ray_origin[2] + direction[2] * dist
+                            });
+                        }
+                    }
+
+                    // Build sensor_msgs::msg::Image (32FC1)
+                    sensor_msgs::msg::Image msg;
+                    msg.header.frame_id = "world";
+                    msg.header.stamp = this->now();
+                    msg.height = static_cast<uint32_t>(img_h);
+                    msg.width = static_cast<uint32_t>(img_w);
+                    msg.encoding = "32FC1";
+                    msg.is_bigendian = false;
+                    msg.step = static_cast<uint32_t>(img_w * sizeof(float));
+
+                    size_t data_size = static_cast<size_t>(msg.step) * img_h;
+                    msg.data.resize(data_size);
+                    std::memcpy(msg.data.data(), depth_buffer.data(), data_size);
+
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Depth Image (sensor_msgs::Image) sensor!");
+                return cb;
             }
+
         }
 
         /**
@@ -1396,6 +1604,7 @@ namespace obelisk {
 
         // For the height map
         std::unique_ptr<obelisk::RayCasterInterface> scan_interface_;
+        std::unique_ptr<obelisk::RayCasterInterface> depth_scan_interface_;
         int scan_dots_idx_;
 
         // Constants

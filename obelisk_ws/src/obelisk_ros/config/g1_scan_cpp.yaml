@@ -187,9 +187,15 @@ onboard:
           #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml
           #   sensor_names:
           #     scan_pos_sensor: framepos
-          - topic: /obelisk/g1/raycast
-            dt: 0.1
-            msg_type: ObkScan
+          # - topic: /obelisk/g1/raycast
+          #   dt: 0.1
+          #   msg_type: DepthImage
+          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
+          #   sensor_names:
+          #     scan_pos_sensor: framepos
+          - topic: /depth/image_processed
+            dt: 0.033
+            msg_type: DepthImage
             config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
             sensor_names:
               scan_pos_sensor: framepos
@@ -262,6 +268,20 @@ onboard:
               right_wrist_roll_joint_vel_sensor: jointvel
               right_wrist_pitch_joint_vel_sensor: jointvel
               right_wrist_yaw_joint_vel_sensor: jointvel
+          # ---------- Fast LIO ----------- #
+          - topic: /livox/imu
+            dt: 0.005
+            msg_type: Imu
+            sensor_names:
+              lidar_imu_acc_sensor: accelerometer
+              lidar_imu_gyro_sensor: gyro
+              lidar_imu_quat_sensor: framequat
+          - topic: /Odometry
+            dt: 0.1
+            msg_type: Odometry
+            sensor_names:
+              head_lidar_pos_sensor: framepos
+              head_lidar_orientation_sensor: framequat
       timers:
         - ros_parameter: timer_sensor_setting
           timer_period_sec: 0.02

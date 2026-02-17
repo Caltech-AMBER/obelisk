@@ -126,6 +126,9 @@ class RayCasterInterface {
      */
     virtual float get_return(const std::array<double, 3> hit_point, const float dist) = 0;
 
+    virtual int get_image_width() const { return -1; }
+    virtual int get_image_height() const { return -1; }
+
   protected:
     /**
      * @brief Offset transform (position and optional rotation)

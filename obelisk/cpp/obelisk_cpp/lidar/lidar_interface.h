@@ -139,6 +139,9 @@ class LidarInterface : public RayCasterInterface {
         // All rays start from origin in local frame
         ray_starts_local_.setZero();
 
+        nv_ = nv;
+        nh_ = nh;
+
         // Meshgrid with indexing="ij" (outer: vertical, inner: horizontal)
         int idx = 0;
         for (int vi = 0; vi < nv; ++vi) {
@@ -171,6 +174,13 @@ class LidarInterface : public RayCasterInterface {
         (void)hit_point;
         return dist;
     }
+
+    int get_image_width() const override { return nh_; }
+    int get_image_height() const override { return nv_; }
+
+  private:
+    int nv_ = 0;
+    int nh_ = 0;
 };
 
 } // namespace obelisk
