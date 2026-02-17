@@ -128,6 +128,7 @@ class RayCasterInterface {
 
     virtual int get_image_width() const { return -1; }
     virtual int get_image_height() const { return -1; }
+    virtual Vector3d get_image_forward_local() const { return Vector3d::Zero(); }
 
   protected:
     /**

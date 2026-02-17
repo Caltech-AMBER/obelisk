@@ -1371,8 +1371,8 @@ namespace obelisk {
                          data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
                          data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
 
-                    // Camera forward axis (site x-axis, first column of rotation matrix)
-                    Eigen::Vector3d forward = rot.col(0);
+                    // Optical axis: center-of-FOV ray direction in world frame
+                    Eigen::Vector3d forward = rot * depth_scan_interface_->get_image_forward_local();
 
                     int img_w = depth_scan_interface_->get_image_width();
                     int img_h = depth_scan_interface_->get_image_height();
@@ -1387,7 +1387,7 @@ namespace obelisk {
 
                     depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
 
-                    // Build depth image buffer
+                    // Build depth image buffer (rows flipped: vi=0 → bottom row, vi=nv-1 → top row)
                     std::vector<float> depth_buffer(num_rays);
                     scan_viz_points_.clear();
                     scan_viz_points_.reserve(num_rays);
@@ -1399,12 +1399,17 @@ namespace obelisk {
                         // Perform ray cast
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
 
+                        // Flip rows for standard image convention (row 0 = top = highest elevation)
+                        int vi = ii / img_w;
+                        int hi = ii % img_w;
+                        int out_idx = (img_h - 1 - vi) * img_w + hi;
+
                         if (dist < 0) {
                             // No hit - set to NaN
-                            depth_buffer[ii] = std::numeric_limits<float>::quiet_NaN();
+                            depth_buffer[out_idx] = std::numeric_limits<float>::quiet_NaN();
                         } else {
-                            // Perpendicular depth: project ray distance onto camera forward axis
-                            depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
+                            // Perpendicular depth: project ray distance onto optical axis
+                            depth_buffer[out_idx] = static_cast<float>(dist * direction.dot(forward));
 
                             // Store hit point for visualization
                             scan_viz_points_.push_back({

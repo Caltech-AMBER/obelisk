@@ -165,9 +165,22 @@ class LidarInterface : public RayCasterInterface {
             }
         }
 
+        // Compute the optical axis: center-of-FOV ray direction (before offset)
+        double vert_center_rad = (vert_min_deg + vert_max_deg) / 2.0 * M_PI / 180.0;
+        double horz_center_rad = (horz_min_deg + horz_max_deg) / 2.0 * M_PI / 180.0;
+        double cv_c = std::cos(vert_center_rad);
+        double sv_c = std::sin(vert_center_rad);
+        double ch_c = std::cos(horz_center_rad);
+        double sh_c = std::sin(horz_center_rad);
+        image_forward_local_ = Vector3d(cv_c * ch_c, cv_c * sh_c, sv_c);
+
         // Apply offset transform (rotation to directions, position to starts)
         Offset offset = parse_offset(pattern);
         apply_offset(offset);
+
+        // Apply the same offset rotation to the optical axis
+        image_forward_local_ = quat_apply(offset.rot, image_forward_local_);
+        image_forward_local_.normalize();
     }
 
     float get_return(const std::array<double, 3> hit_point, const float dist) override {
@@ -177,10 +190,12 @@ class LidarInterface : public RayCasterInterface {
 
     int get_image_width() const override { return nh_; }
     int get_image_height() const override { return nv_; }
+    Vector3d get_image_forward_local() const override { return image_forward_local_; }
 
   private:
     int nv_ = 0;
     int nh_ = 0;
+    Vector3d image_forward_local_ = Vector3d::Zero();
 };
 
 } // namespace obelisk
