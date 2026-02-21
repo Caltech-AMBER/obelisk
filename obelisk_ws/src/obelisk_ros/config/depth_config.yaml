@@ -2,11 +2,10 @@ site_name: "pelvis_mocap_site"
 geom_groups: [0, 1, 2]
 
 pattern:
-  type: "lidar_scan"
-  vertical_fov_range: [-0., 50.]
-  horizontal_fov_range: [-30.0, 30.0]
-  channels: 26
-  horizontal_res: 2.0
+  type: "depth_camera"
+  width: 30
+  height: 26
+  intrinsic_matrix: [25.9928, 0.0, 14.9936, 0.0, 27.8703, 12.9966, 0.0, 0.0, 1.0]
   offset:
     pos: [0.153246, 0.0, 0.106799]
-    rot: [0.707107, 0, 0.707107, 0]
+    rot: [0.843391, 0., 0.537300, 0.]

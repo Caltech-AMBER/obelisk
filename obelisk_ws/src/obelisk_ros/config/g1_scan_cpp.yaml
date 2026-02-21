@@ -196,7 +196,7 @@ onboard:
           - topic: /depth/image_processed
             dt: 0.033
             msg_type: DepthImage
-            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
+            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/depth_config.yaml
             sensor_names:
               scan_pos_sensor: framepos
           - topic: /obelisk/g1/joint_encoders

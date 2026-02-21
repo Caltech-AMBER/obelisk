@@ -27,6 +27,7 @@
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
 #include "obelisk_sensor_msgs/msg/obk_scan.hpp"
 #include "obelisk_sim_robot.h"
+#include "depth_interface.h"
 #include "height_scan_interface.h"
 #include "lidar_interface.h"
 
@@ -640,10 +641,12 @@ namespace obelisk {
                     const std::string type_str = type_node.as<std::string>();
                     if (type_str == "lidar_scan") {
                         depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                    } else if (type_str == "depth_camera") {
+                        depth_scan_interface_ = std::make_unique<obelisk::DepthInterface>(sensor_config_path);
                     } else {
                         RCLCPP_ERROR_STREAM(
                             this->get_logger(),
-                            "DepthImage sensor type only supports 'lidar_scan' pattern, got: " + type_str
+                            "DepthImage sensor type only supports 'lidar_scan' or 'depth_camera' pattern, got: " + type_str
                         );
                     }
 
