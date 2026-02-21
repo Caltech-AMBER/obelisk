@@ -1390,7 +1390,8 @@ namespace obelisk {
 
                     depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
 
-                    // Build depth image buffer (rows flipped: vi=0 → bottom row, vi=nv-1 → top row)
+                    // Build depth image buffer in natural ray order (row 0 = top of image),
+                    // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
                     std::vector<float> depth_buffer(num_rays);
                     scan_viz_points_.clear();
                     scan_viz_points_.reserve(num_rays);
@@ -1402,17 +1403,12 @@ namespace obelisk {
                         // Perform ray cast
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
 
-                        // Flip rows for standard image convention (row 0 = top = highest elevation)
-                        int vi = ii / img_w;
-                        int hi = ii % img_w;
-                        int out_idx = (img_h - 1 - vi) * img_w + hi;
-
                         if (dist < 0) {
                             // No hit - set to NaN
-                            depth_buffer[out_idx] = std::numeric_limits<float>::quiet_NaN();
+                            depth_buffer[ii] = std::numeric_limits<float>::quiet_NaN();
                         } else {
                             // Perpendicular depth: project ray distance onto optical axis
-                            depth_buffer[out_idx] = static_cast<float>(dist * direction.dot(forward));
+                            depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
 
                             // Store hit point for visualization
                             scan_viz_points_.push_back({
