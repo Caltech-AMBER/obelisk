@@ -1410,6 +1410,10 @@ namespace obelisk {
 
                     scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
 
+                    // Local-frame rays for body-frame point cloud
+                    const auto& starts_l = scan_interface_->get_ray_starts_local();
+                    const auto& dirs_l = scan_interface_->get_ray_directions_local();
+
                     // Collect hit points
                     std::vector<std::array<float, 3>> points;
                     points.reserve(num_rays);
@@ -1423,12 +1427,20 @@ namespace obelisk {
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
 
                         if (dist >= 0) {
-                            float hx = static_cast<float>(ray_origin[0] + direction[0] * dist);
-                            float hy = static_cast<float>(ray_origin[1] + direction[1] * dist);
-                            float hz = static_cast<float>(ray_origin[2] + direction[2] * dist);
+                            // Compute point in sensor body frame for the point cloud
+                            Eigen::Vector3d ray_origin_local = starts_l.row(ii).transpose();
+                            Eigen::Vector3d direction_local  = dirs_l.row(ii).transpose();
+                            float hx = static_cast<float>(ray_origin_local[0] + direction_local[0] * dist);
+                            float hy = static_cast<float>(ray_origin_local[1] + direction_local[1] * dist);
+                            float hz = static_cast<float>(ray_origin_local[2] + direction_local[2] * dist);
                             points.push_back({hx, hy, hz});
+
+                            // Viz points remain in world frame
                             if (ii % scan_viz_decimation_ == 0) {
-                                scan_viz_points_.push_back({static_cast<double>(hx), static_cast<double>(hy), static_cast<double>(hz)});
+                                double wx = ray_origin[0] + direction[0] * dist;
+                                double wy = ray_origin[1] + direction[1] * dist;
+                                double wz = ray_origin[2] + direction[2] * dist;
+                                scan_viz_points_.push_back({wx, wy, wz});
                             }
                         }
                     }
