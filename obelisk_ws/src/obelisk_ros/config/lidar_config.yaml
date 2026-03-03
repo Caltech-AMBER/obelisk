@@ -1,12 +1,14 @@
-site_name: "pelvis_mocap_site"
-geom_groups: [0, 1, 2]
+site_name: "head_lidar_site"
+geom_groups: [2]
+viz_decimation: 10
+frame: "body"
 
 pattern:
   type: "lidar_scan"
-  vertical_fov_range: [-25.0, 25.0]
-  horizontal_fov_range: [-25.0, 25.0]
-  channels: 21
-  horizontal_res: 2.5
+  vertical_fov_range: [0.0, 51.0]
+  horizontal_fov_range: [0., 360.]
+  channels: 51
+  horizontal_res: 1.0
   offset:
-    pos: [0.08, 0.0, 0.15]
-    rot: [0.8660, 0.0, 0.5000, 0.0]
+    pos: [0., 0., 0.]
+    rot: [1., 0., 0., 0.]

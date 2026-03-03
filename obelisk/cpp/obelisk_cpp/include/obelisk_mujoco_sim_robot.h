@@ -21,6 +21,8 @@
 #include <nav_msgs/msg/grid_cells.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -592,12 +594,7 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == "ObkScan") {
-                    // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkScan>(topic, depth);
-                    this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkScan>>(pub);
-                    
+                } else if ((sensor_type == "ObkScan") || (sensor_type == "PointCloud2")) {
                     // Create the scanner interface
                     // Parse the yaml
                     YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
@@ -618,13 +615,34 @@ namespace obelisk {
                         );
                     }
 
+                    // Read viz_decimation from config (optional, default: 1)
+                    if (scan_config["viz_decimation"]) {
+                        scan_viz_decimation_ = std::max(1, scan_config["viz_decimation"].as<int>());
+                    }
+
                     // Add the timer to the list
-                    this->timers_[sensor_key] = this->create_wall_timer(
-                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<obelisk_sensor_msgs::msg::ObkScan>(
-                            sensor_names, mj_sensor_types,
-                            this->template GetPublisher<obelisk_sensor_msgs::msg::ObkScan>(sensor_key)),
-                        callback_group_);
+                    if (sensor_type == "ObkScan") {
+                        auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkScan>(topic, depth);
+                        this->publishers_[sensor_key] =
+                            std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkScan>>(pub);
+                        this->timers_[sensor_key] = this->create_wall_timer(
+                            std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                            CreateTimerCallback<obelisk_sensor_msgs::msg::ObkScan>(
+                                sensor_names, mj_sensor_types,
+                                this->template GetPublisher<obelisk_sensor_msgs::msg::ObkScan>(sensor_key)),
+                            callback_group_);
+                    } else if (sensor_type == "PointCloud2") {
+                        auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::PointCloud2>(topic, depth);
+                        this->publishers_[sensor_key] =
+                            std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::PointCloud2>>(pub);
+                        this->timers_[sensor_key] = this->create_wall_timer(
+                            std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                            CreateTimerCallback<sensor_msgs::msg::PointCloud2>(
+                                sensor_names, mj_sensor_types,
+                                this->template GetPublisher<sensor_msgs::msg::PointCloud2>(sensor_key)),
+                            callback_group_);
+                    }
+                    
                 } else if (sensor_type == "DepthImage") {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Image>(topic, depth);
@@ -652,6 +670,11 @@ namespace obelisk {
 
                     if (depth_scan_interface_->get_image_width() < 0 || depth_scan_interface_->get_image_height() < 0) {
                         throw std::runtime_error("DepthImage sensor requires a scan interface with image dimensions");
+                    }
+
+                    // Read viz_decimation from config (optional, default: 1)
+                    if (scan_config["viz_decimation"]) {
+                        depth_viz_decimation_ = std::max(1, scan_config["viz_decimation"].as<int>());
                     }
 
                     // Add the timer to the list
@@ -1327,8 +1350,8 @@ namespace obelisk {
                     scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
 
                     scan_viz_points_.clear();
-                    scan_viz_points_.reserve(scan_interface_->get_num_rays());
-                
+                    scan_viz_points_.reserve(scan_interface_->get_num_rays() / scan_viz_decimation_ + 1);
+
                     for (int ii = 0; ii < scan_interface_->get_num_rays(); ++ii) {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
@@ -1344,15 +1367,98 @@ namespace obelisk {
                         };
                         float ret = scan_interface_->get_return(hit_point, dist);
                         msg.data.push_back(ret);
-                        scan_viz_points_.push_back({hit_point[0], hit_point[1], hit_point[2]});
+                        if (ii % scan_viz_decimation_ == 0) {
+                            scan_viz_points_.push_back({hit_point[0], hit_point[1], hit_point[2]});
+                        }
                     }
 
-                    msg.header.frame_id = "world";
+                    msg.header.frame_id = scan_interface_->get_frame();
                     msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Scan Dots (ObkScan) sensor!");
+                return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::PointCloud2>::value) {
+                // ------------------------------------------ //
+                // ----------- PointCloud2 Sensor ----------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                    std::string site = scan_interface_->get_site();
+                    int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
+                    if (site_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + scan_interface_->get_site());
+                    }
+
+                    // Site position and rotation in world frame
+                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
+                    Eigen::Matrix3d rot;
+                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
+                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
+                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
+
+                    // Temp storage for geom id output
+                    int geom_id[1] = { -1 };
+
+                    obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
+                    int num_rays = scan_interface_->get_num_rays();
+                    starts_w.resize(num_rays, 3);
+                    dirs_w.resize(num_rays, 3);
+
+                    scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Collect hit points
+                    std::vector<std::array<float, 3>> points;
+                    points.reserve(num_rays);
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(num_rays / scan_viz_decimation_ + 1);
+
+                    for (int ii = 0; ii < num_rays; ++ii) {
+                        Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                        Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+
+                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+
+                        if (dist >= 0) {
+                            float hx = static_cast<float>(ray_origin[0] + direction[0] * dist);
+                            float hy = static_cast<float>(ray_origin[1] + direction[1] * dist);
+                            float hz = static_cast<float>(ray_origin[2] + direction[2] * dist);
+                            points.push_back({hx, hy, hz});
+                            if (ii % scan_viz_decimation_ == 0) {
+                                scan_viz_points_.push_back({static_cast<double>(hx), static_cast<double>(hy), static_cast<double>(hz)});
+                            }
+                        }
+                    }
+
+                    // Build PointCloud2 message
+                    sensor_msgs::msg::PointCloud2 msg;
+                    msg.header.frame_id = scan_interface_->get_frame();
+                    msg.header.stamp = this->now();
+                    msg.height = 1;
+                    msg.width = static_cast<uint32_t>(points.size());
+                    msg.is_dense = true;
+                    msg.is_bigendian = false;
+
+                    sensor_msgs::PointCloud2Modifier modifier(msg);
+                    modifier.setPointCloud2FieldsByString(1, "xyz");
+                    modifier.resize(points.size());
+
+                    sensor_msgs::PointCloud2Iterator<float> iter_x(msg, "x");
+                    sensor_msgs::PointCloud2Iterator<float> iter_y(msg, "y");
+                    sensor_msgs::PointCloud2Iterator<float> iter_z(msg, "z");
+
+                    for (const auto& pt : points) {
+                        *iter_x = pt[0]; ++iter_x;
+                        *iter_y = pt[1]; ++iter_y;
+                        *iter_z = pt[2]; ++iter_z;
+                    }
+
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a PointCloud2 sensor!");
                 return cb;
             } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Image>::value) {
                 // ------------------------------------------ //
@@ -1394,7 +1500,7 @@ namespace obelisk {
                     // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
                     std::vector<float> depth_buffer(num_rays);
                     scan_viz_points_.clear();
-                    scan_viz_points_.reserve(num_rays);
+                    scan_viz_points_.reserve(num_rays / depth_viz_decimation_ + 1);
 
                     for (int ii = 0; ii < num_rays; ++ii) {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
@@ -1411,17 +1517,19 @@ namespace obelisk {
                             depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
 
                             // Store hit point for visualization
-                            scan_viz_points_.push_back({
-                                ray_origin[0] + direction[0] * dist,
-                                ray_origin[1] + direction[1] * dist,
-                                ray_origin[2] + direction[2] * dist
-                            });
+                            if (ii % depth_viz_decimation_ == 0) {
+                                scan_viz_points_.push_back({
+                                    ray_origin[0] + direction[0] * dist,
+                                    ray_origin[1] + direction[1] * dist,
+                                    ray_origin[2] + direction[2] * dist
+                                });
+                            }
                         }
                     }
 
                     // Build sensor_msgs::msg::Image (32FC1)
                     sensor_msgs::msg::Image msg;
-                    msg.header.frame_id = "world";
+                    msg.header.frame_id = depth_scan_interface_->get_frame();
                     msg.header.stamp = this->now();
                     msg.height = static_cast<uint32_t>(img_h);
                     msg.width = static_cast<uint32_t>(img_w);
@@ -1609,6 +1717,8 @@ namespace obelisk {
         // For the height map
         std::unique_ptr<obelisk::RayCasterInterface> scan_interface_;
         std::unique_ptr<obelisk::RayCasterInterface> depth_scan_interface_;
+        int scan_viz_decimation_ = 1;
+        int depth_viz_decimation_ = 1;
         int scan_dots_idx_;
 
         // Constants

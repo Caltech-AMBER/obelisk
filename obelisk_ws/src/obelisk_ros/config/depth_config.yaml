@@ -1,5 +1,7 @@
 site_name: "pelvis_mocap_site"
 geom_groups: [0, 1, 2]
+viz_decimation: 1
+frame: "world"
 
 pattern:
   type: "depth_camera"

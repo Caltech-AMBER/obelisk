@@ -187,18 +187,18 @@ onboard:
           #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml
           #   sensor_names:
           #     scan_pos_sensor: framepos
-          # - topic: /obelisk/g1/raycast
-          #   dt: 0.1
-          #   msg_type: DepthImage
-          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
-          #   sensor_names:
-          #     scan_pos_sensor: framepos
-          - topic: /depth/image_processed
-            dt: 0.033
-            msg_type: DepthImage
-            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/depth_config.yaml
+          - topic: /cloud_registered_body
+            dt: 0.1
+            msg_type: PointCloud2
+            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
             sensor_names:
               scan_pos_sensor: framepos
+          # - topic: /depth/image_processed
+          #   dt: 0.033
+          #   msg_type: DepthImage
+          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/depth_config.yaml
+          #   sensor_names:
+          #     scan_pos_sensor: framepos
           - topic: /obelisk/g1/joint_encoders
             dt: 0.002
             msg_type: ObkJointEncoders

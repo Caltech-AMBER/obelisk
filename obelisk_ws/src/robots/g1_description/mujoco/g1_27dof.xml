@@ -376,7 +376,7 @@ Position and velocity actuators added. -->
             <!-- TODO: Verify position -->
             <site name="tracking_camera_site" pos="0.085725 0 0.2413" euler="0.02 -0.08 0" rgba="0 0 1 0" size="0.01"/>
 
-            <site name="head_lidar_site" pos="0.0039635 0 -0.054" euler="0 0 0" rgba="0 0 1 0" size="0.01"/>
+            <site name="head_lidar_site" pos="0.0 0 0.42218" euler="3.14159 -0.03491 0" rgba="0 0 1 1" size="0.01"/>
 
             <!-- Left Arm -->
             <body name="left_shoulder_pitch_link" pos="0.0039563 0.10022 0.23778" quat="0.990264 0.139201 1.38722e-05 -9.86868e-05">

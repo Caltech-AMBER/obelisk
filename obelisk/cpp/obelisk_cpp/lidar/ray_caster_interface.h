@@ -71,6 +71,11 @@ class RayCasterInterface {
         } else {
             geom_group_mask_[0] = 1;
         }
+
+        // Read frame (optional, default: "world")
+        if (config_["frame"]) {
+            frame_ = config_["frame"].as<std::string>();
+        }
     }
 
     virtual ~RayCasterInterface() = default;
@@ -107,6 +112,11 @@ class RayCasterInterface {
      * @brief Get geom group mask for mj_ray
      */
     const mjtByte* get_geom_group_mask() const { return geom_group_mask_; }
+
+    /**
+     * @brief Get the frame_id string for published messages
+     */
+    const std::string& get_frame() const { return frame_; }
 
     /**
      * @brief Compute ray starts and directions in world frame
@@ -209,6 +219,7 @@ class RayCasterInterface {
     YAML::Node config_;
     std::string site_name_;
     mjtByte geom_group_mask_[mjNGROUP];
+    std::string frame_ = "world";
 };
 
 } // namespace obelisk
