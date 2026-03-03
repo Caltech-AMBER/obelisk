@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/wcompton/repos/IsaacLab/source/isaaclab/isaaclab/sensors/ray_caster/patterns/**)"
+    ]
+  }
+}

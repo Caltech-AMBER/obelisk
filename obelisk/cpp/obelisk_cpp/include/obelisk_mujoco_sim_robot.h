@@ -7,7 +7,9 @@
 
 #include <cmath>
 #include <cstdarg>
+#include <cstring>
 #include <filesystem>
+#include <limits>
 #include <vector>
 
 #include <GLFW/glfw3.h>
@@ -18,11 +20,19 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <nav_msgs/msg/grid_cells.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
+#include "obelisk_sensor_msgs/msg/obk_scan.hpp"
 #include "obelisk_sim_robot.h"
+#include "depth_interface.h"
+#include "height_scan_interface.h"
+#include "lidar_interface.h"
 
 namespace obelisk {
     template <typename ControlMessageT> class ObeliskMujocoRobot : public ObeliskSimRobot<ControlMessageT> {
@@ -75,13 +85,6 @@ namespace obelisk {
             num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
 
             configuration_complete_ = true;
-            
-            this->declare_parameter("height_map_geom_group", std::vector<long>{0});
-            this->declare_parameter("height_map_grid_size", std::vector<double>{0.});
-            this->declare_parameter("height_map_grid_spacing", 0.0);
-            height_map_grid_size_ = this->get_parameter("height_map_grid_size").as_double_array();
-            height_map_grid_spacing_ = this->get_parameter("height_map_grid_spacing").as_double();
-            height_map_geom_group_ = this->get_parameter("height_map_geom_group").as_integer_array();
 
             ParseSensorString(mujoco_config_map.at("sensor_settings"));
 
@@ -304,6 +307,19 @@ namespace obelisk {
                         std::scoped_lock lock(sensor_data_mut_, shared_data_mut_);
                         time = data_->time;
                         mjv_updateScene(model_, data_, &opt, NULL, &cam, mjCAT_ALL, &scn);
+
+                        mjtNum size[3] = {0.01, 0, 0};
+                        mjtNum mat[9]  = {1,0,0, 0,1,0, 0,0,1};
+                        float  rgba[4] = {1,0,0,1};
+
+                        for (auto &p : scan_viz_points_) {
+                            if (scn.ngeom >= scn.maxgeom) break;
+
+                            mjvGeom g;
+                            mjv_initGeom(&g, mjGEOM_SPHERE, size, p.data(), mat, rgba);
+                            scn.geoms[scn.ngeom++] = g;
+                        }
+
                     }
                     mjr_render(viewport, &scn, &con);
 
@@ -479,6 +495,13 @@ namespace obelisk {
                     throw std::runtime_error("No sensor type provided for a sensor!");
                 }
 
+                // Check for config path
+                std::string sensor_config_path = "";
+                if (auto it = setting_map.find("config_path"); it != setting_map.end()) {
+                    sensor_config_path = it->second;
+                }
+
+
                 std::vector<std::string> sensor_names;
                 std::vector<std::string> mj_sensor_types;
                 const std::string name_delim = "&";
@@ -533,6 +556,19 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<sensor_msgs::msg::Imu>(sensor_key)),
                         callback_group_);
+                } else if (sensor_type == "Imu") {
+                    // Make a publisher and add it to the list
+                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Imu>(topic, depth);
+                    this->publishers_[sensor_key] =
+                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Imu>>(pub);
+
+                    // Add the timer to the list
+                    this->timers_[sensor_key] = this->create_wall_timer(
+                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                        CreateTimerCallback<sensor_msgs::msg::Imu>(
+                            sensor_names, mj_sensor_types,
+                            this->template GetPublisher<sensor_msgs::msg::Imu>(sensor_key)),
+                        callback_group_);
                 } else if (sensor_type == "PoseStamped") {
                     // Make a publisher and add it to the list
                     auto pub = ObeliskNode::create_publisher<geometry_msgs::msg::PoseStamped>(topic, depth);
@@ -559,18 +595,95 @@ namespace obelisk {
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
                         callback_group_);
-                } else if (sensor_type == "GridCells") {
+                } else if ((sensor_type == "ObkScan") || (sensor_type == "PointCloud2")) {
+                    // Create the scanner interface
+                    // Parse the yaml
+                    YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
+                    const auto type_node = scan_config["pattern"]["type"];
+                    if (!type_node) {
+                        throw std::runtime_error("scan config missing pattern.type");
+                    }
+
+                    const std::string type_str = type_node.as<std::string>();
+                    if (type_str == "height_scan") {
+                        scan_interface_ = std::make_unique<obelisk::HeightScanInterface>(sensor_config_path);
+                    } else if (type_str == "lidar_scan") {
+                        scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                    } else {
+                        RCLCPP_ERROR_STREAM(
+                            this->get_logger(),
+                            "Provided RayCaster Scan type " + type_str + " is invalid. Valid types are 'height_scan' and 'lidar_scan'"
+                        );
+                    }
+
+                    // Read viz_decimation from config (optional, default: 1)
+                    if (scan_config["viz_decimation"]) {
+                        scan_viz_decimation_ = std::max(1, scan_config["viz_decimation"].as<int>());
+                    }
+
+                    // Add the timer to the list
+                    if (sensor_type == "ObkScan") {
+                        auto pub = ObeliskNode::create_publisher<obelisk_sensor_msgs::msg::ObkScan>(topic, depth);
+                        this->publishers_[sensor_key] =
+                            std::make_shared<internal::ObeliskPublisher<obelisk_sensor_msgs::msg::ObkScan>>(pub);
+                        this->timers_[sensor_key] = this->create_wall_timer(
+                            std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                            CreateTimerCallback<obelisk_sensor_msgs::msg::ObkScan>(
+                                sensor_names, mj_sensor_types,
+                                this->template GetPublisher<obelisk_sensor_msgs::msg::ObkScan>(sensor_key)),
+                            callback_group_);
+                    } else if (sensor_type == "PointCloud2") {
+                        auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::PointCloud2>(topic, depth);
+                        this->publishers_[sensor_key] =
+                            std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::PointCloud2>>(pub);
+                        this->timers_[sensor_key] = this->create_wall_timer(
+                            std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
+                            CreateTimerCallback<sensor_msgs::msg::PointCloud2>(
+                                sensor_names, mj_sensor_types,
+                                this->template GetPublisher<sensor_msgs::msg::PointCloud2>(sensor_key)),
+                            callback_group_);
+                    }
+                    
+                } else if (sensor_type == "DepthImage") {
                     // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<nav_msgs::msg::GridCells>(topic, depth);
+                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Image>(topic, depth);
                     this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<nav_msgs::msg::GridCells>>(pub);
+                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Image>>(pub);
+
+                    // Create the scanner interface
+                    YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
+                    const auto type_node = scan_config["pattern"]["type"];
+                    if (!type_node) {
+                        throw std::runtime_error("scan config missing pattern.type");
+                    }
+
+                    const std::string type_str = type_node.as<std::string>();
+                    if (type_str == "lidar_scan") {
+                        depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                    } else if (type_str == "depth_camera") {
+                        depth_scan_interface_ = std::make_unique<obelisk::DepthInterface>(sensor_config_path);
+                    } else {
+                        RCLCPP_ERROR_STREAM(
+                            this->get_logger(),
+                            "DepthImage sensor type only supports 'lidar_scan' or 'depth_camera' pattern, got: " + type_str
+                        );
+                    }
+
+                    if (depth_scan_interface_->get_image_width() < 0 || depth_scan_interface_->get_image_height() < 0) {
+                        throw std::runtime_error("DepthImage sensor requires a scan interface with image dimensions");
+                    }
+
+                    // Read viz_decimation from config (optional, default: 1)
+                    if (scan_config["viz_decimation"]) {
+                        depth_viz_decimation_ = std::max(1, scan_config["viz_decimation"].as<int>());
+                    }
 
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
                         std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<nav_msgs::msg::GridCells>(
+                        CreateTimerCallback<sensor_msgs::msg::Image>(
                             sensor_names, mj_sensor_types,
-                            this->template GetPublisher<nav_msgs::msg::GridCells>(sensor_key)),
+                            this->template GetPublisher<sensor_msgs::msg::Image>(sensor_key)),
                         callback_group_);
                 } else {
                     throw std::runtime_error("Sensor type not supported: " + sensor_type);
@@ -909,6 +1022,79 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a IMU!");
                 return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Imu>::value) {
+                // ------------------------------------------ //
+                // -------- Standard IMU call back ---------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    sensor_msgs::msg::Imu msg;
+
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    bool has_acc       = false;
+                    bool has_gyro      = false;
+                    bool has_framequat = false;
+
+                    for (size_t i = 0; i < sensor_names.size(); i++) {
+                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
+                        if (sensor_id == -1) {
+                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor.");
+                        }
+
+                        int sensor_addr = this->model_->sensor_adr[sensor_id];
+                        if (mj_sensor_types.at(i) == "accelerometer") {
+                            if (!has_acc) {
+                                msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
+                                msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+
+                                int site_id = this->model_->sensor_objid[sensor_id];
+                                msg.header.frame_id =
+                                    std::string(this->model_->names + this->model_->name_siteadr[site_id]);
+
+                                has_acc = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two accelerometers associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "gyro") {
+                            if (!has_gyro) {
+                                msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
+                                msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
+                                msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                                has_gyro               = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two gyros associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else if (mj_sensor_types.at(i) == "framequat") {
+                            if (!has_framequat) {
+                                msg.orientation.w = this->data_->sensordata[sensor_addr];
+                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
+                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
+                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                has_framequat     = true;
+                            } else {
+                                RCLCPP_ERROR_STREAM(this->get_logger(),
+                                                    "There are two framequats associated with this IMU! Ignoring "
+                                                        << sensor_names.at(i));
+                            }
+                        } else {
+                            RCLCPP_ERROR_STREAM(
+                                this->get_logger(),
+                                "Sensor " << sensor_names.at(i)
+                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
+                                          << mj_sensor_types.at(i));
+                        }
+
+                        msg.header.stamp = this->now();
+                    }
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a standard IMU!");
+                return cb;
             } else if constexpr (std::is_same<MessageT, geometry_msgs::msg::PoseStamped>::value) {
                 // ------------------------------------------ //
                 // ---------- Frame Pose call back ---------- //
@@ -1131,183 +1317,238 @@ namespace obelisk {
 
                 RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Odometry!");
                 return cb;
-            } else if constexpr (std::is_same<MessageT, nav_msgs::msg::GridCells>::value) {
+            } else if constexpr (std::is_same<MessageT, obelisk_sensor_msgs::msg::ObkScan>::value) {
                 // ------------------------------------------ //
                 // ------------ Scan Dots Sensor ------------ //
                 // ------------------------------------------ //
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
                     // This sensor is always made up of:
                     //  - Framepos
-
-                    nav_msgs::msg::GridCells msg;
-
-                    bool has_framepos  = false;
-                    
-                    // Verify that the proper parameters have been passed
-                    if (this->height_map_grid_size_.size() != 2) {
-                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid size!");
-                    }
-                    int x_rays = this->height_map_grid_size_[0] / this->height_map_grid_spacing_ + 1;
-                    int y_rays = this->height_map_grid_size_[1] / this->height_map_grid_spacing_ + 1;
-                    msg.cells.resize(x_rays * y_rays);
-
-                    if (this->height_map_grid_spacing_ == 0) {
-                        throw std::runtime_error("Attempted to use a scan dots sensor without providing a valid grid spacing!");
-                    }
-
-
-                    std::array<int, 2> x_y_num_rays = {x_rays, y_rays};
-
-                    msg.cell_width = this->height_map_grid_spacing_;
-
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
-                    for (size_t i = 0; i < sensor_names.size(); i++) {
-                        int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
-                        if (sensor_id == -1) {
-                            throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the sensor: " + sensor_names.at(i));
-                        }
-                        // Get the sensor id
-                        int sensor_addr = this->model_->sensor_adr[sensor_id];
 
-                        if (mj_sensor_types.at(i) == "framepos") {
-                            if (!has_framepos) {
-                                // Starting ray origin position (top-left corner of scan)
-                                std::array<double, 3> sensor_pos = {this->data_->sensordata[sensor_addr],
-                                    this->data_->sensordata[sensor_addr + 1],
-                                    this->data_->sensordata[sensor_addr + 2] + 10.0 };  // shift upward
-
-                                int site_id = model_->sensor_objid[sensor_id];
-                                std::array<double, 3> site_pos_global = {this->data_->site_xpos[3*site_id],
-                                    this->data_->site_xpos[3*site_id + 1],
-                                    this->data_->site_xpos[3*site_id + 2],
-                                };
-
-                                sensor_pos[0] += site_pos_global[0];
-                                sensor_pos[1] += site_pos_global[1];
-
-                                // Get the yaw from the quat
-                                double w = this->data_->qpos[3], x = this->data_->qpos[4], y = this->data_->qpos[5], z = this->data_->qpos[6];
-
-                                // Yaw (Z-axis rotation)
-                                double siny_cosp = 2.0 * (w * z + x * y);
-                                double cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
-                                double base_yaw = std::atan2(siny_cosp, cosy_cosp);
-
-                                // Make the rotation matrix
-                                double cos_yaw = std::cos(base_yaw);
-                                double sin_yaw = std::sin(base_yaw);
-                                double R_2d[2][2] = {
-                                    { cos_yaw, -sin_yaw },
-                                    { sin_yaw,  cos_yaw }
-                                };
-
-                                // Adjust X and Y to go to bottom-left corner
-                                std::array<double, 2> offset = { -this->height_map_grid_size_[0] / 2.0, -this->height_map_grid_size_[1] / 2.0 };
-                                // Rotate offset: R_2d x offset
-                                std::array<double, 2> rotated_offset = {
-                                    R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
-                                    R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
-                                };
-                                sensor_pos[0] += rotated_offset[0];
-                                sensor_pos[1] += rotated_offset[1];
-
-                                // Ray direction: straight down
-                                const std::array<double, 3> direction = { 0.0, 0.0, -1.0 };
-
-                                // Geom groups active for ray collisions
-                                mjtByte geom_group[mjNGROUP] = {0, 0, 0, 0, 0, 0};
-                                for (size_t i = 0; i < this->height_map_geom_group_.size(); i++) {
-                                    geom_group[this->height_map_geom_group_[i]] = 1;
-                                }
-
-                                // Temp storage for geom id output
-                                int geom_id[1] = { -1 };
-
-                                int ii = 0;
-                                for (int x = 0; x < x_y_num_rays[0]; ++x) {
-                                    for (int y = 0; y < x_y_num_rays[1]; ++y) {
-                                        // Compute origin for this ray
-                                        offset = { this->height_map_grid_spacing_ * x, this->height_map_grid_spacing_ * y};
-
-                                        // Rotate offset: R_2d x offset
-                                        rotated_offset = {
-                                            R_2d[0][0] * offset[0] + R_2d[0][1] * offset[1],
-                                            R_2d[1][0] * offset[0] + R_2d[1][1] * offset[1]
-                                        };
-
-                                        std::array<double, 3> ray_origin = {
-                                            sensor_pos[0] + rotated_offset[0],
-                                            sensor_pos[1] + rotated_offset[1],
-                                            sensor_pos[2]               // z already offset upward
-                                        };
-
-                                        // Perform ray cast
-                                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), geom_group, 1, -1, geom_id);
-
-                                        // Compute hit point
-                                        std::array<double, 3> hit_point = {
-                                            ray_origin[0] + direction[0] * dist,
-                                            ray_origin[1] + direction[1] * dist,
-                                            ray_origin[2] + direction[2] * dist
-                                        };
-                                        geometry_msgs::msg::Point ros_pt;
-                                        // Making it relative to the base link
-                                        ros_pt.x = hit_point[0] - site_pos_global[0];
-                                        ros_pt.y = hit_point[1] - site_pos_global[1];
-                                        ros_pt.z = hit_point[2];
-                                        msg.cells[ii] = ros_pt;
-                                        ii++;
-                                    }
-                                }
-
-                                if (this->model_->sensor_refid[sensor_id] == -1) {
-                                    msg.header.frame_id = "world";
-                                } else {
-                                    int ref_type = this->model_->sensor_reftype[sensor_id];
-                                    int ref_id   = this->model_->sensor_refid[sensor_id];
-                                    if (ref_type == mjOBJ_SITE) {
-                                        msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_siteadr[ref_id]);
-                                    } else if (ref_type == mjOBJ_BODY) {
-                                        msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_bodyadr[ref_id]);
-                                    } else if (ref_type == mjOBJ_GEOM) {
-                                        msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_geomadr[ref_id]);
-                                    } else if (ref_type == mjOBJ_CAMERA) {
-                                        msg.header.frame_id =
-                                            std::string(this->model_->names + this->model_->name_camadr[ref_id]);
-                                    } else {
-                                        RCLCPP_ERROR_STREAM(this->get_logger(),
-                                                            "Framepos sensor, "
-                                                                << sensor_names.at(i)
-                                                                << ", is not associated with a supported Mujoco object "
-                                                                   "type! Current object type (mjtObj): "
-                                                                << ref_type);
-                                    }
-                                }
-                                has_framepos = true;
-                            } else {
-                                RCLCPP_ERROR_STREAM(this->get_logger(),
-                                                    "There are two framepos associated with this FramePose! Ignoring "
-                                                        << sensor_names.at(i));
-                            }
-                        } else {
-                            RCLCPP_ERROR_STREAM(
-                                this->get_logger(),
-                                "Sensor " << sensor_names.at(i)
-                                          << " is not associated with a valid Mujoco sensor type! Current sensor type: "
-                                          << mj_sensor_types.at(i));
-                        }
-
-                        msg.header.stamp = this->now();
+                    obelisk_sensor_msgs::msg::ObkScan msg;
+                    std::string site = scan_interface_->get_site();
+                    int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
+                    if (site_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + scan_interface_->get_site());
                     }
+
+                    // Starting ray origin position (top-left corner of scan)
+                    // position (world)
+                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
+                    Eigen::Matrix3d rot;
+                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
+                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
+                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
+
+                    // Temp storage for geom id output
+                    int geom_id[1] = { -1 };
+
+                    obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
+                    starts_w.resize(scan_interface_->get_num_rays(), 3);
+                    dirs_w.resize(scan_interface_->get_num_rays(), 3);
+
+                    scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(scan_interface_->get_num_rays() / scan_viz_decimation_ + 1);
+
+                    for (int ii = 0; ii < scan_interface_->get_num_rays(); ++ii) {
+                        Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                        Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+
+                        // Perform ray cast
+                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+
+                        // Compute hit point
+                        std::array<double, 3> hit_point = {
+                            ray_origin[0] + direction[0] * dist,
+                            ray_origin[1] + direction[1] * dist,
+                            ray_origin[2] + direction[2] * dist
+                        };
+                        float ret = scan_interface_->get_return(hit_point, dist);
+                        msg.data.push_back(ret);
+                        if (ii % scan_viz_decimation_ == 0) {
+                            scan_viz_points_.push_back({hit_point[0], hit_point[1], hit_point[2]});
+                        }
+                    }
+
+                    msg.header.frame_id = scan_interface_->get_frame();
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
-                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Scan Dots (GridCells) sensor!");
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Scan Dots (ObkScan) sensor!");
+                return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::PointCloud2>::value) {
+                // ------------------------------------------ //
+                // ----------- PointCloud2 Sensor ----------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                    std::string site = scan_interface_->get_site();
+                    int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
+                    if (site_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + scan_interface_->get_site());
+                    }
+
+                    // Site position and rotation in world frame
+                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
+                    Eigen::Matrix3d rot;
+                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
+                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
+                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
+
+                    // Temp storage for geom id output
+                    int geom_id[1] = { -1 };
+
+                    obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
+                    int num_rays = scan_interface_->get_num_rays();
+                    starts_w.resize(num_rays, 3);
+                    dirs_w.resize(num_rays, 3);
+
+                    scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Collect hit points
+                    std::vector<std::array<float, 3>> points;
+                    points.reserve(num_rays);
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(num_rays / scan_viz_decimation_ + 1);
+
+                    for (int ii = 0; ii < num_rays; ++ii) {
+                        Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                        Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+
+                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+
+                        if (dist >= 0) {
+                            float hx = static_cast<float>(ray_origin[0] + direction[0] * dist);
+                            float hy = static_cast<float>(ray_origin[1] + direction[1] * dist);
+                            float hz = static_cast<float>(ray_origin[2] + direction[2] * dist);
+                            points.push_back({hx, hy, hz});
+                            if (ii % scan_viz_decimation_ == 0) {
+                                scan_viz_points_.push_back({static_cast<double>(hx), static_cast<double>(hy), static_cast<double>(hz)});
+                            }
+                        }
+                    }
+
+                    // Build PointCloud2 message
+                    sensor_msgs::msg::PointCloud2 msg;
+                    msg.header.frame_id = scan_interface_->get_frame();
+                    msg.header.stamp = this->now();
+                    msg.height = 1;
+                    msg.width = static_cast<uint32_t>(points.size());
+                    msg.is_dense = true;
+                    msg.is_bigendian = false;
+
+                    sensor_msgs::PointCloud2Modifier modifier(msg);
+                    modifier.setPointCloud2FieldsByString(1, "xyz");
+                    modifier.resize(points.size());
+
+                    sensor_msgs::PointCloud2Iterator<float> iter_x(msg, "x");
+                    sensor_msgs::PointCloud2Iterator<float> iter_y(msg, "y");
+                    sensor_msgs::PointCloud2Iterator<float> iter_z(msg, "z");
+
+                    for (const auto& pt : points) {
+                        *iter_x = pt[0]; ++iter_x;
+                        *iter_y = pt[1]; ++iter_y;
+                        *iter_z = pt[2]; ++iter_z;
+                    }
+
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a PointCloud2 sensor!");
+                return cb;
+            } else if constexpr (std::is_same<MessageT, sensor_msgs::msg::Image>::value) {
+                // ------------------------------------------ //
+                // ------------ Depth Image Sensor ---------- //
+                // ------------------------------------------ //
+                auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
+                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+
+                    std::string site = depth_scan_interface_->get_site();
+                    int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
+                    if (site_id == -1) {
+                        throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + site);
+                    }
+
+                    // Site position and rotation in world frame
+                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
+                    Eigen::Matrix3d rot;
+                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
+                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
+                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
+
+                    // Optical axis: center-of-FOV ray direction in world frame
+                    Eigen::Vector3d forward = rot * depth_scan_interface_->get_image_forward_local();
+
+                    int img_w = depth_scan_interface_->get_image_width();
+                    int img_h = depth_scan_interface_->get_image_height();
+                    int num_rays = depth_scan_interface_->get_num_rays();
+
+                    // Temp storage for geom id output
+                    int geom_id[1] = { -1 };
+
+                    obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
+                    starts_w.resize(num_rays, 3);
+                    dirs_w.resize(num_rays, 3);
+
+                    depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Build depth image buffer in natural ray order (row 0 = top of image),
+                    // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
+                    std::vector<float> depth_buffer(num_rays);
+                    scan_viz_points_.clear();
+                    scan_viz_points_.reserve(num_rays / depth_viz_decimation_ + 1);
+
+                    for (int ii = 0; ii < num_rays; ++ii) {
+                        Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                        Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+
+                        // Perform ray cast
+                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+
+                        if (dist < 0) {
+                            // No hit - set to NaN
+                            depth_buffer[ii] = std::numeric_limits<float>::quiet_NaN();
+                        } else {
+                            // Perpendicular depth: project ray distance onto optical axis
+                            depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
+
+                            // Store hit point for visualization
+                            if (ii % depth_viz_decimation_ == 0) {
+                                scan_viz_points_.push_back({
+                                    ray_origin[0] + direction[0] * dist,
+                                    ray_origin[1] + direction[1] * dist,
+                                    ray_origin[2] + direction[2] * dist
+                                });
+                            }
+                        }
+                    }
+
+                    // Build sensor_msgs::msg::Image (32FC1)
+                    sensor_msgs::msg::Image msg;
+                    msg.header.frame_id = depth_scan_interface_->get_frame();
+                    msg.header.stamp = this->now();
+                    msg.height = static_cast<uint32_t>(img_h);
+                    msg.width = static_cast<uint32_t>(img_w);
+                    msg.encoding = "32FC1";
+                    msg.is_bigendian = false;
+                    msg.step = static_cast<uint32_t>(img_w * sizeof(float));
+
+                    size_t data_size = static_cast<size_t>(msg.step) * img_h;
+                    msg.data.resize(data_size);
+                    std::memcpy(msg.data.data(), depth_buffer.data(), data_size);
+
+                    publisher->publish(msg);
+                };
+
+                RCLCPP_INFO_STREAM(this->get_logger(), "Timer callback created for a Depth Image (sensor_msgs::Image) sensor!");
                 return cb;
             }
+
         }
 
         /**
@@ -1455,6 +1696,7 @@ namespace obelisk {
 
         // Geom id's for viz
         std::vector<int> viz_geoms_;
+        std::vector<std::array<mjtNum,3>> scan_viz_points_;
 
         // Shared data between the main thread and the sim thread
         std::vector<double> shared_data_;
@@ -1474,9 +1716,11 @@ namespace obelisk {
         int num_sensors_;
 
         // For the height map
-        std::vector<double> height_map_grid_size_;
-        double height_map_grid_spacing_;
-        std::vector<long> height_map_geom_group_;
+        std::unique_ptr<obelisk::RayCasterInterface> scan_interface_;
+        std::unique_ptr<obelisk::RayCasterInterface> depth_scan_interface_;
+        int scan_viz_decimation_ = 1;
+        int depth_viz_decimation_ = 1;
+        int scan_dots_idx_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;
