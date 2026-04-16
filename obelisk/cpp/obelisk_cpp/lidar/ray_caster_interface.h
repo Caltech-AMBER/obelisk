@@ -76,6 +76,15 @@ class RayCasterInterface {
         if (config_["frame"]) {
             frame_ = config_["frame"].as<std::string>();
         }
+
+        // Read max ray distance (optional, default: 0.0 meaning "disabled")
+        // Hits beyond this distance are treated as no-hit (apply_max_distance returns -1).
+        if (config_["max_distance"]) {
+            max_distance_ = config_["max_distance"].as<double>();
+            if (max_distance_ < 0.0) {
+                throw std::runtime_error("max_distance must be >= 0");
+            }
+        }
     }
 
     virtual ~RayCasterInterface() = default;
@@ -117,6 +126,25 @@ class RayCasterInterface {
      * @brief Get the frame_id string for published messages
      */
     const std::string& get_frame() const { return frame_; }
+
+    /**
+     * @brief Max ray distance in meters. 0.0 means disabled (no limit).
+     */
+    double get_max_distance() const { return max_distance_; }
+
+    /**
+     * @brief Clamp a raycast distance by max_distance.
+     *
+     * If max_distance is configured (>0) and the hit is farther than the limit,
+     * returns -1 (the mj_ray no-hit sentinel) so callers can treat it as a miss.
+     * Otherwise returns dist unchanged (including the existing -1 no-hit case).
+     */
+    double apply_max_distance(double dist) const {
+        if (max_distance_ > 0.0 && dist > max_distance_) {
+            return -1.0;
+        }
+        return dist;
+    }
 
     /**
      * @brief Compute ray starts and directions in world frame
@@ -220,6 +248,7 @@ class RayCasterInterface {
     std::string site_name_;
     mjtByte geom_group_mask_[mjNGROUP];
     std::string frame_ = "world";
+    double max_distance_ = 0.0; // 0 => disabled
 };
 
 } // namespace obelisk

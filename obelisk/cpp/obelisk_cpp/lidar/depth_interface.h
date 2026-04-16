@@ -16,6 +16,7 @@ namespace obelisk {
  * YAML Config:
  *   site_name: "camera_site"              # MuJoCo site name (required)
  *   geom_groups: [0]                      # Geom groups for collision (optional)
+ *   max_distance: 0.0                     # Max ray distance in meters, 0 disables (optional)
  *   pattern:
  *     width: 30                           # Image width in pixels (required)
  *     height: 26                          # Image height in pixels (required)

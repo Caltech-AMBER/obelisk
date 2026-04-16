@@ -18,6 +18,7 @@ namespace obelisk {
  * YAML Config:
  *   site_name: "lidar_site"            # MuJoCo site name (required)
  *   geom_groups: [0]                   # Geom groups for collision (optional)
+ *   max_distance: 0.0                  # Max ray distance in meters, 0 disables (optional)
  *   pattern:
  *     vertical_fov_range: [-15, 15]    # [min, max] degrees (required)
  *     horizontal_fov_range: [0, 360]   # [min, max] degrees (required)

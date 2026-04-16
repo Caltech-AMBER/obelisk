@@ -1379,6 +1379,7 @@ namespace obelisk {
 
                         // Perform ray cast
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+                        dist = scan_interface_->apply_max_distance(dist);
 
                         // Compute hit point
                         std::array<double, 3> hit_point = {
@@ -1448,6 +1449,7 @@ namespace obelisk {
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
 
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+                        dist = scan_interface_->apply_max_distance(dist);
 
                         if (dist >= 0) {
                             // Compute point in sensor body frame for the point cloud
@@ -1547,6 +1549,7 @@ namespace obelisk {
 
                         // Perform ray cast
                         double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
+                        dist = depth_scan_interface_->apply_max_distance(dist);
 
                         if (dist < 0) {
                             // No hit - set to NaN

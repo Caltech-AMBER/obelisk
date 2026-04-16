@@ -14,6 +14,7 @@ namespace obelisk {
  * YAML Config:
  *   site_name: "height_scan_site"   # MuJoCo site name (required)
  *   geom_groups: [0]                # Geom groups for collision (optional)
+ *   max_distance: 0.0               # Max ray distance in meters, 0 disables (optional)
  *   pattern:
  *     ordering: "xy"                # Grid ordering: "xy" or "yx" (optional, default: "xy")
  *     resolution: 0.05              # Grid step size in meters (required)
