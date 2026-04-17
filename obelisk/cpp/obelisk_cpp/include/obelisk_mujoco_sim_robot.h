@@ -1480,17 +1480,24 @@ namespace obelisk {
                     msg.is_bigendian = false;
 
                     sensor_msgs::PointCloud2Modifier modifier(msg);
-                    modifier.setPointCloud2FieldsByString(1, "xyz");
+                    modifier.setPointCloud2Fields(4,
+                        "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+                        "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+                        "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+                        "intensity", 1, sensor_msgs::msg::PointField::FLOAT32);
                     modifier.resize(points.size());
 
                     sensor_msgs::PointCloud2Iterator<float> iter_x(msg, "x");
                     sensor_msgs::PointCloud2Iterator<float> iter_y(msg, "y");
                     sensor_msgs::PointCloud2Iterator<float> iter_z(msg, "z");
+                    sensor_msgs::PointCloud2Iterator<float> iter_i(msg, "intensity");
 
+                    constexpr float kDefaultIntensity = 128.0f;
                     for (const auto& pt : points) {
                         *iter_x = pt[0]; ++iter_x;
                         *iter_y = pt[1]; ++iter_y;
                         *iter_z = pt[2]; ++iter_z;
+                        *iter_i = kDefaultIntensity; ++iter_i;
                     }
 
                     publisher->publish(msg);
