@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # --- script flags --- #
-leap=false
 zed=false
 
 for arg in "$@"; do

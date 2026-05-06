@@ -6,10 +6,20 @@ namespace obelisk {
                                                              obelisk_estimator_msgs::msg::EstimatedState> {
       public:
         ObeliskControllerTester() : ObeliskController("obelisk_controller_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_ctrl_setting", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_ctrl_setting", "topic:topic1"));
-            this->set_parameter(rclcpp::Parameter("sub_est_setting", "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
+            const std::string settings = R"(
+publishers:
+  - key: pub_ctrl
+    topic: topic1
+    history_depth: 10
+subscribers:
+  - key: sub_est
+    topic: topic2
+    history_depth: 10
+timers:
+  - key: timer_ctrl
+    timer_period_sec: 1.0
+)";
+            this->set_parameter(rclcpp::Parameter("obelisk_settings", settings));
         }
 
         void Configure() {

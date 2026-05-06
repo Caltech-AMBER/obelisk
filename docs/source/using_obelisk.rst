@@ -123,8 +123,8 @@ Estimator Code
             JointEncodersPassthroughEstimator(const std::string& name)
                 : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
-                this->RegisterSubscription<obelisk_sensor_msgs::msg::JointEncoders>(
-                    "sub_sensor_setting", "sub_sensor",
+                this->RegisterObkSubscription<obelisk_sensor_msgs::msg::JointEncoders>(
+                    "sub_sensor",
                     std::bind(&JointEncodersPassthroughEstimator::JointEncoderCallback, this, std::placeholders::_1));
             }
 
@@ -167,9 +167,8 @@ Estimator Code
                     """Initialize the joint encoders passthrough estimator."""
                     super().__init__(node_name)
                     self.register_obk_subscription(
-                        "sub_sensor_setting",
-                        self.joint_encoder_callback,  # type: ignore
-                        key="subscriber_sensor",  # key can be specified here or in the config file
+                        key="sub_sensor",
+                        callback=self.joint_encoder_callback,  # type: ignore
                         msg_type=JointEncoders,
                     )
 

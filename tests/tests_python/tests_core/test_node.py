@@ -1,7 +1,14 @@
+"""Tests for ObeliskNode (post-config-string-refactor).
+
+These exercise the new ``obelisk_settings`` YAML-string parameter and the simplified
+``register_obk_*(key, ...)`` API.
+"""
+
 from typing import Any, Callable, Generator
 
 import obelisk_control_msgs.msg as ocm
 import pytest
+import yaml
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.lifecycle.node import TransitionCallbackReturn
 from rclpy.publisher import Publisher
@@ -10,10 +17,6 @@ from rclpy.timer import Timer
 from std_msgs.msg import String
 
 from obelisk_py.core.node import ObeliskNode
-
-# ##### #
-# SETUP #
-# ##### #
 
 
 @pytest.fixture
@@ -24,92 +27,54 @@ def test_node(ros_context: Any) -> Generator[ObeliskNode, None, None]:
     node.destroy_node()
 
 
-# ##### #
-# TESTS #
-# ##### #
+def _set_obelisk_settings(node: ObeliskNode, settings: dict, set_node_parameters: Callable) -> None:
+    """Serialize ``settings`` to YAML and assign it to the node's ``obelisk_settings`` parameter."""
+    set_node_parameters(node, {"obelisk_settings": yaml.safe_dump(settings)})
 
 
 def test_node_initialization(test_node: ObeliskNode) -> None:
-    """Test the initialization of the ObeliskNode.
-
-    This test checks if the node is properly initialized with the correct name and if the callback_group_settings
-    parameter is declared.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """The node declares the single ``obelisk_settings`` parameter and the user ``params_path`` slot."""
     assert test_node.get_name() == "test_node_exclusivity"
-    assert test_node.has_parameter("callback_group_settings")
+    assert test_node.has_parameter("obelisk_settings")
+    assert test_node.has_parameter("params_path")
 
 
 def test_register_obk_publisher(test_node: ObeliskNode) -> None:
-    """Test the registration of an Obelisk publisher.
-
-    This test verifies that a publisher can be registered with the node and that the appropriate ROS parameter is
-    declared.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
-    test_node.register_obk_publisher("test_pub_param", String, key="test_pub")
-    assert test_node.has_parameter("test_pub_param")
+    """register_obk_publisher records the registration without declaring a per-component parameter."""
+    test_node.register_obk_publisher(key="test_pub", msg_type=String)
+    assert any(s["key"] == "test_pub" for s in test_node._obk_pub_settings)
+    # No legacy *_setting parameter should be declared anymore.
+    assert not test_node.has_parameter("test_pub_setting")
 
 
 def test_register_obk_subscription(test_node: ObeliskNode) -> None:
-    """Test the registration of an Obelisk subscription.
-
-    This test verifies that a subscription can be registered with the node and that the appropriate ROS parameter is
-    declared.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """register_obk_subscription stores the callback and msg type, no extra ROS param declared."""
 
     def callback(msg: String) -> None:
         pass
 
-    test_node.register_obk_subscription("test_sub_param", callback, String, key="test_sub")
-    assert test_node.has_parameter("test_sub_param")
+    test_node.register_obk_subscription(key="test_sub", callback=callback, msg_type=String)
+    assert any(s["key"] == "test_sub" and s["callback"] is callback for s in test_node._obk_sub_settings)
 
 
 def test_register_obk_timer(test_node: ObeliskNode) -> None:
-    """Test the registration of an Obelisk timer.
-
-    This test verifies that a timer can be registered with the node and that the appropriate ROS parameter is declared.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """register_obk_timer stores the callback, no extra ROS param declared."""
 
     def callback() -> None:
         pass
 
-    test_node.register_obk_timer("test_timer_param", callback, key="test_timer")
-    assert test_node.has_parameter("test_timer_param")
+    test_node.register_obk_timer(key="test_timer", callback=callback)
+    assert any(s["key"] == "test_timer" and s["callback"] is callback for s in test_node._obk_timer_settings)
 
 
 def test_create_publisher(test_node: ObeliskNode) -> None:
-    """Test the creation of a publisher.
-
-    This test verifies that a publisher can be created with an Obelisk message type and that an ObeliskMsgError is
-    raised for non-Obelisk message types.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """The underlying create_publisher still works for direct use cases."""
     pub = test_node.create_publisher(ocm.PositionSetpoint, "test_topic", 10)
     assert isinstance(pub, Publisher)
 
 
 def test_create_subscription(test_node: ObeliskNode) -> None:
-    """Test the creation of a subscription.
-
-    This test verifies that a subscription can be created with an Obelisk message type and that an ObeliskMsgError is
-    raised for non-Obelisk message types.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """The underlying create_subscription still works for direct use cases."""
 
     def callback(msg: ocm.PositionSetpoint) -> None:
         pass
@@ -119,14 +84,7 @@ def test_create_subscription(test_node: ObeliskNode) -> None:
 
 
 def test_lifecycle_callbacks(test_node: ObeliskNode) -> None:
-    """Test the lifecycle callbacks of the ObeliskNode.
-
-    This test verifies that the lifecycle callbacks (on_configure, on_activate, on_deactivate, on_cleanup, on_shutdown)
-    return the expected TransitionCallbackReturn.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-    """
+    """All lifecycle callbacks return SUCCESS for an empty ObeliskNode."""
     assert test_node.on_configure(None) == TransitionCallbackReturn.SUCCESS
     assert test_node.on_activate(None) == TransitionCallbackReturn.SUCCESS
     assert test_node.on_deactivate(None) == TransitionCallbackReturn.SUCCESS
@@ -135,78 +93,82 @@ def test_lifecycle_callbacks(test_node: ObeliskNode) -> None:
 
 
 def test_callback_group_creation(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
-    """Test the creation of callback groups.
-
-    This test verifies that callback groups can be created from a configuration string.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-        set_node_parameters: A fixture to set node parameters.
-    """
-    set_node_parameters(
-        test_node, {"callback_group_settings": "group1:MutuallyExclusiveCallbackGroup,group2:ReentrantCallbackGroup"}
+    """Callback groups specified in obelisk_settings are instantiated and bound as attributes."""
+    _set_obelisk_settings(
+        test_node,
+        {
+            "callback_groups": {
+                "group1": "MutuallyExclusiveCallbackGroup",
+                "group2": "ReentrantCallbackGroup",
+            }
+        },
+        set_node_parameters,
     )
     test_node.on_configure(None)
-    assert hasattr(test_node, "group1")
     assert isinstance(test_node.group1, MutuallyExclusiveCallbackGroup)
-    assert hasattr(test_node, "group2")
     assert isinstance(test_node.group2, ReentrantCallbackGroup)
 
 
-def test_publisher_creation_from_config(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
-    """Test the creation of a publisher from a configuration string.
-
-    This test verifies that a publisher can be created from a configuration string.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-        set_node_parameters: A fixture to set node parameters.
-    """
-    test_node.register_obk_publisher("test_pub_param", ocm.PositionSetpoint, key="test_pub")
-    set_node_parameters(test_node, {"test_pub_param": "topic:/test_topic,msg_type:PositionSetpoint,history_depth:10"})
+def test_publisher_creation_from_settings(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
+    """A publisher entry in obelisk_settings.publishers becomes a real rclpy Publisher."""
+    test_node.register_obk_publisher(key="test_pub", msg_type=ocm.PositionSetpoint)
+    _set_obelisk_settings(
+        test_node,
+        {
+            "publishers": [
+                {"key": "test_pub", "topic": "/test_topic", "history_depth": 10},
+            ]
+        },
+        set_node_parameters,
+    )
     test_node.on_configure(None)
 
     assert "test_pub" in test_node.obk_publishers
     assert isinstance(test_node.obk_publishers["test_pub"], Publisher)
 
 
-def test_subscription_creation_from_config(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
-    """Test the creation of a subscription from a configuration string.
-
-    This test verifies that a subscription can be created from a configuration string.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-        set_node_parameters: A fixture to set node parameters.
-    """
+def test_subscription_creation_from_settings(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
+    """A subscriber entry in obelisk_settings.subscribers becomes a real rclpy Subscription."""
 
     def callback(msg: ocm.PositionSetpoint) -> None:
         pass
 
-    test_node.register_obk_subscription("test_sub_param", callback, ocm.PositionSetpoint, key="test_sub")
-    set_node_parameters(test_node, {"test_sub_param": "topic:/test_topic,msg_type:PositionSetpoint,history_depth:10"})
+    test_node.register_obk_subscription(key="test_sub", callback=callback, msg_type=ocm.PositionSetpoint)
+    _set_obelisk_settings(
+        test_node,
+        {
+            "subscribers": [
+                {"key": "test_sub", "topic": "/test_topic", "history_depth": 10},
+            ]
+        },
+        set_node_parameters,
+    )
     test_node.on_configure(None)
 
     assert "test_sub" in test_node.obk_subscriptions
     assert isinstance(test_node.obk_subscriptions["test_sub"], Subscription)
 
 
-def test_timer_creation_from_config(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
-    """Test the creation of a timer from a configuration string.
-
-    This test verifies that a timer can be created from a configuration string.
-
-    Parameters:
-        test_node: An instance of ObeliskNode.
-        set_node_parameters: A fixture to set node parameters.
-    """
+def test_timer_creation_from_settings(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
+    """A timer entry in obelisk_settings.timers becomes a real rclpy Timer."""
 
     def callback() -> None:
         pass
 
-    test_node.register_obk_timer("test_timer_param", callback, key="test_timer")
-    set_node_parameters(test_node, {"test_timer_param": "timer_period_sec:1.0"})
+    test_node.register_obk_timer(key="test_timer", callback=callback)
+    _set_obelisk_settings(
+        test_node,
+        {"timers": [{"key": "test_timer", "timer_period_sec": 1.0}]},
+        set_node_parameters,
+    )
     test_node.on_configure(None)
 
     assert "test_timer" in test_node.obk_timers
     assert isinstance(test_node.obk_timers["test_timer"], Timer)
+
+
+def test_invalid_callback_group_type(test_node: ObeliskNode, set_node_parameters: Callable) -> None:
+    """An unknown callback-group type raises ValueError at on_configure time."""
+    _set_obelisk_settings(test_node, {"callback_groups": {"bad": "NotARealGroupType"}}, set_node_parameters)
+    with pytest.raises(ValueError):
+        test_node.on_configure(None)

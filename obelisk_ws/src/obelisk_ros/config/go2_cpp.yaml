@@ -205,7 +205,6 @@ onboard:
           callback_group: None
   viz:
     on: True
-    viz_tool: foxglove
     viz_nodes:
       - pkg: obelisk_viz_cpp
         executable: default_robot_viz

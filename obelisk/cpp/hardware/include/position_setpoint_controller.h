@@ -42,11 +42,12 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
         // Joystick example
         // ----- Joystick Subscriber ----- //
         this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
-            "joystick_sub_setting", "joystick_sub",
+            "joystick_sub",
             std::bind(&PositionSetpointController::JoystickCallback, this, std::placeholders::_1));
 
         // ----- Joystick Publisher ----- //
-        this->RegisterObkPublisher<sensor_msgs::msg::JoyFeedback>("joystick_feedback_setting", "joystick_pub");
+        // Key must match what the launch-side producer derives from `joystick_feedback_setting` in the YAML.
+        this->RegisterObkPublisher<sensor_msgs::msg::JoyFeedback>("joystick_feedback");
     }
 
   protected:
@@ -93,7 +94,7 @@ class PositionSetpointController : public obelisk::ObeliskController<obelisk_con
             joy_feedback.type      = sensor_msgs::msg::JoyFeedback::TYPE_RUMBLE;
             joy_feedback.id        = 0;
             joy_feedback.intensity = 0.75;
-            this->GetPublisher<sensor_msgs::msg::JoyFeedback>("joystick_pub")->publish(joy_feedback);
+            this->GetPublisher<sensor_msgs::msg::JoyFeedback>("joystick_feedback")->publish(joy_feedback);
         }
     }
 

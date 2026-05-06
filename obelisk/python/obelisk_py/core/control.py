@@ -20,21 +20,12 @@ class ObeliskController(ABC, ObeliskNode):
     def __init__(self, node_name: str, ctrl_msg_type: Type, est_msg_type: Type) -> None:
         """Initialize the Obelisk controller."""
         super().__init__(node_name)
-        self.register_obk_timer(
-            "timer_ctrl_setting",
-            self.compute_control,
-            key="timer_ctrl",
-        )
-        self.register_obk_publisher(
-            "pub_ctrl_setting",
-            msg_type=ctrl_msg_type,
-            key="pub_ctrl",
-        )
+        self.register_obk_timer(key="timer_ctrl", callback=self.compute_control)
+        self.register_obk_publisher(key="pub_ctrl", msg_type=ctrl_msg_type)
         self.register_obk_subscription(
-            "sub_est_setting",
-            self.update_x_hat,
-            msg_type=est_msg_type,
             key="sub_est",
+            callback=self.update_x_hat,
+            msg_type=est_msg_type,
         )
 
     @abstractmethod
@@ -49,9 +40,9 @@ class ObeliskController(ABC, ObeliskNode):
     def compute_control(self) -> Type:
         """Compute the control signal.
 
-        This is the control timer callback and is expected to call 'publisher_ctrl' internally. Note that the control
-        message is still returned afterwards, mostly for logging/debugging purposes. The publish call is the important
-        part, NOT the returned value, since the topic is what the ObeliskRobot subscribes to.
+        This is the control timer callback and is expected to call ``self.obk_publishers["pub_ctrl"]`` internally. Note
+        that the control message is still returned afterwards, mostly for logging/debugging purposes. The publish call
+        is the important part, NOT the returned value, since the topic is what the ObeliskRobot subscribes to.
 
         Returns:
             obelisk_control_msg: An Obelisk message type containing the control signal and relevant metadata.

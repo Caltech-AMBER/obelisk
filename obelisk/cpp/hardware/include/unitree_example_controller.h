@@ -31,7 +31,7 @@ namespace obelisk {
             }
             // ----- Joystick Subscriber ----- //
             this->RegisterObkSubscription<sensor_msgs::msg::Joy>(
-                        "joystick_sub_setting", "joystick_sub",
+                        "joystick_sub",
                         std::bind(&UnitreeExampleController::JoystickCallback, this, std::placeholders::_1));
 
             RCLCPP_INFO_STREAM(this->get_logger(), "New Joint Index: " << joint_idx_ << ", Expected Joint: " << joint_names_[joint_idx_]);

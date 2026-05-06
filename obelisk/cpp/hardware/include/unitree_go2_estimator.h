@@ -11,11 +11,11 @@ namespace obelisk {
             : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
             this->RegisterObkSubscription<obelisk_sensor_msgs::msg::ObkJointEncoders>(
-                "sub_sensor_setting", "sub_sensor",
+                "sub_sensor",
                 std::bind(&UnitreeGo2Estimator::JointEncoderCallback, this, std::placeholders::_1));
 
             this->RegisterObkSubscription<obelisk_sensor_msgs::msg::ObkImu>(
-                "sub_imu_setting", "imu_sensor",
+                "sub_imu",
                 std::bind(&UnitreeGo2Estimator::TorsoIMUCallback, this, std::placeholders::_1));
         }
 

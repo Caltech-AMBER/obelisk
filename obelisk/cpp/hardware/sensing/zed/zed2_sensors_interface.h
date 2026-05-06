@@ -61,7 +61,7 @@ class ObeliskZed2Sensors : public obelisk::ObeliskSensor {
         this->set_camera_params(params_path);
 
         // Register publisher for ZED2 cameras
-        this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImage>("pub_img_setting", pub_img_key_);
+        this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkImage>(pub_img_key_);
     }
 
     /**

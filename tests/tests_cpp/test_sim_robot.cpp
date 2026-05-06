@@ -6,10 +6,20 @@ namespace obelisk {
     class ObeliskSimRobotTester : public ObeliskSimRobot<obelisk_control_msgs::msg::PositionSetpoint> {
       public:
         ObeliskSimRobotTester() : ObeliskSimRobot("obelisk_sim_robot_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "topic:topic3,timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
+            const std::string settings = R"(
+publishers:
+  - key: pub_true_sim_state
+    topic: topic4
+    history_depth: 10
+subscribers:
+  - key: sub_ctrl
+    topic: topic5
+    history_depth: 10
+timers:
+  - key: timer_true_sim_state
+    timer_period_sec: 1.0
+)";
+            this->set_parameter(rclcpp::Parameter("obelisk_settings", settings));
         }
 
         void Configure() {

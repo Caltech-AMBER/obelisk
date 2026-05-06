@@ -61,14 +61,26 @@ namespace obelisk {
         on_configure(const rclcpp_lifecycle::State& prev_state) {
             this->ObeliskSimRobot<ControlMessageT>::on_configure(prev_state);
 
-            // Read in the config string
-            std::string mujoco_setting = this->get_parameter("mujoco_setting").as_string();
-            auto mujoco_config_map     = this->ParseConfigStr(mujoco_setting);
+            // Read in the YAML-encoded mujoco settings
+            const std::string mujoco_setting = this->get_parameter("mujoco_setting").as_string();
+            YAML::Node mujoco_cfg;
+            try {
+                mujoco_cfg = YAML::Load(mujoco_setting);
+            } catch (const YAML::Exception& e) {
+                throw std::runtime_error(std::string("Failed to parse mujoco_setting YAML: ") + e.what());
+            }
 
-            // Get config params
-            xml_path_             = GetXMLPath(mujoco_config_map);      // Required
-            std::string robot_pkg = GetRobotPackage(mujoco_config_map); // Optional
-            // Search for the model
+            // Required: model XML path
+            if (!mujoco_cfg["model_xml_path"]) {
+                throw std::runtime_error("No model XML path was provided in mujoco_setting.");
+            }
+            xml_path_ = std::filesystem::path(mujoco_cfg["model_xml_path"].as<std::string>());
+
+            // Optional: robot package — used to resolve XML path relative to a ROS2 package's share dir.
+            std::string robot_pkg = "None";
+            if (mujoco_cfg["robot_pkg"]) {
+                robot_pkg = mujoco_cfg["robot_pkg"].as<std::string>();
+            }
             if (!std::filesystem::exists(xml_path_)) {
                 if (robot_pkg != "None" && robot_pkg != "none") {
                     std::string share_directory = ament_index_cpp::get_package_share_directory(robot_pkg);
@@ -83,15 +95,18 @@ namespace obelisk {
 
             RCLCPP_INFO_STREAM(this->get_logger(), "XML Path:" << xml_path_);
 
-            num_steps_per_viz_ = GetNumStepsPerViz(mujoco_config_map);
+            num_steps_per_viz_ = mujoco_cfg["num_steps_per_viz"]
+                                     ? mujoco_cfg["num_steps_per_viz"].as<int>()
+                                     : STEPS_PER_VIZ_DEFAULT;
 
             configuration_complete_ = true;
 
-            ParseSensorString(mujoco_config_map.at("sensor_settings"));
-
-            try {
-                ParseVizString(mujoco_config_map.at("viz_geoms"));
-            } catch (const std::exception& e) {
+            if (mujoco_cfg["sensor_settings"]) {
+                ParseSensors(mujoco_cfg["sensor_settings"]);
+            }
+            if (mujoco_cfg["viz_geoms"]) {
+                ParseVizGeoms(mujoco_cfg["viz_geoms"]);
+            } else {
                 RCLCPP_INFO_STREAM(this->get_logger(), "No geoms to visualize in the simulator.");
             }
 
@@ -386,56 +401,16 @@ namespace obelisk {
             return retval;
         }
 
-        // --------------------------------------------- //
-        // ----------- Config String Helpers ----------- //
-        // --------------------------------------------- //
-        std::filesystem::path GetXMLPath(const std::map<std::string, std::string>& config_map) {
-            try {
-                std::string path = config_map.at("model_xml_path");
-                return std::filesystem::path(path);
-            } catch (const std::exception& e) {
-                throw std::runtime_error("No model XML path was provided!");
-            }
-        }
+        // ------------------------------------------ //
+        // ----------- Sensor / viz parse ----------- //
+        // ------------------------------------------ //
 
-        std::string GetRobotPackage(const std::map<std::string, std::string>& config_map) {
-            try {
-                return config_map.at("robot_pkg");
-            } catch (const std::exception& e) {
-                return "None";
-            }
-        }
-
-        int GetNumStepsPerViz(const std::map<std::string, std::string>& config_map) {
-            try {
-                int num_steps = std::stoi(config_map.at("num_steps_per_viz"));
-                return num_steps;
-            } catch (const std::exception& e) {
-                return STEPS_PER_VIZ_DEFAULT;
-            }
-        }
-
-        void ParseSensorString(std::string sensor_settings) {
-            // Remove {} and []
-            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '{'),
-                                  sensor_settings.end());
-            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '}'),
-                                  sensor_settings.end());
-            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), '['),
-                                  sensor_settings.end());
-            sensor_settings.erase(std::remove(sensor_settings.begin(), sensor_settings.end(), ']'),
-                                  sensor_settings.end());
-
-            // Break the string by the "+"s.
-            const std::string group_delim = "+";
-            std::vector<std::string> sensor_groups;
-            while (!sensor_settings.empty()) {
-                size_t plus_idx = sensor_settings.find(group_delim);
-                if (plus_idx == std::string::npos) {
-                    plus_idx = sensor_settings.length();
-                }
-                sensor_groups.emplace_back(sensor_settings.substr(0, plus_idx));
-                sensor_settings.erase(0, plus_idx + group_delim.length());
+        /**
+         * @brief Walk the YAML ``sensor_settings`` sequence and create a publisher + timer per entry.
+         */
+        void ParseSensors(const YAML::Node& sensor_settings) {
+            if (!sensor_settings || !sensor_settings.IsSequence()) {
+                return;
             }
 
             // Wait for mujoco setup to complete
@@ -446,88 +421,39 @@ namespace obelisk {
 
             callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-            for (auto group : sensor_groups) {
-                // Create a new map between the names and their string values
-                const std::string setting_delim = "|";
-                const std::string val_delim     = "=";
-                std::map<std::string, std::string> setting_map;
-
-                size_t val_idx;
-                while (!group.empty()) {
-                    val_idx = group.find(setting_delim);
-                    if (val_idx == std::string::npos) {
-                        val_idx = group.length();
-                    }
-
-                    size_t setting_idx = group.find(val_delim);
-                    if (setting_idx == std::string::npos) {
-                        throw std::runtime_error("Invalid sensor setting string!");
-                    }
-
-                    std::string setting = group.substr(0, setting_idx);
-                    std::string val     = group.substr(setting_idx + 1, val_idx - (setting_idx + 1));
-                    setting_map.emplace(setting, val);
-                    group.erase(0, val_idx + val_delim.length());
-                }
-
-                // The dt for the timer
-                double dt = -1;
-                try {
-                    dt = std::stod(setting_map.at("dt"));
-                    if (dt <= 0) {
-                        throw std::runtime_error("Invalid dt. Must be > 0.");
-                    }
-                } catch (const std::exception& e) {
+            for (const auto& entry : sensor_settings) {
+                if (!entry["dt"]) {
                     throw std::runtime_error("No dt provided for a sensor!");
                 }
+                const double dt = entry["dt"].as<double>();
+                if (dt <= 0) {
+                    throw std::runtime_error("Invalid dt. Must be > 0.");
+                }
 
-                // The topic for the publisher
-                std::string topic;
-                try {
-                    topic = setting_map.at("topic");
-                } catch (const std::exception& e) {
+                if (!entry["topic"]) {
                     throw std::runtime_error("No topic provided for a sensor!");
                 }
+                const std::string topic = entry["topic"].as<std::string>();
+                const int depth         = entry["history_depth"] ? entry["history_depth"].as<int>() : 10;
 
-                const int depth = this->ObeliskNode::GetHistoryDepth(setting_map);
-
-                std::string sensor_type;
-                try {
-                    sensor_type = setting_map.at("msg_type");
-                } catch (const std::exception& e) {
+                if (!entry["msg_type"]) {
                     throw std::runtime_error("No sensor type provided for a sensor!");
                 }
+                const std::string sensor_type = entry["msg_type"].as<std::string>();
 
-                // Check for config path
                 std::string sensor_config_path = "";
-                if (auto it = setting_map.find("config_path"); it != setting_map.end()) {
-                    sensor_config_path = it->second;
+                if (entry["config_path"]) {
+                    sensor_config_path = entry["config_path"].as<std::string>();
                 }
-
 
                 std::vector<std::string> sensor_names;
                 std::vector<std::string> mj_sensor_types;
-                const std::string name_delim = "&";
-                const std::string type_delim = "$";
-                try {
-                    std::string names = setting_map.at("sensor_names");
-                    while (!names.empty()) {
-                        size_t plus_idx = names.find(name_delim);
-                        if (plus_idx == std::string::npos) {
-                            plus_idx = names.length();
-                        }
-                        // now determine sensor type
-                        size_t dollar_idx = names.find(type_delim);
-                        if (dollar_idx == std::string::npos) {
-                            dollar_idx = names.length();
-                        }
-                        sensor_names.emplace_back(names.substr(0, dollar_idx));
-                        mj_sensor_types.emplace_back(names.substr(dollar_idx + type_delim.length(),
-                                                                  plus_idx - dollar_idx - type_delim.length()));
-                        names.erase(0, plus_idx + name_delim.length());
-                    }
-                } catch (const std::exception& e) {
-                    throw std::runtime_error("No sensor name was provided for a sensor group!");
+                if (!entry["sensor_names"] || !entry["sensor_names"].IsMap()) {
+                    throw std::runtime_error("No sensor_names mapping was provided for a sensor group!");
+                }
+                for (const auto& kv : entry["sensor_names"]) {
+                    sensor_names.push_back(kv.first.as<std::string>());
+                    mj_sensor_types.push_back(kv.second.as<std::string>());
                 }
 
                 // Create the timer and publishers with the settings
@@ -545,19 +471,6 @@ namespace obelisk {
                         CreateTimerCallback<obelisk_sensor_msgs::msg::ObkJointEncoders>(
                             sensor_names, mj_sensor_types,
                             this->template GetPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(sensor_key)),
-                        callback_group_);
-                } else if (sensor_type == "Imu") {
-                    // Make a publisher and add it to the list
-                    auto pub = ObeliskNode::create_publisher<sensor_msgs::msg::Imu>(topic, depth);
-                    this->publishers_[sensor_key] =
-                        std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Imu>>(pub);
-
-                    // Add the timer to the list
-                    this->timers_[sensor_key] = this->create_wall_timer(
-                        std::chrono::milliseconds(static_cast<uint>(1e3 * dt)),
-                        CreateTimerCallback<sensor_msgs::msg::Imu>(
-                            sensor_names, mj_sensor_types,
-                            this->template GetPublisher<sensor_msgs::msg::Imu>(sensor_key)),
                         callback_group_);
                 } else if (sensor_type == "Imu") {
                     // Make a publisher and add it to the list
@@ -712,75 +625,49 @@ namespace obelisk {
 
         /**
          * @brief Parse the settings for visualizing geometries from the mujoco scene.
+         *
+         * Expected YAML shape (a map with a ``dt`` and arbitrary ``geom_name: geom_type`` entries —
+         * the type is not actually used; mujoco supplies it):
+         * ```
+         * dt: 1.0
+         * dummy_box: box
+         * dummy_sphere: sphere
+         * ```
          */
-        void ParseVizString(std::string viz_settings) {
-            // TODO: We should probably make the yaml entry a normal list, but with the way config strings are done that
-            // will be a huge pain So in the future we should adjust this. This is because I don't actually need the
-            // user to provide the geom type.
-
-            // Remove {} and []
-            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '{'), viz_settings.end());
-            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '}'), viz_settings.end());
-            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), '['), viz_settings.end());
-            viz_settings.erase(std::remove(viz_settings.begin(), viz_settings.end(), ']'), viz_settings.end());
+        void ParseVizGeoms(const YAML::Node& viz_settings) {
+            if (!viz_settings || !viz_settings.IsMap()) {
+                return;
+            }
 
             // Wait for mujoco setup to complete
             while (!mujoco_setup_) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
 
-            // Extract the geom id's for publishing
-            // Create a new map between the names and their string values
-            const std::string setting_delim = "|";
-            const std::string val_delim     = ":";
-            std::map<std::string, std::string> setting_map;
-
-            size_t val_idx;
-            while (!viz_settings.empty()) {
-                val_idx = viz_settings.find(setting_delim);
-                if (val_idx == std::string::npos) {
-                    val_idx = viz_settings.length();
-                }
-
-                size_t setting_idx = viz_settings.find(val_delim);
-                if (setting_idx == std::string::npos) {
-                    throw std::runtime_error("Invalid viz setting string!");
-                }
-
-                std::string setting = viz_settings.substr(0, setting_idx);
-                std::string val     = viz_settings.substr(setting_idx + 1, val_idx - (setting_idx + 1));
-                setting_map.emplace(setting, val);
-                viz_settings.erase(0, val_idx + val_delim.length());
-            }
-
-            // The dt for the timer
-            double dt = -1;
-            try {
-                dt = std::stod(setting_map.at("dt"));
-                if (dt <= 0) {
-                    throw std::runtime_error("Invalid dt. Must be > 0.");
-                }
-            } catch (const std::exception& e) {
+            if (!viz_settings["dt"]) {
                 throw std::runtime_error("No dt provided for the viz publisher!");
             }
+            const double dt = viz_settings["dt"].as<double>();
+            if (dt <= 0) {
+                throw std::runtime_error("Invalid dt. Must be > 0.");
+            }
 
-            for (const auto& [key, value] : setting_map) {
-                if (key != "dt") {
-                    // Find the mujoco geom with that name
-                    const int geom_id = mj_name2id(model_, mjtObj::mjOBJ_GEOM, key.c_str());
-                    if (geom_id == -1) {
-                        RCLCPP_ERROR_STREAM(this->get_logger(), "Geom " << key << " not found in the model! Skipping!");
-                    } else {
-                        // TODO: Can easily add elipsoids in
-                        if (model_->geom_type[geom_id] != mjtGeom::mjGEOM_BOX &&
-                            model_->geom_type[geom_id] != mjtGeom::mjGEOM_SPHERE &&
-                            model_->geom_type[geom_id] != mjtGeom::mjGEOM_CYLINDER) {
-                            RCLCPP_ERROR_STREAM(this->get_logger(),
-                                                "Geom type not supported! Only support Box, Sphere, and Cylinder.");
-                        } else {
-                            viz_geoms_.emplace_back(geom_id);
-                        }
-                    }
+            for (const auto& kv : viz_settings) {
+                const std::string key = kv.first.as<std::string>();
+                if (key == "dt") {
+                    continue;
+                }
+                // Find the mujoco geom with that name
+                const int geom_id = mj_name2id(model_, mjtObj::mjOBJ_GEOM, key.c_str());
+                if (geom_id == -1) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "Geom " << key << " not found in the model! Skipping!");
+                } else if (model_->geom_type[geom_id] != mjtGeom::mjGEOM_BOX &&
+                           model_->geom_type[geom_id] != mjtGeom::mjGEOM_SPHERE &&
+                           model_->geom_type[geom_id] != mjtGeom::mjGEOM_CYLINDER) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(),
+                                        "Geom type not supported! Only support Box, Sphere, and Cylinder.");
+                } else {
+                    viz_geoms_.emplace_back(geom_id);
                 }
             }
 

@@ -2,6 +2,7 @@ from typing import Any, Callable, Generator
 
 import obelisk_sensor_msgs.msg as osm
 import pytest
+import yaml
 from rclpy.lifecycle.node import TransitionCallbackReturn
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
@@ -67,7 +68,8 @@ def test_robot_initialization(test_robot: TestRobot) -> None:
         test_robot: An instance of TestRobot.
     """
     assert test_robot.get_name() == "test_robot"
-    assert test_robot.has_parameter("sub_ctrl_setting")
+    assert test_robot.has_parameter("obelisk_settings")
+    assert any(s["key"] == "sub_ctrl" for s in test_robot._obk_sub_settings)
 
 
 def test_robot_subscription_registration(test_robot: TestRobot) -> None:
@@ -93,7 +95,8 @@ def test_robot_configuration(test_robot: TestRobot, set_node_parameters: Callabl
         test_robot: An instance of TestRobot.
         set_node_parameters: A fixture to set node parameters.
     """
-    set_node_parameters(test_robot, {"sub_ctrl_setting": "topic:/test_control,msg_type:PositionSetpoint"})
+    settings = {"subscribers": [{"key": "sub_ctrl", "topic": "/test_control", "history_depth": 10}]}
+    set_node_parameters(test_robot, {"obelisk_settings": yaml.safe_dump(settings)})
     result = test_robot.on_configure(None)
 
     assert result == TransitionCallbackReturn.SUCCESS
@@ -111,8 +114,9 @@ def test_sim_robot_initialization(test_sim_robot: TestSimRobot) -> None:
         test_sim_robot: An instance of TestSimRobot.
     """
     assert test_sim_robot.get_name() == "test_sim_robot"
-    assert test_sim_robot.has_parameter("timer_true_sim_state_setting")
-    assert test_sim_robot.has_parameter("pub_true_sim_state_setting")
+    assert test_sim_robot.has_parameter("obelisk_settings")
+    assert any(s["key"] == "timer_true_sim_state" for s in test_sim_robot._obk_timer_settings)
+    assert any(s["key"] == "pub_true_sim_state" for s in test_sim_robot._obk_pub_settings)
 
 
 def test_sim_robot_timer_registration(test_sim_robot: TestSimRobot) -> None:
@@ -149,14 +153,12 @@ def test_sim_robot_configuration(test_sim_robot: TestSimRobot, set_node_paramete
         test_sim_robot: An instance of TestSimRobot.
         set_node_parameters: A fixture to set node parameters.
     """
-    set_node_parameters(
-        test_sim_robot,
-        {
-            "sub_ctrl_setting": "topic:/test_control,msg_type:PositionSetpoint",
-            "timer_true_sim_state_setting": "timer_period_sec:0.1",
-            "pub_true_sim_state_setting": "topic:/test_true_sim_state",
-        },
-    )
+    settings = {
+        "subscribers": [{"key": "sub_ctrl", "topic": "/test_control", "history_depth": 10}],
+        "timers": [{"key": "timer_true_sim_state", "timer_period_sec": 0.1}],
+        "publishers": [{"key": "pub_true_sim_state", "topic": "/test_true_sim_state", "history_depth": 10}],
+    }
+    set_node_parameters(test_sim_robot, {"obelisk_settings": yaml.safe_dump(settings)})
     result = test_sim_robot.on_configure(None)
 
     assert result == TransitionCallbackReturn.SUCCESS

@@ -54,15 +54,15 @@ namespace obelisk {
             high_level_ctrl_engaged_ = this->get_parameter("init_high_level").as_bool();
 
             // Additional Publishers
-            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("pub_sensor_setting", pub_joint_state_key_);
-            this->RegisterObkPublisher<sensor_msgs::msg::Imu>("pub_imu_setting", pub_imu_state_key_);
+            this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_);
+            this->RegisterObkPublisher<sensor_msgs::msg::Imu>(pub_imu_state_key_);
 
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
-                "sub_fsm_setting", sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::TransitionFSM, this, std::placeholders::_1));
+                sub_fsm_key_, std::bind(&ObeliskUnitreeInterface::TransitionFSM, this, std::placeholders::_1));
             // Register High Level Control Subscriber
             this->RegisterObkSubscription<unitree_vel_cmd_msg>(
-                "sub_vel_cmd_setting", sub_UNITREE_VEL_CTRL_key_, std::bind(&ObeliskUnitreeInterface::ApplyVelCmd, this, std::placeholders::_1));
+                sub_UNITREE_VEL_CTRL_key_, std::bind(&ObeliskUnitreeInterface::ApplyVelCmd, this, std::placeholders::_1));
 
             // ---------- Default PD gains ---------- //
             this->declare_parameter<std::vector<double>>("default_kp");
@@ -102,7 +102,7 @@ namespace obelisk {
                 startup_time_ = this->now();
                 // NOTE: InitializeLogging and timer registration are deferred to on_activate
                 // because they call pure virtual methods that aren't available during construction.
-                this->RegisterObkTimer("timer_logging_setting", timer_logging_key_,
+                this->RegisterObkTimer(timer_logging_key_,
                                    std::bind(&ObeliskUnitreeInterface<MotorStateType, N>::WriteMotorData, this));
             }
 
@@ -319,11 +319,14 @@ namespace obelisk {
         std::vector<double> kd_damping_;
 
         // Keys
-        const std::string sub_fsm_key_ = "sub_exec_fsm_key";
-        const std::string sub_UNITREE_VEL_CTRL_key_ = "sub_vel_cmd_key";
-        const std::string pub_joint_state_key_ = "joint_state_pub";
-        const std::string pub_imu_state_key_ = "imu_state_pub";
-        const std::string timer_logging_key_ = "timer_logging_key";
+        // These key strings match the names the launch-side producer derives from
+        // `ros_parameter: <name>_setting` entries in the YAML configs (suffix `_setting` stripped),
+        // so existing YAMLs migrate to the obelisk_settings mechanism without explicit `key:` edits.
+        const std::string sub_fsm_key_ = "sub_fsm";
+        const std::string sub_UNITREE_VEL_CTRL_key_ = "sub_vel_cmd";
+        const std::string pub_joint_state_key_ = "pub_sensor";
+        const std::string pub_imu_state_key_ = "pub_imu";
+        const std::string timer_logging_key_ = "timer_logging";
 
         // Logging
         bool logging_;

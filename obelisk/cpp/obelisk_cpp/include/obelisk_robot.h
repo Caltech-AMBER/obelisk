@@ -19,7 +19,7 @@ namespace obelisk {
 
             // Register all components
             this->RegisterObkSubscription<ControlMessageT>(
-                "sub_ctrl_setting", sub_ctrl_key_, std::bind(&ObeliskRobot::ApplyControl, this, std::placeholders::_1));
+                sub_ctrl_key_, std::bind(&ObeliskRobot::ApplyControl, this, std::placeholders::_1));
         }
 
         /**

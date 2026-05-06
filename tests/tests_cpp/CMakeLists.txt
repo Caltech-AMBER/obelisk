@@ -22,12 +22,7 @@ add_executable(NodeTest
     test_robot.cpp
     test_sim_robot.cpp
     test_mujoco_sim_robot.cpp
-    claude_obelisk_node_test.cpp
-    claude_obelisk_controller_test.cpp
-    claude_obelisk_sim_robot_test.cpp
-    claude_obelisk_sensor_test.cpp
-    claude_obelisk_robot_test.cpp
-    claude_obelisk_estimator_test.cpp)
+    test_yaml_to_node.cpp)
 
 add_executable(VizTest
     test_viz_robot.cpp

@@ -25,28 +25,24 @@ namespace obelisk::viz {
     template <typename EstimatorMessageT> class ObeliskVizRobot : public ObeliskNode {
       public:
         ObeliskVizRobot(const std::string& name, const std::string& est_key = "sub_est",
-                        const std::string& timer_key = "time_joints")
-            : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key), first_message_received_(false) {
+                        const std::string& timer_key = "time_joints",
+                        const std::string& pub_viz_joint_key = "pub_viz_joint")
+            : ObeliskNode(name), est_key_(est_key), timer_key_(timer_key),
+              pub_viz_joint_key_(pub_viz_joint_key), first_message_received_(false) {
             this->declare_parameter("urdf_path_param", "");
             this->declare_parameter("tf_prefix", "");
 
-            this->declare_parameter<std::string>("pub_viz_joint_setting", "");
-            this->RegisterObkTimer("timer_viz_joint_setting", timer_key_,
-                                   std::bind(&ObeliskVizRobot::PublishJointState, this));
-
+            this->RegisterObkTimer(timer_key_, std::bind(&ObeliskVizRobot::PublishJointState, this));
             this->RegisterObkSubscription<EstimatorMessageT>(
-                "sub_viz_est_setting", est_key_,
-                std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
+                est_key_, std::bind(&ObeliskVizRobot::ParseEstimatedStateSafe, this, std::placeholders::_1));
+            this->template RegisterObkPublisher<sensor_msgs::msg::JointState>(pub_viz_joint_key_);
 
             // Create the tf broadcaster
             base_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
         }
 
         /**
-         * @brief Configures the node.
-         *
-         * @param prev_state the state of the ros node.
-         * @return success if everything completes.
+         * @brief Configures the node — load URDF and let ObeliskNode wire up pubs/subs/timers.
          */
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
         on_configure(const rclcpp_lifecycle::State& prev_state) override {
@@ -68,75 +64,6 @@ namespace obelisk::viz {
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Successfully parsed URDF file.");
             RCLCPP_INFO_STREAM(this->get_logger(), "Robot name: " << model_.getName());
-
-            // Use the original lifecycle create function to avoid the warning, as we know we need non-obelisk here.
-            // The user can only configure the topic name and history depth.
-            // *** Note: The launch file must re-map the corresponding `robot_state_publisher`
-            //     topic to be this topic, otherwise the topics won't match. ***
-            // TODO: Let the user configure the callback
-            auto config_map = ParseConfigStr(this->get_parameter("pub_viz_joint_setting").as_string());
-            js_publisher_   = rclcpp_lifecycle::LifecycleNode::create_publisher<sensor_msgs::msg::JointState>(
-                GetTopic(config_map), GetHistoryDepth(config_map));
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief Activates the node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_activate(const rclcpp_lifecycle::State& prev_state) override {
-            this->ObeliskNode::on_activate(prev_state);
-            if (js_publisher_) {
-                js_publisher_->on_activate();
-            }
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief Deactivates the node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_deactivate(const rclcpp_lifecycle::State& prev_state) override {
-            this->ObeliskNode::on_deactivate(prev_state);
-            if (js_publisher_) {
-                js_publisher_->on_deactivate();
-            }
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief Cleans up the node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_cleanup(const rclcpp_lifecycle::State& prev_state) override {
-            ObeliskNode::on_cleanup(prev_state);
-            if (js_publisher_) {
-                js_publisher_.reset();
-            }
-
-            return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-        }
-
-        /**
-         * @brief Shuts down the ros node.
-         *
-         * @param prev_state the state of the ros node.
-         */
-        rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-        on_shutdown(const rclcpp_lifecycle::State& prev_state) override {
-            ObeliskNode::on_shutdown(prev_state);
-            if (js_publisher_) {
-                js_publisher_.reset();
-            }
 
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
@@ -170,13 +97,10 @@ namespace obelisk::viz {
 
             // Publish only once we have received a message
             if (first_message_received_) {
-                js_publisher_->publish(joint_state_);
+                this->template GetPublisher<sensor_msgs::msg::JointState>(pub_viz_joint_key_)->publish(joint_state_);
                 base_broadcaster_->sendTransform(base_tf_);
             }
         }
-
-        // JointState publisher
-        rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>::SharedPtr js_publisher_;
 
         // Need a mutex for the common joint state message
         std::mutex state_mut_;
@@ -192,6 +116,7 @@ namespace obelisk::viz {
 
         std::string est_key_;
         std::string timer_key_;
+        std::string pub_viz_joint_key_;
 
         bool first_message_received_;
 

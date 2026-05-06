@@ -14,10 +14,20 @@ namespace obelisk::viz {
             data_path += "/tests/tests_cpp/test_data/r2d2.urdf";
             std::cout << "path: " << data_path << std::endl;
             this->set_parameter(rclcpp::Parameter("urdf_path_param", data_path));
-            this->set_parameter(rclcpp::Parameter("pub_viz_joint_setting", "topic:topic1"));
-            this->set_parameter(rclcpp::Parameter("sub_viz_est_setting", "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter("timer_viz_joint_setting", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
+            const std::string settings = R"(
+publishers:
+  - key: pub_viz_joint
+    topic: topic1
+    history_depth: 10
+subscribers:
+  - key: sub_est
+    topic: topic2
+    history_depth: 10
+timers:
+  - key: time_joints
+    timer_period_sec: 1.0
+)";
+            this->set_parameter(rclcpp::Parameter("obelisk_settings", settings));
         }
 
         void Configure() {

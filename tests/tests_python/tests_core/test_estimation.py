@@ -1,7 +1,9 @@
+"""Tests for ObeliskEstimator (post-config-string-refactor)."""
+
 from typing import Any, Callable, Generator, Type
 
 import pytest
-import rclpy
+import yaml
 from obelisk_sensor_msgs.msg import ObkJointEncoders
 from rclpy.lifecycle.node import TransitionCallbackReturn
 from rclpy.publisher import Publisher
@@ -11,10 +13,6 @@ from std_msgs.msg import String
 from obelisk_py.core.estimation import ObeliskEstimator
 from obelisk_py.core.obelisk_typing import ObeliskEstimatorMsg, ObeliskSensorMsg
 
-# ##### #
-# SETUP #
-# ##### #
-
 
 class TestEstimator(ObeliskEstimator):
     """A concrete implementation of ObeliskEstimator for testing purposes."""
@@ -23,10 +21,9 @@ class TestEstimator(ObeliskEstimator):
         """Initialize the TestEstimator."""
         super().__init__(node_name, est_msg_type)
         self.register_obk_subscription(
-            "sub_sensor_setting",
-            self.update_sensor,
-            ObkJointEncoders,
             key="sub_sensor",
+            callback=self.update_sensor,
+            msg_type=ObkJointEncoders,
         )
 
     def update_sensor(self, sensor_msg: ObeliskSensorMsg) -> None:
@@ -46,69 +43,32 @@ def test_estimator(ros_context: Any) -> Generator[TestEstimator, None, None]:
     estimator.destroy_node()
 
 
-# ##### #
-# TESTS #
-# ##### #
-
-
 def test_estimator_initialization(test_estimator: TestEstimator) -> None:
-    """Test the initialization of the ObeliskEstimator.
-
-    This test checks if the estimator is properly initialized with the correct name and if the required timers,
-    publishers, and subscriptions are registered.
-
-    Parameters:
-        test_estimator: An instance of TestEstimator.
-    """
+    """The estimator is named correctly and declares the obelisk_settings parameter."""
     assert test_estimator.get_name() == "test_estimator"
-    assert test_estimator.has_parameter("timer_est_setting")
-    assert test_estimator.has_parameter("pub_est_setting")
-    assert test_estimator.has_parameter("sub_sensor_setting")
+    assert test_estimator.has_parameter("obelisk_settings")
 
 
 def test_timer_registration(test_estimator: TestEstimator) -> None:
-    """Test the registration of the estimation timer.
-
-    This test verifies that the estimation timer is properly registered with the correct key and callback.
-
-    Parameters:
-        test_estimator: An instance of TestEstimator.
-    """
+    """The compute_state_estimate timer is registered under key 'timer_est'."""
     timer_setting = next(s for s in test_estimator._obk_timer_settings if s["key"] == "timer_est")
     assert timer_setting["callback"] == test_estimator.compute_state_estimate
 
 
 def test_subscription_registration(test_estimator: TestEstimator) -> None:
-    """Test the registration of the sensor subscription.
-
-    This test verifies that the sensor subscription is properly registered with the correct key, callback, and
-    message type.
-
-    Parameters:
-        test_estimator: An instance of TestEstimator.
-    """
+    """The sensor subscription is registered under key 'sub_sensor' with the right callback."""
     sub_setting = next(s for s in test_estimator._obk_sub_settings if s["key"] == "sub_sensor")
     assert sub_setting["callback"] == test_estimator.update_sensor
 
 
 def test_estimator_configuration(test_estimator: TestEstimator, set_node_parameters: Callable) -> None:
-    """Test the configuration of the ObeliskEstimator.
-
-    This test verifies that the estimator can be properly configured with the necessary parameters and that the
-    timers, publishers, and subscriptions are created correctly.
-
-    Parameters:
-        test_estimator: An instance of TestEstimator.
-        set_node_parameters: A fixture to set node parameters.
-    """
-    set_node_parameters(
-        test_estimator,
-        {
-            "timer_est_setting": "timer_period_sec:0.1",
-            "pub_est_setting": "topic:/test_estimate,msg_type:EstimatedState",
-            "sub_sensor_setting": "topic:/test_sensor",
-        },
-    )
+    """The estimator wires up timer/publisher/subscriber from obelisk_settings."""
+    settings = {
+        "timers": [{"key": "timer_est", "timer_period_sec": 0.1}],
+        "publishers": [{"key": "pub_est", "topic": "/test_estimate", "history_depth": 10}],
+        "subscribers": [{"key": "sub_sensor", "topic": "/test_sensor", "history_depth": 10}],
+    }
+    set_node_parameters(test_estimator, {"obelisk_settings": yaml.safe_dump(settings)})
     result = test_estimator.on_configure(None)
 
     assert result == TransitionCallbackReturn.SUCCESS
@@ -120,11 +80,7 @@ def test_estimator_configuration(test_estimator: TestEstimator, set_node_paramet
 
 
 def test_abstract_methods() -> None:
-    """Test the abstract methods of ObeliskEstimator.
-
-    This test verifies that the abstract method compute_state_estimate is properly defined and must be implemented
-    by subclasses.
-    """
+    """ObeliskEstimator's abstract methods must be implemented by subclasses."""
     with pytest.raises(TypeError):
 
         class IncompleteEstimator(ObeliskEstimator):
@@ -138,18 +94,3 @@ def test_abstract_methods() -> None:
 
     complete_estimator = CompleteEstimator("complete_estimator", String)
     assert hasattr(complete_estimator, "compute_state_estimate")
-
-
-def test_missing_sensor_subscriber() -> None:
-    """Test the requirement for at least one sensor subscriber.
-
-    This test verifies that an assertion error is raised when no sensor subscriber is registered.
-    """
-
-    class NoSensorEstimator(ObeliskEstimator):
-        def compute_state_estimate(self) -> ObeliskEstimatorMsg:
-            return ObeliskEstimatorMsg()
-
-    estimator = NoSensorEstimator("no_sensor_estimator", String)
-    with pytest.raises(rclpy.exceptions.ParameterUninitializedException):
-        estimator.on_configure(None)

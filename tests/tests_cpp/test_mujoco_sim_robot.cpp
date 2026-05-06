@@ -6,15 +6,38 @@ namespace obelisk {
     class ObeliskMujocoTester : public ObeliskMujocoRobot<obelisk_control_msgs::msg::PositionSetpoint> {
       public:
         ObeliskMujocoTester() : ObeliskMujocoRobot("obelisk_mujoco_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_true_sim_state_setting", "topic:topic1,timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_true_sim_state_setting", "topic:topic4"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", "topic:topic2"));
-            this->set_parameter(rclcpp::Parameter(
-                "mujoco_setting", "model_xml_path:dummy/"
-                                  "dummy.xml,n_u:1,sensor_settings:[{group_name=group1|dt=0.01|topic=topic1|sensor_"
-                                  "type=jointpos|sensor_names=sensor_joint1&sensor_joint2+group_name=group2|topic="
-                                  "topic2|dt=0.5|sensor_type=jointpos|sensor_names=sensor_joint3}]"));
-            this->set_parameter(rclcpp::Parameter("sub_ctrl_setting", "topic:topic5"));
+            const std::string settings = R"(
+publishers:
+  - key: pub_true_sim_state
+    topic: topic4
+    history_depth: 10
+subscribers:
+  - key: sub_ctrl
+    topic: topic5
+    history_depth: 10
+timers:
+  - key: timer_true_sim_state
+    timer_period_sec: 1.0
+)";
+            this->set_parameter(rclcpp::Parameter("obelisk_settings", settings));
+
+            const std::string mujoco = R"(
+model_xml_path: dummy/dummy.xml
+n_u: 1
+sensor_settings:
+  - topic: topic1
+    dt: 0.01
+    msg_type: ObkJointEncoders
+    sensor_names:
+      sensor_joint1: jointpos
+      sensor_joint2: jointpos
+  - topic: topic2
+    dt: 0.5
+    msg_type: ObkJointEncoders
+    sensor_names:
+      sensor_joint3: jointpos
+)";
+            this->set_parameter(rclcpp::Parameter("mujoco_setting", mujoco));
         }
 
         void Configure() {

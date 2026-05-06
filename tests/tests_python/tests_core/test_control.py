@@ -1,6 +1,7 @@
 from typing import Any, Callable, Generator
 
 import pytest
+import yaml
 from rclpy.publisher import Publisher
 from rclpy.subscription import Subscription
 from rclpy.timer import Timer
@@ -51,9 +52,11 @@ def test_controller_initialization(test_controller: TestController) -> None:
         test_controller: An instance of TestController.
     """
     assert test_controller.get_name() == "test_controller"
-    assert test_controller.has_parameter("timer_ctrl_setting")
-    assert test_controller.has_parameter("pub_ctrl_setting")
-    assert test_controller.has_parameter("sub_est_setting")
+    assert test_controller.has_parameter("obelisk_settings")
+    # Internal registration table is populated for all three components.
+    assert any(s["key"] == "timer_ctrl" for s in test_controller._obk_timer_settings)
+    assert any(s["key"] == "pub_ctrl" for s in test_controller._obk_pub_settings)
+    assert any(s["key"] == "sub_est" for s in test_controller._obk_sub_settings)
 
 
 def test_timer_registration(test_controller: TestController) -> None:
@@ -91,14 +94,12 @@ def test_controller_configuration(test_controller: TestController, set_node_para
         test_controller: An instance of TestController.
         set_node_parameters: A fixture to set node parameters.
     """
-    set_node_parameters(
-        test_controller,
-        {
-            "timer_ctrl_setting": "timer_period_sec:0.1",
-            "pub_ctrl_setting": "topic:/test_control,msg_type:PositionSetpoint",
-            "sub_est_setting": "topic:/test_estimate,msg_type:EstimatedState",
-        },
-    )
+    settings = {
+        "timers": [{"key": "timer_ctrl", "timer_period_sec": 0.1}],
+        "publishers": [{"key": "pub_ctrl", "topic": "/test_control", "history_depth": 10}],
+        "subscribers": [{"key": "sub_est", "topic": "/test_estimate", "history_depth": 10}],
+    }
+    set_node_parameters(test_controller, {"obelisk_settings": yaml.safe_dump(settings)})
     test_controller.on_configure(None)
 
     assert "timer_ctrl" in test_controller.obk_timers

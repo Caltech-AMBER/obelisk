@@ -7,7 +7,6 @@ cyclone_perf=false
 source_ros=false
 
 # hardware-specific deps
-leap=false
 zed=false
 unitree=false
 
@@ -52,7 +51,7 @@ Options:
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--leap] [--zed]"
+            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--zed] [--unitree]"
             exit 1
             ;;
     esac

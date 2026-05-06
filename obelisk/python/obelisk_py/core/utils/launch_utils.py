@@ -1,18 +1,21 @@
 import os
-import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import launch
 import launch_ros
 import lifecycle_msgs.msg
+import yaml
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
-from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch.actions import EmitEvent, RegisterEventHandler
 from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
+
+# Sections of a node's settings dict that Obelisk owns and bundles into the single
+# `obelisk_settings` ROS parameter at launch time.
+_OBELISK_SETTINGS_KEYS = ("publishers", "subscribers", "timers", "sim", "callback_groups")
 
 
 def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
@@ -48,116 +51,66 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
         raise FileNotFoundError(f"Could not load a configuration file at {abs_file_path}!") from e
 
 
-def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Dict:
-    """Returns a subdictionary of the component settings associated with an Obelisk node.
+def _strip_ros_parameter(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a shallow copy of an entry with ``ros_parameter`` dropped, deriving ``key`` if needed.
 
-    Parameters:
-        node_settings: the settings dictionary of an Obelisk node.
-        subdict_name: the name of the subdictionary to extract from the node settings.
-
-    Returns:
-        A dictionary with the ROS parameter names as keys and the corresponding settings as values.
+    The pre-refactor YAML schema named each pub/sub/timer entry by ``ros_parameter`` (e.g.
+    ``pub_ctrl_setting``). The new schema uses ``key`` (e.g. ``pub_ctrl``). For YAMLs that haven't
+    been migrated yet, derive ``key`` by stripping a trailing ``_setting``.
     """
-    component_settings_subdict = {}
-
-    # iterate over the settings for each component - if doesn't exist, make a new dict entry, else append it
-    for component_settings in node_settings[subdict_name]:
-        if component_settings["ros_parameter"] not in component_settings_subdict:
-            component_settings_subdict[component_settings["ros_parameter"]] = [
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
-            ]
-        else:
-            component_settings_subdict[component_settings["ros_parameter"]].append(
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
-            )
-
-    # if there is only one setting, don't return a list, just a single element
-    for ros_parameter, pub_settings_list in component_settings_subdict.items():
-        if len(pub_settings_list) == 1:
-            component_settings_subdict[ros_parameter] = pub_settings_list[0]
-
-    return component_settings_subdict
+    cleaned = {k: v for k, v in entry.items() if k != "ros_parameter"}
+    if "key" not in cleaned and "ros_parameter" in entry:
+        rp = entry["ros_parameter"]
+        if isinstance(rp, str):
+            cleaned["key"] = rp[: -len("_setting")] if rp.endswith("_setting") else rp
+    return cleaned
 
 
-def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
-    """Returns a subdictionary of the simulation settings associated with an Obelisk node.
+def _build_obelisk_settings(node_settings: Dict) -> str:
+    """Bundle the publishers / subscribers / timers / callback_groups sections into a single YAML string.
 
-    Parameters:
-        node_settings: the settings dictionary of an Obelisk node.
+    Returns the empty string if the node has no Obelisk-internal sections (caller can then skip
+    setting the ``obelisk_settings`` ROS parameter entirely if desired, though setting it to an
+    empty string is also valid — the node treats empty as "no components").
 
-    Returns:
-        A dictionary with the ROS parameter names as keys and the corresponding settings as values.
+    Note: ``sim`` entries are *not* bundled here. They are emitted as separate ROS parameters
+    (one per ``ros_parameter`` in the entry, e.g. ``mujoco_setting``) so that simulator nodes can
+    read their dedicated setting independently. Each sim entry's value is YAML-encoded.
     """
-    sim_settings_dict = {}
-    for sim_settings in node_settings["sim"]:
-        # convert the dictionary of simulation settings to a string, excluding 'ros_parameter'
-        sim_settings_strs = []
-        for k, v in sim_settings.items():
-            if k != "ros_parameter":
-                sim_settings_strs.append(f"{k}:{v}")
-        sim_settings_str = ",".join(sim_settings_strs).replace(" ", "")
+    bundle: Dict[str, Any] = {}
+    for section in ("publishers", "subscribers", "timers"):
+        if section in node_settings and node_settings[section] is not None:
+            bundle[section] = [_strip_ros_parameter(entry) for entry in node_settings[section]]
+    if "callback_groups" in node_settings and node_settings["callback_groups"] is not None:
+        bundle["callback_groups"] = dict(node_settings["callback_groups"])
+    if not bundle:
+        return ""
+    return yaml.safe_dump(bundle, default_flow_style=False, sort_keys=False)
 
-        # replace colons in 'sensor_names':{...} with '$', delete curly braces only within the outermost braces
-        def _replace_colons_delete_inner_braces(match: re.Match) -> str:
-            dollar_str = match.group(0).replace(":", "$")
-            dollar_str = dollar_str.replace("$", ":", 1)
 
-            # find the position of the outermost braces
-            open_brace = dollar_str.find("{")
-            close_brace = dollar_str.rfind("}")
+def _build_sim_parameters(sim_entries: List[Dict[str, Any]]) -> Dict[str, str]:
+    """Emit one YAML-string ROS parameter per sim entry, named by its ``ros_parameter`` field.
 
-            if open_brace != -1 and close_brace != -1 and open_brace < close_brace:
-                # keep content before the first brace and after the last brace
-                prefix = dollar_str[: open_brace + 1]
-                suffix = dollar_str[close_brace:]
-
-                # remove braces from the inner content
-                inner_content = dollar_str[open_brace + 1 : close_brace]
-                inner_content_no_braces = inner_content.replace("{", "").replace("}", "")
-
-                return f"{prefix}{inner_content_no_braces}{suffix}"
-            else:
-                # if we can't find matching outermost braces, return the original string (SHOULD NEVER HAPPEN)
-                return dollar_str
-
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_colons_delete_inner_braces, sim_settings_str)
-
-        # replace commas in 'sensor_names':{...} with '&', remove outermost braces
-        def _replace_commas_delete_outer_braces(match: re.Match) -> str:
-            return match.group(0).replace(",", "&").replace("{", "").replace("}", "")
-
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_commas_delete_outer_braces, sim_settings_str)
-
-        # remove single quotes
-        sim_settings_str = sim_settings_str.replace("'", "")
-
-        # replace commas between matching curly braces with "|"
-        def _replace_commas_between_curly_braces(match: re.Match) -> str:
-            return match.group(0).replace(",", "|")
-
-        sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
-
-        # replace commas in 'sensor_settings':[...,...] with "+"
-        def _replace_commas_in_sensor_settings(match: re.Match) -> str:
-            return match.group(0).replace(",", "+")
-
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_commas_in_sensor_settings, sim_settings_str)
-
-        # replace colons inside 'sensor_settings':[...:...] with "="
-        def _replace_colons_in_sensor_settings(match: re.Match) -> str:
-            content = match.group(0)
-            return re.sub(r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content)
-
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_colons_in_sensor_settings, sim_settings_str)
-
-        # add the formatted string to the dictionary with the ROS parameter as the key
-        sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
-
-    return sim_settings_dict
+    Each entry's content (minus the ``ros_parameter`` key itself) is yaml.safe_dumped and used as
+    the value of the ROS parameter. The simulator node parses the YAML in its on_configure.
+    """
+    out: Dict[str, str] = {}
+    for entry in sim_entries:
+        if "ros_parameter" not in entry:
+            raise KeyError("Each sim entry must specify a `ros_parameter` for the simulator's settings parameter.")
+        param_name = entry["ros_parameter"]
+        body = {k: v for k, v in entry.items() if k != "ros_parameter"}
+        out[param_name] = yaml.safe_dump(body, default_flow_style=False, sort_keys=False)
+    return out
 
 
 def get_parameters_dict(node_settings: Dict) -> Dict:
-    """Returns the parameters dictionary corresponding to the settings of a node in the Obelisk architecture.
+    """Returns the parameters dictionary corresponding to the settings of a node.
+
+    The Obelisk-internal sections (``publishers``, ``subscribers``, ``timers``, ``sim``,
+    ``callback_groups``) are bundled into a single ``obelisk_settings`` ROS parameter whose value is
+    a YAML string. User-defined ``params`` and ``params_path`` entries flow through as separate ROS
+    parameters, unchanged.
 
     Parameters:
         node_settings: the settings dictionary of an Obelisk node.
@@ -168,32 +121,20 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
     if node_settings is None:
         return {}
 
-    # parse settings for each component
-    if "callback_groups" in node_settings:
-        callback_group_settings = ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
-    else:
-        callback_group_settings = None
-    pub_settings_dict = (
-        get_component_settings_subdict(node_settings, "publishers") if "publishers" in node_settings else {}
-    )
-    sub_settings_dict = (
-        get_component_settings_subdict(node_settings, "subscribers") if "subscribers" in node_settings else {}
-    )
-    timer_settings_dict = get_component_settings_subdict(node_settings, "timers") if "timers" in node_settings else {}
-    sim_settings_dict = get_component_sim_settings_subdict(node_settings) if "sim" in node_settings else {}
+    parameters_dict: Dict[str, Any] = {}
 
-    # create parameters dictionary for a node by combining all the settings
-    parameters_dict = (
-        {"callback_group_settings": callback_group_settings} if callback_group_settings is not None else {}
-    )
+    bundled = _build_obelisk_settings(node_settings)
+    if bundled:
+        parameters_dict["obelisk_settings"] = bundled
+
+    if "sim" in node_settings and node_settings["sim"] is not None:
+        parameters_dict.update(_build_sim_parameters(node_settings["sim"]))
+
     if "params_path" in node_settings:
         parameters_dict["params_path"] = node_settings["params_path"]
     if "params" in node_settings:
         parameters_dict.update(node_settings["params"])
-    parameters_dict.update(pub_settings_dict)
-    parameters_dict.update(sub_settings_dict)
-    parameters_dict.update(timer_settings_dict)
-    parameters_dict.update(sim_settings_dict)
+
     return parameters_dict
 
 
@@ -315,44 +256,28 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
         for i, viz_node_settings in enumerate(node_settings):
             launch_actions += _single_viz_node_launch_actions(viz_node_settings, suffix=i)
 
-        if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
-            # Setup Rviz
-            if "rviz_config" not in settings.keys():
-                launch_actions += [
-                    Node(
-                        package="rviz2",
-                        executable="rviz2",
-                        name="rviz2",
-                        output="screen",
-                    )
-                ]
-            else:
-                rviz_file_name = "rviz/" + settings["rviz_config"]
-                rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
-                launch_actions += [
-                    Node(
-                        package="rviz2",
-                        executable="rviz2",
-                        name="rviz2",
-                        output="screen",
-                        arguments=["-d", rviz_config_path],
-                    )
-                ]
-        elif settings["viz_tool"] == "foxglove":
-            # setup fox glove
-            xml_launch_file = os.path.join(
-                get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
-            )
+        # Setup Rviz
+        if "rviz_config" not in settings.keys():
             launch_actions += [
-                IncludeLaunchDescription(
-                    FrontendLaunchDescriptionSource(xml_launch_file),
-                    launch_arguments={
-                        "capabilities": "[clientPublish,parametersSubscribe,services,connectionGraph,assets]"
-                    }.items(),
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
                 )
             ]
         else:
-            raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
+            rviz_file_name = "rviz/" + settings["rviz_config"]
+            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+            launch_actions += [
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
+                    arguments=["-d", rviz_config_path],
+                )
+            ]
 
     return launch_actions
 

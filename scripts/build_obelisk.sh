@@ -1,6 +1,5 @@
 #!/bin/bash
 
-leap=false
 zed=false
 verbose=false
 
@@ -18,7 +17,7 @@ for arg in "$@"; do
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--leap] [--zed] [--verbose]"
+            echo "Usage: $0 [--zed] [--verbose]"
             exit 1
             ;;
     esac
