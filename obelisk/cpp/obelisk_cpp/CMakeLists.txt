@@ -34,6 +34,9 @@ option(USE_MUJOCO "Enable Mujoco support" ${USE_MUJOCO_DEFAULT})
 message(STATUS "USE_MUJOCO option set to: ${USE_MUJOCO}")
 
 if(USE_MUJOCO)
+  find_package(Eigen3 REQUIRED)
+  find_package(yaml-cpp REQUIRED)
+
   include(FetchContent)
   set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
   set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
@@ -61,7 +64,7 @@ endif()
 # ------- Source files ------- #
 message(STATUS "cmake source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 set(CORE_INC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-
+set(LIDAR_INC "${CMAKE_CURRENT_SOURCE_DIR}/lidar")
 # These are not currently used, but might be used in the future
 # set(OBELISK_CPP_HEADER_LIST
 #         "${CORE_INC}/obelisk_node.h"
@@ -79,8 +82,8 @@ target_include_directories(ObkCore INTERFACE ${CORE_INC})
 
 # Conditionally add Mujoco dependencies
 if(USE_MUJOCO)
-  target_include_directories(ObkCore INTERFACE ${mujoco_SOURCE_DIR}/include)
-  target_link_libraries(ObkCore INTERFACE mujoco-lib glfw)
+  target_include_directories(ObkCore INTERFACE ${mujoco_SOURCE_DIR}/include ${LIDAR_INC})
+  target_link_libraries(ObkCore INTERFACE mujoco-lib glfw Eigen3::Eigen yaml-cpp)
 
   # Define compile definition for conditional compilation
   target_compile_definitions(ObkCore INTERFACE OBELISK_USE_MUJOCO)

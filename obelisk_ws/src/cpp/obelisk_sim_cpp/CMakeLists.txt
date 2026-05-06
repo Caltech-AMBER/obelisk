@@ -35,6 +35,28 @@ if(USE_MUJOCO)
 
   ament_target_dependencies(obelisk_mujoco_robot PUBLIC rclcpp)
 
+  # Demo the raycaster
+  # Fetch yaml-cpp; disable tests and tools, which are unnecessary and can throw warnings
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+  set(YAML_CPP_BUILD_TESTS OFF)
+  set(YAML_CPP_BUILD_TOOLS OFF)
+  FetchContent_Declare(
+      yaml-cpp
+      GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+      GIT_TAG 0.8.0 # note all other versions are of the form yaml-cpp-x.y.z
+  )
+  FetchContent_MakeAvailable(yaml-cpp)
+
+  # Disable warnings for yaml-cpp
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(yaml-cpp PRIVATE -w -Wno-unused-parameter)
+  elseif(MSVC)
+      target_compile_options(yaml-cpp PRIVATE /W0 /wd4100)
+  endif()
+  add_executable(ray_caster_demo src/ray_caster_demo.cpp)
+  find_package(Eigen3 REQUIRED)
+  target_link_libraries(ray_caster_demo PUBLIC Obelisk::Core Eigen3::Eigen yaml-cpp)
+
   if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     set(ament_cmake_copyright_FOUND TRUE)

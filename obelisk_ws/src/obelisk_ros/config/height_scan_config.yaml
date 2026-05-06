@@ -1,0 +1,10 @@
+site_name: "pelvis_mocap_site"
+geom_groups: [2]
+
+pattern:
+  type: "height_scan"
+  ordering: "xy"
+  resolution: 0.1
+  size: [1.6, 0.8]
+  offset:
+    pos: [0.08, 0.0, 20.0]
