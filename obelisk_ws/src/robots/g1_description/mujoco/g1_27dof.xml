@@ -197,6 +197,7 @@ Position and velocity actuators added. -->
   </asset>
 
   <worldbody>
+    <site name="camera_init_sim" pos="0.01 -0.02 0" euler="3.14 1.2 0.3" rgba="0.2 0.3 0.4 1"/>
     <site name="inverted_global" pos="0 0 0" euler="3.14 0 0" rgba="0.2 0.3 0.4 1"/>
     <body name="pelvis" pos="0 0 0.793">
       <inertial pos="0 0 -0.07605" quat="1 0 -0.000399148 0" mass="3.813" diaginertia="0.010549 0.0093089 0.0079184"/>
@@ -375,7 +376,7 @@ Position and velocity actuators added. -->
             <!-- TODO: Verify position -->
             <site name="tracking_camera_site" pos="0.085725 0 0.2413" euler="0.02 -0.08 0" rgba="0 0 1 0" size="0.01"/>
 
-            <site name="head_lidar_site" pos="0.0039635 0 -0.054" euler="0 0 0" rgba="0 0 1 0" size="0.01"/>
+            <site name="head_lidar_site" pos="0.0 0 0.42218" euler="3.14159 -0.03491 0" rgba="0 0 1 1" size="0.01"/>
 
             <!-- Left Arm -->
             <body name="left_shoulder_pitch_link" pos="0.0039563 0.10022 0.23778" quat="0.990264 0.139201 1.38722e-05 -9.86868e-05">
@@ -792,12 +793,15 @@ Position and velocity actuators added. -->
     <gyro name="pelvis_camera_gyro" site="pelvis_tracking_camera_site" noise="0.01"/>
     <velocimeter name="pelvis_camera_velocimeter" site="pelvis_tracking_camera_site"/>
 
-    <!-- Head Lidar Odometry -->
-    <!-- May need to add: refname="inverted_global" reftype="site" if the lidar data is inverted -->
-    <framepos name="head_lidar_pos_sensor" objtype="site" objname="head_lidar_site" noise="0.01"/>
-    <framequat name="head_lidar_orientation_sensor" objtype="site" objname="head_lidar_site" noise="0.01"/>
-    <gyro name="head_lidar_gyro" site="head_lidar_site" noise="0.01"/>
-    <velocimeter name="head_lidar_velocimeter" site="head_lidar_site"/>
+    <!-- Head Lidar -->
+    <framepos name="head_lidar_pos_sensor" objtype="site" objname="head_lidar_site" noise="0.01" refname="camera_init_sim" reftype="site"/>
+    <framequat name="head_lidar_orientation_sensor" objtype="site" objname="head_lidar_site" noise="0.01" refname="camera_init_sim" reftype="site"/>
+    <accelerometer name="lidar_imu_acc_sensor" site="head_lidar_site" noise="0.1"/>
+    <gyro name="lidar_imu_gyro_sensor" site="head_lidar_site" noise="0.01"/>
+    <framequat name="lidar_imu_quat_sensor" objtype="site" objname="head_lidar_site" noise="0.01"/>
+
+    <!-- Hieght Scan Location -->
+    <framepos name="scan_pos_sensor" objtype="site" objname="pelvis_mocap_site" noise="0.01"/>
 
   </sensor>
 
