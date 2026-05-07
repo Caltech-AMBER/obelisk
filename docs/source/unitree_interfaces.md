@@ -28,29 +28,49 @@ To avoid having the default FSM conflict with any user-specified FSM operating o
 
 where L1 refers to Layer 1, i.e. the layer button must be held down. Additionally, all buttons not passed to the fsm are passed through on a separate joystick node (`/obelisk/g1/joy_passthrough` by default). It is recommended that the user subscribe to this topic to use the controller, rather than the joystick topic (default `/obelisk/g1/joy`), to avoid interference with the fsm. 
 
-All of these buttons can be remapped as desired in the setup yaml. Here is a complete yaml, with all available options (omitted options will take default values): 
+All of these buttons can be remapped as desired in the setup yaml. The relevant pieces live in two
+places:
 
-```
+1. The **top-level `joystick:` block** configures the raw ROS `joy_node` that reads hardware joystick
+   events and publishes them on `/obelisk/g1/joy`. Only `on`, `pub_topic`, `sub_topic`, and standard
+   `joy_node` parameters (`device_id`, `device_name`, `deadzone`, `autorepeat_rate`,
+   `sticky_buttons`, `coalesce_interval_ms`) live here.
+2. The **`obelisk_unitree_joystick` control entry** (under `control:`) translates raw button events
+   into FSM transitions and velocity commands. Its remap settings — button bindings and scale factors
+   — go in its own `params:` block.
+
+A complete config showing all available options (omitted options take defaults):
+
+```yaml
+# 1. ROS joy_node — raw joystick → /obelisk/g1/joy
 joystick:
     on: True
     pub_topic: /obelisk/g1/joy
     sub_topic: /obelisk/g1/joy_feedback
-    ros_parameters:
-        v_x_scale: 0.5
-        v_y_scale: 0.5
-        w_z_scale: 0.5
-        unitree_home_button:    116  // DL1
-        user_pose_button:       127  // DR1
-        low_level_ctrl_button:  128  // DD1
-        high_level_ctrl_button: 117  // DU1
-        damping_button:          12  // LT
-        estop:                   15  // RT     
-        vel_cmd_x:               11  // LY
-        vel_cmd_y:               10  // LX
-        vel_cmd_yaw:             14  // RY
-        layer:                    4  // LB
+
+# 2. Obelisk unitree-joystick controller — buttons → FSM/vel commands
+control:
+    - pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_joystick
+      params:
+          v_x_scale: 0.5
+          v_y_scale: 0.5
+          w_z_scale: 0.5
+          axis_threshold: -0.1
+          menu_button:              7  # MENU
+          unitree_home_button:    116  # DL1
+          user_pose_button:       127  # DR1
+          low_level_ctrl_button:  128  # DD1
+          high_level_ctrl_button: 117  # DU1
+          damping_button:          12  # LT
+          estop:                   15  # RT
+          vel_cmd_x:               11  # LY
+          vel_cmd_y:               10  # LX
+          vel_cmd_yaw:             14  # RY
+          layer_button:             4  # LB
+      # publishers/subscribers/timers as in the example configs
 ```
-`scale` parameters refer to the multiplicative factor under which joystick inputs are scaled when passed to the unitree controller (or if the user controller is subscribed to the same message). 
+`scale` parameters refer to the multiplicative factor under which joystick inputs are scaled when passed to the unitree controller (or if the user controller is subscribed to the same message).
 Buttons are passed as integers, under the following map:
 ```
 LT = 12     // 2 + AXIS_OFFSET,

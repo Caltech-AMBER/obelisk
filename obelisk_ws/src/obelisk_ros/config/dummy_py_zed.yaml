@@ -78,7 +78,7 @@ onboard:
               joint_vel: jointvel
           - topic: /obelisk/dummy/imu
             dt: 0.002
-            msg_type: ObkImu
+            msg_type: Imu
             sensor_names:
               tip_acc_sensor: accelerometer
               tip_gyro_sensor: gyro

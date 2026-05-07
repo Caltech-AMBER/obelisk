@@ -17,7 +17,6 @@
 
 #include "obelisk_sensor_msgs/msg/obk_frame_pose.hpp"
 #include "obelisk_sensor_msgs/msg/obk_image.hpp"
-#include "obelisk_sensor_msgs/msg/obk_imu.hpp"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.hpp"
 #include "obelisk_sensor_msgs/msg/true_sim_state.hpp"
 

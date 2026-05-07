@@ -309,19 +309,17 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
         params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
         # callback_groups:
         publishers:
-          - ros_parameter: pub_ctrl_setting
+          - key: pub_ctrl
             topic: /obelisk/dummy/ctrl
-            msg_type: PositionSetpoint
             history_depth: 10
             callback_group: None
         subscribers:
-          - ros_parameter: sub_est_setting
+          - key: sub_est
             topic: /obelisk/dummy/est
-            msg_type: EstimatedState
             history_depth: 10
             callback_group: None
         timers:
-          - ros_parameter: timer_ctrl_setting
+          - key: timer_ctrl
             timer_period_sec: 0.001
             callback_group: None
     estimation:
@@ -329,19 +327,17 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
         executable: jointencoders_passthrough_estimator
         # callback_groups:
         publishers:
-          - ros_parameter: pub_est_setting
+          - key: pub_est
             topic: /obelisk/dummy/est
-            msg_type: EstimatedState
             history_depth: 10
             callback_group: None
         subscribers:
-          - ros_parameter: sub_sensor_setting
+          - key: sub_sensor
             topic: /obelisk/dummy/sensor
-            msg_type: JointEncoders
             history_depth: 10
             callback_group: None
         timers:
-          - ros_parameter: timer_est_setting
+          - key: timer_est
             timer_period_sec: 0.001
             callback_group: None
     # sensing:
@@ -354,9 +350,8 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
         # callback_groups:
         # publishers:
         subscribers:
-          - ros_parameter: sub_ctrl_setting
+          - key: sub_ctrl
             topic: /obelisk/dummy/ctrl
-            msg_type: PositionSetpoint
             history_depth: 10
             callback_group: None
         sim:
@@ -372,7 +367,7 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
                 joint_vel: jointvel
             - topic: /obelisk/dummy/imu
               dt: 0.002
-              msg_type: ObkImu
+              msg_type: Imu
               sensor_names:
                 tip_acc_sensor: accelerometer
                 tip_gyro_sensor: gyro
@@ -408,38 +403,38 @@ First we give the name of this configuration (``dummy``), and which device this 
     executable: example_position_setpoint_controller
     params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
     publishers:
-      - ros_parameter: pub_ctrl_setting
+      - key: pub_ctrl
         topic: /obelisk/dummy/ctrl
-        msg_type: PositionSetpoint
-        key: "asdf"
         history_depth: 10
         callback_group: None
     subscribers:
-      - ros_parameter: sub_est_setting
+      - key: sub_est
         topic: /obelisk/dummy/est
-        msg_type: EstimatedState
         history_depth: 10
         callback_group: None
     timers:
-      - ros_parameter: timer_ctrl_setting
+      - key: timer_ctrl
         timer_period_sec: 0.001
         callback_group: None
 
 
 Now we configure our Controller node. ``pkg`` gives the name of the package containing the Obelisk node, and ``executable`` tells us what the name is of the executable with ``main`` in it.
 ``params_path`` (optional) is a string parameter that allows you to specify a file path that can be accessed within your code. This is useful for things like accessing controller gains that are specfied through a seperate yaml file. Note that there is no convention on how the file path is processed as that is up to you as the user.
-Now we need to configure all of the Components in this node. Publishers and subscribers have the following options.
 
-- ``ros_parameter`` gives the string name of the ros parameter declared in the code. This is how the launch file gets these options to the correct node.
+The launch-side producer bundles the ``publishers``, ``subscribers``, ``timers``, and ``callback_groups`` sections of each node into a single ROS string parameter named ``obelisk_settings`` whose value is a YAML document. Each Obelisk node parses that YAML at ``on_configure`` time and looks up its registered components by ``key``. (For backward compatibility with older configs, the producer still accepts ``ros_parameter: <name>_setting`` and derives ``key`` by stripping the ``_setting`` suffix.)
+
+Publishers and subscribers have the following options:
+
+- ``key`` gives the string key associated with the component. It must match the key the node registered via ``register_obk_publisher`` / ``register_obk_subscription`` (Python) or ``RegisterObkPublisher`` / ``RegisterObkSubscription`` (C++).
 - ``topic`` gives the string topic name that will either be published or subscribed to.
-- ``msg_type`` gives the type of message we want to publish or subscribe to. **Note this is only ever used in the Python implementation. In C++ the message type must be specified in the code as a templated parameter.**
-- ``key`` gives the string key associated with the component if not already specified in the code implementation. **Note this is only ever used in the Python implementation. In C++, the key must be specified during component declaration time.**
-- ``history_depth`` (optional) gives the number of messages to hold in the queue before deleting additional messages. If this not set we the use the default value of 10.
+- ``history_depth`` (optional) gives the number of messages to hold in the queue before deleting additional messages. If this is not set we use the default value of 10.
 - ``callback_group`` (optional) gives the string name of the callback group to use. The callback groups can be configured within this configuration file. If no value is specified, then the node's default callback group is used.
 
-Timers have the following options.
+Note: the message type is no longer specified in YAML for normal pub/sub entries — it is bound at code-registration time (the ``msg_type`` argument to ``register_obk_publisher`` in Python, or the template parameter in C++).
 
-- ``ros_parameter`` gives the string name of the ros parameter declared in the code.
+Timers have the following options:
+
+- ``key`` gives the string key associated with the timer (matches the key used in ``register_obk_timer`` / ``RegisterObkTimer``).
 - ``timer_period_sec`` gives the period of the timer in seconds.
 - ``callback_group`` (optional) gives the string name of the callback group to use. The callback groups can be configured within this configuration file. If no value is specified, then the node's default callback group is used.
 
@@ -451,19 +446,17 @@ This is repeated for every non-system node in the block diagram, which in this c
       pkg: obelisk_estimation_py
       executable: jointencoders_passthrough_estimator
       publishers:
-        - ros_parameter: pub_est_setting
+        - key: pub_est
           topic: /obelisk/dummy/est
-          msg_type: EstimatedState
           history_depth: 10
           callback_group: None
       subscribers:
-        - ros_parameter: sub_sensor_setting
+        - key: sub_sensor
           topic: /obelisk/dummy/sensor
-          msg_type: JointEncoders
           history_depth: 10
           callback_group: None
       timers:
-        - ros_parameter: timer_est_setting
+        - key: timer_est
           timer_period_sec: 0.001
           callback_group: None
 
@@ -481,9 +474,8 @@ Lastly, we need to configure the ``robot`` (aka, the system).
     # callback_groups:
     # publishers:
     subscribers:
-      - ros_parameter: sub_ctrl_setting
+      - key: sub_ctrl
         topic: /obelisk/dummy/ctrl
-        msg_type: PositionSetpoint
         history_depth: 10
         callback_group: None
     sim:
@@ -499,7 +491,7 @@ Lastly, we need to configure the ``robot`` (aka, the system).
             joint_vel: jointvel
         - topic: /obelisk/dummy/imu
           dt: 0.002
-          msg_type: ObkImu
+          msg_type: Imu
           sensor_names:
             tip_acc_sensor: accelerometer
             tip_gyro_sensor: gyro
@@ -510,18 +502,18 @@ Lastly, we need to configure the ``robot`` (aka, the system).
           sensor_names:
             tip_pos_sensor: framepos
             tip_orientation_sensor: framequat
-          viz_geoms:
-            dt: 1.0
-            dummy_box: box
-            dummy_box_2: box
-            dummy_sphere: sphere
+        viz_geoms:
+          dt: 1.0
+          dummy_box: box
+          dummy_box_2: box
+          dummy_sphere: sphere
 
 ``is_simulated`` marks if we are running on hardware or in simulation. ``pkg`` and ``executable`` are as before.
 ``ic_keyframe`` (optional) in the params section tells the simulation which keyframe to use for an initial condition.
 
 Now, we must configure the Components of the node, which in this example is just a subscriber. These Components have all the same options as the non-system Components given above.
 
-Lastly, since this is a simulation, we must provide the simulator with all relevant information. Here, we are using the Mujoco simulation interface. The new settings here are:
+Lastly, since this is a simulation, we must provide the simulator with all relevant information. Here, we are using the Mujoco simulation interface. The simulator's settings are passed as a YAML-formatted string in their own ROS parameter (``mujoco_setting``), which is why the ``sim:`` entry still uses ``ros_parameter:``. The new settings here are:
 
 - ``num_steps_per_viz`` (optional) gives the number of steps to use between simulation rendering. If no value is provided, the default value of 8 steps will be used.
 
@@ -529,15 +521,15 @@ Lastly, since this is a simulation, we must provide the simulator with all relev
 
 - ``msg_type`` gives the ROS message type associated with the given group of sensors.
 - ``dt`` gives the sensor publishing period in seconds.
-- Each element under ``sensor_names`` follows ``sensor_name: sensor_type`` **Note that the Mujoco XML must have all the sensors listed in the Obelisk configuration file, if you request a sensor here that is not available in Mujoco, there will be an error.** All supported Mujoco sensors and corresponding Obelisk messages are listed below.
+- Each element under ``sensor_names`` follows ``sensor_name: sensor_type`` **Note that the Mujoco XML must have all the sensors listed in the Obelisk configuration file, if you request a sensor here that is not available in Mujoco, there will be an error.** All supported Mujoco sensors and corresponding message types are listed below.
 
-=============================================== ====================
-Mujoco sensor type                              Obelisk Message Type
-=============================================== ====================
+=============================================== ============================
+Mujoco sensor type                              Message type (``msg_type``)
+=============================================== ============================
 ``jointpos`` and ``jointvel``                   ``ObkJointEncoders``
-``accelerometer``, ``gyro``, and ``framequat``  ``ObkImu``
+``accelerometer``, ``gyro``, and ``framequat``  ``Imu`` (``sensor_msgs/Imu``)
 ``framepos`` and ``framequat``                  ``ObkFramePose``
-=============================================== ====================
+=============================================== ============================
 
 You may have multiple of the same type of sensor in the yaml.
 

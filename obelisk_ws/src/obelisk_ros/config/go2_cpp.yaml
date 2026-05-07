@@ -191,7 +191,7 @@ onboard:
           # ---------- Torso IMU ---------- #
           - topic: /obelisk/go2/torso_imu
             dt: 0.001
-            msg_type: ObkImu
+            msg_type: Imu
             sensor_names:
               imu_acc_sensor: accelerometer
               imu_gyro_sensor: gyro

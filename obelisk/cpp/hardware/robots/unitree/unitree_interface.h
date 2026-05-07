@@ -3,7 +3,6 @@
 #include "obelisk_robot.h"
 #include "obelisk_ros_utils.h"
 #include "obelisk_sensor_msgs/msg/obk_joint_encoders.h"
-#include "obelisk_sensor_msgs/msg/obk_imu.h"
 #include "obelisk_control_msgs/msg/pd_feed_forward.h"
 #include "obelisk_control_msgs/msg/execution_fsm.hpp"
 #include "obelisk_control_msgs/msg/velocity_command.hpp"
