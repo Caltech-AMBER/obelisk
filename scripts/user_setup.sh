@@ -221,7 +221,7 @@ function obk-kill {
 function obk-launch {
     local config=""
     local auto_start="True"
-    local bag="True"
+    local bag="False"
 
     while [[ \$# -gt 0 ]]; do
         key="\$1"
@@ -269,7 +269,8 @@ Builds Obelisk ROS2 nodes via colcon (run inside the dev container).\n\n\
 obk-launch:\n\
 Launches the obelisk_bringup.launch.py with specified arguments.\n\
 Usage: obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]\n\
-Example:\n  obk-launch config=example.yaml auto_start=True bag=True\n\n\
+Defaults: auto_start=True, bag=False (pass bag=True to record a rosbag of all topics).\n\
+Example:\n  obk-launch config=example.yaml\n\n\
 State Transitions:\n\
 obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
 obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\

@@ -33,7 +33,7 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
     config_file_path_arg = DeclareLaunchArgument("config_file_path")
     auto_start_arg = DeclareLaunchArgument("auto_start", default_value="True")
-    bag_arg = DeclareLaunchArgument("bag", default_value="True")
+    bag_arg = DeclareLaunchArgument("bag", default_value="False")
 
     launch_actions += [config_file_path_arg, auto_start_arg, bag_arg]
     launch_args.update(
