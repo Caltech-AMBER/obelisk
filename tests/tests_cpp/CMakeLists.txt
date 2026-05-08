@@ -22,7 +22,8 @@ add_executable(NodeTest
     test_robot.cpp
     test_sim_robot.cpp
     test_mujoco_sim_robot.cpp
-    test_yaml_to_node.cpp)
+    test_yaml_to_node.cpp
+    test_lidar_interfaces.cpp)
 
 add_executable(VizTest
     test_viz_robot.cpp

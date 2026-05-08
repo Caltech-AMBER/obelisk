@@ -30,6 +30,10 @@ class HeightScanInterface : public RayCasterInterface {
         setup_rays(get_config());
     }
 
+    explicit HeightScanInterface(const YAML::Node& config) : RayCasterInterface(config) {
+        setup_rays(get_config());
+    }
+
     void compute_rays_world(const Matrix3d& site_xmat, const Vector3d& site_pos,
                             MatrixX3d& ray_starts_world,
                             MatrixX3d& ray_directions_world) const override {
@@ -52,6 +56,12 @@ class HeightScanInterface : public RayCasterInterface {
 
         // Directions are NOT rotated for height scan (always point in fixed world direction)
         ray_directions_world = ray_directions_local_;
+    }
+
+    // Public accessor (override of virtual method declared public in RayCasterInterface).
+    float get_return(const std::array<double, 3> hit_point, const float dist) override {
+        (void)dist;
+        return float(hit_point[2]);
     }
 
   protected:
@@ -157,10 +167,6 @@ class HeightScanInterface : public RayCasterInterface {
         apply_offset(offset);
     }
 
-    float get_return(const std::array<double, 3> hit_point, const float dist) override {
-        (void)dist;
-        return float(hit_point[2]);
-    }
 };
 
 } // namespace obelisk

@@ -406,6 +406,24 @@ namespace obelisk {
         // ------------------------------------------ //
 
         /**
+         * @brief Resolve the ray-caster scan config for a sensor entry.
+         *
+         * Prefers an inline ``scan_config:`` map on the entry. If that is absent, falls back to
+         * loading the YAML file at ``config_path:`` (legacy form). Throws if neither is provided.
+         */
+        static YAML::Node ResolveScanConfig(const YAML::Node& entry, const std::string& config_path) {
+            if (entry["scan_config"] && entry["scan_config"].IsMap()) {
+                return entry["scan_config"];
+            }
+            if (!config_path.empty()) {
+                return YAML::LoadFile(config_path);
+            }
+            throw std::runtime_error(
+                "RayCaster sensor (ObkScan/PointCloud2/DepthImage) requires either an inline "
+                "`scan_config:` block on the sensor entry or a legacy `config_path:` pointing to a YAML file.");
+        }
+
+        /**
          * @brief Walk the YAML ``sensor_settings`` sequence and create a publisher + timer per entry.
          */
         void ParseSensors(const YAML::Node& sensor_settings) {
@@ -512,9 +530,9 @@ namespace obelisk {
                             this->template GetPublisher<nav_msgs::msg::Odometry>(sensor_key)),
                         callback_group_);
                 } else if ((sensor_type == "ObkScan") || (sensor_type == "PointCloud2")) {
-                    // Create the scanner interface
-                    // Parse the yaml
-                    YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
+                    // Resolve scan config: prefer inline `scan_config:` block, fall back to
+                    // legacy `config_path:` pointing at a separate YAML file.
+                    YAML::Node scan_config = ResolveScanConfig(entry, sensor_config_path);
                     const auto type_node = scan_config["pattern"]["type"];
                     if (!type_node) {
                         throw std::runtime_error("scan config missing pattern.type");
@@ -522,9 +540,9 @@ namespace obelisk {
 
                     const std::string type_str = type_node.as<std::string>();
                     if (type_str == "height_scan") {
-                        scan_interface_ = std::make_unique<obelisk::HeightScanInterface>(sensor_config_path);
+                        scan_interface_ = std::make_unique<obelisk::HeightScanInterface>(scan_config);
                     } else if (type_str == "lidar_scan") {
-                        scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                        scan_interface_ = std::make_unique<obelisk::LidarInterface>(scan_config);
                     } else {
                         RCLCPP_ERROR_STREAM(
                             this->get_logger(),
@@ -573,8 +591,9 @@ namespace obelisk {
                     this->publishers_[sensor_key] =
                         std::make_shared<internal::ObeliskPublisher<sensor_msgs::msg::Image>>(pub);
 
-                    // Create the scanner interface
-                    YAML::Node scan_config = YAML::LoadFile(sensor_config_path);
+                    // Resolve scan config: prefer inline `scan_config:` block, fall back to
+                    // legacy `config_path:` pointing at a separate YAML file.
+                    YAML::Node scan_config = ResolveScanConfig(entry, sensor_config_path);
                     const auto type_node = scan_config["pattern"]["type"];
                     if (!type_node) {
                         throw std::runtime_error("scan config missing pattern.type");
@@ -582,9 +601,9 @@ namespace obelisk {
 
                     const std::string type_str = type_node.as<std::string>();
                     if (type_str == "lidar_scan") {
-                        depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(sensor_config_path);
+                        depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(scan_config);
                     } else if (type_str == "depth_camera") {
-                        depth_scan_interface_ = std::make_unique<obelisk::DepthInterface>(sensor_config_path);
+                        depth_scan_interface_ = std::make_unique<obelisk::DepthInterface>(scan_config);
                     } else {
                         RCLCPP_ERROR_STREAM(
                             this->get_logger(),

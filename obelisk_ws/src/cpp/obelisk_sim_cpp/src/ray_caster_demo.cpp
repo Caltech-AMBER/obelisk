@@ -5,16 +5,14 @@
 #include <iomanip>
 
 int main(int argc, char* argv[]) {
-    std::string height_scan_config = "/home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml";
-    std::string lidar_config = "/home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml";
-
-    // Allow config paths as arguments
-    if (argc >= 2) {
-        height_scan_config = argv[1];
+    if (argc < 3) {
+        std::cerr << "Usage: ray_caster_demo <height_scan_yaml> <lidar_yaml>\n"
+                  << "  Each argument is a path to a YAML config (same schema as the inline\n"
+                  << "  scan_config: blocks under sensor_settings in the obelisk launch YAMLs).\n";
+        return 1;
     }
-    if (argc >= 3) {
-        lidar_config = argv[2];
-    }
+    std::string height_scan_config = argv[1];
+    std::string lidar_config       = argv[2];
 
     std::cout << "=== Height Scan Interface ===" << std::endl;
     {

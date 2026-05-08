@@ -1,0 +1,151 @@
+config: dummy_scan
+# Same as dummy_cpp.yaml, plus three ray-caster sensors (height-scan, lidar, depth-camera)
+# configured inline via `scan_config:` blocks (no external YAML file required).
+#
+# Run with:
+#   obk-launch config=dummy_cpp_scan.yaml device=onboard auto_start=True bag=False
+#
+# Then in another shell:
+#   ros2 topic list                        # expect /obelisk/dummy/{height_scan,lidar,depth}
+#   ros2 topic hz /obelisk/dummy/lidar     # confirm 10 Hz
+#   ros2 topic echo /obelisk/dummy/height_scan --once
+onboard:
+  control:
+    - pkg: obelisk_control_cpp
+      executable: example_position_setpoint_controller
+      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
+      params:
+        test_param: value_configured_in_yaml
+      publishers:
+        - ros_parameter: pub_ctrl_setting
+          topic: /obelisk/dummy/ctrl
+          history_depth: 10
+          callback_group: None
+        - ros_parameter: joystick_feedback_setting
+          topic: /obelisk/dummy/joy_feedback
+      subscribers:
+        - ros_parameter: sub_est_setting
+          topic: /obelisk/dummy/est
+          history_depth: 10
+          callback_group: None
+        - ros_parameter: joystick_sub_setting
+          topic: /obelisk/dummy/joy
+      timers:
+        - ros_parameter: timer_ctrl_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_estimation_cpp
+      executable: jointencoders_passthrough_estimator
+      publishers:
+        - ros_parameter: pub_est_setting
+          topic: /obelisk/dummy/est
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - ros_parameter: sub_sensor_setting
+          topic: /obelisk/dummy/joint_encoders
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_est_setting
+          timer_period_sec: 0.001
+          callback_group: None
+  robot:
+    - is_simulated: True
+      pkg: obelisk_sim_cpp
+      executable: obelisk_mujoco_robot
+      params:
+        ic_keyframe: ic
+      subscribers:
+        - ros_parameter: sub_ctrl_setting
+          topic: /obelisk/dummy/ctrl
+          history_depth: 10
+          callback_group: None
+      sim:
+        - ros_parameter: mujoco_setting
+          num_steps_per_viz: 5
+          robot_pkg: dummy_bot
+          model_xml_path: dummy.xml
+          sensor_settings:
+            # ---- Standard MuJoCo sensors (joints + IMU) ----
+            - topic: /obelisk/dummy/joint_encoders
+              dt: 0.001
+              msg_type: ObkJointEncoders
+              sensor_names:
+                joint_pos: jointpos
+                joint_vel: jointvel
+            - topic: /obelisk/dummy/imu
+              dt: 0.01
+              msg_type: Imu
+              sensor_names:
+                tip_acc_sensor: accelerometer
+                tip_gyro_sensor: gyro
+                tip_frame_sensor: framequat
+
+            # ---- Height-scan (ObkScan) using HeightScanInterface ----
+            # Grid of downward rays, 1.6m x 0.8m at 0.1m resolution. Origin lifted 20m above
+            # the `tip` site so rays travel down to hit the floor / boxes regardless of robot pose.
+            - topic: /obelisk/dummy/height_scan
+              dt: 0.1
+              msg_type: ObkScan
+              sensor_names:
+                tip_pos_sensor: framepos
+              scan_config:
+                site_name: tip
+                geom_groups: [0]
+                pattern:
+                  type: height_scan
+                  ordering: xy
+                  resolution: 0.1
+                  size: [1.6, 0.8]
+                  offset:
+                    pos: [0.0, 0.0, 20.0]
+
+            # ---- Lidar (PointCloud2) using LidarInterface ----
+            # 16-channel spherical pattern emulating a small Velodyne-style sensor.
+            - topic: /obelisk/dummy/lidar
+              dt: 0.1
+              msg_type: PointCloud2
+              sensor_names:
+                tip_pos_sensor: framepos
+              scan_config:
+                site_name: tip
+                geom_groups: [0]
+                frame: world
+                max_distance: 10.0
+                pattern:
+                  type: lidar_scan
+                  vertical_fov_range: [-15.0, 15.0]
+                  horizontal_fov_range: [0.0, 360.0]
+                  channels: 16
+                  horizontal_res: 2.0
+                  offset:
+                    pos: [0.0, 0.0, 0.0]
+                    rot: [1.0, 0.0, 0.0, 0.0]
+
+            # ---- Depth camera (DepthImage) using DepthInterface ----
+            # 32x24 pinhole-camera depth image, looking forward from the `tip` site.
+            - topic: /obelisk/dummy/depth
+              dt: 0.05
+              msg_type: DepthImage
+              sensor_names:
+                tip_pos_sensor: framepos
+              scan_config:
+                site_name: tip
+                geom_groups: [0]
+                frame: world
+                pattern:
+                  type: depth_camera
+                  width: 32
+                  height: 24
+                  intrinsic_matrix: [25.9928, 0.0, 14.9936,
+                                     0.0, 27.8703, 12.9966,
+                                     0.0, 0.0, 1.0]
+                  offset:
+                    pos: [0.0, 0.0, 0.0]
+                    rot: [1.0, 0.0, 0.0, 0.0]
+  joystick:
+    on: True
+    pub_topic: /obelisk/dummy/joy
+    sub_topic: /obelisk/dummy/joy_feedback

@@ -184,21 +184,55 @@ onboard:
           # - topic: /obelisk/g1/raycast
           #   dt: 0.1
           #   msg_type: ObkScan
-          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/height_scan_config.yaml
           #   sensor_names:
           #     scan_pos_sensor: framepos
+          #   scan_config:
+          #     site_name: pelvis_mocap_site
+          #     geom_groups: [2]
+          #     pattern:
+          #       type: height_scan
+          #       ordering: xy
+          #       resolution: 0.1
+          #       size: [1.6, 0.8]
+          #       offset:
+          #         pos: [0.08, 0.0, 20.0]
           - topic: /cloud_registered_body
             dt: 0.1
             msg_type: PointCloud2
-            config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/lidar_config.yaml
             sensor_names:
               scan_pos_sensor: framepos
+            scan_config:
+              site_name: head_lidar_site
+              geom_groups: [2]
+              viz_decimation: 10
+              frame: body
+              pattern:
+                type: lidar_scan
+                vertical_fov_range: [0.0, 51.0]
+                horizontal_fov_range: [0.0, 360.0]
+                channels: 51
+                horizontal_res: 1.0
+                offset:
+                  pos: [0.0, 0.0, 0.0]
+                  rot: [1.0, 0.0, 0.0, 0.0]
           # - topic: /depth/image_processed
           #   dt: 0.033
           #   msg_type: DepthImage
-          #   config_path: /home/wcompton/repos/obelisk/obelisk_ws/src/obelisk_ros/config/depth_config.yaml
           #   sensor_names:
           #     scan_pos_sensor: framepos
+          #   scan_config:
+          #     site_name: pelvis_mocap_site
+          #     geom_groups: [0, 1, 2]
+          #     viz_decimation: 1
+          #     frame: world
+          #     pattern:
+          #       type: depth_camera
+          #       width: 30
+          #       height: 26
+          #       intrinsic_matrix: [25.9928, 0.0, 14.9936, 0.0, 27.8703, 12.9966, 0.0, 0.0, 1.0]
+          #       offset:
+          #         pos: [0.153246, 0.0, 0.106799]
+          #         rot: [0.843391, 0.0, 0.537300, 0.0]
           - topic: /obelisk/g1/joint_encoders
             dt: 0.002
             msg_type: ObkJointEncoders
