@@ -14,10 +14,9 @@ class JointEncodersPassthroughEstimator(ObeliskEstimator):
         """Initialize the joint encoders passthrough estimator."""
         super().__init__(node_name, EstimatedState)
         self.register_obk_subscription(
-            "sub_sensor_setting",
-            self.joint_encoder_callback,  # type: ignore
-            ObkJointEncoders,
-            key="sub_sensor",  # key can be specified here or in the config file
+            key="sub_sensor",
+            callback=self.joint_encoder_callback,  # type: ignore
+            msg_type=ObkJointEncoders,
         )
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:

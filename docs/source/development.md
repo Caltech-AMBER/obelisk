@@ -83,12 +83,12 @@ To launch a ROS stack we can use the following commands.
 
 In a seperate terminal, we can run a ROS stack with:
 ```
-obk-launch config=<config file> device=<device>
+obk-launch config=<config file>
 ```
 
 Specifically, for the dummy examples this looks like:
 ```
-obk-launch config=dummy_cpp.yaml device=onboard
+obk-launch config=dummy_cpp.yaml
 ```
 
 All the documentation for the Obelisk terminal aliases can be found [here](obelisk_terminal_aliases.md).

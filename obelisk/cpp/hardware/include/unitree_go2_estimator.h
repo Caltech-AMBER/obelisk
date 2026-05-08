@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 #include "obelisk_estimator.h"
 #include "obelisk_ros_utils.h"
@@ -11,11 +12,11 @@ namespace obelisk {
             : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
             this->RegisterObkSubscription<obelisk_sensor_msgs::msg::ObkJointEncoders>(
-                "sub_sensor_setting", "sub_sensor",
+                "sub_sensor",
                 std::bind(&UnitreeGo2Estimator::JointEncoderCallback, this, std::placeholders::_1));
 
-            this->RegisterObkSubscription<obelisk_sensor_msgs::msg::ObkImu>(
-                "sub_imu_setting", "imu_sensor",
+            this->RegisterObkSubscription<sensor_msgs::msg::Imu>(
+                "sub_imu",
                 std::bind(&UnitreeGo2Estimator::TorsoIMUCallback, this, std::placeholders::_1));
         }
 
@@ -26,7 +27,7 @@ namespace obelisk {
             joint_names_ = msg.joint_names;
         }
 
-        void TorsoIMUCallback(const obelisk_sensor_msgs::msg::ObkImu& msg) {
+        void TorsoIMUCallback(const sensor_msgs::msg::Imu& msg) {
             pose_ = {0., 0., 0., msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w};
             omega_ = {0., 0., 0., msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z};
         }

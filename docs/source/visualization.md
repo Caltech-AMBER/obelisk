@@ -1,6 +1,6 @@
 # Visualization
 Obelisk comes with a suite of tools for visualizing the robot. Some of these include:
-- Robot visualization nodes to display robots in Rviz or [Foxglove](https://docs.foxglove.dev/docs/introduction)
+- Robot visualization nodes to display robots in Rviz
 
 ## Robot Visualization
 Oftentimes you may want to display a visual of a robot in a specified configuration, or see the motion of a robot throughout a trajectory, or maybe you want to check the estimated state vs the true state. In all of these cases we need to be able to see the robot. Obelisk provides two nodes to help with this:
@@ -21,10 +21,9 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
 
 ### Visualization Configuration Settings
 #### Example Configuration
-```
+```yaml
   viz:
     on: True
-    viz_tool: rviz
     rviz_pkg: obelisk_ros
     rviz_config: basic_obk_config.rviz
     viz_nodes:
@@ -35,18 +34,17 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
         robot_topic: robot_description
         tf_prefix: g1
         subscribers:
-          - ros_parameter: sub_viz_est_setting
+          - key: sub_est
             topic: estimated_state
             history_depth: 10
             callback_group: None
-            non_obelisk: False
         publishers:
-          - ros_parameter: pub_viz_joint_setting
+          - key: pub_viz_joint
             topic: joint_states_g1
             history_depth: 10
             callback_group: None
         timers:
-          - ros_parameter: timer_viz_joint_setting
+          - key: time_joints
             timer_period_sec: 0.05
             callback_group: None
       - pkg: obelisk_viz_cpp
@@ -56,23 +54,22 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
         robot_topic: go2_description
         tf_prefix: go2
         subscribers:
-          - ros_parameter: sub_viz_est_setting
+          - key: sub_est
             topic: estimated_state2
             history_depth: 10
             callback_group: None
-            non_obelisk: False
         publishers:
-          - ros_parameter: pub_viz_joint_setting
+          - key: pub_viz_joint
             topic: joint_states_go2
             history_depth: 10
             callback_group: None
         timers:
-          - ros_parameter: timer_viz_joint_setting
+          - key: time_joints
             timer_period_sec: 0.05
             callback_group: None
 ```
 #### Breaking Down the Configuration
-```
+```yaml
   viz:
     on: True
     rviz_pkg: obelisk_ros
@@ -80,12 +77,11 @@ The `base_link_name` must match a link in the URDF and `joint_names` must all be
 ```
 The visualization section starts with the `viz` tag. Then we have all the "global" visualization settings, i.e., all the settings that apply to everything, such as Rviz settings.
 - `on` is a boolean flag to turn on or off the visualizer and spin the nodes. If this is false, all the following settings are skipped.
-- `viz_tool` (optional) selects which visualization tool to bring up. For now the only two supported options are `rviz` and `foxglove`. If not present, the default is `rviz`.
-- `rviz_pkg` (optional) is the package where the Rviz configuration file is found. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
-- `rviz_config` (optional) is the name of the Rviz configuration file. ***Note that we assume this is stored in a folder named `rviz` in the package listed above.*** Be sure that this folder is "installed" when building ROS. Not need if `viz_tool` is `foxglove`, but required for `rviz`.
+- `rviz_pkg` (optional) is the package where the Rviz configuration file is found.
+- `rviz_config` (optional) is the name of the Rviz configuration file. ***Note that we assume this is stored in a folder named `rviz` in the package listed above.*** Be sure that this folder is "installed" when building ROS.
 
 Then, under `viz_nodes` we have a list of nodes and their settings. We will examine only one as they always have the same fields.
-```
+```yaml
 - pkg: obelisk_viz_cpp
     executable: default_robot_viz
     robot_pkg: g1_description
@@ -93,28 +89,27 @@ Then, under `viz_nodes` we have a list of nodes and their settings. We will exam
     robot_topic: robot_description
     tf_prefix: g1
     subscribers:
-        - ros_parameter: sub_viz_est_setting
-        topic: estimated_state
-        history_depth: 10
-        callback_group: None
-        non_obelisk: False
+        - key: sub_est
+          topic: estimated_state
+          history_depth: 10
+          callback_group: None
     publishers:
-        - ros_parameter: pub_viz_joint_setting
-        topic: joint_states_g1
-        history_depth: 10
-        callback_group: None
+        - key: pub_viz_joint
+          topic: joint_states_g1
+          history_depth: 10
+          callback_group: None
     timers:
-        - ros_parameter: timer_viz_joint_setting
-        timer_period_sec: 0.05
-        callback_group: None
+        - key: time_joints
+          timer_period_sec: 0.05
+          callback_group: None
 ```
 - `pkg` gives the package where the executable is.
 - `executable` is the name of the executable.
 - `robot_pkg` is the name of the package where all the robot files are stored.
 - `urdf` is the name of the URDF file. ***Note that we assume the urdf is stored in a folder named `rviz` in the `robot_pkg`.***
-- `robot_topic` (optional) is the name of the topic where the robot description (urdf) will be published for Rviz. This remaps the `robot_description` topic give in the [`robot_state_publisher`](https://index.ros.org/p/robot_state_publisher/github-ros-robot_state_publisher/#humble).
+- `robot_topic` (optional) is the name of the topic where the robot description (urdf) will be published for Rviz. This remaps the `robot_description` topic given in the [`robot_state_publisher`](https://index.ros.org/p/robot_state_publisher/github-ros-robot_state_publisher/#humble).
 - `tf_prefix` (optional) is the prefix on all of the transform messages put out by the `robot_state_publisher`. In the `ObeliskVizRobotDefault` implementation this is accounted for. If you extend `ObeliskVizRobot` manually, then you must be sure to use this prefix (given as a node parameter) to prefix the base transform.
-- Finally we have all the normal component settings, which we will not go over here.
+- Finally we have the standard `publishers` / `subscribers` / `timers` component settings. The keys `sub_est`, `pub_viz_joint`, and `time_joints` are the defaults the `ObeliskVizRobot` constructor registers — see `obelisk/cpp/viz/include/obelisk_viz_robot.h` if you need to override them.
 
 The `robot_topic` and `tf_prefix` are mostly useful when you have multiple robots to display. By changing these options we can prevent name clashes.
 

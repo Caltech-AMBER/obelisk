@@ -1,0 +1,3 @@
+# Cycle-detection fixture: includes compose_cycle_b which includes us back.
+include:
+  - compose_cycle_b.yaml

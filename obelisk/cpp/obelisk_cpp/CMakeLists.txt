@@ -22,6 +22,9 @@ find_package(nav_msgs REQUIRED)
 # --------- Viz Messages --------- #
 find_package(visualization_msgs REQUIRED)
 
+# ------- yaml-cpp (required for obelisk_settings parsing) ------- #
+find_package(yaml-cpp REQUIRED)
+
 # ------- Mujoco (optional) ------- #
 # Read from environment variable, default to ON if not set
 if(DEFINED ENV{OBELISK_USE_MUJOCO})
@@ -35,7 +38,6 @@ message(STATUS "USE_MUJOCO option set to: ${USE_MUJOCO}")
 
 if(USE_MUJOCO)
   find_package(Eigen3 REQUIRED)
-  find_package(yaml-cpp REQUIRED)
 
   include(FetchContent)
   set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
@@ -80,14 +82,17 @@ add_library(ObkCore INTERFACE)
 add_library(Obelisk::Core ALIAS ObkCore)   # Namespaced alias
 target_include_directories(ObkCore INTERFACE ${CORE_INC})
 
+# yaml-cpp is required by ObeliskNode for parsing the obelisk_settings YAML parameter.
+target_link_libraries(ObkCore INTERFACE yaml-cpp)
+
 # Conditionally add Mujoco dependencies
 if(USE_MUJOCO)
   target_include_directories(ObkCore INTERFACE ${mujoco_SOURCE_DIR}/include ${LIDAR_INC})
-  target_link_libraries(ObkCore INTERFACE mujoco-lib glfw Eigen3::Eigen yaml-cpp)
+  target_link_libraries(ObkCore INTERFACE mujoco-lib glfw Eigen3::Eigen)
 
   # Define compile definition for conditional compilation
   target_compile_definitions(ObkCore INTERFACE OBELISK_USE_MUJOCO)
-  
+
   message(STATUS "ObkCore built WITH Mujoco support")
 else()
   message(STATUS "ObkCore built WITHOUT Mujoco support")

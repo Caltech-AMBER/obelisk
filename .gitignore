@@ -246,3 +246,9 @@ MUJOCO_LOG.TXT
 obk_logs/
 docker/user_setup.sh
 docker/install_sys_deps.sh
+
+# ###### #
+# CLAUDE #
+# ###### #
+CLAUDE.md
+.claude/

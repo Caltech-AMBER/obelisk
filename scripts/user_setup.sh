@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # script flags
-pixi=false
 obk_aliases=false
 
 zed=false
@@ -10,10 +9,6 @@ unitree=false
 for arg in "$@"; do
     case $arg in
         # general user setup
-        --pixi)
-            pixi=true
-            shift  # Installs pixi
-            ;;
         --obk-aliases)
             obk_aliases=true
             shift  # Adds obelisk aliases to the ~/.bash_aliases file
@@ -31,23 +26,13 @@ for arg in "$@"; do
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--cyclone-perf] [--obk-aliases]"
+            echo "Usage: $0 [--obk-aliases] [--zed] [--unitree]"
             exit 1
             ;;
     esac
 done
 
-# [1] installs pixi
-if [ "$pixi" = true ]; then
-    if ! command -v pixi &> /dev/null; then
-        echo -e "\033[1;32mPixi is not installed. Installing Pixi...\033[0m"
-        curl -fsSL https://pixi.sh/install.sh | bash
-    else
-        echo -e "\033[1;33mPixi is already installed. Skipping Pixi installation.\033[0m"
-    fi
-fi
-
-# [2] adds obelisk aliases to the ~/.bash_aliases file
+# adds obelisk aliases to the ~/.bash_aliases file
 if [ "$obk_aliases" = true ]; then
     # check if ~/.bash_aliases is sourced in ~/.bashrc; if not, add it
     block='if [ -f ~/.bash_aliases ]; then
@@ -127,9 +112,9 @@ export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
         export HAS_OBK_ACTIVATED=true
     fi
 
-    # checks if current shell is a conda or pixi shell - if not, source base ros if /opt/ros/humble/setup.bash exists
+    # checks if current shell is a conda shell - if not, source base ros if /opt/ros/humble/setup.bash exists
     # in the case of conda, it will source base ros if \$CONDA_DEFAULT_ENV is "base" still
-    if [[ -z "\$CONDA_DEFAULT_ENV" || "\$CONDA_DEFAULT_ENV" == "base" ]] && [[ -z "\$PIXI_ENVIRONMENT_NAME" ]]; then
+    if [[ -z "\$CONDA_DEFAULT_ENV" || "\$CONDA_DEFAULT_ENV" == "base" ]]; then
         if [ -f "/opt/ros/humble/setup.bash" ]; then
             echo -e "\033[1;32mSourcing base ROS2 Humble installation...\033[0m"
             source /opt/ros/humble/setup.bash
@@ -142,11 +127,6 @@ export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
     else
         source \$OBELISK_ROOT/scripts/build_obelisk.sh $OBELISK_BUILD_OPTIONS
         source \$OBELISK_ROOT/obelisk_ws/install/setup.bash
-    fi
-
-    # if PIXI_ZED=true, then run bash $OBELISK_ROOT/scripts/install_pyzed.sh
-    if [[ -n "\$PIXI_ZED" && "\$PIXI_ZED" == "true" ]]; then
-        bash \$OBELISK_ROOT/scripts/install_pyzed.sh
     fi
 }
 
@@ -240,19 +220,14 @@ function obk-kill {
 # convenience function for ros2 launch command
 function obk-launch {
     local config=""
-    local device=""
     local auto_start="True"
-    local bag="True"
+    local bag="False"
 
     while [[ \$# -gt 0 ]]; do
         key="\$1"
         case \$key in
             config=*)
             config="\${key#*=}"
-            shift
-            ;;
-            device=*)
-            device="\${key#*=}"
             shift
             ;;
             auto_start=*)
@@ -270,14 +245,13 @@ function obk-launch {
         esac
     done
 
-    # Check if any of the required arguments are empty
-    if [[ -z "\$config" || -z "\$device" ]]; then
-        echo -e "\033[1;34mError: Missing required arguments.\033[0m"
-        echo -e "\033[1;34mUsage: obk-launch config=<path> device=<name> auto_start=<True|False>\033[0m"
+    if [[ -z "\$config" ]]; then
+        echo -e "\033[1;34mError: Missing required argument.\033[0m"
+        echo -e "\033[1;34mUsage: obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]\033[0m"
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} device_name:=\${device} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command
@@ -291,11 +265,12 @@ Options:\n\
     --permanent: Adds the global settings to ~/.bashrc.\n\
     --remove: Removes the global settings from ~/.bashrc.\n\n\
 obk-build:\n\
-Builds Obelisk nodes after you have activated a pixi environment.\n\n\
+Builds Obelisk ROS2 nodes via colcon (run inside the dev container).\n\n\
 obk-launch:\n\
 Launches the obelisk_bringup.launch.py with specified arguments.\n\
-Usage: obk-launch config=<path> device=<name> auto_start=<True|False> bag=<True|False>\n\
-Example:\n  obk-launch config=example.yaml device=onboard auto_start=True bag=True\n\n\
+Usage: obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]\n\
+Defaults: auto_start=True, bag=False (pass bag=True to record a rosbag of all topics).\n\
+Example:\n  obk-launch config=example.yaml\n\n\
 State Transitions:\n\
 obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
 obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\

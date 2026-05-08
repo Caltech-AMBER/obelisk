@@ -233,7 +233,7 @@ If you are using a stable version of Obelisk, you should only need to run this o
 
 Once Obelisk is activated and built we can run a basic example to make sure everything is working as expected.
 ```
-obk-launch config=dummy_cpp.yaml device=onboard
+obk-launch config=dummy_cpp.yaml
 ```
 At this point you should see a Mujoco simulation running.
 

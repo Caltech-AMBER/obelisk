@@ -49,43 +49,14 @@ class RayCasterInterface {
         if (!std::filesystem::exists(yaml_path)) {
             throw std::runtime_error("Ray caster config file not found: " + yaml_path);
         }
-
-        config_ = YAML::LoadFile(yaml_path);
-
-        // Read site name (required)
-        if (config_["site_name"]) {
-            site_name_ = config_["site_name"].as<std::string>();
-        } else {
-            throw std::runtime_error("site_name is required in ray caster config");
-        }
-
-        // Read geom groups for mj_ray filtering (optional, default: group 0 only)
-        std::fill(std::begin(geom_group_mask_), std::end(geom_group_mask_), 0);
-        if (config_["geom_groups"]) {
-            auto groups = config_["geom_groups"].as<std::vector<int>>();
-            for (int g : groups) {
-                if (g >= 0 && g < mjNGROUP) {
-                    geom_group_mask_[g] = 1;
-                }
-            }
-        } else {
-            geom_group_mask_[0] = 1;
-        }
-
-        // Read frame (optional, default: "world")
-        if (config_["frame"]) {
-            frame_ = config_["frame"].as<std::string>();
-        }
-
-        // Read max ray distance (optional, default: 0.0 meaning "disabled")
-        // Hits beyond this distance are treated as no-hit (apply_max_distance returns -1).
-        if (config_["max_distance"]) {
-            max_distance_ = config_["max_distance"].as<double>();
-            if (max_distance_ < 0.0) {
-                throw std::runtime_error("max_distance must be >= 0");
-            }
-        }
+        load_common(YAML::LoadFile(yaml_path));
     }
+
+    /**
+     * @brief Construct from a parsed YAML node (inline config; no file I/O).
+     * @throws std::runtime_error if the node is missing required fields
+     */
+    explicit RayCasterInterface(const YAML::Node& config) { load_common(config); }
 
     virtual ~RayCasterInterface() = default;
 
@@ -244,6 +215,47 @@ class RayCasterInterface {
     MatrixX3d ray_directions_local_; // Nx3 matrix of ray directions (unit vectors)
 
   private:
+    /**
+     * @brief Common initialization: validate and pull top-level fields out of the YAML node.
+     */
+    void load_common(const YAML::Node& config) {
+        config_ = config;
+
+        // Read site name (required)
+        if (config_["site_name"]) {
+            site_name_ = config_["site_name"].as<std::string>();
+        } else {
+            throw std::runtime_error("site_name is required in ray caster config");
+        }
+
+        // Read geom groups for mj_ray filtering (optional, default: group 0 only)
+        std::fill(std::begin(geom_group_mask_), std::end(geom_group_mask_), 0);
+        if (config_["geom_groups"]) {
+            auto groups = config_["geom_groups"].as<std::vector<int>>();
+            for (int g : groups) {
+                if (g >= 0 && g < mjNGROUP) {
+                    geom_group_mask_[g] = 1;
+                }
+            }
+        } else {
+            geom_group_mask_[0] = 1;
+        }
+
+        // Read frame (optional, default: "world")
+        if (config_["frame"]) {
+            frame_ = config_["frame"].as<std::string>();
+        }
+
+        // Read max ray distance (optional, default: 0.0 meaning "disabled")
+        // Hits beyond this distance are treated as no-hit (apply_max_distance returns -1).
+        if (config_["max_distance"]) {
+            max_distance_ = config_["max_distance"].as<double>();
+            if (max_distance_ < 0.0) {
+                throw std::runtime_error("max_distance must be >= 0");
+            }
+        }
+    }
+
     YAML::Node config_;
     std::string site_name_;
     mjtByte geom_group_mask_[mjNGROUP];

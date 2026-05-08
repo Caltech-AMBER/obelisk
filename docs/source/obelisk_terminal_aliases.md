@@ -5,11 +5,11 @@ Launches the `obelisk_bringup.launch.py` with specified arguments.
 
 Usage:
 ```
-obk-launch config=<path> device=<name> auto_start=<True|False>
+obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]
 ```
 Example:
 ```
-obk-launch config=example.yaml device=onboard auto_start=True
+obk-launch config=example.yaml auto_start=True
 ```
 
 ## `obk-build`

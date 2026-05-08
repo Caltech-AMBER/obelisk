@@ -1,41 +1,23 @@
 #include <catch2/catch_test_macros.hpp>
-#include <iostream>
 
 #include "obelisk_node.h"
-#include "rcl_interfaces/msg/parameter_event.hpp"
 #include "std_msgs/msg/string.hpp"
 
 using std::placeholders::_1;
 
 namespace obelisk {
-    // Helper class for testing
+    /**
+     * Minimal subclass that lets us register components and exercise the new YAML-driven flow.
+     */
     class ObeliskNodeTester : public ObeliskNode {
       public:
-        ObeliskNodeTester() : ObeliskNode("obelisk_tester") {
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", "my_cbg:None"));
+        ObeliskNodeTester() : ObeliskNode("obelisk_tester") {}
 
-            on_configure(this->get_current_state());
-        }
-
-        template <typename MessageT> void SubscriptionConfigStrTester(const std::string& config) {
-            CreateSubscriptionFromConfigStr<MessageT>(
-                config, std::bind(&ObeliskNodeTester::GenericCallback<MessageT>, this, _1));
-        }
-
-        template <typename MessageT> void PublishConfigStrTester(const std::string& config) {
-            CreatePublisherFromConfigStr<MessageT>(config);
-        }
-
-        void TimerConfigFromStrTester(const std::string& config) {
-            CreateWallTimerFromConfigStr(config, std::bind(&ObeliskNodeTester::SimpleCallback, this));
-        }
-        void SimpleCallback() {}
-
-        // Templated generic callback to facilitate easy testing
-        template <typename MessageT> void GenericCallback(const MessageT& msg) {}
-
+        // expose for tests
         using ObeliskNode::create_publisher;
         using ObeliskNode::create_subscription;
+
+        template <typename MessageT> void GenericCallback(const MessageT& msg) {}
     };
 } // namespace obelisk
 
@@ -47,39 +29,19 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
 
     obelisk::ObeliskNodeTester node;
 
-    SECTION("Publishers") {
+    SECTION("Direct publishers") {
         REQUIRE_NOTHROW(node.create_publisher<std_msgs::msg::String>("topic", 10));
-
-        // Verify that allowed messages are fine
         REQUIRE_NOTHROW(node.create_publisher<obelisk_control_msgs::msg::PositionSetpoint>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_estimator_msgs::msg::EstimatedState>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::ObkJointEncoders>("topic", 10));
         REQUIRE_NOTHROW(node.create_publisher<obelisk_sensor_msgs::msg::TrueSimState>("topic", 10));
     }
 
-    SECTION("Subscribers") {
-        // Verify that allowed messages are fine
+    SECTION("Direct subscribers") {
         REQUIRE_NOTHROW(node.create_subscription<obelisk_control_msgs::msg::PositionSetpoint>(
             "topic", 10,
             std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_control_msgs::msg::PositionSetpoint>, &node,
                       _1)));
-        REQUIRE_NOTHROW(node.create_subscription<obelisk_estimator_msgs::msg::EstimatedState>(
-            "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_estimator_msgs::msg::EstimatedState>, &node,
-                      _1)));
-        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::ObkJointEncoders>(
-            "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::ObkJointEncoders>, &node,
-                      _1)));
-        REQUIRE_NOTHROW(node.create_subscription<obelisk_sensor_msgs::msg::TrueSimState>(
-            "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_sensor_msgs::msg::TrueSimState>, &node,
-                      _1)));
-        REQUIRE_NOTHROW(node.create_subscription<rcl_interfaces::msg::ParameterEvent>(
-            "topic", 10,
-            std::bind(&obelisk::ObeliskNodeTester::GenericCallback<rcl_interfaces::msg::ParameterEvent>, &node, _1)));
-
-        // Try with the override flag
         REQUIRE_NOTHROW(node.create_subscription<std_msgs::msg::String>(
             "topic", 10, std::bind(&obelisk::ObeliskNodeTester::GenericCallback<std_msgs::msg::String>, &node, _1)));
     }
@@ -87,55 +49,67 @@ TEST_CASE("Obelisk Node Pub and Sub", "[obelisk_node]") {
     rclcpp::shutdown();
 }
 
-TEST_CASE("Components from string", "[obelisk_node]") {
+TEST_CASE("Obelisk Node configures pub/sub/timer from obelisk_settings YAML", "[obelisk_node]") {
     rclcpp::init(0, nullptr);
 
     obelisk::ObeliskNodeTester node;
 
-    SECTION("Subscribers") {
-        // Check with good config string
-        REQUIRE_NOTHROW(
-            node.SubscriptionConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("topic:test1,depth:10"));
+    // Register a publisher, subscription, and timer by key.
+    node.RegisterObkPublisher<obelisk_control_msgs::msg::PositionSetpoint>("pub_x");
+    node.RegisterObkSubscription<obelisk_control_msgs::msg::PositionSetpoint>(
+        "sub_x", std::bind(&obelisk::ObeliskNodeTester::GenericCallback<obelisk_control_msgs::msg::PositionSetpoint>,
+                           &node, _1));
+    bool fired = false;
+    node.RegisterObkTimer("timer_x", [&fired]() { fired = true; });
 
-        REQUIRE_NOTHROW(node.SubscriptionConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>(
-            "topic:test1,depth:10,non_obelisk:true"));
+    const std::string settings = R"(
+publishers:
+  - key: pub_x
+    topic: /test/pub
+    history_depth: 7
+subscribers:
+  - key: sub_x
+    topic: /test/sub
+    history_depth: 3
+timers:
+  - key: timer_x
+    timer_period_sec: 0.01
+)";
+    node.set_parameter(rclcpp::Parameter("obelisk_settings", settings));
 
-        // Check without topic
-        REQUIRE_THROWS(node.SubscriptionConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("depth:10"));
+    REQUIRE(node.on_configure(node.get_current_state()) ==
+            rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-        // Check when missing a colon
-        REQUIRE_THROWS(
-            node.SubscriptionConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("topic:test1,depth 10"));
-    }
+    auto pub = node.GetPublisher<obelisk_control_msgs::msg::PositionSetpoint>("pub_x");
+    REQUIRE(pub != nullptr);
+    CHECK(pub->get_actual_qos().depth() == 7);
 
-    SECTION("Publishers") {
-        // Check with good config string
-        REQUIRE_NOTHROW(
-            node.PublishConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("topic:test1,depth:10"));
+    auto sub = node.GetSubscription<obelisk_control_msgs::msg::PositionSetpoint>("sub_x");
+    REQUIRE(sub != nullptr);
+    CHECK(sub->get_actual_qos().depth() == 3);
 
-        REQUIRE_NOTHROW(node.PublishConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>(
-            "topic:test1,depth:10,non_obelisk:true"));
+    REQUIRE(node.GetTimer("timer_x") != nullptr);
 
-        // Check without topic
-        REQUIRE_THROWS(node.PublishConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("depth:10"));
+    rclcpp::shutdown();
+}
 
-        // Check when missing a colon
-        REQUIRE_THROWS(
-            node.PublishConfigStrTester<obelisk_control_msgs::msg::PositionSetpoint>("topic:test1,depth 10"));
-    }
+TEST_CASE("Empty obelisk_settings is a no-op (no components registered)", "[obelisk_node]") {
+    rclcpp::init(0, nullptr);
 
-    SECTION("Timers") {
-        // Check with good config string
-        REQUIRE_NOTHROW(node.TimerConfigFromStrTester("timer_period_sec:2"));
+    obelisk::ObeliskNodeTester node;
+    // Default value of obelisk_settings is "" (empty string).
+    REQUIRE(node.on_configure(node.get_current_state()) ==
+            rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 
-        REQUIRE_NOTHROW(node.TimerConfigFromStrTester("timer_period_sec:.5"));
+    rclcpp::shutdown();
+}
 
-        // // Check without period
-        REQUIRE_THROWS(node.TimerConfigFromStrTester("depth:10"));
+TEST_CASE("Malformed YAML in obelisk_settings raises", "[obelisk_node]") {
+    rclcpp::init(0, nullptr);
 
-        // // Check when missing a colon
-        REQUIRE_THROWS(node.TimerConfigFromStrTester("timer_period_sec:2, test"));
-    }
+    obelisk::ObeliskNodeTester node;
+    node.set_parameter(rclcpp::Parameter("obelisk_settings", std::string("publishers: [unterminated")));
+    REQUIRE_THROWS(node.on_configure(node.get_current_state()));
 
     rclcpp::shutdown();
 }

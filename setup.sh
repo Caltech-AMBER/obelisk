@@ -124,7 +124,6 @@ fi
 
 # run user-specific setup
 source $OBELISK_ROOT/scripts/user_setup.sh \
-    $([ "$pixi" = true ] && echo "--pixi") \
     $([ "$zed" = true ] && echo "--zed") \
     $([ "$unitree" = true ] && echo "--unitree") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")

@@ -1,11 +1,18 @@
+"""Tests for launch_utils (post-config-string-refactor).
+
+The producer now bundles all Obelisk-internal sections (publishers/subscribers/timers/sim/
+callback_groups) into a single ``obelisk_settings`` ROS parameter whose value is a YAML string.
+User ``params`` and ``params_path`` flow through as separate ROS parameters.
+"""
+
 from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+import yaml
 from launch_ros.actions import LifecycleNode
 
 from obelisk_py.core.utils.launch_utils import (
-    get_component_settings_subdict,
     get_launch_actions_from_node_settings,
     get_parameters_dict,
     load_config_file,
@@ -14,95 +21,93 @@ from obelisk_py.core.utils.launch_utils import (
 
 @pytest.fixture
 def test_config() -> Dict[str, Any]:
-    """Fixture to provide test configuration data."""
+    """Fixture to provide test configuration data (mirrors test_assets/test_config.yaml)."""
     return {
-        "onboard": {
-            "control": [
-                {
-                    "pkg": "test_pkg1",
-                    "executable": "test_controller",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
-                    "publishers": [
-                        {
-                            "ros_parameter": "pub_ctrl_settings1",
-                            "key": "pub1",
-                            "topic": "/test/controller/pub1",
-                            "msg_type": "TestMsg",
-                            "history_depth": 10,
-                            "callback_group": "cbg1",
-                            "non_obelisk": False,
-                        }
-                    ],
-                    "subscribers": [
-                        {
-                            "ros_parameter": "sub_ctrl_settings1",
-                            "key": "sub1",
-                            "topic": "/test/controller/sub1",
-                            "msg_type": "TestMsg",
-                            "history_depth": 5,
-                            "callback_key": "sub_callback1",
-                            "callback_group": "cbg2",
-                            "non_obelisk": False,
-                        }
-                    ],
-                    "timers": [
-                        {
-                            "ros_parameter": "timer_ctrl_settings1",
-                            "key": "timer1",
-                            "timer_period_sec": 0.1,
-                            "callback_group": "cbg1",
-                            "callback_key": "timer_callback1",
-                        }
-                    ],
-                }
-            ],
-            "estimation": [
-                {
-                    "pkg": "test_pkg2",
-                    "executable": "test_estimator",
-                    "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-                }
-            ],
-            "robot": [
-                {
-                    "pkg": "test_pkg3",
-                    "executable": "test_robot",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-                }
-            ],
-            "sensing": [
-                {
-                    "pkg": "test_pkg4",
-                    "executable": "test_sensor1",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-                    "publishers": [
-                        {
-                            "ros_parameter": "pub_sensor_settings1",
-                            "key": "pub1",
-                            "topic": "/test/sensor1/pub1",
-                            "msg_type": "SensorMsg",
-                            "history_depth": 10,
-                            "callback_group": "cbg1",
-                            "non_obelisk": False,
-                        }
-                    ],
-                },
-                {
-                    "pkg": "test_pkg5",
-                    "executable": "test_sensor2",
-                    "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-                    "timers": [
-                        {
-                            "ros_parameter": "timer_sensor_settings1",
-                            "key": "timer1",
-                            "timer_period_sec": 0.01,
-                            "callback_group": "cbg1",
-                            "callback_key": "timer_callback1",
-                        }
-                    ],
-                },
-            ],
-        }
+        "control": [
+            {
+                "pkg": "test_pkg1",
+                "executable": "test_controller",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
+                "publishers": [
+                    {
+                        "ros_parameter": "pub_ctrl_settings1",
+                        "key": "pub1",
+                        "topic": "/test/controller/pub1",
+                        "msg_type": "TestMsg",
+                        "history_depth": 10,
+                        "callback_group": "cbg1",
+                        "non_obelisk": False,
+                    }
+                ],
+                "subscribers": [
+                    {
+                        "ros_parameter": "sub_ctrl_settings1",
+                        "key": "sub1",
+                        "topic": "/test/controller/sub1",
+                        "msg_type": "TestMsg",
+                        "history_depth": 5,
+                        "callback_key": "sub_callback1",
+                        "callback_group": "cbg2",
+                        "non_obelisk": False,
+                    }
+                ],
+                "timers": [
+                    {
+                        "ros_parameter": "timer_ctrl_settings1",
+                        "key": "timer1",
+                        "timer_period_sec": 0.1,
+                        "callback_group": "cbg1",
+                        "callback_key": "timer_callback1",
+                    }
+                ],
+            }
+        ],
+        "estimation": [
+            {
+                "pkg": "test_pkg2",
+                "executable": "test_estimator",
+                "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
+            }
+        ],
+        "robot": [
+            {
+                "pkg": "test_pkg3",
+                "executable": "test_robot",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
+            }
+        ],
+        "sensing": [
+            {
+                "pkg": "test_pkg4",
+                "executable": "test_sensor1",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
+                "publishers": [
+                    {
+                        "ros_parameter": "pub_sensor_settings1",
+                        "key": "pub1",
+                        "topic": "/test/sensor1/pub1",
+                        "msg_type": "SensorMsg",
+                        "history_depth": 10,
+                        "callback_group": "cbg1",
+                        "non_obelisk": False,
+                    }
+                ],
+            },
+            {
+                "pkg": "test_pkg5",
+                "executable": "test_sensor2",
+                "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
+                "timers": [
+                    {
+                        "ros_parameter": "timer_sensor_settings1",
+                        "key": "timer1",
+                        "timer_period_sec": 0.01,
+                        "callback_group": "cbg1",
+                        "callback_key": "timer_callback1",
+                    }
+                ],
+            },
+        ],
     }
 
 
@@ -118,216 +123,192 @@ def test_global_state_node() -> LifecycleNode:
     )
 
 
-def test_load_config_file(test_config: Dict[str, Any]) -> None:
-    """Test the load_config_file function.
+_ASSETS = Path(__file__).parent.parent.parent / "test_assets"
 
-    Args:
-        test_config: Test configuration fixture.
-    """
-    # Test with absolute path
-    abs_path = Path(__file__).parent.parent.parent / "test_assets" / "test_config.yaml"
-    result = load_config_file(abs_path)
+
+def test_load_config_file(test_config: Dict[str, Any]) -> None:
+    """load_config_file reads YAML files (used by the launch entry point)."""
+    result = load_config_file(_ASSETS / "test_config.yaml")
     assert result == test_config
 
-    # Test file not found
     with pytest.raises(FileNotFoundError):
         load_config_file("non_existent.yaml")
 
 
-def test_get_component_settings_subdict(test_config: Dict[str, Any]) -> None:
-    """Test the get_component_settings_subdict function.
+# ---------------------------------------------------------------------- #
+# include: directive — composition tests                                 #
+# ---------------------------------------------------------------------- #
 
-    Args:
-        test_config: Test configuration fixture.
+
+def test_load_config_no_include_returns_same_dict(test_config: Dict[str, Any]) -> None:
+    """A YAML without an `include:` key behaves exactly as before (regression check)."""
+    result = load_config_file(_ASSETS / "test_config.yaml")
+    assert "include" not in result
+    assert result == test_config
+
+
+def test_load_config_with_include_merges_and_strips_directive() -> None:
+    """compose_a includes compose_b which includes compose_c. The include key is dropped from
+    the result, scalars take the outermost value, and list-shaped sections concat in include order
+    (innermost first).
     """
-    node_settings = test_config["onboard"]["control"][0]
+    result = load_config_file(_ASSETS / "compose_a.yaml")
 
-    # Test publishers
-    pub_settings = get_component_settings_subdict(node_settings, "publishers")
-    expected_pub_settings = {
-        "pub_ctrl_settings1": (
-            "key:pub1,topic:/test/controller/pub1,msg_type:TestMsg,history_depth:10,"
-            "callback_group:cbg1,non_obelisk:False"
-        )
-    }
-    assert pub_settings == expected_pub_settings
-
-    # Test subscribers
-    sub_settings = get_component_settings_subdict(node_settings, "subscribers")
-    expected_sub_settings = {
-        "sub_ctrl_settings1": (
-            "key:sub1,topic:/test/controller/sub1,msg_type:TestMsg,history_depth:5,callback_key:sub_callback1,"
-            "callback_group:cbg2,non_obelisk:False"
-        )
-    }
-    assert sub_settings == expected_sub_settings
-
-    # Test timers
-    timer_settings = get_component_settings_subdict(node_settings, "timers")
-    expected_timer_settings = {
-        "timer_ctrl_settings1": "key:timer1,timer_period_sec:0.1,callback_group:cbg1,callback_key:timer_callback1"
-    }
-    assert timer_settings == expected_timer_settings
+    assert "include" not in result
+    # config: outermost (a) wins
+    assert result["config"] == "composed_a"
+    # control: c, b, a appended in that order (deepest include first, outermost last)
+    ctrl_pkgs = [entry["pkg"] for entry in result["control"]]
+    assert ctrl_pkgs == ["c_pkg", "b_pkg", "a_pkg"]
+    # estimation only defined in c, propagates up unchanged
+    assert result["estimation"][0]["pkg"] == "c_est_pkg"
 
 
-def test_get_parameters_dict(test_config: Dict[str, Any]) -> None:
-    """Test the get_parameters_dict function.
-
-    Args:
-        test_config: Test configuration fixture.
+def test_load_config_dict_section_deep_merge() -> None:
+    """joystick is dict-shaped: deep-merge with parent winning on per-key conflicts. b sets `on`
+    and `sub_topic`; a overrides `pub_topic`.
     """
-    node_settings = test_config["onboard"]["control"][0]
+    result = load_config_file(_ASSETS / "compose_a.yaml")
+    assert result["joystick"] == {
+        "on": True,
+        "pub_topic": "/from_a",  # a overrode b's value
+        "sub_topic": "/from_b_sub",  # only b set this; survives
+    }
+
+
+def test_load_config_recursive_includes_three_deep() -> None:
+    """A includes B, B includes C; C's contributions appear in the final result."""
+    result = load_config_file(_ASSETS / "compose_a.yaml")
+    # only c defines an estimation list, and it has one entry
+    assert len(result["estimation"]) == 1
+    assert result["estimation"][0]["executable"] == "c_est"
+
+
+def test_load_config_cycle_detection_raises() -> None:
+    """An include cycle raises RuntimeError mentioning the chain — never hangs."""
+    with pytest.raises(RuntimeError, match="Cycle"):
+        load_config_file(_ASSETS / "compose_cycle_a.yaml")
+
+
+def test_load_config_relative_includes_resolve_to_parent_dir(tmp_path: Path) -> None:
+    """Relative paths in `include:` resolve against the parent file's directory, not the
+    obelisk_ros package share dir.
+    """
+    # Build a small two-file tree in a fresh tmpdir so we know the dir is unrelated to share/.
+    sub = tmp_path / "configs" / "subdir"
+    sub.mkdir(parents=True)
+    (sub / "leaf.yaml").write_text("config: leaf\ncontrol:\n  - pkg: leaf_pkg\n    executable: e\n")
+    (sub / "root.yaml").write_text(
+        "config: root\ninclude:\n  - leaf.yaml\ncontrol:\n  - pkg: root_pkg\n    executable: e\n"
+    )
+
+    result = load_config_file(sub / "root.yaml")
+    assert [c["pkg"] for c in result["control"]] == ["leaf_pkg", "root_pkg"]
+    assert result["config"] == "root"
+
+
+def test_load_config_absolute_include_path_works(tmp_path: Path) -> None:
+    """An absolute path inside `include:` is used as-is."""
+    leaf = tmp_path / "leaf.yaml"
+    leaf.write_text("control:\n  - pkg: abs_pkg\n    executable: e\n")
+    root = tmp_path / "root.yaml"
+    root.write_text(f"include:\n  - {leaf}\n")
+
+    result = load_config_file(root)
+    assert result["control"][0]["pkg"] == "abs_pkg"
+
+
+def test_load_config_dummy_composed_resolves_to_full_stack() -> None:
+    """End-to-end smoke test: dummy_composed.yaml (which uses `include:`) loads into a dict that
+    looks like a single-file config — control + estimation + robot + joystick all present, no
+    leftover `include:` key."""
+    composed = load_config_file("dummy_composed.yaml")
+    assert "include" not in composed
+    assert composed["config"] == "dummy_composed"
+    assert len(composed["control"]) == 1
+    assert composed["control"][0]["pkg"] == "obelisk_control_cpp"
+    assert len(composed["estimation"]) == 1
+    assert len(composed["robot"]) == 1
+    assert composed["robot"][0]["is_simulated"] is True
+    assert composed["joystick"]["on"] is True
+
+
+def test_get_parameters_dict_bundles_obelisk_sections(test_config: Dict[str, Any]) -> None:
+    """A controller node's settings collapse into a single obelisk_settings YAML string."""
+    node_settings = test_config["control"][0]
     parameters_dict = get_parameters_dict(node_settings)
 
-    expected_dict = {
-        "callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup,cbg2:ReentrantCallbackGroup",
-        "pub_ctrl_settings1": (
-            "key:pub1,topic:/test/controller/pub1,msg_type:TestMsg,history_depth:10,callback_group:cbg1,"
-            "non_obelisk:False"
-        ),
-        "sub_ctrl_settings1": (
-            "key:sub1,topic:/test/controller/sub1,msg_type:TestMsg,history_depth:5,callback_key:sub_callback1,"
-            "callback_group:cbg2,non_obelisk:False"
-        ),
-        "timer_ctrl_settings1": "key:timer1,timer_period_sec:0.1,callback_group:cbg1,callback_key:timer_callback1",
-    }
+    assert "obelisk_settings" in parameters_dict
+    bundled = yaml.safe_load(parameters_dict["obelisk_settings"])
 
-    assert parameters_dict == expected_dict
+    # callback_groups round-trip
+    assert bundled["callback_groups"] == {
+        "cbg1": "MutuallyExclusiveCallbackGroup",
+        "cbg2": "ReentrantCallbackGroup",
+    }
+    # publisher entry has key + topic + ros_parameter dropped
+    assert len(bundled["publishers"]) == 1
+    pub = bundled["publishers"][0]
+    assert pub["key"] == "pub1"
+    assert pub["topic"] == "/test/controller/pub1"
+    assert "ros_parameter" not in pub
+    # timer + subscriber too
+    assert bundled["timers"][0]["timer_period_sec"] == 0.1
+    assert bundled["subscribers"][0]["callback_group"] == "cbg2"
+
+
+def test_get_parameters_dict_derives_key_from_ros_parameter() -> None:
+    """An entry that has only ``ros_parameter`` (no ``key``) gets ``key`` derived by stripping ``_setting``."""
+    node_settings = {
+        "publishers": [
+            {"ros_parameter": "pub_ctrl_setting", "topic": "/foo"},
+        ]
+    }
+    bundled = yaml.safe_load(get_parameters_dict(node_settings)["obelisk_settings"])
+    assert bundled["publishers"][0]["key"] == "pub_ctrl"
+
+
+def test_get_parameters_dict_user_params_passthrough() -> None:
+    """User-defined ``params`` and ``params_path`` are forwarded as separate ROS parameters."""
+    node_settings = {
+        "params_path": "/some/path.txt",
+        "params": {"user_int": 7, "user_str": "x"},
+    }
+    parameters_dict = get_parameters_dict(node_settings)
+    assert parameters_dict["params_path"] == "/some/path.txt"
+    assert parameters_dict["user_int"] == 7
+    assert parameters_dict["user_str"] == "x"
+
+
+def test_get_parameters_dict_empty_node() -> None:
+    """A node with only callback_groups still produces obelisk_settings."""
+    minimal = {"pkg": "p", "executable": "e", "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"}}
+    parameters_dict = get_parameters_dict(minimal)
+    bundled = yaml.safe_load(parameters_dict["obelisk_settings"])
+    assert bundled == {"callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"}}
+
+
+def test_get_parameters_dict_handles_none() -> None:
+    """get_parameters_dict on None returns an empty dict."""
+    assert get_parameters_dict(None) == {}
 
 
 def test_get_launch_actions_from_node_settings(
     test_config: Dict[str, Any], test_global_state_node: LifecycleNode
 ) -> None:
-    """Test the get_launch_actions_from_node_settings function.
-
-    Args:
-        test_config: Test configuration fixture.
-        test_global_state_node: Dummy global state node fixture.
-    """
-    node_settings = test_config["onboard"]["control"]
+    """Each node setting becomes one LifecycleNode plus its lifecycle handlers (8 actions per node)."""
+    node_settings = test_config["control"]
     launch_actions = get_launch_actions_from_node_settings(node_settings, "control", test_global_state_node)
-
     assert len(launch_actions) == 8  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)
 
-    # Test for sensors (multiple nodes)
-    sensors_settings = [
-        {
-            "pkg": "test_pkg1",
-            "executable": "test_sensor1",
-            "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-            "publishers": [
-                {
-                    "ros_parameter": "pub_sensor_settings1",
-                    "key": "pub1",
-                    "topic": "/test/sensor1/pub1",
-                    "msg_type": "SensorMsg",
-                    "history_depth": 10,
-                    "callback_group": "cbg1",
-                    "non_obelisk": False,
-                }
-            ],
-        },
-        {
-            "pkg": "test_pkg2",
-            "executable": "test_sensor2",
-            "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-            "timers": [
-                {
-                    "ros_parameter": "timer_sensor_settings1",
-                    "key": "timer1",
-                    "timer_period_sec": 0.01,
-                    "callback_group": "cbg1",
-                    "callback_key": "timer_callback1",
-                }
-            ],
-        },
-    ]
-
-    launch_actions = get_launch_actions_from_node_settings(sensors_settings, "sensing", test_global_state_node)
-
-    assert len(launch_actions) == 16  # noqa: PLR2004
-    assert isinstance(launch_actions[0], LifecycleNode)
-    assert isinstance(launch_actions[8], LifecycleNode)
-
-
-def test_get_component_settings_subdict_sensors(test_config: Dict[str, Any]) -> None:
-    """Test the get_component_settings_subdict function for sensors.
-
-    Args:
-        test_config: Test configuration fixture.
-    """
-    sensors_settings = test_config["onboard"]["sensing"]
-
-    # Test publishers for the first sensor
-    pub_settings = get_component_settings_subdict(sensors_settings[0], "publishers")
-    expected_pub_settings = {
-        "pub_sensor_settings1": (
-            "key:pub1,topic:/test/sensor1/pub1,msg_type:SensorMsg,history_depth:10,callback_group:cbg1,"
-            "non_obelisk:False"
-        )
-    }
-    assert pub_settings == expected_pub_settings
-
-    # Test timers for the second sensor
-    timer_settings = get_component_settings_subdict(sensors_settings[1], "timers")
-    expected_timer_settings = {
-        "timer_sensor_settings1": "key:timer1,timer_period_sec:0.01,callback_group:cbg1,callback_key:timer_callback1"
-    }
-    assert timer_settings == expected_timer_settings
-
-
-def test_get_parameters_dict_sensors(test_config: Dict[str, Any]) -> None:
-    """Test the get_parameters_dict function for sensors.
-
-    Args:
-        test_config: Test configuration fixture.
-    """
-    sensors_settings = test_config["onboard"]["sensing"]
-
-    # Test parameters for the first sensor
-    parameters_dict1 = get_parameters_dict(sensors_settings[0])
-    expected_dict1 = {
-        "callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup",
-        "pub_sensor_settings1": (
-            "key:pub1,topic:/test/sensor1/pub1,msg_type:SensorMsg,history_depth:10,callback_group:cbg1,"
-            "non_obelisk:False"
-        ),
-    }
-    assert parameters_dict1 == expected_dict1
-
-    # Test parameters for the second sensor
-    parameters_dict2 = get_parameters_dict(sensors_settings[1])
-    expected_dict2 = {
-        "callback_group_settings": "cbg1:ReentrantCallbackGroup",
-        "timer_sensor_settings1": "key:timer1,timer_period_sec:0.01,callback_group:cbg1,callback_key:timer_callback1",
-    }
-    assert parameters_dict2 == expected_dict2
-
-
-def test_get_parameters_dict_empty_node(test_config: Dict[str, Any]) -> None:
-    """Test the get_parameters_dict function for a node with minimal settings.
-
-    Args:
-        test_config: Test configuration fixture.
-    """
-    minimal_node_settings = {
-        "pkg": "test_pkg1",
-        "executable": "test_minimal",
-        "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-    }
-    parameters_dict = get_parameters_dict(minimal_node_settings)
-    expected_dict = {"callback_group_settings": "cbg1:MutuallyExclusiveCallbackGroup"}
-    assert parameters_dict == expected_dict
-
 
 def test_get_launch_actions_from_node_settings_invalid_type(test_global_state_node: LifecycleNode) -> None:
-    """Test the get_launch_actions_from_node_settings function with an invalid node type."""
-    invalid_node_settings = {
-        "pkg": "test_pkg1",
-        "executable": "test_invalid",
+    """An unknown node type asserts."""
+    invalid = {
+        "pkg": "p",
+        "executable": "e",
         "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
     }
-
     with pytest.raises(AssertionError):
-        get_launch_actions_from_node_settings(invalid_node_settings, "invalid_type", test_global_state_node)
+        get_launch_actions_from_node_settings(invalid, "invalid_type", test_global_state_node)

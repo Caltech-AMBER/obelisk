@@ -28,20 +28,17 @@ def launch_args_setup(context: launch.LaunchContext, *args: List, **kwargs: Dict
 
     # expose path to config file
     config_file_path = LaunchConfiguration("config_file_path")
-    device_name = LaunchConfiguration("device_name")
     auto_start = LaunchConfiguration("auto_start")
     bag = LaunchConfiguration("bag")
 
     config_file_path_arg = DeclareLaunchArgument("config_file_path")
-    device_name_arg = DeclareLaunchArgument("device_name")
     auto_start_arg = DeclareLaunchArgument("auto_start", default_value="True")
-    bag_arg = DeclareLaunchArgument("bag", default_value="True")
+    bag_arg = DeclareLaunchArgument("bag", default_value="False")
 
-    launch_actions += [config_file_path_arg, device_name_arg, auto_start_arg, bag_arg]
+    launch_actions += [config_file_path_arg, auto_start_arg, bag_arg]
     launch_args.update(
         {
             "config_file_path": config_file_path,
-            "device_name": device_name,
             "auto_start": auto_start,
             "bag": bag,
         }
@@ -57,7 +54,6 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
 
     # parsing the launch arguments
     config_file_path = context.launch_configurations.get("config_file_path")
-    device_name = context.launch_configurations.get("device_name")
     auto_start = context.launch_configurations.get("auto_start")
     auto_start = "true" if auto_start is None else auto_start.lower()
     bag = context.launch_configurations.get("bag")
@@ -65,8 +61,10 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
 
     full_config_dict = load_config_file(config_file_path)
     config_name = full_config_dict["config"]
-    obelisk_config = full_config_dict[device_name]  # grab the settings associated with the device
-    logger.info(f"Bringing up the Obelisk nodes on device {device_name}...")
+    # The full config is a flat dict at the top level: keys include `config` (the run name)
+    # plus any of `control`, `estimation`, `robot`, `sensing`, `viz`, `joystick`.
+    obelisk_config = full_config_dict
+    logger.info(f"Bringing up the Obelisk nodes for config '{config_name}'...")
 
     # checks - we must at least have these 3 components
     # New -> no longer require control/estimation/robot

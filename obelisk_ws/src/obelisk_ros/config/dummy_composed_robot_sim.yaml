@@ -1,0 +1,49 @@
+# Sim-mode robot backend for the dummy stack. Pairs with dummy_composed_base.yaml via include.
+robot:
+  - is_simulated: True
+    pkg: obelisk_sim_cpp
+    executable: obelisk_mujoco_robot
+    params:
+      ic_keyframe: ic
+      height_map_grid_size: [1., 1.]
+      height_map_grid_spacing: 0.1
+      height_map_geom_group: [0]
+    subscribers:
+      - ros_parameter: sub_ctrl_setting
+        topic: /obelisk/dummy/ctrl
+        msg_type: PositionSetpoint
+        history_depth: 10
+        callback_group: None
+    sim:
+      - ros_parameter: mujoco_setting
+        num_steps_per_viz: 5
+        robot_pkg: dummy_bot
+        model_xml_path: dummy.xml
+        sensor_settings:
+        - topic: /obelisk/dummy/joint_encoders
+          dt: 0.001
+          msg_type: ObkJointEncoders
+          sensor_names:
+            joint_pos: jointpos
+            joint_vel: jointvel
+        - topic: /obelisk/dummy/imu
+          dt: 0.002
+          msg_type: Imu
+          sensor_names:
+            tip_acc_sensor: accelerometer
+            tip_gyro_sensor: gyro
+            tip_frame_sensor: framequat
+        - topic: /obelisk/dummy/framepose
+          dt: 0.002
+          msg_type: PoseStamped
+          sensor_names:
+            tip_pos_sensor: framepos
+            tip_orientation_sensor: framequat
+        - topic: /obelisk/dummy/odom
+          dt: 0.005
+          msg_type: Odometry
+          sensor_names:
+            tip_pos_sensor: framepos
+            tip_orientation_sensor: framequat
+            tip_velocimeter: velocimeter
+            tip_gyro_sensor: gyro

@@ -6,9 +6,16 @@ namespace obelisk {
     class ObeliskEstimatorTester : public ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState> {
       public:
         ObeliskEstimatorTester() : ObeliskEstimator("obelisk_estimator_tester") {
-            this->set_parameter(rclcpp::Parameter("timer_est_setting", "timer_period_sec:1"));
-            this->set_parameter(rclcpp::Parameter("pub_est_setting", "topic:topic1"));
-            this->set_parameter(rclcpp::Parameter("callback_group_settings", ""));
+            const std::string settings = R"(
+publishers:
+  - key: pub_est
+    topic: topic1
+    history_depth: 10
+timers:
+  - key: timer_est
+    timer_period_sec: 1.0
+)";
+            this->set_parameter(rclcpp::Parameter("obelisk_settings", settings));
         }
 
         void Configure() {

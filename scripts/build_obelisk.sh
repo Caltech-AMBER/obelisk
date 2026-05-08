@@ -1,6 +1,5 @@
 #!/bin/bash
 
-leap=false
 zed=false
 verbose=false
 
@@ -18,7 +17,7 @@ for arg in "$@"; do
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--leap] [--zed] [--verbose]"
+            echo "Usage: $0 [--zed] [--verbose]"
             exit 1
             ;;
     esac
@@ -37,6 +36,13 @@ fi
 
 # building Obelisk packages
 OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
+
+# Ensure the local obelisk_py is the one Python imports. The Docker image installs obelisk_py from
+# GitHub main during image build (because OBELISK_ROOT isn't bind-mounted yet), so without this
+# step launch_utils.py would be stale relative to the live source tree.
+echo -e "\033[1;32mInstalling obelisk_py editable from local source...\033[0m"
+pip install -e $OBELISK_ROOT/obelisk/python --quiet || \
+    pip install --user -e $OBELISK_ROOT/obelisk/python --quiet
 
 echo -e "\033[1;32mBuilding Obelisk ROS messages...\033[0m"
 curr_dir=$(pwd)

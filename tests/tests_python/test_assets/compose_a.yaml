@@ -1,0 +1,9 @@
+# Composition unit-test fixture: top-level entry that includes B and adds a control entry.
+config: composed_a
+include:
+  - compose_b.yaml
+control:
+  - pkg: a_pkg
+    executable: a_ctrl
+joystick:
+  pub_topic: /from_a

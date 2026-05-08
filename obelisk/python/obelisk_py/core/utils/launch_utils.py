@@ -1,163 +1,209 @@
 import os
-import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import launch
 import launch_ros
 import lifecycle_msgs.msg
+import yaml
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, IncludeLaunchDescription, RegisterEventHandler
-from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch.actions import EmitEvent, RegisterEventHandler
 from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
 
+# Sections of a node's settings dict that Obelisk owns and bundles into the single
+# `obelisk_settings` ROS parameter at launch time.
+_OBELISK_SETTINGS_KEYS = ("publishers", "subscribers", "timers", "sim", "callback_groups")
+
 
 def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
-    """Loads an Obelisk configuration file.
+    """Loads an Obelisk configuration file, recursively expanding ``include:`` directives.
+
+    The file at ``file_path`` is the *primary* config: an absolute path is used as-is, otherwise
+    the path resolves against the ``config/`` subdirectory of an installed ROS2 package (default
+    ``obelisk_ros``).
+
+    If the loaded YAML has a top-level ``include:`` key (a list of paths), each entry is loaded
+    recursively and merged into a single dict before the parent's own keys are applied. Paths inside
+    an ``include:`` resolve **relative to the directory of the file containing the include**;
+    absolute paths still pass through unchanged. The ``include:`` key is stripped from the result.
+
+    Merge rules (parent = file containing the include, children = files it includes):
+      * List-shaped sections (``control``, ``estimation``, ``robot``, ``sensing``) **concatenate**
+        in include order, with the parent's entries appended last.
+      * Dict-shaped sections (``joystick``, ``viz``) **deep-merge**, with parent values winning on
+        scalar conflicts.
+      * Scalar / other keys (e.g. ``config``, ``params_path``): parent wins.
 
     Parameters:
-        file_path: the path to the configuration file, either absolute or relative to the 'config' directory of an
-            installed ROS2 package.
-        package_name: the name of the ROS2 package that contains the configuration file. If not provided, the
-            'obelisk_ros' package is assumed.
+        file_path: path to the configuration file.
+        package_name: the ROS2 package whose ``config/`` dir to resolve relative ``file_path``
+            against. If None, ``obelisk_ros`` is used.
 
     Returns:
-        config: A dictionary containing the configuration settings.
+        config: A dictionary containing the merged configuration settings.
+
+    Raises:
+        FileNotFoundError: if the file (or any include) cannot be located/parsed.
+        RuntimeError: if the include graph contains a cycle.
     """
+    abs_file_path = _resolve_primary_config_path(file_path, package_name)
+    return _load_config_recursive(abs_file_path, stack=[])
+
+
+def _resolve_primary_config_path(file_path: Union[str, Path], package_name: Optional[str]) -> Path:
+    """Resolve the primary (top-level) config path: absolute as-is, else under <pkg>/share/config/."""
     file_path = str(file_path)
     if not file_path.startswith("/"):
         try:
             obk_ros_dir = get_package_share_directory("obelisk_ros" if package_name is None else package_name)
-            abs_file_path = Path(obk_ros_dir) / "config" / file_path
         except Exception as e:
             raise FileNotFoundError(
                 f"Could not find package {package_name}. If you supply a relative path to the config file, it must lie "
                 "in a subdirectory named 'config' of either the obelisk_ros package or some other ROS2 package of your "
                 "choice. Otherwise, you can supply an absolute path to the config file."
             ) from e
-    else:
-        abs_file_path = Path(file_path)
+        return Path(obk_ros_dir) / "config" / file_path
+    return Path(file_path)
 
-    yaml = YAML(typ="safe")
+
+def _load_config_recursive(abs_file_path: Path, stack: List[Path]) -> Dict:
+    """Load a single YAML and recursively expand any ``include:`` it has, merging the results.
+
+    ``stack`` tracks the chain of resolved-absolute paths so we can detect include cycles.
+    """
+    abs_file_path = abs_file_path.resolve()
+    if abs_file_path in stack:
+        chain = " -> ".join(str(p) for p in stack + [abs_file_path])
+        raise RuntimeError(f"Cycle detected in obelisk config include chain: {chain}")
+
+    loader = YAML(typ="safe")
     try:
-        return yaml.load(abs_file_path)
+        raw = loader.load(abs_file_path)
     except Exception as e:
         raise FileNotFoundError(f"Could not load a configuration file at {abs_file_path}!") from e
 
+    # An empty or null YAML file should be treated as an empty mapping rather than failing.
+    if raw is None:
+        raw = {}
 
-def get_component_settings_subdict(node_settings: Dict, subdict_name: str) -> Dict:
-    """Returns a subdictionary of the component settings associated with an Obelisk node.
+    includes = raw.pop("include", []) or []
+    if not isinstance(includes, list):
+        raise ValueError(
+            f"`include:` in {abs_file_path} must be a list of YAML paths; got {type(includes).__name__}."
+        )
 
-    Parameters:
-        node_settings: the settings dictionary of an Obelisk node.
-        subdict_name: the name of the subdictionary to extract from the node settings.
+    new_stack = stack + [abs_file_path]
+    base_dir = abs_file_path.parent
 
-    Returns:
-        A dictionary with the ROS parameter names as keys and the corresponding settings as values.
+    merged: Dict[str, Any] = {}
+    for inc in includes:
+        inc_path = Path(str(inc))
+        # Includes are resolved relative to the directory of the file containing the include.
+        # Absolute paths pass through unchanged.
+        if not inc_path.is_absolute():
+            inc_path = base_dir / inc_path
+        included = _load_config_recursive(inc_path, new_stack)
+        merged = _merge_obelisk_configs(merged, included)
+
+    # Parent's own keys take precedence over included ones.
+    return _merge_obelisk_configs(merged, raw)
+
+
+# Top-level sections whose values are lists of complete node entries; concatenated when merging.
+_LIST_SECTIONS = ("control", "estimation", "robot", "sensing")
+
+
+def _merge_obelisk_configs(base: Dict, override: Dict) -> Dict:
+    """Merge ``override`` onto ``base`` according to the obelisk schema rules.
+
+    List-shaped sections concat (with override's entries appended); dicts deep-merge with override
+    winning on scalar conflicts; everything else: override wins.
     """
-    component_settings_subdict = {}
-
-    # iterate over the settings for each component - if doesn't exist, make a new dict entry, else append it
-    for component_settings in node_settings[subdict_name]:
-        if component_settings["ros_parameter"] not in component_settings_subdict:
-            component_settings_subdict[component_settings["ros_parameter"]] = [
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
-            ]
+    out: Dict[str, Any] = dict(base)
+    for k, v in override.items():
+        if k in _LIST_SECTIONS and isinstance(out.get(k), list) and isinstance(v, list):
+            out[k] = list(out[k]) + list(v)
+        elif isinstance(out.get(k), dict) and isinstance(v, dict):
+            out[k] = _deep_merge(out[k], v)
         else:
-            component_settings_subdict[component_settings["ros_parameter"]].append(
-                ",".join([f"{k}:{v}" for k, v in component_settings.items() if k != "ros_parameter"])
-            )
-
-    # if there is only one setting, don't return a list, just a single element
-    for ros_parameter, pub_settings_list in component_settings_subdict.items():
-        if len(pub_settings_list) == 1:
-            component_settings_subdict[ros_parameter] = pub_settings_list[0]
-
-    return component_settings_subdict
+            out[k] = v
+    return out
 
 
-def get_component_sim_settings_subdict(node_settings: Dict) -> Dict:
-    """Returns a subdictionary of the simulation settings associated with an Obelisk node.
+def _deep_merge(a: Dict, b: Dict) -> Dict:
+    """Recursive dict merge; ``b`` wins on scalar conflicts. Returns a new dict."""
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(out.get(k), dict) and isinstance(v, dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
 
-    Parameters:
-        node_settings: the settings dictionary of an Obelisk node.
 
-    Returns:
-        A dictionary with the ROS parameter names as keys and the corresponding settings as values.
+def _strip_ros_parameter(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a shallow copy of an entry with ``ros_parameter`` dropped, deriving ``key`` if needed.
+
+    The pre-refactor YAML schema named each pub/sub/timer entry by ``ros_parameter`` (e.g.
+    ``pub_ctrl_setting``). The new schema uses ``key`` (e.g. ``pub_ctrl``). For YAMLs that haven't
+    been migrated yet, derive ``key`` by stripping a trailing ``_setting``.
     """
-    sim_settings_dict = {}
-    for sim_settings in node_settings["sim"]:
-        # convert the dictionary of simulation settings to a string, excluding 'ros_parameter'
-        sim_settings_strs = []
-        for k, v in sim_settings.items():
-            if k != "ros_parameter":
-                sim_settings_strs.append(f"{k}:{v}")
-        sim_settings_str = ",".join(sim_settings_strs).replace(" ", "")
+    cleaned = {k: v for k, v in entry.items() if k != "ros_parameter"}
+    if "key" not in cleaned and "ros_parameter" in entry:
+        rp = entry["ros_parameter"]
+        if isinstance(rp, str):
+            cleaned["key"] = rp[: -len("_setting")] if rp.endswith("_setting") else rp
+    return cleaned
 
-        # replace colons in 'sensor_names':{...} with '$', delete curly braces only within the outermost braces
-        def _replace_colons_delete_inner_braces(match: re.Match) -> str:
-            dollar_str = match.group(0).replace(":", "$")
-            dollar_str = dollar_str.replace("$", ":", 1)
 
-            # find the position of the outermost braces
-            open_brace = dollar_str.find("{")
-            close_brace = dollar_str.rfind("}")
+def _build_obelisk_settings(node_settings: Dict) -> str:
+    """Bundle the publishers / subscribers / timers / callback_groups sections into a single YAML string.
 
-            if open_brace != -1 and close_brace != -1 and open_brace < close_brace:
-                # keep content before the first brace and after the last brace
-                prefix = dollar_str[: open_brace + 1]
-                suffix = dollar_str[close_brace:]
+    Returns the empty string if the node has no Obelisk-internal sections (caller can then skip
+    setting the ``obelisk_settings`` ROS parameter entirely if desired, though setting it to an
+    empty string is also valid — the node treats empty as "no components").
 
-                # remove braces from the inner content
-                inner_content = dollar_str[open_brace + 1 : close_brace]
-                inner_content_no_braces = inner_content.replace("{", "").replace("}", "")
+    Note: ``sim`` entries are *not* bundled here. They are emitted as separate ROS parameters
+    (one per ``ros_parameter`` in the entry, e.g. ``mujoco_setting``) so that simulator nodes can
+    read their dedicated setting independently. Each sim entry's value is YAML-encoded.
+    """
+    bundle: Dict[str, Any] = {}
+    for section in ("publishers", "subscribers", "timers"):
+        if section in node_settings and node_settings[section] is not None:
+            bundle[section] = [_strip_ros_parameter(entry) for entry in node_settings[section]]
+    if "callback_groups" in node_settings and node_settings["callback_groups"] is not None:
+        bundle["callback_groups"] = dict(node_settings["callback_groups"])
+    if not bundle:
+        return ""
+    return yaml.safe_dump(bundle, default_flow_style=False, sort_keys=False)
 
-                return f"{prefix}{inner_content_no_braces}{suffix}"
-            else:
-                # if we can't find matching outermost braces, return the original string (SHOULD NEVER HAPPEN)
-                return dollar_str
 
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_colons_delete_inner_braces, sim_settings_str)
+def _build_sim_parameters(sim_entries: List[Dict[str, Any]]) -> Dict[str, str]:
+    """Emit one YAML-string ROS parameter per sim entry, named by its ``ros_parameter`` field.
 
-        # replace commas in 'sensor_names':{...} with '&', remove outermost braces
-        def _replace_commas_delete_outer_braces(match: re.Match) -> str:
-            return match.group(0).replace(",", "&").replace("{", "").replace("}", "")
-
-        sim_settings_str = re.sub(r"'sensor_names':\{[^\}]*\}", _replace_commas_delete_outer_braces, sim_settings_str)
-
-        # remove single quotes
-        sim_settings_str = sim_settings_str.replace("'", "")
-
-        # replace commas between matching curly braces with "|"
-        def _replace_commas_between_curly_braces(match: re.Match) -> str:
-            return match.group(0).replace(",", "|")
-
-        sim_settings_str = re.sub(r"\{[^{}]*\}", _replace_commas_between_curly_braces, sim_settings_str)
-
-        # replace commas in 'sensor_settings':[...,...] with "+"
-        def _replace_commas_in_sensor_settings(match: re.Match) -> str:
-            return match.group(0).replace(",", "+")
-
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_commas_in_sensor_settings, sim_settings_str)
-
-        # replace colons inside 'sensor_settings':[...:...] with "="
-        def _replace_colons_in_sensor_settings(match: re.Match) -> str:
-            content = match.group(0)
-            return re.sub(r"(?<=\[).*?(?=\])", lambda m: m.group(0).replace(":", "="), content)
-
-        sim_settings_str = re.sub(r"sensor_settings:\[.*?\]", _replace_colons_in_sensor_settings, sim_settings_str)
-
-        # add the formatted string to the dictionary with the ROS parameter as the key
-        sim_settings_dict[sim_settings["ros_parameter"]] = sim_settings_str
-
-    return sim_settings_dict
+    Each entry's content (minus the ``ros_parameter`` key itself) is yaml.safe_dumped and used as
+    the value of the ROS parameter. The simulator node parses the YAML in its on_configure.
+    """
+    out: Dict[str, str] = {}
+    for entry in sim_entries:
+        if "ros_parameter" not in entry:
+            raise KeyError("Each sim entry must specify a `ros_parameter` for the simulator's settings parameter.")
+        param_name = entry["ros_parameter"]
+        body = {k: v for k, v in entry.items() if k != "ros_parameter"}
+        out[param_name] = yaml.safe_dump(body, default_flow_style=False, sort_keys=False)
+    return out
 
 
 def get_parameters_dict(node_settings: Dict) -> Dict:
-    """Returns the parameters dictionary corresponding to the settings of a node in the Obelisk architecture.
+    """Returns the parameters dictionary corresponding to the settings of a node.
+
+    The Obelisk-internal sections (``publishers``, ``subscribers``, ``timers``, ``sim``,
+    ``callback_groups``) are bundled into a single ``obelisk_settings`` ROS parameter whose value is
+    a YAML string. User-defined ``params`` and ``params_path`` entries flow through as separate ROS
+    parameters, unchanged.
 
     Parameters:
         node_settings: the settings dictionary of an Obelisk node.
@@ -168,32 +214,20 @@ def get_parameters_dict(node_settings: Dict) -> Dict:
     if node_settings is None:
         return {}
 
-    # parse settings for each component
-    if "callback_groups" in node_settings:
-        callback_group_settings = ",".join([f"{k}:{v}" for k, v in node_settings["callback_groups"].items()])
-    else:
-        callback_group_settings = None
-    pub_settings_dict = (
-        get_component_settings_subdict(node_settings, "publishers") if "publishers" in node_settings else {}
-    )
-    sub_settings_dict = (
-        get_component_settings_subdict(node_settings, "subscribers") if "subscribers" in node_settings else {}
-    )
-    timer_settings_dict = get_component_settings_subdict(node_settings, "timers") if "timers" in node_settings else {}
-    sim_settings_dict = get_component_sim_settings_subdict(node_settings) if "sim" in node_settings else {}
+    parameters_dict: Dict[str, Any] = {}
 
-    # create parameters dictionary for a node by combining all the settings
-    parameters_dict = (
-        {"callback_group_settings": callback_group_settings} if callback_group_settings is not None else {}
-    )
+    bundled = _build_obelisk_settings(node_settings)
+    if bundled:
+        parameters_dict["obelisk_settings"] = bundled
+
+    if "sim" in node_settings and node_settings["sim"] is not None:
+        parameters_dict.update(_build_sim_parameters(node_settings["sim"]))
+
     if "params_path" in node_settings:
         parameters_dict["params_path"] = node_settings["params_path"]
     if "params" in node_settings:
         parameters_dict.update(node_settings["params"])
-    parameters_dict.update(pub_settings_dict)
-    parameters_dict.update(sub_settings_dict)
-    parameters_dict.update(timer_settings_dict)
-    parameters_dict.update(sim_settings_dict)
+
     return parameters_dict
 
 
@@ -315,44 +349,28 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
         for i, viz_node_settings in enumerate(node_settings):
             launch_actions += _single_viz_node_launch_actions(viz_node_settings, suffix=i)
 
-        if "viz_tool" not in settings or settings["viz_tool"] == "rviz":
-            # Setup Rviz
-            if "rviz_config" not in settings.keys():
-                launch_actions += [
-                    Node(
-                        package="rviz2",
-                        executable="rviz2",
-                        name="rviz2",
-                        output="screen",
-                    )
-                ]
-            else:
-                rviz_file_name = "rviz/" + settings["rviz_config"]
-                rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
-                launch_actions += [
-                    Node(
-                        package="rviz2",
-                        executable="rviz2",
-                        name="rviz2",
-                        output="screen",
-                        arguments=["-d", rviz_config_path],
-                    )
-                ]
-        elif settings["viz_tool"] == "foxglove":
-            # setup fox glove
-            xml_launch_file = os.path.join(
-                get_package_share_directory("foxglove_bridge"), "launch", "foxglove_bridge_launch.xml"
-            )
+        # Setup Rviz
+        if "rviz_config" not in settings.keys():
             launch_actions += [
-                IncludeLaunchDescription(
-                    FrontendLaunchDescriptionSource(xml_launch_file),
-                    launch_arguments={
-                        "capabilities": "[clientPublish,parametersSubscribe,services,connectionGraph,assets]"
-                    }.items(),
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
                 )
             ]
         else:
-            raise RuntimeError("Invalid setting for `viz_tool`. Must be either `rviz` of `foxglove`.")
+            rviz_file_name = "rviz/" + settings["rviz_config"]
+            rviz_config_path = os.path.join(get_package_share_directory(settings["rviz_pkg"]), rviz_file_name)
+            launch_actions += [
+                Node(
+                    package="rviz2",
+                    executable="rviz2",
+                    name="rviz2",
+                    output="screen",
+                    arguments=["-d", rviz_config_path],
+                )
+            ]
 
     return launch_actions
 

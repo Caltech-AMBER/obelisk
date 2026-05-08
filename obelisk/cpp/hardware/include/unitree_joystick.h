@@ -181,8 +181,8 @@ namespace obelisk {
 
 
             // Register publishers
-            this->RegisterObkPublisher<unitree_fsm_msg>("pub_exec_fsm_setting", pub_exec_fsm_key_);
-            this->RegisterObkPublisher<sensor_msgs::msg::Joy>("pub_joy_passthrough_setting", pub_joy_passthrough_key_);
+            this->RegisterObkPublisher<unitree_fsm_msg>(pub_exec_fsm_key_);
+            this->RegisterObkPublisher<sensor_msgs::msg::Joy>(pub_joy_passthrough_key_);
             RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick node has been initialized.");
         }
         
@@ -424,8 +424,8 @@ namespace obelisk {
         };
 
         // Publisher key
-        const std::string pub_exec_fsm_key_ = "pub_exec_fsm_key";
-        const std::string pub_joy_passthrough_key_ = "pub_joy_passthrough_key";
+        const std::string pub_exec_fsm_key_ = "pub_exec_fsm";
+        const std::string pub_joy_passthrough_key_ = "pub_joy_passthrough";
 
         // Hold velocity bounds
         float v_x_scale_;

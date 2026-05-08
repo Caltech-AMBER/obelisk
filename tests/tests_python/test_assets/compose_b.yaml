@@ -1,0 +1,11 @@
+# Composition unit-test fixture: middle layer that includes C and adds another control entry.
+config: composed_b
+include:
+  - compose_c.yaml
+control:
+  - pkg: b_pkg
+    executable: b_ctrl
+joystick:
+  on: True
+  pub_topic: /from_b
+  sub_topic: /from_b_sub

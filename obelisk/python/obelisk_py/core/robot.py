@@ -20,10 +20,9 @@ class ObeliskRobot(ABC, ObeliskNode):
         """Initialize the Obelisk robot."""
         super().__init__(node_name)
         self.register_obk_subscription(
-            "sub_ctrl_setting",
-            self.apply_control,
-            ctrl_msg_type,
             key="sub_ctrl",
+            callback=self.apply_control,
+            msg_type=ctrl_msg_type,
         )
 
     @abstractmethod
@@ -51,18 +50,8 @@ class ObeliskSimRobot(ObeliskRobot):
     def __init__(self, node_name: str, ctrl_msg_type: Type) -> None:
         """Initialize the Obelisk sim robot."""
         super().__init__(node_name, ctrl_msg_type)
-        self.register_obk_timer(
-            "timer_true_sim_state_setting",
-            self.publish_true_sim_state,
-            key="timer_true_sim_state",
-            default_config_str="",
-        )
-        self.register_obk_publisher(
-            "pub_true_sim_state_setting",
-            osm.TrueSimState,
-            key="pub_true_sim_state",
-            default_config_str="",
-        )
+        self.register_obk_timer(key="timer_true_sim_state", callback=self.publish_true_sim_state)
+        self.register_obk_publisher(key="pub_true_sim_state", msg_type=osm.TrueSimState)
         self.shared_ctrl = None
 
     def _set_shared_ctrl(self, ctrl: List[float]) -> None:
@@ -89,8 +78,8 @@ class ObeliskSimRobot(ObeliskRobot):
         """Configure the simulation."""
         super().on_configure(state)
 
-        # checking the settings of the true sim state pub/timer
-        if "publisher_true_sim_state" in self.obk_publishers and "timer_true_sim_state" in self.obk_timers:
+        # checking the settings of the true sim state pub/timer (optional in the YAML)
+        if "pub_true_sim_state" in self.obk_publishers and "timer_true_sim_state" in self.obk_timers:
             assert (
                 self.obk_timers["timer_true_sim_state"].callback == self.publish_true_sim_state
             ), f"Timer callback must be publish_true_sim_state! Is {self.obk_timers['timer_true_sim_state'].callback}."

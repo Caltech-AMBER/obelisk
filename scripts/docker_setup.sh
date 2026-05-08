@@ -3,13 +3,10 @@ docker_install=false
 
 docker_basic=false
 docker_cyclone_perf=false
-docker_leap=false
 docker_zed=false
-docker_pixi=false
 docker_unitree=false
 docker_mujoco=false
 
-docker_group_leap=false
 docker_group_zed=false
 
 for arg in "$@"; do
@@ -185,9 +182,9 @@ if [ "$docker_unitree" = true ]; then
     echo "OBELISK_DOCKER_UNITREE=true" >> $env_file
     export OBELISK_DOCKER_UNITREE=true
 else
-    echo -e "\033[1;33mSetting OBELISK_DOCKER_PIXI=false!\033[0m"
-    echo "OBELISK_DOCKER_PIXI=false" >> $env_file
-    export OBELISK_DOCKER_PIXI=false
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_UNITREE=false!\033[0m"
+    echo "OBELISK_DOCKER_UNITREE=false" >> $env_file
+    export OBELISK_DOCKER_UNITREE=false
 fi
 
 if [ "$docker_mujoco" = true ]; then

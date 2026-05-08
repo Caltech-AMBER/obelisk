@@ -33,6 +33,10 @@ class DepthInterface : public RayCasterInterface {
         setup_rays(get_config());
     }
 
+    explicit DepthInterface(const YAML::Node& config) : RayCasterInterface(config) {
+        setup_rays(get_config());
+    }
+
     void compute_rays_world(const Matrix3d& site_xmat, const Vector3d& site_pos,
                             MatrixX3d& ray_starts_world,
                             MatrixX3d& ray_directions_world) const override {
@@ -42,6 +46,16 @@ class DepthInterface : public RayCasterInterface {
 
         ray_directions_world = (site_xmat * ray_directions_local_.transpose()).transpose();
     }
+
+    // Public accessors (overrides of virtual methods declared public in RayCasterInterface).
+    float get_return(const std::array<double, 3> hit_point, const float dist) override {
+        (void)hit_point;
+        return dist;
+    }
+
+    int get_image_width() const override { return width_; }
+    int get_image_height() const override { return height_; }
+    Vector3d get_image_forward_local() const override { return image_forward_local_; }
 
   protected:
     void setup_rays(const YAML::Node& config) override {
@@ -131,15 +145,6 @@ class DepthInterface : public RayCasterInterface {
         image_forward_local_ = quat_apply(offset.rot, image_forward_local_);
         image_forward_local_.normalize();
     }
-
-    float get_return(const std::array<double, 3> hit_point, const float dist) override {
-        (void)hit_point;
-        return dist;
-    }
-
-    int get_image_width() const override { return width_; }
-    int get_image_height() const override { return height_; }
-    Vector3d get_image_forward_local() const override { return image_forward_local_; }
 
   private:
     int width_ = 0;

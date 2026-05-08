@@ -11,7 +11,7 @@ namespace obelisk {
             : obelisk::ObeliskEstimator<obelisk_estimator_msgs::msg::EstimatedState>(name) {
 
             this->RegisterObkSubscription<obelisk_sensor_msgs::msg::ObkJointEncoders>(
-                "sub_sensor_setting", "sub_sensor",
+                "sub_sensor",
                 std::bind(&UnitreeExampleEstimator::JointEncoderCallback, this, std::placeholders::_1));
         }
 

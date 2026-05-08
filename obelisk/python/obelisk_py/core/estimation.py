@@ -33,24 +33,17 @@ class ObeliskEstimator(ABC, ObeliskNode):
         [NOTE] In derived classes, you should declare settings for sensor subscribers.
         """
         super().__init__(node_name)
-        self.register_obk_timer(
-            "timer_est_setting",
-            self.compute_state_estimate,
-            key="timer_est",
-        )
-        self.register_obk_publisher(
-            "pub_est_setting",
-            msg_type=est_msg_type,
-            key="pub_est",
-        )
+        self.register_obk_timer(key="timer_est", callback=self.compute_state_estimate)
+        self.register_obk_publisher(key="pub_est", msg_type=est_msg_type)
 
     @abstractmethod
     def compute_state_estimate(self) -> Type:
         """Compute the state estimate.
 
-        This is the state estimate timer callback and is expected to call 'publisher_est' internally. Note that the
-        state estimate message is still returned afterwards, mostly for logging/debugging purposes. The publish call is
-        the important part, NOT the returned value, since the topic is what the ObeliskController subscribes to.
+        This is the state estimate timer callback and is expected to call ``self.obk_publishers["pub_est"]`` internally.
+        Note that the state estimate message is still returned afterwards, mostly for logging/debugging purposes. The
+        publish call is the important part, NOT the returned value, since the topic is what the ObeliskController
+        subscribes to.
 
         Returns:
             state_estimate: the state estimate message. Can be either an estimator message or, in the case of output
