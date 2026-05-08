@@ -220,7 +220,6 @@ function obk-kill {
 # convenience function for ros2 launch command
 function obk-launch {
     local config=""
-    local device=""
     local auto_start="True"
     local bag="True"
 
@@ -229,10 +228,6 @@ function obk-launch {
         case \$key in
             config=*)
             config="\${key#*=}"
-            shift
-            ;;
-            device=*)
-            device="\${key#*=}"
             shift
             ;;
             auto_start=*)
@@ -250,14 +245,13 @@ function obk-launch {
         esac
     done
 
-    # Check if any of the required arguments are empty
-    if [[ -z "\$config" || -z "\$device" ]]; then
-        echo -e "\033[1;34mError: Missing required arguments.\033[0m"
-        echo -e "\033[1;34mUsage: obk-launch config=<path> device=<name> auto_start=<True|False>\033[0m"
+    if [[ -z "\$config" ]]; then
+        echo -e "\033[1;34mError: Missing required argument.\033[0m"
+        echo -e "\033[1;34mUsage: obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]\033[0m"
         return 1
     fi
 
-    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} device_name:=\${device} auto_start:=\${auto_start} bag:=\${bag}
+    ros2 launch obelisk_ros obelisk_bringup.launch.py config_file_path:=\${config} auto_start:=\${auto_start} bag:=\${bag}
 }
 
 # help command
@@ -274,8 +268,8 @@ obk-build:\n\
 Builds Obelisk ROS2 nodes via colcon (run inside the dev container).\n\n\
 obk-launch:\n\
 Launches the obelisk_bringup.launch.py with specified arguments.\n\
-Usage: obk-launch config=<path> device=<name> auto_start=<True|False> bag=<True|False>\n\
-Example:\n  obk-launch config=example.yaml device=onboard auto_start=True bag=True\n\n\
+Usage: obk-launch config=<path> [auto_start=<True|False>] [bag=<True|False>]\n\
+Example:\n  obk-launch config=example.yaml auto_start=True bag=True\n\n\
 State Transitions:\n\
 obk-configure:\n    Configure all Obelisk nodes.\n    Usage: obk-configure <config_name>\n\
 obk-activate:\n    Activate all Obelisk nodes.\n    Usage: obk-activate <config_name>\n\

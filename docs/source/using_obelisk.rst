@@ -302,87 +302,86 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
 .. code-block:: yaml
 
   config: dummy
-  onboard:
-    control:
-      - pkg: obelisk_control_cpp
-        executable: example_position_setpoint_controller
-        params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
-        # callback_groups:
-        publishers:
-          - key: pub_ctrl
-            topic: /obelisk/dummy/ctrl
-            history_depth: 10
-            callback_group: None
-        subscribers:
-          - key: sub_est
-            topic: /obelisk/dummy/est
-            history_depth: 10
-            callback_group: None
-        timers:
-          - key: timer_ctrl
-            timer_period_sec: 0.001
-            callback_group: None
-    estimation:
-      - pkg: obelisk_estimation_cpp
-        executable: jointencoders_passthrough_estimator
-        # callback_groups:
-        publishers:
-          - key: pub_est
-            topic: /obelisk/dummy/est
-            history_depth: 10
-            callback_group: None
-        subscribers:
-          - key: sub_sensor
-            topic: /obelisk/dummy/sensor
-            history_depth: 10
-            callback_group: None
-        timers:
-          - key: timer_est
-            timer_period_sec: 0.001
-            callback_group: None
-    # sensing:
-    robot:
-      - is_simulated: True
-        pkg: obelisk_sim_cpp
-        executable: obelisk_mujoco_robot
-        params:
-          ic_keyframe: ic
-        # callback_groups:
-        # publishers:
-        subscribers:
-          - key: sub_ctrl
-            topic: /obelisk/dummy/ctrl
-            history_depth: 10
-            callback_group: None
-        sim:
-          - ros_parameter: mujoco_setting
-            model_xml_path: dummy/dummy.xml
-            num_steps_per_viz: 5
-            sensor_settings:
-            - topic: /obelisk/dummy/joint_encoders
-              dt: 0.001
-              msg_type: ObkJointEncoders
-              sensor_names:
-                joint_pos: jointpos
-                joint_vel: jointvel
-            - topic: /obelisk/dummy/imu
-              dt: 0.002
-              msg_type: Imu
-              sensor_names:
-                tip_acc_sensor: accelerometer
-                tip_gyro_sensor: gyro
-                tip_frame_sensor: framequat
-            - topic: /obelisk/dummy/framepose
-              dt: 0.002
-              msg_type: ObkFramePose
-              sensor_names:
-                tip_pos_sensor: framepos
-                tip_orientation_sensor: framequat
-            viz_geoms:
-              dt: 1.0
-              dummy_box: box
-              dummy_box_2: box
-              dummy_sphere: sphere
+  control:
+    - pkg: obelisk_control_cpp
+      executable: example_position_setpoint_controller
+      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
+      # callback_groups:
+      publishers:
+        - key: pub_ctrl
+          topic: /obelisk/dummy/ctrl
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - key: sub_est
+          topic: /obelisk/dummy/est
+          history_depth: 10
+          callback_group: None
+      timers:
+        - key: timer_ctrl
+          timer_period_sec: 0.001
+          callback_group: None
+  estimation:
+    - pkg: obelisk_estimation_cpp
+      executable: jointencoders_passthrough_estimator
+      # callback_groups:
+      publishers:
+        - key: pub_est
+          topic: /obelisk/dummy/est
+          history_depth: 10
+          callback_group: None
+      subscribers:
+        - key: sub_sensor
+          topic: /obelisk/dummy/sensor
+          history_depth: 10
+          callback_group: None
+      timers:
+        - key: timer_est
+          timer_period_sec: 0.001
+          callback_group: None
+  # sensing:
+  robot:
+    - is_simulated: True
+      pkg: obelisk_sim_cpp
+      executable: obelisk_mujoco_robot
+      params:
+        ic_keyframe: ic
+      # callback_groups:
+      # publishers:
+      subscribers:
+        - key: sub_ctrl
+          topic: /obelisk/dummy/ctrl
+          history_depth: 10
+          callback_group: None
+      sim:
+        - ros_parameter: mujoco_setting
+          model_xml_path: dummy/dummy.xml
+          num_steps_per_viz: 5
+          sensor_settings:
+          - topic: /obelisk/dummy/joint_encoders
+            dt: 0.001
+            msg_type: ObkJointEncoders
+            sensor_names:
+              joint_pos: jointpos
+              joint_vel: jointvel
+          - topic: /obelisk/dummy/imu
+            dt: 0.002
+            msg_type: Imu
+            sensor_names:
+              tip_acc_sensor: accelerometer
+              tip_gyro_sensor: gyro
+              tip_frame_sensor: framequat
+          - topic: /obelisk/dummy/framepose
+            dt: 0.002
+            msg_type: ObkFramePose
+            sensor_names:
+              tip_pos_sensor: framepos
+              tip_orientation_sensor: framequat
+          viz_geoms:
+            dt: 1.0
+            dummy_box: box
+            dummy_box_2: box
+            dummy_sphere: sphere
 
 
 
@@ -391,10 +390,9 @@ Breaking down the configuration file
 .. code-block:: yaml
 
   config: dummy
-  onboard:
 
 
-First we give the name of this configuration (``dummy``), and which device this is running on.
+First we give the name of this configuration (``dummy``). The remaining top-level keys (``control``, ``estimation``, ``robot``, ``sensing``, ``viz``, ``joystick``) hold the per-component settings.
 
 .. code-block:: yaml
 

@@ -122,5 +122,5 @@ Note that to avoid conflicts between `button` indices and `axis` indices (and is
 ## Debugging
 You can also check what the default button mappings are by running:
 ```
-obk-launch config=unitree_fsm_debug.yaml device=onboard
+obk-launch config=unitree_fsm_debug.yaml
 ```

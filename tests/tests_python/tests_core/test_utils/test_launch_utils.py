@@ -23,93 +23,91 @@ from obelisk_py.core.utils.launch_utils import (
 def test_config() -> Dict[str, Any]:
     """Fixture to provide test configuration data (mirrors test_assets/test_config.yaml)."""
     return {
-        "onboard": {
-            "control": [
-                {
-                    "pkg": "test_pkg1",
-                    "executable": "test_controller",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
-                    "publishers": [
-                        {
-                            "ros_parameter": "pub_ctrl_settings1",
-                            "key": "pub1",
-                            "topic": "/test/controller/pub1",
-                            "msg_type": "TestMsg",
-                            "history_depth": 10,
-                            "callback_group": "cbg1",
-                            "non_obelisk": False,
-                        }
-                    ],
-                    "subscribers": [
-                        {
-                            "ros_parameter": "sub_ctrl_settings1",
-                            "key": "sub1",
-                            "topic": "/test/controller/sub1",
-                            "msg_type": "TestMsg",
-                            "history_depth": 5,
-                            "callback_key": "sub_callback1",
-                            "callback_group": "cbg2",
-                            "non_obelisk": False,
-                        }
-                    ],
-                    "timers": [
-                        {
-                            "ros_parameter": "timer_ctrl_settings1",
-                            "key": "timer1",
-                            "timer_period_sec": 0.1,
-                            "callback_group": "cbg1",
-                            "callback_key": "timer_callback1",
-                        }
-                    ],
-                }
-            ],
-            "estimation": [
-                {
-                    "pkg": "test_pkg2",
-                    "executable": "test_estimator",
-                    "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-                }
-            ],
-            "robot": [
-                {
-                    "pkg": "test_pkg3",
-                    "executable": "test_robot",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-                }
-            ],
-            "sensing": [
-                {
-                    "pkg": "test_pkg4",
-                    "executable": "test_sensor1",
-                    "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
-                    "publishers": [
-                        {
-                            "ros_parameter": "pub_sensor_settings1",
-                            "key": "pub1",
-                            "topic": "/test/sensor1/pub1",
-                            "msg_type": "SensorMsg",
-                            "history_depth": 10,
-                            "callback_group": "cbg1",
-                            "non_obelisk": False,
-                        }
-                    ],
-                },
-                {
-                    "pkg": "test_pkg5",
-                    "executable": "test_sensor2",
-                    "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
-                    "timers": [
-                        {
-                            "ros_parameter": "timer_sensor_settings1",
-                            "key": "timer1",
-                            "timer_period_sec": 0.01,
-                            "callback_group": "cbg1",
-                            "callback_key": "timer_callback1",
-                        }
-                    ],
-                },
-            ],
-        }
+        "control": [
+            {
+                "pkg": "test_pkg1",
+                "executable": "test_controller",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup", "cbg2": "ReentrantCallbackGroup"},
+                "publishers": [
+                    {
+                        "ros_parameter": "pub_ctrl_settings1",
+                        "key": "pub1",
+                        "topic": "/test/controller/pub1",
+                        "msg_type": "TestMsg",
+                        "history_depth": 10,
+                        "callback_group": "cbg1",
+                        "non_obelisk": False,
+                    }
+                ],
+                "subscribers": [
+                    {
+                        "ros_parameter": "sub_ctrl_settings1",
+                        "key": "sub1",
+                        "topic": "/test/controller/sub1",
+                        "msg_type": "TestMsg",
+                        "history_depth": 5,
+                        "callback_key": "sub_callback1",
+                        "callback_group": "cbg2",
+                        "non_obelisk": False,
+                    }
+                ],
+                "timers": [
+                    {
+                        "ros_parameter": "timer_ctrl_settings1",
+                        "key": "timer1",
+                        "timer_period_sec": 0.1,
+                        "callback_group": "cbg1",
+                        "callback_key": "timer_callback1",
+                    }
+                ],
+            }
+        ],
+        "estimation": [
+            {
+                "pkg": "test_pkg2",
+                "executable": "test_estimator",
+                "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
+            }
+        ],
+        "robot": [
+            {
+                "pkg": "test_pkg3",
+                "executable": "test_robot",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
+            }
+        ],
+        "sensing": [
+            {
+                "pkg": "test_pkg4",
+                "executable": "test_sensor1",
+                "callback_groups": {"cbg1": "MutuallyExclusiveCallbackGroup"},
+                "publishers": [
+                    {
+                        "ros_parameter": "pub_sensor_settings1",
+                        "key": "pub1",
+                        "topic": "/test/sensor1/pub1",
+                        "msg_type": "SensorMsg",
+                        "history_depth": 10,
+                        "callback_group": "cbg1",
+                        "non_obelisk": False,
+                    }
+                ],
+            },
+            {
+                "pkg": "test_pkg5",
+                "executable": "test_sensor2",
+                "callback_groups": {"cbg1": "ReentrantCallbackGroup"},
+                "timers": [
+                    {
+                        "ros_parameter": "timer_sensor_settings1",
+                        "key": "timer1",
+                        "timer_period_sec": 0.01,
+                        "callback_group": "cbg1",
+                        "callback_key": "timer_callback1",
+                    }
+                ],
+            },
+        ],
     }
 
 
@@ -137,7 +135,7 @@ def test_load_config_file(test_config: Dict[str, Any]) -> None:
 
 def test_get_parameters_dict_bundles_obelisk_sections(test_config: Dict[str, Any]) -> None:
     """A controller node's settings collapse into a single obelisk_settings YAML string."""
-    node_settings = test_config["onboard"]["control"][0]
+    node_settings = test_config["control"][0]
     parameters_dict = get_parameters_dict(node_settings)
 
     assert "obelisk_settings" in parameters_dict
@@ -199,7 +197,7 @@ def test_get_launch_actions_from_node_settings(
     test_config: Dict[str, Any], test_global_state_node: LifecycleNode
 ) -> None:
     """Each node setting becomes one LifecycleNode plus its lifecycle handlers (8 actions per node)."""
-    node_settings = test_config["onboard"]["control"]
+    node_settings = test_config["control"]
     launch_actions = get_launch_actions_from_node_settings(node_settings, "control", test_global_state_node)
     assert len(launch_actions) == 8  # noqa: PLR2004
     assert isinstance(launch_actions[0], LifecycleNode)

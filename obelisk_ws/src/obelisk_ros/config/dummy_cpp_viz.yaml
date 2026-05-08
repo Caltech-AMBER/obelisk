@@ -1,133 +1,132 @@
 config: dummy
-onboard:
-  control:
-    - pkg: obelisk_control_cpp
-      executable: example_position_setpoint_controller
-      params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
-      # callback_groups:
-      publishers:
-        - ros_parameter: pub_ctrl_setting
-          topic: /obelisk/dummy/ctrl
-          msg_type: PositionSetpoint
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      subscribers:
-        - ros_parameter: sub_est_setting
-          topic: /obelisk/dummy/est
-          msg_type: EstimatedState
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      timers:
-        - ros_parameter: timer_ctrl_setting
-          timer_period_sec: 0.001
-          callback_group: None
-  estimation:
-    - pkg: obelisk_estimation_cpp
-      executable: jointencoders_passthrough_estimator
-      # callback_groups:
-      publishers:
-        - ros_parameter: pub_est_setting
-          topic: /obelisk/dummy/est
-          msg_type: EstimatedState
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      subscribers:
-        - ros_parameter: sub_sensor_setting
-          topic: /obelisk/dummy/joint_encoders
-          msg_type: JointEncoders
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      timers:
-        - ros_parameter: timer_est_setting
-          timer_period_sec: 0.001
-          callback_group: None
-  # sensing:
-  robot:
-    - is_simulated: True
-      pkg: obelisk_sim_cpp
-      executable: obelisk_mujoco_robot
-      # callback_groups:
-      params:
-        height_map_grid_size: [1., 1.]
-        height_map_grid_spacing: 0.1
-        height_map_geom_group: [0]
-      subscribers:
-        - ros_parameter: sub_ctrl_setting
-          topic: /obelisk/dummy/ctrl
-          msg_type: PositionSetpoint
-          history_depth: 10
-          callback_group: None
-          non_obelisk: False
-      sim:
-        - ros_parameter: mujoco_setting
-          num_steps_per_viz: 5
-          robot_pkg: dummy_bot
-          model_xml_path: dummy.xml
-          sensor_settings:
-          - topic: /obelisk/dummy/joint_encoders
-            dt: 0.001
-            msg_type: ObkJointEncoders
-            sensor_names:
-              joint_pos: jointpos
-              joint_vel: jointvel
-          - topic: /obelisk/dummy/imu
-            dt: 0.002
-            msg_type: Imu
-            sensor_names:
-              tip_acc_sensor: accelerometer
-              tip_gyro_sensor: gyro
-              tip_frame_sensor: framequat
-          - topic: /obelisk/dummy/framepose
-            dt: 0.002
-            msg_type: PoseStamped
-            sensor_names:
-              tip_pos_sensor: framepos
-              tip_orientation_sensor: framequat
-          - topic: /obelisk/dummy/odom
-            dt: 0.005
-            msg_type: Odometry
-            sensor_names:
-              tip_pos_sensor: framepos
-              tip_orientation_sensor: framequat
-              tip_velocimeter: velocimeter
-              tip_gyro_sensor: gyro
-          - topic: /obelisk/dummy/scan_dots
-            dt: 0.1
-            msg_type: GridCells
-            sensor_names:
-              tip_pos_sensor: framepos
-          viz_geoms:
-            dt: 1.0
-            dummy_box: box
-            dummy_box_2: box
-            dummy_sphere: sphere
-
-  viz:
-    on: True
-    rviz_pkg: obelisk_ros
-    rviz_config: basic_obk_config.rviz
-    viz_nodes:
-      - pkg: obelisk_viz_cpp
-        executable: default_robot_viz
+control:
+  - pkg: obelisk_control_cpp
+    executable: example_position_setpoint_controller
+    params_path: /obelisk_ws/src/obelisk_ros/config/dummy_params.txt
+    # callback_groups:
+    publishers:
+      - ros_parameter: pub_ctrl_setting
+        topic: /obelisk/dummy/ctrl
+        msg_type: PositionSetpoint
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
+    subscribers:
+      - ros_parameter: sub_est_setting
+        topic: /obelisk/dummy/est
+        msg_type: EstimatedState
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
+    timers:
+      - ros_parameter: timer_ctrl_setting
+        timer_period_sec: 0.001
+        callback_group: None
+estimation:
+  - pkg: obelisk_estimation_cpp
+    executable: jointencoders_passthrough_estimator
+    # callback_groups:
+    publishers:
+      - ros_parameter: pub_est_setting
+        topic: /obelisk/dummy/est
+        msg_type: EstimatedState
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
+    subscribers:
+      - ros_parameter: sub_sensor_setting
+        topic: /obelisk/dummy/joint_encoders
+        msg_type: JointEncoders
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
+    timers:
+      - ros_parameter: timer_est_setting
+        timer_period_sec: 0.001
+        callback_group: None
+# sensing:
+robot:
+  - is_simulated: True
+    pkg: obelisk_sim_cpp
+    executable: obelisk_mujoco_robot
+    # callback_groups:
+    params:
+      height_map_grid_size: [1., 1.]
+      height_map_grid_spacing: 0.1
+      height_map_geom_group: [0]
+    subscribers:
+      - ros_parameter: sub_ctrl_setting
+        topic: /obelisk/dummy/ctrl
+        msg_type: PositionSetpoint
+        history_depth: 10
+        callback_group: None
+        non_obelisk: False
+    sim:
+      - ros_parameter: mujoco_setting
+        num_steps_per_viz: 5
         robot_pkg: dummy_bot
-        urdf: dummy_bot.urdf
-        robot_topic: robot_description
-        subscribers:
-          - ros_parameter: sub_viz_est_setting
-            topic: /obelisk/dummy/est
-            history_depth: 10
-            callback_group: None
-            non_obelisk: False
-        publishers:
-          - ros_parameter: pub_viz_joint_setting
-            topic: joint_states
-            history_depth: 10
-            callback_group: None
-        timers:
-          - ros_parameter: timer_viz_joint_setting
-            timer_period_sec: 0.05
-            callback_group: None
+        model_xml_path: dummy.xml
+        sensor_settings:
+        - topic: /obelisk/dummy/joint_encoders
+          dt: 0.001
+          msg_type: ObkJointEncoders
+          sensor_names:
+            joint_pos: jointpos
+            joint_vel: jointvel
+        - topic: /obelisk/dummy/imu
+          dt: 0.002
+          msg_type: Imu
+          sensor_names:
+            tip_acc_sensor: accelerometer
+            tip_gyro_sensor: gyro
+            tip_frame_sensor: framequat
+        - topic: /obelisk/dummy/framepose
+          dt: 0.002
+          msg_type: PoseStamped
+          sensor_names:
+            tip_pos_sensor: framepos
+            tip_orientation_sensor: framequat
+        - topic: /obelisk/dummy/odom
+          dt: 0.005
+          msg_type: Odometry
+          sensor_names:
+            tip_pos_sensor: framepos
+            tip_orientation_sensor: framequat
+            tip_velocimeter: velocimeter
+            tip_gyro_sensor: gyro
+        - topic: /obelisk/dummy/scan_dots
+          dt: 0.1
+          msg_type: GridCells
+          sensor_names:
+            tip_pos_sensor: framepos
+        viz_geoms:
+          dt: 1.0
+          dummy_box: box
+          dummy_box_2: box
+          dummy_sphere: sphere
+
+viz:
+  on: True
+  rviz_pkg: obelisk_ros
+  rviz_config: basic_obk_config.rviz
+  viz_nodes:
+    - pkg: obelisk_viz_cpp
+      executable: default_robot_viz
+      robot_pkg: dummy_bot
+      urdf: dummy_bot.urdf
+      robot_topic: robot_description
+      subscribers:
+        - ros_parameter: sub_viz_est_setting
+          topic: /obelisk/dummy/est
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      publishers:
+        - ros_parameter: pub_viz_joint_setting
+          topic: joint_states
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_viz_joint_setting
+          timer_period_sec: 0.05
+          callback_group: None
