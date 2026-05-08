@@ -1,0 +1,3 @@
+# Cycle-detection fixture: closes the loop back to compose_cycle_a.
+include:
+  - compose_cycle_a.yaml

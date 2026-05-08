@@ -123,14 +123,114 @@ def test_global_state_node() -> LifecycleNode:
     )
 
 
+_ASSETS = Path(__file__).parent.parent.parent / "test_assets"
+
+
 def test_load_config_file(test_config: Dict[str, Any]) -> None:
     """load_config_file reads YAML files (used by the launch entry point)."""
-    abs_path = Path(__file__).parent.parent.parent / "test_assets" / "test_config.yaml"
-    result = load_config_file(abs_path)
+    result = load_config_file(_ASSETS / "test_config.yaml")
     assert result == test_config
 
     with pytest.raises(FileNotFoundError):
         load_config_file("non_existent.yaml")
+
+
+# ---------------------------------------------------------------------- #
+# include: directive — composition tests                                 #
+# ---------------------------------------------------------------------- #
+
+
+def test_load_config_no_include_returns_same_dict(test_config: Dict[str, Any]) -> None:
+    """A YAML without an `include:` key behaves exactly as before (regression check)."""
+    result = load_config_file(_ASSETS / "test_config.yaml")
+    assert "include" not in result
+    assert result == test_config
+
+
+def test_load_config_with_include_merges_and_strips_directive() -> None:
+    """compose_a includes compose_b which includes compose_c. The include key is dropped from
+    the result, scalars take the outermost value, and list-shaped sections concat in include order
+    (innermost first).
+    """
+    result = load_config_file(_ASSETS / "compose_a.yaml")
+
+    assert "include" not in result
+    # config: outermost (a) wins
+    assert result["config"] == "composed_a"
+    # control: c, b, a appended in that order (deepest include first, outermost last)
+    ctrl_pkgs = [entry["pkg"] for entry in result["control"]]
+    assert ctrl_pkgs == ["c_pkg", "b_pkg", "a_pkg"]
+    # estimation only defined in c, propagates up unchanged
+    assert result["estimation"][0]["pkg"] == "c_est_pkg"
+
+
+def test_load_config_dict_section_deep_merge() -> None:
+    """joystick is dict-shaped: deep-merge with parent winning on per-key conflicts. b sets `on`
+    and `sub_topic`; a overrides `pub_topic`.
+    """
+    result = load_config_file(_ASSETS / "compose_a.yaml")
+    assert result["joystick"] == {
+        "on": True,
+        "pub_topic": "/from_a",  # a overrode b's value
+        "sub_topic": "/from_b_sub",  # only b set this; survives
+    }
+
+
+def test_load_config_recursive_includes_three_deep() -> None:
+    """A includes B, B includes C; C's contributions appear in the final result."""
+    result = load_config_file(_ASSETS / "compose_a.yaml")
+    # only c defines an estimation list, and it has one entry
+    assert len(result["estimation"]) == 1
+    assert result["estimation"][0]["executable"] == "c_est"
+
+
+def test_load_config_cycle_detection_raises() -> None:
+    """An include cycle raises RuntimeError mentioning the chain — never hangs."""
+    with pytest.raises(RuntimeError, match="Cycle"):
+        load_config_file(_ASSETS / "compose_cycle_a.yaml")
+
+
+def test_load_config_relative_includes_resolve_to_parent_dir(tmp_path: Path) -> None:
+    """Relative paths in `include:` resolve against the parent file's directory, not the
+    obelisk_ros package share dir.
+    """
+    # Build a small two-file tree in a fresh tmpdir so we know the dir is unrelated to share/.
+    sub = tmp_path / "configs" / "subdir"
+    sub.mkdir(parents=True)
+    (sub / "leaf.yaml").write_text("config: leaf\ncontrol:\n  - pkg: leaf_pkg\n    executable: e\n")
+    (sub / "root.yaml").write_text(
+        "config: root\ninclude:\n  - leaf.yaml\ncontrol:\n  - pkg: root_pkg\n    executable: e\n"
+    )
+
+    result = load_config_file(sub / "root.yaml")
+    assert [c["pkg"] for c in result["control"]] == ["leaf_pkg", "root_pkg"]
+    assert result["config"] == "root"
+
+
+def test_load_config_absolute_include_path_works(tmp_path: Path) -> None:
+    """An absolute path inside `include:` is used as-is."""
+    leaf = tmp_path / "leaf.yaml"
+    leaf.write_text("control:\n  - pkg: abs_pkg\n    executable: e\n")
+    root = tmp_path / "root.yaml"
+    root.write_text(f"include:\n  - {leaf}\n")
+
+    result = load_config_file(root)
+    assert result["control"][0]["pkg"] == "abs_pkg"
+
+
+def test_load_config_dummy_composed_resolves_to_full_stack() -> None:
+    """End-to-end smoke test: dummy_composed.yaml (which uses `include:`) loads into a dict that
+    looks like a single-file config — control + estimation + robot + joystick all present, no
+    leftover `include:` key."""
+    composed = load_config_file("dummy_composed.yaml")
+    assert "include" not in composed
+    assert composed["config"] == "dummy_composed"
+    assert len(composed["control"]) == 1
+    assert composed["control"][0]["pkg"] == "obelisk_control_cpp"
+    assert len(composed["estimation"]) == 1
+    assert len(composed["robot"]) == 1
+    assert composed["robot"][0]["is_simulated"] is True
+    assert composed["joystick"]["on"] is True
 
 
 def test_get_parameters_dict_bundles_obelisk_sections(test_config: Dict[str, Any]) -> None:

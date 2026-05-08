@@ -1,0 +1,8 @@
+# Composition unit-test fixture: leaf in the include chain.
+config: composed_c
+control:
+  - pkg: c_pkg
+    executable: c_ctrl
+estimation:
+  - pkg: c_est_pkg
+    executable: c_est

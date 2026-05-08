@@ -385,6 +385,33 @@ Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. 
 
 
 
+Composing configs with ``include:``
+-----------------------------------
+A launch YAML may pull in other YAMLs via an optional top-level ``include:`` list. The loader merges them before the launch system consumes the result, so you can factor out shared chunks (controller, estimator, joystick) into reusable files and assemble them differently for, say, sim and hardware variants.
+
+.. code-block:: yaml
+
+  # dummy_composed.yaml — what you point obk-launch at
+  config: dummy_composed
+  include:
+    - dummy_composed_base.yaml      # shared control + estimation + joystick
+    - dummy_composed_robot_sim.yaml # the sim-mode robot backend
+
+  # No other keys needed; everything comes from the included files.
+
+The included files are themselves regular Obelisk YAMLs. They can also have ``include:`` lists of their own (recursion is allowed; cycles are caught and raise a ``RuntimeError``).
+
+**Path rules.** The primary file (the one named on ``obk-launch config=…``) resolves the same way it always did: absolute path used as-is, otherwise relative to ``share/obelisk_ros/config/``. Paths inside an ``include:`` directive resolve **relative to the directory of the YAML containing the include**. Absolute paths in include lists pass through unchanged.
+
+**Merge rules.** When merging an outer YAML over its includes:
+
+* The list-shaped sections (``control``, ``estimation``, ``robot``, ``sensing``) **concatenate** in include order, with the outer file's entries appended last.
+* The dict-shaped sections (``joystick``, ``viz``) **deep-merge** with the outer file winning on per-key conflicts.
+* Scalar keys (``config``, ``params_path``): the outer file wins.
+* The ``include:`` key is stripped from the final result.
+
+A worked end-to-end example lives at ``obelisk_ws/src/obelisk_ros/config/dummy_composed*.yaml``.
+
 Breaking down the configuration file
 ------------------------------------
 .. code-block:: yaml

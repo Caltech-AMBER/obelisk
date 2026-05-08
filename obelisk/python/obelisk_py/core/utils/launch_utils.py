@@ -19,36 +19,129 @@ _OBELISK_SETTINGS_KEYS = ("publishers", "subscribers", "timers", "sim", "callbac
 
 
 def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = None) -> Dict:
-    """Loads an Obelisk configuration file.
+    """Loads an Obelisk configuration file, recursively expanding ``include:`` directives.
+
+    The file at ``file_path`` is the *primary* config: an absolute path is used as-is, otherwise
+    the path resolves against the ``config/`` subdirectory of an installed ROS2 package (default
+    ``obelisk_ros``).
+
+    If the loaded YAML has a top-level ``include:`` key (a list of paths), each entry is loaded
+    recursively and merged into a single dict before the parent's own keys are applied. Paths inside
+    an ``include:`` resolve **relative to the directory of the file containing the include**;
+    absolute paths still pass through unchanged. The ``include:`` key is stripped from the result.
+
+    Merge rules (parent = file containing the include, children = files it includes):
+      * List-shaped sections (``control``, ``estimation``, ``robot``, ``sensing``) **concatenate**
+        in include order, with the parent's entries appended last.
+      * Dict-shaped sections (``joystick``, ``viz``) **deep-merge**, with parent values winning on
+        scalar conflicts.
+      * Scalar / other keys (e.g. ``config``, ``params_path``): parent wins.
 
     Parameters:
-        file_path: the path to the configuration file, either absolute or relative to the 'config' directory of an
-            installed ROS2 package.
-        package_name: the name of the ROS2 package that contains the configuration file. If not provided, the
-            'obelisk_ros' package is assumed.
+        file_path: path to the configuration file.
+        package_name: the ROS2 package whose ``config/`` dir to resolve relative ``file_path``
+            against. If None, ``obelisk_ros`` is used.
 
     Returns:
-        config: A dictionary containing the configuration settings.
+        config: A dictionary containing the merged configuration settings.
+
+    Raises:
+        FileNotFoundError: if the file (or any include) cannot be located/parsed.
+        RuntimeError: if the include graph contains a cycle.
     """
+    abs_file_path = _resolve_primary_config_path(file_path, package_name)
+    return _load_config_recursive(abs_file_path, stack=[])
+
+
+def _resolve_primary_config_path(file_path: Union[str, Path], package_name: Optional[str]) -> Path:
+    """Resolve the primary (top-level) config path: absolute as-is, else under <pkg>/share/config/."""
     file_path = str(file_path)
     if not file_path.startswith("/"):
         try:
             obk_ros_dir = get_package_share_directory("obelisk_ros" if package_name is None else package_name)
-            abs_file_path = Path(obk_ros_dir) / "config" / file_path
         except Exception as e:
             raise FileNotFoundError(
                 f"Could not find package {package_name}. If you supply a relative path to the config file, it must lie "
                 "in a subdirectory named 'config' of either the obelisk_ros package or some other ROS2 package of your "
                 "choice. Otherwise, you can supply an absolute path to the config file."
             ) from e
-    else:
-        abs_file_path = Path(file_path)
+        return Path(obk_ros_dir) / "config" / file_path
+    return Path(file_path)
 
-    yaml = YAML(typ="safe")
+
+def _load_config_recursive(abs_file_path: Path, stack: List[Path]) -> Dict:
+    """Load a single YAML and recursively expand any ``include:`` it has, merging the results.
+
+    ``stack`` tracks the chain of resolved-absolute paths so we can detect include cycles.
+    """
+    abs_file_path = abs_file_path.resolve()
+    if abs_file_path in stack:
+        chain = " -> ".join(str(p) for p in stack + [abs_file_path])
+        raise RuntimeError(f"Cycle detected in obelisk config include chain: {chain}")
+
+    loader = YAML(typ="safe")
     try:
-        return yaml.load(abs_file_path)
+        raw = loader.load(abs_file_path)
     except Exception as e:
         raise FileNotFoundError(f"Could not load a configuration file at {abs_file_path}!") from e
+
+    # An empty or null YAML file should be treated as an empty mapping rather than failing.
+    if raw is None:
+        raw = {}
+
+    includes = raw.pop("include", []) or []
+    if not isinstance(includes, list):
+        raise ValueError(
+            f"`include:` in {abs_file_path} must be a list of YAML paths; got {type(includes).__name__}."
+        )
+
+    new_stack = stack + [abs_file_path]
+    base_dir = abs_file_path.parent
+
+    merged: Dict[str, Any] = {}
+    for inc in includes:
+        inc_path = Path(str(inc))
+        # Includes are resolved relative to the directory of the file containing the include.
+        # Absolute paths pass through unchanged.
+        if not inc_path.is_absolute():
+            inc_path = base_dir / inc_path
+        included = _load_config_recursive(inc_path, new_stack)
+        merged = _merge_obelisk_configs(merged, included)
+
+    # Parent's own keys take precedence over included ones.
+    return _merge_obelisk_configs(merged, raw)
+
+
+# Top-level sections whose values are lists of complete node entries; concatenated when merging.
+_LIST_SECTIONS = ("control", "estimation", "robot", "sensing")
+
+
+def _merge_obelisk_configs(base: Dict, override: Dict) -> Dict:
+    """Merge ``override`` onto ``base`` according to the obelisk schema rules.
+
+    List-shaped sections concat (with override's entries appended); dicts deep-merge with override
+    winning on scalar conflicts; everything else: override wins.
+    """
+    out: Dict[str, Any] = dict(base)
+    for k, v in override.items():
+        if k in _LIST_SECTIONS and isinstance(out.get(k), list) and isinstance(v, list):
+            out[k] = list(out[k]) + list(v)
+        elif isinstance(out.get(k), dict) and isinstance(v, dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
+def _deep_merge(a: Dict, b: Dict) -> Dict:
+    """Recursive dict merge; ``b`` wins on scalar conflicts. Returns a new dict."""
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(out.get(k), dict) and isinstance(v, dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
 
 
 def _strip_ros_parameter(entry: Dict[str, Any]) -> Dict[str, Any]:

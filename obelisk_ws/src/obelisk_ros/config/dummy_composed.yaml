@@ -1,0 +1,16 @@
+# Demo of the `include:` composition feature.
+#
+# Equivalent to dummy_cpp.yaml, but factored into reusable pieces:
+#   - dummy_composed_base.yaml      — control + estimation + joystick (would also be reused
+#                                     by a hypothetical hardware variant)
+#   - dummy_composed_robot_sim.yaml — the sim-mode robot backend
+#
+# Run with:
+#   obk-launch config=dummy_composed.yaml
+#
+# The launch result should be identical to `obk-launch config=dummy_cpp.yaml` (modulo the run
+# name `config:` below).
+config: dummy_composed
+include:
+  - dummy_composed_base.yaml
+  - dummy_composed_robot_sim.yaml
