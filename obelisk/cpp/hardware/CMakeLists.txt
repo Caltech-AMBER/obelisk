@@ -65,6 +65,19 @@ if(UNITREE_VAR_ENV)
   add_subdirectory(robots/unitree)
 endif()
 
+# Westwood (Themis) interface
+message(STATUS "OBELISK_BUILD_WESTWOOD env variable: ${OBELISK_BUILD_WESTWOOD}")
+if(DEFINED ENV{OBELISK_BUILD_WESTWOOD} AND "$ENV{OBELISK_BUILD_WESTWOOD}" STREQUAL "true")
+    set(WESTWOOD_VAR_ENV TRUE)
+else()
+    set(WESTWOOD_VAR_ENV FALSE)
+endif()
+
+if(WESTWOOD_VAR_ENV)
+  message(STATUS "Configuring Westwood interface...")
+  add_subdirectory(robots/westwood)
+endif()
+
 target_link_libraries(Hardware INTERFACE Obelisk::Core)
 
 ament_target_dependencies(Hardware INTERFACE

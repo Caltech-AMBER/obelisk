@@ -1,0 +1,247 @@
+# Obelisk launch config for the Westwood Robotics THEMIS humanoid.
+#
+# Three deployment paths from this one file:
+#   1. MuJoCo sim (no real robot)  — DEFAULT below
+#        obk-launch config=themis_cpp.yaml
+#   2. Hardware joint-level control (USER_CTRL)
+#        - Robot side:  python3 -m Play.Others.themis_obk_server --mode user-ctrl
+#        - Desktop:     obk-launch config=themis_cpp.yaml
+#   3. Hardware high-level velocity control (HIGH_LEVEL_VEL)
+#        - Robot side:  python3 -m Play.Others.themis_obk_server --mode high-level
+#        - Desktop:     same launch; transition the FSM via /obelisk/themis/exec_fsm
+#
+# To switch between sim and hardware, toggle the comments on the two robot entries
+# below — only the `- is_simulated: ...` / `pkg` / `executable` / `params` block
+# changes between them; the publishers/subscribers/sim/timers below are shared and
+# attach to whichever entry is currently uncommented.
+#
+# See obelisk_westwood_cpp/server/README.md for server-side deployment details.
+
+config: themis_example
+
+control:
+  - pkg: obelisk_westwood_cpp
+    executable: themis_example_controller
+    publishers:
+      - ros_parameter: pub_ctrl_setting
+        topic: /obelisk/themis/ctrl
+        history_depth: 10
+        callback_group: None
+    subscribers:
+      - ros_parameter: sub_est_setting
+        topic: /obelisk/themis/est_state
+        history_depth: 10
+        callback_group: None
+      # ----- Joystick (button X advances the swept joint index) ----- #
+      - ros_parameter: joystick_sub_setting
+        topic: /obelisk/themis/joy
+    timers:
+      - ros_parameter: timer_ctrl_setting
+        timer_period_sec: 0.002      # 500 Hz
+        callback_group: None
+
+estimation:
+  - pkg: obelisk_estimation_cpp
+    executable: jointencoders_passthrough_estimator
+    publishers:
+      - ros_parameter: pub_est_setting
+        topic: /obelisk/themis/est_state
+        msg_type: EstimatedState
+        history_depth: 10
+        callback_group: None
+    subscribers:
+      - ros_parameter: sub_sensor_setting
+        topic: /obelisk/themis/joint_encoders
+        msg_type: ObkJointEncoders
+        history_depth: 10
+        callback_group: None
+    timers:
+      - ros_parameter: timer_est_setting
+        timer_period_sec: 0.002      # 500 Hz
+        callback_group: None
+
+robot:
+  # === simulation ===
+  - is_simulated: True
+    pkg: obelisk_westwood_cpp
+    executable: obelisk_themis_sim
+    params:
+      ic_keyframe: ic
+  # === hardware ===
+  # - is_simulated: False
+  #   pkg: obelisk_westwood_cpp
+  #   executable: obelisk_themis_hardware
+  #   params:
+  #     target_ip: "192.168.0.11"
+  #     udp_port: 9870
+  #     feedback_rate_hz: 100.0
+  #     heartbeat_period_s: 2.0
+  #     user_pose_transition_duration: 3.0
+  #     enable_base_orient_cmd: false
+  #     enable_com_pos_cmd: false
+  #     # 28-joint canonical order: [right_leg(6), left_leg(6), right_arm(7), left_arm(7), head(2)]
+  #     default_joint_names: [
+  #       HIP_YAW_R, HIP_ROLL_R, HIP_PITCH_R, KNEE_PITCH_R, ANKLE_PITCH_R, ANKLE_ROLL_R,
+  #       HIP_YAW_L, HIP_ROLL_L, HIP_PITCH_L, KNEE_PITCH_L, ANKLE_PITCH_L, ANKLE_ROLL_L,
+  #       SHOULDER_PITCH_R, SHOULDER_ROLL_R, SHOULDER_YAW_R, ELBOW_PITCH_R, ELBOW_YAW_R, WRIST_PITCH_R, WRIST_YAW_R,
+  #       SHOULDER_PITCH_L, SHOULDER_ROLL_L, SHOULDER_YAW_L, ELBOW_PITCH_L, ELBOW_YAW_L, WRIST_PITCH_L, WRIST_YAW_L,
+  #       HEAD_YAW, HEAD_PITCH,
+  #     ]
+  #     # Home pose — themis_rl/sim2real/config.py DEFAULT_JOINT_POS
+  #     user_pose: [
+  #       0.000,  0.000, -0.270,  0.570, -0.300,  0.200,
+  #       0.000,  0.000, -0.270,  0.570, -0.300,  0.200,
+  #       0.200, -0.300,  0.000,  1.300,  0.000,  0.000,  0.000,
+  #       0.200,  0.300,  0.000,  1.300,  0.000,  0.000,  0.000,
+  #       0.000,  0.000,
+  #     ]
+  #     # PD gains — themis_rl/sim2real/config.py KP/KD/KD_DAMPING
+  #     default_kp: [
+  #       30, 30, 30, 30, 20, 20,
+  #       30, 30, 30, 30, 20, 20,
+  #       15, 15, 15, 15, 15, 15, 15,
+  #       15, 15, 15, 15, 15, 15, 15,
+  #       10, 10,
+  #     ]
+  #     default_kd: [
+  #       6, 6, 8, 8, 3, 3,
+  #       6, 6, 8, 8, 3, 3,
+  #       2, 2, 2, 2, 2, 2, 2,
+  #       2, 2, 2, 2, 2, 2, 2,
+  #       1, 1,
+  #     ]
+  #     default_kd_damping: [
+  #       6, 6, 6, 6, 3, 3,
+  #       6, 6, 6, 6, 3, 3,
+  #       6, 6, 6, 6, 6, 6, 6,
+  #       6, 6, 6, 6, 6, 6, 6,
+  #       2, 2,
+  #     ]
+  # ==================
+  # Shared body — attaches to whichever robot entry is uncommented above.
+  # Sim ignores sub_fsm/sub_vel_cmd/pub_imu (just unused); hardware uses all of them.
+    publishers:
+      - ros_parameter: pub_sensor_setting
+        topic: /obelisk/themis/joint_encoders
+        history_depth: 10
+      - ros_parameter: pub_imu_setting
+        topic: /obelisk/themis/pelvis_imu
+        history_depth: 10
+    subscribers:
+      - ros_parameter: sub_ctrl_setting
+        topic: /obelisk/themis/ctrl
+        history_depth: 10
+        callback_group: None
+      - ros_parameter: sub_fsm_setting
+        topic: /obelisk/themis/exec_fsm
+        history_depth: 10
+        callback_group: None
+      - ros_parameter: sub_vel_cmd_setting
+        topic: /obelisk/themis/vel_cmd
+        history_depth: 10
+        callback_group: None
+    sim:
+      - ros_parameter: mujoco_setting
+        n_u: 28
+        time_step: 0.001
+        num_steps_per_viz: 5
+        robot_pkg: themis_description
+        # Three model variants ship in themis_description/mujoco/:
+        # model_xml_path: themis_basic_scene.xml
+        model_xml_path: themis_29dof_fixed_base.xml
+        sensor_settings:
+          - topic: /obelisk/themis/joint_encoders
+            dt: 0.002
+            msg_type: ObkJointEncoders
+            sensor_names:
+              # joint positions
+              HIP_YAW_R_pos: jointpos
+              HIP_ROLL_R_pos: jointpos
+              HIP_PITCH_R_pos: jointpos
+              KNEE_PITCH_R_pos: jointpos
+              ANKLE_PITCH_R_pos: jointpos
+              ANKLE_ROLL_R_pos: jointpos
+              HIP_YAW_L_pos: jointpos
+              HIP_ROLL_L_pos: jointpos
+              HIP_PITCH_L_pos: jointpos
+              KNEE_PITCH_L_pos: jointpos
+              ANKLE_PITCH_L_pos: jointpos
+              ANKLE_ROLL_L_pos: jointpos
+              SHOULDER_PITCH_R_pos: jointpos
+              SHOULDER_ROLL_R_pos: jointpos
+              SHOULDER_YAW_R_pos: jointpos
+              ELBOW_PITCH_R_pos: jointpos
+              ELBOW_YAW_R_pos: jointpos
+              WRIST_PITCH_R_pos: jointpos
+              WRIST_YAW_R_pos: jointpos
+              SHOULDER_PITCH_L_pos: jointpos
+              SHOULDER_ROLL_L_pos: jointpos
+              SHOULDER_YAW_L_pos: jointpos
+              ELBOW_PITCH_L_pos: jointpos
+              ELBOW_YAW_L_pos: jointpos
+              WRIST_PITCH_L_pos: jointpos
+              WRIST_YAW_L_pos: jointpos
+              HEAD_YAW_pos: jointpos
+              HEAD_PITCH_pos: jointpos
+              # joint velocities
+              HIP_YAW_R_vel: jointvel
+              HIP_ROLL_R_vel: jointvel
+              HIP_PITCH_R_vel: jointvel
+              KNEE_PITCH_R_vel: jointvel
+              ANKLE_PITCH_R_vel: jointvel
+              ANKLE_ROLL_R_vel: jointvel
+              HIP_YAW_L_vel: jointvel
+              HIP_ROLL_L_vel: jointvel
+              HIP_PITCH_L_vel: jointvel
+              KNEE_PITCH_L_vel: jointvel
+              ANKLE_PITCH_L_vel: jointvel
+              ANKLE_ROLL_L_vel: jointvel
+              SHOULDER_PITCH_R_vel: jointvel
+              SHOULDER_ROLL_R_vel: jointvel
+              SHOULDER_YAW_R_vel: jointvel
+              ELBOW_PITCH_R_vel: jointvel
+              ELBOW_YAW_R_vel: jointvel
+              WRIST_PITCH_R_vel: jointvel
+              WRIST_YAW_R_vel: jointvel
+              SHOULDER_PITCH_L_vel: jointvel
+              SHOULDER_ROLL_L_vel: jointvel
+              SHOULDER_YAW_L_vel: jointvel
+              ELBOW_PITCH_L_vel: jointvel
+              ELBOW_YAW_L_vel: jointvel
+              WRIST_PITCH_L_vel: jointvel
+              WRIST_YAW_L_vel: jointvel
+              HEAD_YAW_vel: jointvel
+              HEAD_PITCH_vel: jointvel
+    timers:
+      - ros_parameter: timer_sensor_setting
+        timer_period_sec: 0.01       # 100 Hz state publish
+        callback_group: None
+
+viz:
+  on: False
+  viz_nodes:
+    - pkg: obelisk_viz_cpp
+      executable: default_robot_viz
+      robot_pkg: themis_description
+      urdf: themis.urdf
+      robot_topic: robot_description
+      subscribers:
+        - ros_parameter: sub_viz_est_setting
+          topic: /obelisk/themis/est_state
+          history_depth: 10
+          callback_group: None
+          non_obelisk: False
+      publishers:
+        - ros_parameter: pub_viz_joint_setting
+          topic: joint_states
+          history_depth: 10
+          callback_group: None
+      timers:
+        - ros_parameter: timer_viz_joint_setting
+          timer_period_sec: 0.02
+          callback_group: None
+
+joystick:
+  on: True
+  pub_topic: /obelisk/themis/joy
+  sub_topic: /obelisk/themis/joy_feedback

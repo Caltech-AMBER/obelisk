@@ -1,0 +1,10 @@
+This subdirectory (server/) is distributed under the GNU General Public License,
+version 3, because themis_obk_server.py imports modules from Westwood Robotics'
+AOS (https://github.com/Westwood-Robotics/AOS), which is licensed under GPL-3.0.
+
+The rest of the obelisk_westwood_cpp package — the C++ client, headers, and
+launch glue — does NOT link against AOS (it speaks UDP only) and is distributed
+under Obelisk's MIT license.
+
+For the full text of the GNU GPL version 3, see:
+  https://www.gnu.org/licenses/gpl-3.0.html

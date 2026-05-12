@@ -5,6 +5,7 @@ docker_basic=false
 docker_cyclone_perf=false
 docker_zed=false
 docker_unitree=false
+docker_westwood=false
 docker_mujoco=false
 
 docker_group_zed=false
@@ -32,6 +33,10 @@ for arg in "$@"; do
             docker_unitree=true
             shift   # Sets OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
             ;;
+        --docker-westwood)
+            docker_westwood=true
+            shift   # Sets OBELISK_DOCKER_WESTWOOD=true for docker, which enables the THEMIS interface
+            ;;
         --docker-mujoco)
             docker_mujoco=true
             shift  # Sets OBELISK_DOCKER_MUJOCO=true for docker, which enables Mujoco simulation
@@ -53,6 +58,7 @@ Options:
   --docker-cyclone-perf  Set OBELISK_DOCKER_CYCLONE_PERF=true for docker, which enables cyclone performance optimizations
   --docker-zed           Set OBELISK_DOCKER_ZED=true for docker, which installs ZED SDK
   --docker-unitree       Set OBELISK_DOCKER_UNITREE=true for docker, which configures the docker installation
+  --docker-westwood      Set OBELISK_DOCKER_WESTWOOD=true for docker, which enables the THEMIS interface
   --docker-mujoco        Set OBELISK_DOCKER_MUJOCO=true for docker, which enables Mujoco simulation
 
   --docker-group-zed     Adds user to the video group
@@ -185,6 +191,16 @@ else
     echo -e "\033[1;33mSetting OBELISK_DOCKER_UNITREE=false!\033[0m"
     echo "OBELISK_DOCKER_UNITREE=false" >> $env_file
     export OBELISK_DOCKER_UNITREE=false
+fi
+
+if [ "$docker_westwood" = true ]; then
+    echo -e "\033[1;32mSetting OBELISK_DOCKER_WESTWOOD=true!\033[0m"
+    echo "OBELISK_DOCKER_WESTWOOD=true" >> $env_file
+    export OBELISK_DOCKER_WESTWOOD=true
+else
+    echo -e "\033[1;33mSetting OBELISK_DOCKER_WESTWOOD=false!\033[0m"
+    echo "OBELISK_DOCKER_WESTWOOD=false" >> $env_file
+    export OBELISK_DOCKER_WESTWOOD=false
 fi
 
 if [ "$docker_mujoco" = true ]; then

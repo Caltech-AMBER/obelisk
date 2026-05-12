@@ -73,72 +73,72 @@ estimation:
 # sensing:
 robot:
   # === simulation ===
-  # - is_simulated: True
-  #   pkg: obelisk_unitree_cpp
-  #   executable: obelisk_unitree_sim
-  #   params:
-  #     ic_keyframe: standing
-  # === hardware ===
-  - is_simulated: False
+  - is_simulated: True
     pkg: obelisk_unitree_cpp
-    executable: obelisk_unitree_g1_hardware
+    executable: obelisk_unitree_sim
     params:
-      # network_interface_name: enx6c1ff724e92e
-      default_joint_names: [
-        "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
-        "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
-        "right_hip_pitch_joint", "right_hip_roll_joint", "right_hip_yaw_joint",
-        "right_knee_joint", "right_ankle_pitch_joint", "right_ankle_roll_joint",
-        "waist_yaw_joint",
-        "left_shoulder_pitch_joint", "left_shoulder_roll_joint", "left_shoulder_yaw_joint", "left_elbow_joint",
-        "left_wrist_roll_joint", "left_wrist_pitch_joint", "left_wrist_yaw_joint",
-        "right_shoulder_pitch_joint", "right_shoulder_roll_joint", "right_shoulder_yaw_joint", "right_elbow_joint",
-        "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint",
-      ]
-      user_pose: [
-        -0.25,  0,  0,
-        0.46, -0.25, 0,
-        -0.25,  0,  0,
-        0.46, -0.25, 0,
-        0,
-        0.07,  0.24, 0, 1.39,
-        0, 0, 0,
-        0.07, -0.24, 0, 1.39,
-        0, 0, 0
-      ]
-      default_kp: [
-        100., 100., 100.,       # L hip
-        150., 100., 100.,       # L knee, ankle
-        100., 100., 100.,       # R hip
-        150., 100., 100.,       # R knee, ankle
-        100.,                   # Waist
-        50., 50., 40., 40.,  # L shoulder, elbow
-        30., 30., 30.,       # L wrist
-        50., 50., 40., 40.,  # R shoulder, elbow
-        30., 30., 30.,       # R wrist
-      ]
-      default_kd: [
-        2., 2., 2.,       # L hip
-        4., 2., 2.,       # L knee, ankle
-        2., 2., 2.,       # R hip
-        4., 2., 2.,       # R knee, ankle
-        2.,               # Waist
-        2., 2., 2., 2.,   # L shoulder, elbow
-        2., 2., 2.,       # L wrist
-        2., 2., 2., 2.,   # R shoulder, elbow
-        2., 2., 2.,       # R wrist
-      ]
-      default_kd_damping: [
-        10., 10., 10.,       # L hip
-        10., 10., 10.,       # L knee, ankle
-        10., 10., 10.,       # R hip
-        10., 10., 10.,       # R knee, ankle
-        10.,                 # Waist
-        10., 10., 10., 10.,  # L shoulder, elbow
-        10., 10., 10.,       # L wrist
-        10., 10., 10., 10.,  # R shoulder,  elbow
-        10., 10., 10.,       # R wrist
-      ]
+      ic_keyframe: standing
+  # === hardware ===
+  # - is_simulated: False
+  #   pkg: obelisk_unitree_cpp
+  #   executable: obelisk_unitree_g1_hardware
+  #   params:
+  #     # network_interface_name: enx6c1ff724e92e
+  #     default_joint_names: [
+  #       "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
+  #       "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
+  #       "right_hip_pitch_joint", "right_hip_roll_joint", "right_hip_yaw_joint",
+  #       "right_knee_joint", "right_ankle_pitch_joint", "right_ankle_roll_joint",
+  #       "waist_yaw_joint",
+  #       "left_shoulder_pitch_joint", "left_shoulder_roll_joint", "left_shoulder_yaw_joint", "left_elbow_joint",
+  #       "left_wrist_roll_joint", "left_wrist_pitch_joint", "left_wrist_yaw_joint",
+  #       "right_shoulder_pitch_joint", "right_shoulder_roll_joint", "right_shoulder_yaw_joint", "right_elbow_joint",
+  #       "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint",
+  #     ]
+  #     user_pose: [
+  #       -0.25,  0,  0,
+  #       0.46, -0.25, 0,
+  #       -0.25,  0,  0,
+  #       0.46, -0.25, 0,
+  #       0,
+  #       0.07,  0.24, 0, 1.39,
+  #       0, 0, 0,
+  #       0.07, -0.24, 0, 1.39,
+  #       0, 0, 0
+  #     ]
+  #     default_kp: [
+  #       100., 100., 100.,       # L hip
+  #       150., 100., 100.,       # L knee, ankle
+  #       100., 100., 100.,       # R hip
+  #       150., 100., 100.,       # R knee, ankle
+  #       100.,                   # Waist
+  #       50., 50., 40., 40.,  # L shoulder, elbow
+  #       30., 30., 30.,       # L wrist
+  #       50., 50., 40., 40.,  # R shoulder, elbow
+  #       30., 30., 30.,       # R wrist
+  #     ]
+  #     default_kd: [
+  #       2., 2., 2.,       # L hip
+  #       4., 2., 2.,       # L knee, ankle
+  #       2., 2., 2.,       # R hip
+  #       4., 2., 2.,       # R knee, ankle
+  #       2.,               # Waist
+  #       2., 2., 2., 2.,   # L shoulder, elbow
+  #       2., 2., 2.,       # L wrist
+  #       2., 2., 2., 2.,   # R shoulder, elbow
+  #       2., 2., 2.,       # R wrist
+  #     ]
+  #     default_kd_damping: [
+  #       10., 10., 10.,       # L hip
+  #       10., 10., 10.,       # L knee, ankle
+  #       10., 10., 10.,       # R hip
+  #       10., 10., 10.,       # R knee, ankle
+  #       10.,                 # Waist
+  #       10., 10., 10., 10.,  # L shoulder, elbow
+  #       10., 10., 10.,       # L wrist
+  #       10., 10., 10., 10.,  # R shoulder,  elbow
+  #       10., 10., 10.,       # R wrist
+  #     ]
   # ==================
     # callback_groups:
     publishers:
@@ -176,9 +176,9 @@ robot:
         time_step: 0.002
         num_steps_per_viz: 5
         robot_pkg: g1_description
-        # model_xml_path: g1_27dof_fixed_base.xml
+        model_xml_path: g1_27dof_fixed_base.xml
         # model_xml_path: g1_27dof.xml
-        model_xml_path: g1_basic_scene.xml
+        # model_xml_path: g1_basic_scene.xml
         sensor_settings:
         - topic: /obelisk/g1/joint_encoders
           dt: 0.002
@@ -257,7 +257,7 @@ robot:
         timer_period_sec: 0.2
         callback_group: None
 viz:
-  on: True
+  on: False
   viz_nodes:
     - pkg: obelisk_viz_cpp
       executable: default_robot_viz

@@ -9,6 +9,7 @@ source_ros=false
 # hardware-specific deps
 zed=false
 unitree=false
+westwood=false
 
 for arg in "$@"; do
     case $arg in
@@ -32,6 +33,10 @@ for arg in "$@"; do
             unitree=true
             shift # Sets up the Unitree interfaces
             ;;
+        --westwood)
+            westwood=true
+            shift # Sets up the Westwood THEMIS interface (no system deps; UDP only)
+            ;;
         --help)
             echo "Usage: $0 [OPTIONS]
 
@@ -41,6 +46,7 @@ Options:
   --source-ros         Source base ROS in ~/.bashrc
   --zed                Install ZED SDK
   --unitree            Sets up the Unitree interface
+  --westwood           Sets up the Westwood THEMIS interface (no system deps)
 
   --help               Display this help message and exit
 "
@@ -51,7 +57,7 @@ Options:
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--zed] [--unitree]"
+            echo "Usage: $0 [--basic] [--cyclone-perf] [--source-ros] [--zed] [--unitree] [--westwood]"
             exit 1
             ;;
     esac

@@ -5,6 +5,7 @@ obk_aliases=false
 
 zed=false
 unitree=false
+westwood=false
 
 for arg in "$@"; do
     case $arg in
@@ -23,10 +24,14 @@ for arg in "$@"; do
             unitree=true
             shift  # Sets up the Unitree interface
             ;;
+        --westwood)
+            westwood=true
+            shift  # Sets up the Westwood THEMIS interface
+            ;;
         *)
             # Unknown option
             echo "Unknown option: $arg"
-            echo "Usage: $0 [--obk-aliases] [--zed] [--unitree]"
+            echo "Usage: $0 [--obk-aliases] [--zed] [--unitree] [--westwood]"
             exit 1
             ;;
     esac
@@ -67,6 +72,11 @@ fi'
     else
         OBELISK_BUILD_UNITREE=false
     fi
+    if [ "$westwood" = true ]; then
+        OBELISK_BUILD_WESTWOOD=true
+    else
+        OBELISK_BUILD_WESTWOOD=false
+    fi
 
     obk_aliases=$(cat << EOF
 # >>> obelisk >>>
@@ -80,6 +90,7 @@ export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
+export OBELISK_BUILD_WESTWOOD=$OBELISK_BUILD_WESTWOOD
 export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
 '
 

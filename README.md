@@ -28,6 +28,7 @@ Options:
   Hardware:
   --zed                        Enable ZED SDK
   --unitree                    Enable Unitree interfaces
+  --westwood                   Enable Westwood Robotics THEMIS interface (no system deps; UDP-only)
 
   Simulation:
   --mujoco                     Enable Mujoco simulation

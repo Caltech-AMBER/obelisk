@@ -5,6 +5,7 @@ basic=false
 cyclone_perf=false
 zed=false
 unitree=false
+westwood=false
 
 docker_install=false
 install_sys_deps_docker=false
@@ -52,6 +53,10 @@ for arg in "$@"; do
             unitree=true
             shift
             ;;
+        --westwood)
+            westwood=true
+            shift  # Enables Westwood Robotics THEMIS interfaces (no system deps; UDP only)
+            ;;
 
         # help
         --help)
@@ -65,6 +70,7 @@ Options:
   Hardware options:
   --zed                        Enables ZED SDK
   --unitree                    Enables the unitree interfaces
+  --westwood                   Enables the Westwood Robotics THEMIS interface
 
   Simulation options:
   --mujoco                     Enables Mujoco simulation. For now, without this flag there will be no simulation of any type.
@@ -96,6 +102,7 @@ if [ "$install_sys_deps_docker" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$westwood" = true ] && echo "--docker-westwood") \
         $([ "$mujoco" = true ] && echo "--docker-mujoco")
 else
     source $OBELISK_ROOT/scripts/docker_setup.sh \
@@ -103,6 +110,7 @@ else
         $([ "$cyclone_perf" = true ] && echo "--docker-cyclone-perf") \
         $([ "$zed" = true ] && echo "--docker-zed --docker-group-zed") \
         $([ "$unitree" = true ] && echo "--docker-unitree") \
+        $([ "$westwood" = true ] && echo "--docker-westwood") \
         $([ "$mujoco" = true ] && echo "--docker-mujoco")
 fi
 
@@ -119,11 +127,13 @@ if [ "$install_sys_deps" = true ]; then
         $([ "$cyclone_perf" = true ] && echo "--cyclone-perf") \
         $([ "$source_ros" = true ] && echo "--source-ros") \
         $([ "$zed" = true ] && echo "--zed") \
-        $([ "$unitree" = true ] && echo "--unitree")
+        $([ "$unitree" = true ] && echo "--unitree") \
+        $([ "$westwood" = true ] && echo "--westwood")
 fi
 
 # run user-specific setup
 source $OBELISK_ROOT/scripts/user_setup.sh \
     $([ "$zed" = true ] && echo "--zed") \
     $([ "$unitree" = true ] && echo "--unitree") \
+    $([ "$westwood" = true ] && echo "--westwood") \
     $([ "$obk_aliases" = true ] && echo "--obk-aliases")
