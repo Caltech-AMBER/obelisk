@@ -156,6 +156,12 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             "sensing",
             global_state_node,
         )
+    if "nodes" in obelisk_config:
+        obelisk_launch_actions += get_launch_actions_from_node_settings(
+            obelisk_config["nodes"],
+            "node",
+            global_state_node,
+        )
     if "viz" in obelisk_config:
         logger.info("Viz present in config file.")
         obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)

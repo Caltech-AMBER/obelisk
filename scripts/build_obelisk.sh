@@ -38,11 +38,16 @@ fi
 OBELISK_ROOT=$(dirname $(dirname $(readlink -f ${BASH_SOURCE[0]})))
 
 # Ensure the local obelisk_py is the one Python imports. The Docker image installs obelisk_py from
-# GitHub main during image build (because OBELISK_ROOT isn't bind-mounted yet), so without this
-# step launch_utils.py would be stale relative to the live source tree.
+# GitHub main into /usr/local/lib/python3.10/dist-packages at image-build time (because
+# OBELISK_ROOT isn't bind-mounted then). `ros2 launch` runs Python without user-site on its path,
+# so a `pip install --user` editable install would NOT override the stale system copy. We need to
+# install editable into the system site-packages so `import obelisk_py` resolves to the live tree.
+# Falls back to `--user` if sudo isn't available (only useful for `pytest` etc; ros2 launch will
+# still hit the stale copy in that case).
 echo -e "\033[1;32mInstalling obelisk_py editable from local source...\033[0m"
-pip install -e $OBELISK_ROOT/obelisk/python --quiet || \
-    pip install --user -e $OBELISK_ROOT/obelisk/python --quiet
+sudo -n pip install -e $OBELISK_ROOT/obelisk/python --quiet 2>/dev/null \
+    || pip install -e $OBELISK_ROOT/obelisk/python --quiet \
+    || pip install --user -e $OBELISK_ROOT/obelisk/python --quiet
 
 echo -e "\033[1;32mBuilding Obelisk ROS messages...\033[0m"
 curr_dir=$(pwd)

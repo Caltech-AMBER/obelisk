@@ -32,6 +32,7 @@ setup(
     entry_points={
         "console_scripts": [
             "global_state = obelisk_ros.global_state:main",
+            "heartbeat_node = obelisk_ros.heartbeat_node:main",
         ],
     },
 )

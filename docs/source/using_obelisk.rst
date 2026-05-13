@@ -299,6 +299,8 @@ Obelisk Configuration File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Obelisk nodes can be easily configured via a Obelisk configuration (yaml) file. An example Obelisk configuration file is given here.
 
+The available top-level sections are ``control``, ``estimation``, ``robot``, ``sensing``, ``nodes``, ``viz``, and ``joystick``. **Every section is optional** — a config may define only the nodes it needs. The ``nodes:`` section is a generic catch-all for ObeliskNode binaries that don't fit a controller/estimator/robot/sensor role (e.g. a logger, planner, or coordinator). For a minimum-viable single-node launch, see ``obelisk_ws/src/obelisk_ros/config/dummy_minimal.yaml``.
+
 .. code-block:: yaml
 
   config: dummy

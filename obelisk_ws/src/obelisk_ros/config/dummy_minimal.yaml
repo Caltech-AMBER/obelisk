@@ -1,0 +1,25 @@
+# Minimum-viable Obelisk launch: a single node, no controller/estimator/robot triad.
+#
+# Demonstrates that:
+#   - The launch sections (control / estimation / robot / sensing) are all optional.
+#   - The new `nodes:` section accepts any ObeliskNode binary that doesn't fit a role.
+#   - HeartbeatNode (in obelisk_ros/heartbeat_node.py) inherits directly from ObeliskNode.
+#
+# Run:
+#   obk-launch config=dummy_minimal.yaml
+#
+# In a second shell:
+#   ros2 topic echo /obelisk/heartbeat   # ticks once a second, payload is an Int32 counter
+config: dummy_minimal
+nodes:
+  - pkg: obelisk_ros
+    executable: heartbeat_node
+    publishers:
+      - key: pub_heartbeat
+        topic: /obelisk/heartbeat
+        history_depth: 10
+        callback_group: None
+    timers:
+      - key: timer_heartbeat
+        timer_period_sec: 1.0
+        callback_group: None

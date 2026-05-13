@@ -113,7 +113,9 @@ def _load_config_recursive(abs_file_path: Path, stack: List[Path]) -> Dict:
 
 
 # Top-level sections whose values are lists of complete node entries; concatenated when merging.
-_LIST_SECTIONS = ("control", "estimation", "robot", "sensing")
+# `nodes` is the catch-all for ObeliskNode binaries that don't fit a controller/estimator/robot/
+# sensor role.
+_LIST_SECTIONS = ("control", "estimation", "robot", "sensing", "nodes")
 
 
 def _merge_obelisk_configs(base: Dict, override: Dict) -> Dict:
@@ -246,7 +248,7 @@ def get_launch_actions_from_node_settings(
     Returns:
         A list of launch actions.
     """
-    assert node_type in ["control", "estimation", "robot", "sensing", "viz"]
+    assert node_type in ["control", "estimation", "robot", "sensing", "viz", "node"]
 
     def _single_component_launch_actions(node_settings: Dict, suffix: Optional[int] = None) -> List:
         package = node_settings["pkg"]

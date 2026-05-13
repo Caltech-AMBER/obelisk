@@ -312,3 +312,42 @@ def test_get_launch_actions_from_node_settings_invalid_type(test_global_state_no
     }
     with pytest.raises(AssertionError):
         get_launch_actions_from_node_settings(invalid, "invalid_type", test_global_state_node)
+
+
+# ---------------------------------------------------------------------- #
+# generic `nodes:` section + optional-section coverage                   #
+# ---------------------------------------------------------------------- #
+
+
+def test_get_launch_actions_accepts_node_type(test_global_state_node: LifecycleNode) -> None:
+    """The generic ``nodes:`` section uses ``node_type='node'`` and goes through the same launch
+    pipeline as control/estimation/robot/sensing.
+    """
+    settings = [{"pkg": "p", "executable": "e"}]
+    launch_actions = get_launch_actions_from_node_settings(settings, "node", test_global_state_node)
+    assert len(launch_actions) == 8  # 1 LifecycleNode + 7 lifecycle handlers, same as the others
+    assert isinstance(launch_actions[0], LifecycleNode)
+
+
+def test_merge_concats_nodes_section() -> None:
+    """The new ``nodes:`` section is treated as list-shaped and concatenates across includes."""
+    base = {"nodes": [{"pkg": "a", "executable": "x"}]}
+    override = {"nodes": [{"pkg": "b", "executable": "y"}]}
+    from obelisk_py.core.utils.launch_utils import _merge_obelisk_configs  # private but stable
+
+    merged = _merge_obelisk_configs(base, override)
+    assert [n["pkg"] for n in merged["nodes"]] == ["a", "b"]
+
+
+def test_load_dummy_minimal_yaml() -> None:
+    """End-to-end smoke test: dummy_minimal.yaml has only a ``nodes:`` section — no control,
+    estimation, robot, or sensing — and the loader returns it cleanly.
+    """
+    cfg = load_config_file("dummy_minimal.yaml")
+    assert cfg["config"] == "dummy_minimal"
+    assert "control" not in cfg
+    assert "estimation" not in cfg
+    assert "robot" not in cfg
+    assert "sensing" not in cfg
+    assert len(cfg["nodes"]) == 1
+    assert cfg["nodes"][0]["executable"] == "heartbeat_node"
