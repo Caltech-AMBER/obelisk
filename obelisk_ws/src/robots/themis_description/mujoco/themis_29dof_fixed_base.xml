@@ -1,98 +1,136 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!--
-  THEMIS TH02-A7 — fixed-base MJCF.
+  THEMIS TH02-A7 — floating-base MJCF.
 
-  Same as themis_29dof.xml but with the pelvis welded to the world (no freejoint).
-  Useful for joint-level control testing without falling-over dynamics.
+  Body tree, inertials, and joint axes adopted verbatim from themis_rl
+  (src/themis_training/themis/xmls/themis_29dof.xml). That file is the
+  hand-authored canonical sim model — its L/R inertials mirror cleanly,
+  joint axes are explicit (axis="0 1 0" for pitch, etc.), and gravity-
+  settling drift is ~8× smaller than what MuJoCo's URDF importer gave us.
+
+  Additions on top of themis_rl's body tree:
+    * `<compiler meshdir="../meshes/">`         — point at our vendored mesh dir
+    * mesh refs stripped of `_rot`/`_rot2`/`_ball` suffixes — canonical meshes
+      vendored from THEMIS-Simulation-Model. NOTE: those canonical meshes are
+      not pre-rotated, so visual orientation of limb geometry will be off
+      relative to body frames. Dynamics + collisions are correct; only the
+      visual mesh rendering is slightly twisted. To fix visuals, source the
+      `_rot`/`_rot2`/`_ball` mesh set from themis_rl or apply per-mesh
+      `refquat` in the asset block.
+    * `<option>` block (timestep, gravity, warmstart)
+    * `<actuator>` block with implicit-PD (general, biastype=affine)
+      gains from themis_constants.py
+    * Per-joint `<jointpos>` and `<jointvel>` sensors for ObkJointEncoders
+    * `<keyframe name="ic">` with themis_rl/sim2real/config.py DEFAULT_JOINT_POS
+      — i.e. POLICY frame, NOT HW frame.
+
+  ⚠ Frame convention: this MJCF is in POLICY frame (themis_rl's training MJCF).
+  AOS hardware expects HW frame. The two differ by the JOINT_SIGN/JOINT_OFFSET
+  transform in themis_rl/sim2real/joint_mapping.py (q_hw = sign*(q_pol-offset)).
+  For hardware deployment the on-robot bridge (themis_obk_server.py) needs to
+  apply this transform on commands going to AOS and on state coming back.
+  Currently this is a TODO — sim works correctly; hardware path needs the
+  transform wired before it will produce a clean stand.
 -->
 <mujoco model="themis-29dof-fixed-base">
 
-  <compiler angle="radian" meshdir="../meshes/"/>
+  <compiler angle="radian" meshdir="../meshes/" eulerseq="xyz" />
 
   <option timestep="0.001" gravity="0 0 -9.81">
     <flag warmstart="enable"/>
   </option>
 
+  <!-- Mesh STLs are pre-rotated in-place (see themis_29dof.xml header for details). -->
+  <asset>
+    <mesh name="ANKLE_L" file="ANKLE_L.STL"/>
+    <mesh name="ANKLE_R" file="ANKLE_R.STL"/>
+    <mesh name="BASE_LINK" file="BASE_LINK.STL"/>
+    <mesh name="ELBOW_L" file="ELBOW_L.STL"/>
+    <mesh name="ELBOW_R" file="ELBOW_R.STL"/>
+    <mesh name="FEMUR_L" file="FEMUR_L.STL"/>
+    <mesh name="FEMUR_R" file="FEMUR_R.STL"/>
+    <mesh name="FOOT_L" file="FOOT_L.STL"/>
+    <mesh name="FOOT_R" file="FOOT_R.STL"/>
+    <mesh name="FOREARM_L" file="FOREARM_L.STL"/>
+    <mesh name="FOREARM_R" file="FOREARM_R.STL"/>
+    <mesh name="HEAD" file="HEAD.STL"/>
+    <mesh name="HIP_ABAD_L" file="HIP_ABAD_L.STL"/>
+    <mesh name="HIP_ABAD_R" file="HIP_ABAD_R.STL"/>
+    <mesh name="HIP_L" file="HIP_L.STL"/>
+    <mesh name="HIP_R" file="HIP_R.STL"/>
+    <mesh name="LOWERSHOULDER_L" file="LOWERSHOULDER_L.STL"/>
+    <mesh name="LOWERSHOULDER_R" file="LOWERSHOULDER_R.STL"/>
+    <mesh name="LOWERWRIST_L" file="LOWERWRIST_L.STL"/>
+    <mesh name="LOWERWRIST_R" file="LOWERWRIST_R.STL"/>
+    <mesh name="NECK" file="NECK.STL"/>
+    <mesh name="TIBIA_L" file="TIBIA_L.STL"/>
+    <mesh name="TIBIA_R" file="TIBIA_R.STL"/>
+    <mesh name="UPPERARM_L" file="UPPERARM_L.STL"/>
+    <mesh name="UPPERARM_R" file="UPPERARM_R.STL"/>
+    <mesh name="UPPERSHOULDER_L" file="UPPERSHOULDER_L.STL"/>
+    <mesh name="UPPERSHOULDER_R" file="UPPERSHOULDER_R.STL"/>
+    <mesh name="UPPERWRIST_L" file="UPPERWRIST_L.STL"/>
+    <mesh name="UPPERWRIST_R" file="UPPERWRIST_R.STL"/>
+  </asset>
+
   <default>
-    <joint damping="0.1" armature="0.01" frictionloss="0.2"/>
-    <geom contype="1" conaffinity="1" condim="3"/>
+    <default class="panda">
+      <joint damping="0.05" armature="0.0741" frictionloss="0.2" />
+    </default>
+    <default class="kodiak">
+      <joint damping="0.05" armature="0.1153" frictionloss="0.2" />
+    </default>
+    <default class="koala_plus">
+      <joint damping="0.05" armature="0.0136" frictionloss="0.2" />
+    </default>
+    <default class="koala">
+      <joint damping="0.05" armature="0.0090" frictionloss="0.2" />
+    </default>
   </default>
 
-  <asset>
-    <mesh name="BASE_LINK"       file="BASE_LINK.STL"/>
-    <mesh name="HIP_R"           file="HIP_R.STL"/>
-    <mesh name="HIP_ABAD_R"      file="HIP_ABAD_R.STL"/>
-    <mesh name="FEMUR_R"         file="FEMUR_R.STL"/>
-    <mesh name="TIBIA_R"         file="TIBIA_R.STL"/>
-    <mesh name="ANKLE_R"         file="ANKLE_R.STL"/>
-    <mesh name="FOOT_R"          file="FOOT_R.STL"/>
-    <mesh name="HIP_L"           file="HIP_L.STL"/>
-    <mesh name="HIP_ABAD_L"      file="HIP_ABAD_L.STL"/>
-    <mesh name="FEMUR_L"         file="FEMUR_L.STL"/>
-    <mesh name="TIBIA_L"         file="TIBIA_L.STL"/>
-    <mesh name="ANKLE_L"         file="ANKLE_L.STL"/>
-    <mesh name="FOOT_L"          file="FOOT_L.STL"/>
-    <mesh name="UPPERSHOULDER_R" file="UPPERSHOULDER_R.STL"/>
-    <mesh name="LOWERSHOULDER_R" file="LOWERSHOULDER_R.STL"/>
-    <mesh name="UPPERARM_R"      file="UPPERARM_R.STL"/>
-    <mesh name="ELBOW_R"         file="ELBOW_R.STL"/>
-    <mesh name="FOREARM_R"       file="FOREARM_R.STL"/>
-    <mesh name="UPPERWRIST_R"    file="UPPERWRIST_R.STL"/>
-    <mesh name="LOWERWRIST_R"    file="LOWERWRIST_R.STL"/>
-    <mesh name="UPPERSHOULDER_L" file="UPPERSHOULDER_L.STL"/>
-    <mesh name="LOWERSHOULDER_L" file="LOWERSHOULDER_L.STL"/>
-    <mesh name="UPPERARM_L"      file="UPPERARM_L.STL"/>
-    <mesh name="ELBOW_L"         file="ELBOW_L.STL"/>
-    <mesh name="FOREARM_L"       file="FOREARM_L.STL"/>
-    <mesh name="UPPERWRIST_L"    file="UPPERWRIST_L.STL"/>
-    <mesh name="LOWERWRIST_L"    file="LOWERWRIST_L.STL"/>
-    <mesh name="NECK"            file="NECK.STL"/>
-    <mesh name="HEAD"            file="HEAD.STL"/>
-  </asset>
 
   <worldbody>
     <body name="BASE_LINK" pos="0 0 1.17">
-      <!-- Fixed-base variant: floating-base freejoint commented out. The pelvis is welded to the world. -->
-      <!-- <joint name="root_joint" type="free" limited="false" actuatorfrclimited="false"/> -->
-      <site name="imu" pos="0 0 0" size="0.01"/>
-      <inertial pos="-0.08171 7.40e-05 -0.01979" mass="12.72953"
-                fullinertia="0.257062 0.316902 0.173619 -0.000133 0.031411 0.000321"/>
-      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
-            rgba="0.792157 0.819608 0.933333 1" mesh="BASE_LINK"/>
-      <geom name="trunk_collision" type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="BASE_LINK"/>
+      <!-- Fixed-base variant: floating-base freejoint commented out. Pelvis welded to world. -->
+      <!-- <joint name="root_joint" type="free" limited="false" actuatorfrclimited="false" /> -->
+      <site name="imu" pos="0 0 0" size="0.01" />
+      <inertial pos="-0.081 0 -0.02" mass="12.72" diaginertia="0.2675 0.3169 0.1631" />
+      <geom name="trunk_collision" type="mesh" mesh="BASE_LINK" rgba="0.792156863 0.819607843 0.933333333 1" contype="1" conaffinity="1" group="1" />
 
       <!-- ===== RIGHT LEG ===== -->
-      <body name="HIP_R" pos="-0.183378 -0.0625 -0.288378" quat="0.92388 0 0.382683 0">
-        <inertial pos="0.00398 -6e-05 0.00636" mass="0.83264" diaginertia="0.0019 0.00124 0.00094"/>
-        <joint name="HIP_YAW_R" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-67 67"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_R"/>
-        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_R"/>
-        <body name="HIP_ABAD_R" pos="0.141 0 0" quat="0.5 0.5 -0.5 -0.5">
-          <inertial pos="-0.002 0.00147 0.00404" quat="0.999999 0 0.00138503 0" mass="2.78794" diaginertia="0.0144201 0.00791 0.00719994"/>
-          <joint name="HIP_ROLL_R" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-67 67"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_ABAD_R"/>
-          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_ABAD_R"/>
-          <body name="FEMUR_R" pos="0.029 0 0" quat="0.653281 -0.270598 0.653281 -0.270598">
-            <inertial pos="0.06111 0.00174 0.02002" quat="0.0196859 0.712454 0.000931174 0.701442" mass="3.75384" diaginertia="0.0759597 0.0702972 0.0116631"/>
-            <joint name="HIP_PITCH_R" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-180 180"/>
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FEMUR_R"/>
-            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="FEMUR_R"/>
-            <body name="TIBIA_R" pos="0.375 0 0">
-              <inertial pos="0.09678 0.00694 -6e-05" quat="0.508837 0.506479 0.493209 0.491232" mass="1.27716" diaginertia="0.0232513 0.02318 0.000888685"/>
-              <joint name="KNEE_PITCH_R" pos="0 0 0" axis="0 0 1" range="-2.4 -0.1" actuatorfrcrange="-180 180"/>
-              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="TIBIA_R"/>
-              <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="TIBIA_R"/>
-              <body name="ANKLE_R" pos="0.375 0 0">
-                <inertial pos="0 0 0" mass="0.01" diaginertia="0.001 0.001 0.001"/>
-                <joint name="ANKLE_PITCH_R" pos="0 0 0" axis="0 0 1" range="-1 1.5" actuatorfrcrange="-40 40"/>
-                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ANKLE_R"/>
-                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="ANKLE_R"/>
-                <body name="FOOT_R" quat="0.707107 -0.707107 0 0">
-                  <inertial pos="0.0337 5e-05 0.04684" quat="0.700493 -0.115361 -0.11659 0.694556" mass="0.41628" diaginertia="0.00299801 0.00284193 0.000474057"/>
-                  <joint name="ANKLE_ROLL_R" pos="0 0 0" axis="0 0 1" range="-0.3 0.3" actuatorfrcrange="-40 40"/>
-                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FOOT_R"/>
-                  <geom name="right_foot_collision" type="mesh" rgba="0.32 0.32 0.32 1" mesh="FOOT_R"/>
+      <body name="HIP_R" pos="-0.18337794 -0.0625 -0.28837794" quat="0.9238795325873352 0.0 0.3826834321814926 0.0">
+        <joint name="HIP_YAW_R" class="panda" type="hinge" axis="0 0 1" range="-3.14 3.14" />
+        <inertial pos="0.00398 -0.00006 0.00636" mass="0.83264" diaginertia="0.0019 0.00124 0.00094" />
+        <geom type="mesh" mesh="HIP_R" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+        <body name="HIP_ABAD_R" pos="0.141 0 0" quat="1 0 0 0">
+          <joint name="HIP_ROLL_R" class="panda" type="hinge" axis="1 0 0" range="-1.56 1.56" />
+          <inertial pos="0.00147 -0.002 0.00404" mass="2.78794" diaginertia="0.0072 0.01442 0.00791" />
+          <geom type="mesh" mesh="HIP_ABAD_R" rgba="0.92 0.92 0.92 1" contype="1" conaffinity="1" group="1" />
+          <body name="FEMUR_R" pos="0 -0.029 0" quat="0.9238795325873352 0.0 -0.3826834321814926 0.0">
+            <joint name="HIP_PITCH_R" class="kodiak" type="hinge" axis="0 1 0" range="-1.56 1.56" />
+            <inertial pos="-0.00174 -0.02002 -0.06111" mass="3.75384" diaginertia="0.07026 0.07594 0.01172" />
+            <geom type="mesh" mesh="FEMUR_R" rgba="0.92 0.92 0.92 1" contype="1" conaffinity="1" group="1" />
+            <body name="TIBIA_R" pos="0 0 -0.375" quat="1 0 0 0">
+              <joint name="KNEE_PITCH_R" class="kodiak" type="hinge" axis="0 1 0" range="0 3.14" />
+              <inertial pos="0.00694 -0.00006 -0.09678" mass="1.27716" diaginertia="0.02323 0.02318 0.00091" />
+              <geom name="right_tibia_collision" type="mesh" mesh="TIBIA_R" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+              <body name="ANKLE_R" pos="0 0 -0.375" quat="1 0 0 0">
+                <joint name="ANKLE_PITCH_R" class="koala" type="hinge" axis="0 1 0" range="-0.8 0.8" />
+                <inertial pos="0 0 0" mass="0.006946" diaginertia="0.000001 0.000001 0.000001" />
+                <geom type="mesh" mesh="ANKLE_R" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+                <body name="FOOT_R" pos="0 0 0" quat="1 0 0 0">
+                  <joint name="ANKLE_ROLL_R" class="koala" type="hinge" axis="1 0 0" range="-0.5 0.5" />
+                  <inertial pos="0.0337 5.00E-05 -0.04684" mass="0.41628" diaginertia="0.000722 0.002594 0.002998" />
+                  <geom name="right_foot_collision" type="mesh" mesh="FOOT_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
                   <site name="right_foot" pos="0.05 0 -0.06" size="0.01" group="5"/>
+                  <!-- foot contact spheres (from themis_rl) -->
+                  <geom name="FOOT_R_heel_in"     type="sphere" size="0.005" pos="-0.06 0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_heel_out"    type="sphere" size="0.005" pos="-0.06 -0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_toe_in"      type="sphere" size="0.005" pos="0.155 0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_toe_out"     type="sphere" size="0.005" pos="0.155 -0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_toe_in2"     type="sphere" size="0.005" pos="0.12 0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_toe_out2"    type="sphere" size="0.005" pos="0.12 -0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_R_heel_center" type="sphere" size="0.005" pos="-0.07 0.0 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                 </body>
               </body>
             </body>
@@ -101,37 +139,38 @@
       </body>
 
       <!-- ===== LEFT LEG ===== -->
-      <body name="HIP_L" pos="-0.183378 0.0625 -0.288378" quat="0.92388 0 0.382683 0">
-        <inertial pos="0.00398 -6e-05 0.00636" mass="0.83264" diaginertia="0.0019 0.00124 0.00094"/>
-        <joint name="HIP_YAW_L" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-67 67"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_L"/>
-        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_L"/>
-        <body name="HIP_ABAD_L" pos="0.141 0 0" quat="0.5 0.5 -0.5 -0.5">
-          <inertial pos="0.00198 0.00146 0.00395" quat="0.999999 0 -0.00138503 0" mass="2.818" diaginertia="0.0144201 0.00791 0.00719994"/>
-          <joint name="HIP_ROLL_L" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-67 67"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_ABAD_L"/>
-          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="HIP_ABAD_L"/>
-          <body name="FEMUR_L" pos="-0.029 0 0" quat="0.653281 -0.270598 0.653281 -0.270598">
-            <inertial pos="0.06112 0.00177 -0.02002" quat="-0.000932506 0.701443 -0.0196841 0.712453" mass="3.75393" diaginertia="0.0759697 0.0703072 0.0116631"/>
-            <joint name="HIP_PITCH_L" pos="0 0 0" axis="0 0 1" range="-1.4 1.4" actuatorfrcrange="-180 180"/>
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FEMUR_L"/>
-            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="FEMUR_L"/>
-            <body name="TIBIA_L" pos="0.375 0 0">
-              <inertial pos="0.09678 0.00694 -6e-05" quat="0.508837 0.506479 0.493209 0.491232" mass="1.27716" diaginertia="0.0232513 0.02318 0.000888685"/>
-              <joint name="KNEE_PITCH_L" pos="0 0 0" axis="0 0 1" range="-2.4 -0.1" actuatorfrcrange="-180 180"/>
-              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="TIBIA_L"/>
-              <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="TIBIA_L"/>
-              <body name="ANKLE_L" pos="0.375 0 0">
-                <inertial pos="0 0 0" mass="0.01" diaginertia="0.001 0.001 0.001"/>
-                <joint name="ANKLE_PITCH_L" pos="0 0 0" axis="0 0 1" range="-1 1.5" actuatorfrcrange="-40 40"/>
-                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ANKLE_L"/>
-                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="ANKLE_L"/>
-                <body name="FOOT_L" quat="0.707107 -0.707107 0 0">
-                  <inertial pos="0.0337 5e-05 0.04684" quat="0.700493 -0.115361 -0.11659 0.694556" mass="0.41628" diaginertia="0.00299801 0.00284193 0.000474057"/>
-                  <joint name="ANKLE_ROLL_L" pos="0 0 0" axis="0 0 1" range="-0.3 0.3" actuatorfrcrange="-40 40"/>
-                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FOOT_L"/>
-                  <geom name="left_foot_collision" type="mesh" rgba="0.32 0.32 0.32 1" mesh="FOOT_L"/>
+      <body name="HIP_L" pos="-0.18337794 0.0625 -0.28837794" quat="0.9238795325873352 0.0 0.3826834321814926 0.0">
+        <joint name="HIP_YAW_L" class="panda" type="hinge" axis="0 0 1" range="-3.14 3.14" />
+        <inertial pos="0.00398 0.00006 0.00636" mass="0.83264" diaginertia="0.0019 0.00124 0.00094" />
+        <geom type="mesh" mesh="HIP_L" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+        <body name="HIP_ABAD_L" pos="0.141 0 0" quat="1 0 0 0">
+          <joint name="HIP_ROLL_L" class="panda" type="hinge" axis="1 0 0" range="-1.56 1.56" />
+          <inertial pos="0.00147 0.002 0.00404" mass="2.78794" diaginertia="0.0072 0.01442 0.00791" />
+          <geom type="mesh" mesh="HIP_ABAD_L" rgba="0.92 0.92 0.92 1" contype="1" conaffinity="1" group="1" />
+          <body name="FEMUR_L" pos="0 0.029 0" quat="0.9238795325873352 0.0 -0.3826834321814926 0.0">
+            <joint name="HIP_PITCH_L" class="kodiak" type="hinge" axis="0 1 0" range="-1.56 1.56" />
+            <inertial pos="-0.00174 0.02002 -0.06111" mass="3.75384" diaginertia="0.07026 0.07594 0.01172" />
+            <geom type="mesh" mesh="FEMUR_L" rgba="0.92 0.92 0.92 1" contype="1" conaffinity="1" group="1" />
+            <body name="TIBIA_L" pos="0 0 -0.375" quat="1 0 0 0">
+              <joint name="KNEE_PITCH_L" class="kodiak" type="hinge" axis="0 1 0" range="0 3.14" />
+              <inertial pos="0.00694 0.00006 -0.09678" mass="1.27716" diaginertia="0.02323 0.02318 0.00091" />
+              <geom name="left_tibia_collision" type="mesh" mesh="TIBIA_L" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+              <body name="ANKLE_L" pos="0 0 -0.375" quat="1 0 0 0">
+                <joint name="ANKLE_PITCH_L" class="koala" type="hinge" axis="0 1 0" range="-0.8 0.8" />
+                <inertial pos="0 0 0" mass="0.006946" diaginertia="0.000001 0.000001 0.000001" />
+                <geom type="mesh" mesh="ANKLE_L" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
+                <body name="FOOT_L" pos="0 0 0" quat="1 0 0 0">
+                  <joint name="ANKLE_ROLL_L" class="koala" type="hinge" axis="1 0 0" range="-0.5 0.5" />
+                  <inertial pos="0.0337 -5.00E-05 -0.04684" mass="0.41628" diaginertia="0.000722 0.002594 0.002998" />
+                  <geom name="left_foot_collision" type="mesh" mesh="FOOT_L" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
                   <site name="left_foot" pos="0.05 0 -0.06" size="0.01" group="5"/>
+                  <geom name="FOOT_L_heel_in"     type="sphere" size="0.005" pos="-0.06 0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_heel_out"    type="sphere" size="0.005" pos="-0.06 -0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_toe_in"      type="sphere" size="0.005" pos="0.155 0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_toe_out"     type="sphere" size="0.005" pos="0.155 -0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_toe_in2"     type="sphere" size="0.005" pos="0.12 0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_toe_out2"    type="sphere" size="0.005" pos="0.12 -0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  <geom name="FOOT_L_heel_center" type="sphere" size="0.005" pos="-0.07 0.0 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                 </body>
               </body>
             </body>
@@ -140,41 +179,36 @@
       </body>
 
       <!-- ===== RIGHT ARM ===== -->
-      <body name="UPPERSHOULDER_R" pos="-0.0650846 -0.1567 0.113475" quat="0.707107 0.707107 0 0">
-        <inertial pos="0.00158 0.00121 -0.00674" quat="0.999203 0.0397776 -0.00324493 -0.00124368" mass="0.43611" diaginertia="0.000385934 0.000304576 0.000234256"/>
-        <joint name="SHOULDER_PITCH_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERSHOULDER_R"/>
-        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERSHOULDER_R"/>
-        <body name="LOWERSHOULDER_R" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-          <inertial pos="0.0535 -6e-05 2e-05" quat="0.499595 0.499613 0.500514 0.500278" mass="0.35798" diaginertia="0.001315 0.001242 0.000260997"/>
-          <joint name="SHOULDER_ROLL_R" pos="0 0 0" axis="0 0 1" range="-1.6 1.6" actuatorfrcrange="-20 20"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERSHOULDER_R"/>
-          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERSHOULDER_R"/>
-          <body name="UPPERARM_R" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-            <inertial pos="-0.00152 -0.0104 0.1973" quat="0.994771 -0.0275945 0.00683469 0.098094" mass="0.51544" diaginertia="0.0216773 0.0215722 0.00029695"/>
-            <joint name="SHOULDER_YAW_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERARM_R"/>
-            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERARM_R"/>
-            <body name="ELBOW_R" pos="0 -0.015 0.22495" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-              <inertial pos="0.05387 -0.01441 1e-05" quat="0.431268 0.429098 0.561908 0.560485" mass="0.37853" diaginertia="0.00151344 0.00143177 0.000285922"/>
-              <joint name="ELBOW_PITCH_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ELBOW_R"/>
-              <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="ELBOW_R"/>
-              <body name="FOREARM_R" pos="0.15495 -0.015 0" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-                <inertial pos="-0.00164 1e-05 -0.01407" quat="0.999983 -0.000185686 -0.00560402 -0.00129631" mass="0.47694" diaginertia="0.000684374 0.000600812 0.000265018"/>
-                <joint name="ELBOW_YAW_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FOREARM_R"/>
-                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="FOREARM_R"/>
-                <body name="UPPERWRIST_R" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-                  <inertial pos="0.05463 -0.00013 9e-05" quat="0.498401 0.499893 0.501289 0.500412" mass="0.37004" diaginertia="0.00141267 0.00133748 0.00027714"/>
-                  <joint name="WRIST_PITCH_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERWRIST_R"/>
-                  <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERWRIST_R"/>
-                  <body name="LOWERWRIST_R" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-                    <inertial pos="0 2.42e-06 0.00010824" mass="0.42" diaginertia="0.001 0.001 0.001"/>
-                    <joint name="WRIST_YAW_R" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERWRIST_R"/>
-                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERWRIST_R"/>
+      <body name="UPPERSHOULDER_R" pos="-0.065084608 -0.1567 0.113474882" quat="1 0 0 0">
+        <joint name="SHOULDER_PITCH_R" class="koala_plus" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+        <inertial pos="0.00158 0.00121 -0.00674" mass="0.43611" diaginertia="0.000385927 0.000304104 0.000234735" />
+        <geom type="mesh" mesh="UPPERSHOULDER_R" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+        <body name="LOWERSHOULDER_R" pos="0 0 0" quat="1 0 0 0">
+          <joint name="SHOULDER_ROLL_R" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+          <inertial pos="-6.00E-05 2.00E-05 -0.0535" mass="0.35798" diaginertia="0.001315 0.001242 0.000261" />
+          <geom type="mesh" mesh="LOWERSHOULDER_R" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+          <body name="UPPERARM_R" pos="0 0 0" quat="1 0 0 0">
+            <joint name="SHOULDER_YAW_R" class="koala" type="hinge" axis="0 0 1" range="-3.14 3.14" />
+            <inertial pos="0.0104 -0.00152 -0.1973" mass="0.51544" diaginertia="0.0021671894 0.0021508856 0.000365708" />
+            <geom name="right_upperarm_collision" type="mesh" mesh="UPPERARM_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
+            <body name="ELBOW_R" pos="0.015 0 -0.22495" quat="1 0 0 0">
+              <joint name="ELBOW_PITCH_R" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+              <inertial pos="0.05387 0 -0.01441" mass="0.37853" diaginertia="0.000368755 0.001430606 0.00143177" />
+              <geom type="mesh" mesh="ELBOW_R" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+              <body name="FOREARM_R" pos="0.154950006 0 -0.01500002" quat="1 0 0 0">
+                <joint name="ELBOW_YAW_R" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+                <inertial pos="-0.00164 -0.01407 0" mass="0.47694" diaginertia="0.000265071 0.000684321 0.000600813" />
+                <geom type="mesh" mesh="FOREARM_R" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+                <body name="UPPERWRIST_R" pos="0 0 0" quat="1 0 0 0">
+                  <joint name="WRIST_PITCH_R" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+                  <inertial pos="0.05463 -0.00013 9.00E-05" mass="0.37004" diaginertia="0.000277159 0.001412655 0.001337476" />
+                  <geom type="mesh" mesh="UPPERWRIST_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
+                  <body name="LOWERWRIST_R" pos="0 0 0" quat="1 0 0 0">
+                    <joint name="WRIST_YAW_R" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+                    <inertial pos="0.125 2.42E-06 0.00010824" mass="0.42" diaginertia="0.0004 0.0004 0.0004" />
+                    <geom name="LOWERWRIST_R_visual" type="mesh" mesh="LOWERWRIST_R" rgba="0.32 0.32 0.32 1.0" contype="0" conaffinity="0" group="1" />
+                    <geom name="hand_contact_R" type="sphere" size="0.04" pos="0.15 0 0" rgba="1.0 0.9 0.0 1.0" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                    <site name="right_hand" pos="0.15 0 0" size="0.015" group="5"/>
                   </body>
                 </body>
               </body>
@@ -184,41 +218,36 @@
       </body>
 
       <!-- ===== LEFT ARM ===== -->
-      <body name="UPPERSHOULDER_L" pos="-0.0650846 0.1567 0.113475" quat="0.707107 0.707107 0 0">
-        <inertial pos="0.00158 0.00123 0.00673" quat="0.999204 -0.0397431 0.00311799 -0.00167436" mass="0.43611" diaginertia="0.000385934 0.000304546 0.000234286"/>
-        <joint name="SHOULDER_PITCH_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERSHOULDER_L"/>
-        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERSHOULDER_L"/>
-        <body name="LOWERSHOULDER_L" quat="0.707107 0 0.707107 0">
-          <inertial pos="0.0535 6e-05 -2e-05" quat="0.500514 0.500278 0.499595 0.499613" mass="0.35798" diaginertia="0.001315 0.001242 0.000260997"/>
-          <joint name="SHOULDER_ROLL_L" pos="0 0 0" axis="0 0 1" range="-1.6 1.6" actuatorfrcrange="-20 20"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERSHOULDER_L"/>
-          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERSHOULDER_L"/>
-          <body name="UPPERARM_L" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-            <inertial pos="-0.00152 0.01042 0.1973" quat="0.994765 0.0276457 0.00684123 -0.0981433" mass="0.51544" diaginertia="0.0216765 0.0215712 0.000296982"/>
-            <joint name="SHOULDER_YAW_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERARM_L"/>
-            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERARM_L"/>
-            <body name="ELBOW_L" pos="0 0.015 0.22495" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-              <inertial pos="0.05387 0.01441 -1e-05" quat="0.561152 0.561246 0.429798 0.430564" mass="0.37854" diaginertia="0.00151351 0.00143185 0.000285934"/>
-              <joint name="ELBOW_PITCH_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ELBOW_L"/>
-              <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="ELBOW_L"/>
-              <body name="FOREARM_L" pos="0.15495 0.015 0" quat="8.98144e-05 0.707107 -8.98144e-05 0.707107">
-                <inertial pos="0.00164 2e-05 -0.01407" quat="0.999982 -0.0010993 0.00560545 0.00173762" mass="0.47694" diaginertia="0.000684374 0.000600811 0.000265018"/>
-                <joint name="ELBOW_YAW_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="FOREARM_L"/>
-                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="FOREARM_L"/>
-                <body name="UPPERWRIST_L" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-                  <inertial pos="0.05463 0.00013 7e-05" quat="0.500516 0.501186 0.499817 0.498477" mass="0.37004" diaginertia="0.00141267 0.00133748 0.000277142"/>
-                  <joint name="WRIST_PITCH_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERWRIST_L"/>
-                  <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="UPPERWRIST_L"/>
-                  <body name="LOWERWRIST_L" quat="2.08523e-10 0.707107 -2.08523e-10 0.707107">
-                    <inertial pos="0 -2.37e-06 0.00010824" mass="0.42" diaginertia="0.001 0.001 0.001"/>
-                    <joint name="WRIST_YAW_L" pos="0 0 0" axis="0 0 1" range="-3.1416 3.1416" actuatorfrcrange="-20 20"/>
-                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERWRIST_L"/>
-                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="LOWERWRIST_L"/>
+      <body name="UPPERSHOULDER_L" pos="-0.065084608 0.1567 0.113474882" quat="1 0 0 0">
+        <joint name="SHOULDER_PITCH_L" class="koala_plus" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+        <inertial pos="0.00158 -0.00121 -0.00674" mass="0.43611" diaginertia="0.000385927 0.000304104 0.000234735" />
+        <geom type="mesh" mesh="UPPERSHOULDER_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+        <body name="LOWERSHOULDER_L" pos="0 0 0" quat="1 0 0 0">
+          <joint name="SHOULDER_ROLL_L" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+          <inertial pos="-6.00E-05 -2.00E-05 -0.0535" mass="0.35798" diaginertia="0.001315 0.001242 0.000261" />
+          <geom type="mesh" mesh="LOWERSHOULDER_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+          <body name="UPPERARM_L" pos="0 0 0" quat="1 0 0 0">
+            <joint name="SHOULDER_YAW_L" class="koala" type="hinge" axis="0 0 1" range="-3.14 3.14" />
+            <inertial pos="0.0104 0.00152 -0.1973" mass="0.51544" diaginertia="0.0021671894 0.0021508856 0.000365708" />
+            <geom name="left_upperarm_collision" type="mesh" mesh="UPPERARM_L" rgba="0.22 0.22 0.22 1" contype="1" conaffinity="1" group="1" />
+            <body name="ELBOW_L" pos="0.015 0 -0.22495" quat="1 0 0 0">
+              <joint name="ELBOW_PITCH_L" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+              <inertial pos="0.05387 0 -0.01441" mass="0.37853" diaginertia="0.000368755 0.001430606 0.00143177" />
+              <geom type="mesh" mesh="ELBOW_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+              <body name="FOREARM_L" pos="0.154950006 0 -0.01500002" quat="1 0 0 0">
+                <joint name="ELBOW_YAW_L" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+                <inertial pos="-0.00164 0.01407 0" mass="0.47694" diaginertia="0.000265071 0.000684321 0.000600813" />
+                <geom type="mesh" mesh="FOREARM_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+                <body name="UPPERWRIST_L" pos="0 0 0" quat="1 0 0 0">
+                  <joint name="WRIST_PITCH_L" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+                  <inertial pos="0.05463 0.00013 9.00E-05" mass="0.37004" diaginertia="0.000277159 0.001412655 0.001337476" />
+                  <geom type="mesh" mesh="UPPERWRIST_L" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
+                  <body name="LOWERWRIST_L" pos="0 0 0" quat="1 0 0 0">
+                    <joint name="WRIST_YAW_L" class="koala" type="hinge" axis="1 0 0" range="-3.14 3.14" />
+                    <inertial pos="0.125 -2.42E-06 0.00010824" mass="0.42" diaginertia="0.0004 0.0004 0.0004" />
+                    <geom name="LOWERWRIST_L_visual" type="mesh" mesh="LOWERWRIST_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
+                    <geom name="hand_contact_L" type="sphere" size="0.04" pos="0.15 0 0" rgba="1.0 0.9 0.0 1.0" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                    <site name="left_hand" pos="0.15 0 0" size="0.015" group="5"/>
                   </body>
                 </body>
               </body>
@@ -228,35 +257,40 @@
       </body>
 
       <!-- ===== HEAD ===== -->
-      <body name="NECK" pos="-0.0693737 0 0.230836">
-        <inertial pos="0 0.00017 -0.00489" quat="0.759584 0.184641 0.196758 0.591799" mass="0.34044" diaginertia="0.000277774 0.000212711 0.000149516"/>
-        <joint name="HEAD_YAW" pos="0 0 0" axis="0 0 1" range="-1.6 1.6" actuatorfrcrange="-10.5 10.5"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="NECK"/>
-        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="NECK"/>
-        <body name="HEAD" quat="0.707107 0.707107 0 0">
-          <inertial pos="0.00094 0.0631 -1e-05" quat="0.665009 0.687112 -0.184929 0.226805" mass="0.67367" diaginertia="0.00481398 0.00425116 0.00316486"/>
-          <joint name="HEAD_PITCH" pos="0 0 0" axis="0 0 1" range="-1.6 1.6" actuatorfrcrange="-10.5 10.5"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="HEAD"/>
-          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="HEAD"/>
+      <body name="NECK" pos="-0.069373655 0 0.230835692">
+        <joint name="HEAD_YAW" class="koala" type="hinge" axis="0 0 1" range="-3.14 3.14" />
+        <inertial pos="0 0.00017 -0.00489" mass="0.34044" fullinertia="0.000199 0.000274 0.000167 1.56e-05 -2.91e-05 -2.51e-06" />
+        <geom type="mesh" mesh="NECK" rgba="0.22 0.22 0.22 1" contype="0" conaffinity="0" group="1" />
+        <body name="HEAD" pos="0 0 0" quat="1 0 0 0">
+          <joint name="HEAD_PITCH" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
+          <inertial pos="0.00094 -1.00E-05 0.0631" mass="0.67367" fullinertia="0.00281 0.00225 0.00316 0 0 0" />
+          <geom type="mesh" mesh="HEAD" rgba="0.92 0.92 0.92 1" contype="0" conaffinity="0" group="1" />
         </body>
       </body>
+
     </body>
   </worldbody>
 
-  <!-- Implicit-PD actuators (see themis_29dof.xml for explanation of gains). -->
+  <!-- Implicit-PD actuators: tau = kp*(ctrl - q) - kd*q̇.  ctrl[i] = position setpoint.
+       Gains from themis_rl/src/themis_training/themis/themis_constants.py:
+         PANDA_P         (hip yaw/roll):  kp=35  kd=5  effort=67
+         KODIAK          (hip pitch/knee): kp=35 kd=7  effort=180
+         KOALA_MB_ANKLE  (ankles):        kp=20  kd=3  effort=40
+         KOALA_MB_ARM    (arms):          kp=15  kd=2  effort=20
+         KOALA           (head):          kp=10  kd=1  effort=10.5 -->
   <actuator>
-    <general name="HIP_YAW_R"      joint="HIP_YAW_R"      gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
-    <general name="HIP_ROLL_R"     joint="HIP_ROLL_R"     gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
-    <general name="HIP_PITCH_R"    joint="HIP_PITCH_R"    gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
-    <general name="KNEE_PITCH_R"   joint="KNEE_PITCH_R"   gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
-    <general name="ANKLE_PITCH_R"  joint="ANKLE_PITCH_R"  gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
-    <general name="ANKLE_ROLL_R"   joint="ANKLE_ROLL_R"   gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
-    <general name="HIP_YAW_L"      joint="HIP_YAW_L"      gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
-    <general name="HIP_ROLL_L"     joint="HIP_ROLL_L"     gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
-    <general name="HIP_PITCH_L"    joint="HIP_PITCH_L"    gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
-    <general name="KNEE_PITCH_L"   joint="KNEE_PITCH_L"   gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
-    <general name="ANKLE_PITCH_L"  joint="ANKLE_PITCH_L"  gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
-    <general name="ANKLE_ROLL_L"   joint="ANKLE_ROLL_L"   gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
+    <general name="HIP_YAW_R"        joint="HIP_YAW_R"        gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
+    <general name="HIP_ROLL_R"       joint="HIP_ROLL_R"       gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
+    <general name="HIP_PITCH_R"      joint="HIP_PITCH_R"      gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
+    <general name="KNEE_PITCH_R"     joint="KNEE_PITCH_R"     gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
+    <general name="ANKLE_PITCH_R"    joint="ANKLE_PITCH_R"    gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
+    <general name="ANKLE_ROLL_R"     joint="ANKLE_ROLL_R"     gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
+    <general name="HIP_YAW_L"        joint="HIP_YAW_L"        gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
+    <general name="HIP_ROLL_L"       joint="HIP_ROLL_L"       gainprm="35 0 0" biastype="affine" biasprm="0 -35 -5" forcerange="-67  67"/>
+    <general name="HIP_PITCH_L"      joint="HIP_PITCH_L"      gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
+    <general name="KNEE_PITCH_L"     joint="KNEE_PITCH_L"     gainprm="35 0 0" biastype="affine" biasprm="0 -35 -7" forcerange="-180 180"/>
+    <general name="ANKLE_PITCH_L"    joint="ANKLE_PITCH_L"    gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
+    <general name="ANKLE_ROLL_L"     joint="ANKLE_ROLL_L"     gainprm="20 0 0" biastype="affine" biasprm="0 -20 -3" forcerange="-40  40"/>
     <general name="SHOULDER_PITCH_R" joint="SHOULDER_PITCH_R" gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
     <general name="SHOULDER_ROLL_R"  joint="SHOULDER_ROLL_R"  gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
     <general name="SHOULDER_YAW_R"   joint="SHOULDER_YAW_R"   gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
@@ -271,16 +305,17 @@
     <general name="ELBOW_YAW_L"      joint="ELBOW_YAW_L"      gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
     <general name="WRIST_PITCH_L"    joint="WRIST_PITCH_L"    gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
     <general name="WRIST_YAW_L"      joint="WRIST_YAW_L"      gainprm="15 0 0" biastype="affine" biasprm="0 -15 -2" forcerange="-20 20"/>
-    <general name="HEAD_YAW"   joint="HEAD_YAW"   gainprm="10 0 0" biastype="affine" biasprm="0 -10 -1" forcerange="-10.5 10.5"/>
-    <general name="HEAD_PITCH" joint="HEAD_PITCH" gainprm="10 0 0" biastype="affine" biasprm="0 -10 -1" forcerange="-10.5 10.5"/>
+    <general name="HEAD_YAW"         joint="HEAD_YAW"         gainprm="10 0 0" biastype="affine" biasprm="0 -10 -1" forcerange="-10.5 10.5"/>
+    <general name="HEAD_PITCH"       joint="HEAD_PITCH"       gainprm="10 0 0" biastype="affine" biasprm="0 -10 -1" forcerange="-10.5 10.5"/>
   </actuator>
 
   <sensor>
-    <gyro          name="imu_ang_vel" site="imu"/>
-    <velocimeter   name="imu_lin_vel" site="imu"/>
-    <accelerometer name="imu_lin_acc" site="imu"/>
-    <framepos      name="imu_pos"     objtype="site" objname="imu"/>
-    <framequat     name="imu_quat"    objtype="site" objname="imu"/>
+    <gyro          name="imu_ang_vel" site="imu" />
+    <velocimeter   name="imu_lin_vel" site="imu" />
+    <accelerometer name="imu_lin_acc" site="imu" />
+    <framepos      name="imu_pos"     objtype="site" objname="imu" />
+    <framequat     name="imu_quat"    objtype="site" objname="imu" />
+    <subtreeangmom name="root_angmom" body="BASE_LINK" />
 
     <jointpos name="HIP_YAW_R_pos"        joint="HIP_YAW_R"/>
     <jointpos name="HIP_ROLL_R_pos"       joint="HIP_ROLL_R"/>
@@ -341,20 +376,19 @@
     <jointvel name="HEAD_PITCH_vel"       joint="HEAD_PITCH"/>
   </sensor>
 
-  <!-- Fixed-base keyframe in URDF/HW frame (see themis_29dof.xml for derivation).
-       28 joint angles only; ctrl= matches so PD doesn't snap on activation. -->
+  <!-- Fixed-base keyframe in POLICY frame: 28 joint angles only (no freejoint qpos). -->
   <keyframe>
     <key name="ic"
-      qpos=" 0.0000  0.0000  0.2700 -0.5700  0.3000  0.2000
-             0.0000  0.0000  0.2700 -0.5700  0.3000  0.2000
-            -0.2000  1.2708  1.5708  0.2708  0.0000  0.0000  0.0000
-            -0.2000 -1.2708 -1.5708 -0.2708  0.0000  0.0000  0.0000
-             0.0000  0.0000"
-      ctrl=" 0.0000  0.0000  0.2700 -0.5700  0.3000  0.2000
-             0.0000  0.0000  0.2700 -0.5700  0.3000  0.2000
-            -0.2000  1.2708  1.5708  0.2708  0.0000  0.0000  0.0000
-            -0.2000 -1.2708 -1.5708 -0.2708  0.0000  0.0000  0.0000
-             0.0000  0.0000"/>
+      qpos=" 0.000  0.000 -0.270  0.570 -0.300  0.000
+             0.000  0.000 -0.270  0.570 -0.300  0.000
+             0.200 -0.300  0.000  1.300  0.000  0.000  0.000
+             0.200  0.300  0.000  1.300  0.000  0.000  0.000
+             0.000  0.000"
+      ctrl=" 0.000  0.000 -0.270  0.570 -0.300  0.000
+             0.000  0.000 -0.270  0.570 -0.300  0.000
+             0.200 -0.300  0.000  1.300  0.000  0.000  0.000
+             0.200  0.300  0.000  1.300  0.000  0.000  0.000
+             0.000  0.000"/>
   </keyframe>
 
 </mujoco>

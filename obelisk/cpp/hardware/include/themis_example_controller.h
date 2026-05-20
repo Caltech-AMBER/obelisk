@@ -103,22 +103,24 @@ namespace obelisk {
             "HEAD_YAW", "HEAD_PITCH",
         };
 
-        // Home pose in URDF/HW frame. Computed from themis_rl/sim2real/config.py DEFAULT_JOINT_POS
-        // by applying q_hw = sign*(q_pol - offset) from themis_rl/sim2real/joint_mapping.py.
-        // (themis_rl's policy frame uses pre-rotated meshes; our MJCF uses the canonical URDF frame,
-        //  so the same physical stand requires different numeric joint angles.)
+        // Home pose in POLICY frame (= themis_rl's training MJCF frame, which our themis_description
+        // MJCF also uses).  Values copied verbatim from themis_rl/sim2real/config.py DEFAULT_JOINT_POS.
+        //
+        // NOTE on hardware deployment: AOS expects HW frame (URDF convention). The frame conversion
+        // q_hw = sign*(q_pol - offset) from themis_rl/sim2real/joint_mapping.py needs to be applied
+        // by themis_obk_server.py before passing setpoints to wbc_api.  TODO until that's wired.
         inline static const std::map<std::string, double> JOINT_DEFAULTS = {
-            {"HIP_YAW_R",   0.0000}, {"HIP_ROLL_R",   0.0000}, {"HIP_PITCH_R",   0.2700},
-            {"KNEE_PITCH_R", -0.5700}, {"ANKLE_PITCH_R", 0.3000}, {"ANKLE_ROLL_R", 0.2000},
-            {"HIP_YAW_L",   0.0000}, {"HIP_ROLL_L",   0.0000}, {"HIP_PITCH_L",   0.2700},
-            {"KNEE_PITCH_L", -0.5700}, {"ANKLE_PITCH_L", 0.3000}, {"ANKLE_ROLL_L", 0.2000},
-            {"SHOULDER_PITCH_R", -0.2000}, {"SHOULDER_ROLL_R", 1.2708}, {"SHOULDER_YAW_R", 1.5708},
-            {"ELBOW_PITCH_R", 0.2708}, {"ELBOW_YAW_R", 0.0000},
-            {"WRIST_PITCH_R", 0.0000}, {"WRIST_YAW_R", 0.0000},
-            {"SHOULDER_PITCH_L", -0.2000}, {"SHOULDER_ROLL_L", -1.2708}, {"SHOULDER_YAW_L", -1.5708},
-            {"ELBOW_PITCH_L", -0.2708}, {"ELBOW_YAW_L", 0.0000},
-            {"WRIST_PITCH_L", 0.0000}, {"WRIST_YAW_L", 0.0000},
-            {"HEAD_YAW", 0.0000}, {"HEAD_PITCH", 0.0000},
+            {"HIP_YAW_R",        0.000},  {"HIP_ROLL_R",       0.000},  {"HIP_PITCH_R",     -0.270},
+            {"KNEE_PITCH_R",     0.570},  {"ANKLE_PITCH_R",   -0.300},  {"ANKLE_ROLL_R",     0.000},
+            {"HIP_YAW_L",        0.000},  {"HIP_ROLL_L",       0.000},  {"HIP_PITCH_L",     -0.270},
+            {"KNEE_PITCH_L",     0.570},  {"ANKLE_PITCH_L",   -0.300},  {"ANKLE_ROLL_L",     0.000},
+            {"SHOULDER_PITCH_R", 0.200},  {"SHOULDER_ROLL_R", -0.300},  {"SHOULDER_YAW_R",   0.000},
+            {"ELBOW_PITCH_R",    1.300},  {"ELBOW_YAW_R",      0.000},
+            {"WRIST_PITCH_R",    0.000},  {"WRIST_YAW_R",      0.000},
+            {"SHOULDER_PITCH_L", 0.200},  {"SHOULDER_ROLL_L",  0.300},  {"SHOULDER_YAW_L",   0.000},
+            {"ELBOW_PITCH_L",    1.300},  {"ELBOW_YAW_L",      0.000},
+            {"WRIST_PITCH_L",    0.000},  {"WRIST_YAW_L",      0.000},
+            {"HEAD_YAW",         0.000},  {"HEAD_PITCH",       0.000},
         };
     };
 
