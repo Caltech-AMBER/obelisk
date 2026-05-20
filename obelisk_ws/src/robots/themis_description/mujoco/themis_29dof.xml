@@ -193,10 +193,7 @@
           <geom type="mesh" mesh="LOWERSHOULDER_R" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
           <body name="UPPERARM_R" pos="0 0 0" quat="1 0 0 0">
             <joint name="SHOULDER_YAW_R" class="koala" type="hinge" axis="0 0 1" range="-3.14 3.14" />
-            <!-- UPPERARM diaginertia restored from URDF: themis_rl had an apparent transcription typo
-                 (leading 0.00 instead of 0.0) giving 10x too little arm inertia.  See
-                 docs/plans/themis_inertia_discrepancies.md and audit_inertia.py. -->
-            <inertial pos="0.0104 -0.00152 -0.1973" mass="0.51544" diaginertia="0.021671894 0.021508856 0.000365708" />
+            <inertial pos="0.0104 -0.00152 -0.1973" mass="0.51544" diaginertia="0.0021671894 0.0021508856 0.000365708" />
             <geom name="right_upperarm_collision" type="mesh" mesh="UPPERARM_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
             <body name="ELBOW_R" pos="0.015 0 -0.22495" quat="1 0 0 0">
               <joint name="ELBOW_PITCH_R" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
@@ -235,8 +232,7 @@
           <geom type="mesh" mesh="LOWERSHOULDER_L" rgba="0.32 0.32 0.32 1" contype="0" conaffinity="0" group="1" />
           <body name="UPPERARM_L" pos="0 0 0" quat="1 0 0 0">
             <joint name="SHOULDER_YAW_L" class="koala" type="hinge" axis="0 0 1" range="-3.14 3.14" />
-            <!-- See UPPERARM_R for the rationale (URDF restore, themis_rl typo). -->
-            <inertial pos="0.0104 0.00152 -0.1973" mass="0.51544" diaginertia="0.021671894 0.021508856 0.000365708" />
+            <inertial pos="0.0104 0.00152 -0.1973" mass="0.51544" diaginertia="0.0021671894 0.0021508856 0.000365708" />
             <geom name="left_upperarm_collision" type="mesh" mesh="UPPERARM_L" rgba="0.22 0.22 0.22 1" contype="1" conaffinity="1" group="1" />
             <body name="ELBOW_L" pos="0.015 0 -0.22495" quat="1 0 0 0">
               <joint name="ELBOW_PITCH_L" class="koala" type="hinge" axis="0 1 0" range="-3.14 3.14" />
