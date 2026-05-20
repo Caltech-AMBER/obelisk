@@ -94,6 +94,14 @@
       <!-- Fixed-base variant: floating-base freejoint commented out. Pelvis welded to world. -->
       <!-- <joint name="root_joint" type="free" limited="false" actuatorfrclimited="false" /> -->
       <site name="imu" pos="0 0 0" size="0.01" />
+      <!-- Chest depth camera: forward-looking sensor, pitched 50° below horizontal.
+           Frame convention: site +X = optical axis (forward), +Y = left, +Z = up.
+           This matches Obelisk's depth_camera scan pattern (see image_forward_local_
+           in obelisk/cpp/obelisk_cpp/lidar/depth_interface.h), so the scan_config
+           offset can stay identity. NOTE: this DIVERGES from themis_rl's site,
+           which used MuJoCo pinhole convention (-Z = optical axis). A future
+           MuJoCo <camera> element placed here would need a different orientation. -->
+      <site name="chest_camera" pos="0.028 0 0.012" quat="0.9063077870 0 0.4226182617 0" size="0.015" group="5"/>
       <inertial pos="-0.081 0 -0.02" mass="12.72" diaginertia="0.2675 0.3169 0.1631" />
       <geom name="trunk_collision" type="mesh" mesh="BASE_LINK" rgba="0.792156863 0.819607843 0.933333333 1" contype="1" conaffinity="1" group="1" />
 
@@ -121,9 +129,14 @@
                 <body name="FOOT_R" pos="0 0 0" quat="1 0 0 0">
                   <joint name="ANKLE_ROLL_R" class="koala" type="hinge" axis="1 0 0" range="-0.5 0.5" />
                   <inertial pos="0.0337 5.00E-05 -0.04684" mass="0.41628" diaginertia="0.000722 0.002594 0.002998" />
-                  <geom name="right_foot_collision" type="mesh" mesh="FOOT_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
+                  <!-- Foot mesh: collision via the foot mesh's convex hull.  URDF uses a box
+                       instead (for IsaacLab/PhysX); MuJoCo handles the mesh hull fine. -->
+                  <geom name="right_foot_collision" type="mesh" mesh="FOOT_R" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" group="1" />
                   <site name="right_foot" pos="0.05 0 -0.06" size="0.01" group="5"/>
-                  <!-- foot contact spheres (from themis_rl) -->
+                  <!-- Box footprint (MJCF-equivalent of the URDF box).  Disabled; uncomment for parity.
+                  <geom name="FOOT_R_box" type="box" size="0.1175 0.05 0.005" pos="0.0425 0 -0.05" rgba="0.9 0.1 0.1 0.5" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  -->
+                  <!-- foot contact spheres (from themis_rl) — kept commented for reference.
                   <geom name="FOOT_R_heel_in"     type="sphere" size="0.005" pos="-0.06 0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_R_heel_out"    type="sphere" size="0.005" pos="-0.06 -0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_R_toe_in"      type="sphere" size="0.005" pos="0.155 0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
@@ -131,6 +144,7 @@
                   <geom name="FOOT_R_toe_in2"     type="sphere" size="0.005" pos="0.12 0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_R_toe_out2"    type="sphere" size="0.005" pos="0.12 -0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_R_heel_center" type="sphere" size="0.005" pos="-0.07 0.0 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  -->
                 </body>
               </body>
             </body>
@@ -162,8 +176,13 @@
                 <body name="FOOT_L" pos="0 0 0" quat="1 0 0 0">
                   <joint name="ANKLE_ROLL_L" class="koala" type="hinge" axis="1 0 0" range="-0.5 0.5" />
                   <inertial pos="0.0337 -5.00E-05 -0.04684" mass="0.41628" diaginertia="0.000722 0.002594 0.002998" />
-                  <geom name="left_foot_collision" type="mesh" mesh="FOOT_L" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" group="1" />
+                  <!-- Foot mesh: collision via the foot mesh's convex hull (see FOOT_R for rationale). -->
+                  <geom name="left_foot_collision" type="mesh" mesh="FOOT_L" rgba="0.32 0.32 0.32 1" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" group="1" />
                   <site name="left_foot" pos="0.05 0 -0.06" size="0.01" group="5"/>
+                  <!-- Box footprint (MJCF-equivalent of the URDF box).  Disabled; uncomment for parity.
+                  <geom name="FOOT_L_box" type="box" size="0.1175 0.05 0.005" pos="0.0425 0 -0.05" rgba="0.9 0.1 0.1 0.5" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  -->
+                  <!-- foot contact spheres (from themis_rl) — kept commented for reference.
                   <geom name="FOOT_L_heel_in"     type="sphere" size="0.005" pos="-0.06 0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_L_heel_out"    type="sphere" size="0.005" pos="-0.06 -0.025 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_L_toe_in"      type="sphere" size="0.005" pos="0.155 0.028 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
@@ -171,6 +190,7 @@
                   <geom name="FOOT_L_toe_in2"     type="sphere" size="0.005" pos="0.12 0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_L_toe_out2"    type="sphere" size="0.005" pos="0.12 -0.045 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
                   <geom name="FOOT_L_heel_center" type="sphere" size="0.005" pos="-0.07 0.0 -0.05" rgba="0.9 0.1 0.1 0.9" contype="1" conaffinity="1" condim="3" friction="1.0 0.005 0.0001" />
+                  -->
                 </body>
               </body>
             </body>
