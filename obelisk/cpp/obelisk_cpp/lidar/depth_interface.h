@@ -56,6 +56,7 @@ class DepthInterface : public RayCasterInterface {
     int get_image_width() const override { return width_; }
     int get_image_height() const override { return height_; }
     Vector3d get_image_forward_local() const override { return image_forward_local_; }
+    bool has_common_origin() const override { return true; }
 
   protected:
     void setup_rays(const YAML::Node& config) override {
