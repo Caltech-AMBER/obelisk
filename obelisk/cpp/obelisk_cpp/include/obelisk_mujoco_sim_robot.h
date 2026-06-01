@@ -1264,14 +1264,15 @@ namespace obelisk {
                          data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
                          data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
 
-                    // Temp storage for geom id output
-                    int geom_id[1] = { -1 };
-
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     starts_w.resize(scan_interface_->get_num_rays(), 3);
                     dirs_w.resize(scan_interface_->get_num_rays(), 3);
 
                     scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                    std::vector<mjtNum> dists;
+                    CastRays(*scan_interface_, starts_w, dirs_w, dists);
 
                     auto& viz_bucket = scan_viz_points_[sensor_key];
                     if (scan_viz_enabled_) {
@@ -1283,9 +1284,7 @@ namespace obelisk {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
 
-                        // Perform ray cast
-                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
-                        dist = scan_interface_->apply_max_distance(dist);
+                        double dist = scan_interface_->apply_max_distance(dists[ii]);
 
                         // Compute hit point
                         std::array<double, 3> hit_point = {
@@ -1327,15 +1326,16 @@ namespace obelisk {
                          data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
                          data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
 
-                    // Temp storage for geom id output
-                    int geom_id[1] = { -1 };
-
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     int num_rays = scan_interface_->get_num_rays();
                     starts_w.resize(num_rays, 3);
                     dirs_w.resize(num_rays, 3);
 
                     scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                    std::vector<mjtNum> dists;
+                    CastRays(*scan_interface_, starts_w, dirs_w, dists);
 
                     // Local-frame rays for body-frame point cloud
                     const auto& starts_l = scan_interface_->get_ray_starts_local();
@@ -1354,8 +1354,7 @@ namespace obelisk {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
 
-                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
-                        dist = scan_interface_->apply_max_distance(dist);
+                        double dist = scan_interface_->apply_max_distance(dists[ii]);
 
                         if (dist >= 0) {
                             // Compute point in sensor body frame for the point cloud
@@ -1438,14 +1437,15 @@ namespace obelisk {
                     int img_h = depth_scan_interface_->get_image_height();
                     int num_rays = depth_scan_interface_->get_num_rays();
 
-                    // Temp storage for geom id output
-                    int geom_id[1] = { -1 };
-
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     starts_w.resize(num_rays, 3);
                     dirs_w.resize(num_rays, 3);
 
                     depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                    std::vector<mjtNum> dists;
+                    CastRays(*depth_scan_interface_, starts_w, dirs_w, dists);
 
                     // Build depth image buffer in natural ray order (row 0 = top of image),
                     // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
@@ -1460,9 +1460,7 @@ namespace obelisk {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
 
-                        // Perform ray cast
-                        double dist = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(), depth_scan_interface_->get_geom_group_mask(), 1, -1, geom_id);
-                        dist = depth_scan_interface_->apply_max_distance(dist);
+                        double dist = depth_scan_interface_->apply_max_distance(dists[ii]);
 
                         if (dist < 0) {
                             // No hit - set to NaN
@@ -1503,6 +1501,49 @@ namespace obelisk {
                 return cb;
             }
 
+        }
+
+        /**
+         * @brief Cast all rays of a ray-caster sensor, filling per-ray hit distances.
+         *
+         * For sensors whose rays share a single origin (LIDAR, depth camera) the cast is
+         * batched through mj_multiRay, which builds the bounding-volume hierarchy once and
+         * reuses it across rays. Grid-origin sensors (height scan) fall back to per-ray mj_ray.
+         *
+         * @warning Reads/writes the mjData arena; must be called while holding sensor_data_mut_.
+         *
+         * @param iface The ray caster describing the ray pattern.
+         * @param starts_w Nx3 ray start positions in world frame.
+         * @param dirs_w Nx3 unit ray directions in world frame.
+         * @param[out] dists Per-ray hit distance (mj_ray no-hit sentinel -1), resized to N.
+         */
+        void CastRays(const obelisk::RayCasterInterface& iface,
+                      const obelisk::RayCasterInterface::MatrixX3d& starts_w,
+                      const obelisk::RayCasterInterface::MatrixX3d& dirs_w,
+                      std::vector<mjtNum>& dists) {
+            const int num_rays = static_cast<int>(dirs_w.rows());
+            dists.resize(num_rays);
+
+            if (iface.has_common_origin() && num_rays > 1) {
+                // All rays emanate from one point: batch through the BVH-accelerated path.
+                const Eigen::Vector3d origin = starts_w.row(0).transpose();
+                // mj_multiRay expects directions as a row-major (nray x 3) contiguous buffer;
+                // MatrixX3d is column-major, so copy into a row-major matrix first.
+                Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> dirs_rm = dirs_w;
+                std::vector<int> geomids(num_rays, -1);
+                const mjtNum cutoff = iface.get_max_distance() > 0.0 ? iface.get_max_distance() : mjMAXVAL;
+                mj_multiRay(this->model_, this->data_, origin.data(), dirs_rm.data(),
+                            iface.get_geom_group_mask(), 1, -1, geomids.data(), dists.data(),
+                            num_rays, cutoff);
+            } else {
+                int geom_id[1] = { -1 };
+                for (int ii = 0; ii < num_rays; ++ii) {
+                    Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
+                    Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
+                    dists[ii] = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(),
+                                       iface.get_geom_group_mask(), 1, -1, geom_id);
+                }
+            }
         }
 
         /**
