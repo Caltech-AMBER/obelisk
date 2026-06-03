@@ -81,6 +81,9 @@ export RCUTILS_COLORIZED_OUTPUT=1
 export OBELISK_BUILD_ZED=$OBELISK_BUILD_ZED
 export OBELISK_BUILD_UNITREE=$OBELISK_BUILD_UNITREE
 export ROS_DOMAIN_ID=$ROS_DOMAIN_ID
+# optional: point Cyclone DDS at a user-supplied config (multi-interface / multi-machine setups).
+# leaves CYCLONEDDS_URI untouched when OBELISK_CYCLONEDDS_URI is unset, so default behavior is unchanged.
+[ -n "\$OBELISK_CYCLONEDDS_URI" ] && export CYCLONEDDS_URI=\$OBELISK_CYCLONEDDS_URI
 '
 
     # Check if the --permanent flag is passed

@@ -21,6 +21,7 @@ Documentation for ``obelisk``
    joystick.rst
    obelisk_terminal_aliases.md
    unitree_interfaces.md
+   multi_machine.md
    faq.md
 
 Overview
