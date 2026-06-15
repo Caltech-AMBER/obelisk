@@ -139,6 +139,15 @@ class RayCasterInterface {
     virtual int get_image_height() const { return -1; }
     virtual Vector3d get_image_forward_local() const { return Vector3d::Zero(); }
 
+    /**
+     * @brief Whether all rays share a single origin in world frame.
+     *
+     * True for patterns whose ray starts are all coincident (e.g. spherical
+     * LIDAR, pinhole depth), which lets callers batch the cast through
+     * mj_multiRay. False for grid patterns with per-ray origins (height scan).
+     */
+    virtual bool has_common_origin() const { return false; }
+
   protected:
     /**
      * @brief Offset transform (position and optional rotation)
