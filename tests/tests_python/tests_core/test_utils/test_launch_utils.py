@@ -233,6 +233,179 @@ def test_load_config_dummy_composed_resolves_to_full_stack() -> None:
     assert composed["joystick"]["on"] is True
 
 
+# ---------------------------------------------------------------------- #
+# include: directive — keyed list-merge + anonymous-entry freezing        #
+# ---------------------------------------------------------------------- #
+
+
+def _compose(tmp_path: Path, base_yaml: str, ext_yaml: str) -> Dict[str, Any]:
+    """Write base.yaml + ext.yaml (ext includes base) in tmp_path and load the extension."""
+    (tmp_path / "base.yaml").write_text(base_yaml)
+    (tmp_path / "ext.yaml").write_text("include:\n  - base.yaml\n" + ext_yaml)
+    return load_config_file(tmp_path / "ext.yaml")
+
+
+def test_keyed_merge_nested_override_by_name_and_ros_parameter(tmp_path: Path) -> None:
+    """A restated robot entry (by name) overrides one nested sim field, inheriting the rest."""
+    result = _compose(
+        tmp_path,
+        base_yaml=(
+            "robot:\n"
+            "  - name: g1_sim\n"
+            "    pkg: unitree\n"
+            "    executable: sim\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        model_xml_path: A\n"
+            "        sensor_settings:\n"
+            "          - topic: /enc\n"
+            "            dt: 0.002\n"
+        ),
+        ext_yaml=(
+            "robot:\n"
+            "  - name: g1_sim\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        model_xml_path: B\n"
+        ),
+    )
+    assert len(result["robot"]) == 1  # restated entry overrode, did not duplicate
+    sim = result["robot"][0]["sim"]
+    assert len(sim) == 1
+    assert sim[0]["model_xml_path"] == "B"  # the only changed field
+    # everything not restated is inherited verbatim from the base
+    assert sim[0]["sensor_settings"] == [{"topic": "/enc", "dt": 0.002}]
+
+
+def test_keyed_merge_scalar_list_replaces(tmp_path: Path) -> None:
+    """A list of scalars is replaced wholesale, not keyed-merged."""
+    result = _compose(
+        tmp_path,
+        base_yaml=(
+            "robot:\n"
+            "  - name: r\n"
+            "    pkg: p\n"
+            "    executable: e\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        geom_groups: [0, 1, 2]\n"
+        ),
+        ext_yaml=(
+            "robot:\n"
+            "  - name: r\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        geom_groups: [2]\n"
+        ),
+    )
+    assert result["robot"][0]["sim"][0]["geom_groups"] == [2]
+
+
+def test_keyed_merge_key_ros_parameter_normalization(tmp_path: Path) -> None:
+    """`key: pub_ctrl` and `ros_parameter: pub_ctrl_setting` identify the same publisher."""
+    result = _compose(
+        tmp_path,
+        base_yaml=(
+            "control:\n"
+            "  - name: c\n"
+            "    pkg: p\n"
+            "    executable: e\n"
+            "    publishers:\n"
+            "      - ros_parameter: pub_ctrl_setting\n"
+            "        topic: /a\n"
+        ),
+        ext_yaml=(
+            "control:\n"
+            "  - name: c\n"
+            "    publishers:\n"
+            "      - key: pub_ctrl\n"
+            "        topic: /b\n"
+        ),
+    )
+    pubs = result["control"][0]["publishers"]
+    assert len(pubs) == 1  # matched, not appended
+    assert pubs[0]["topic"] == "/b"
+
+
+def test_keyless_entries_append_and_get_unknown_labels(tmp_path: Path) -> None:
+    """Keyless node entries stack (today's concat) and receive reserved UNKNOWN# names."""
+    result = _compose(
+        tmp_path,
+        base_yaml="control:\n  - pkg: a\n    executable: x\n",
+        ext_yaml="control:\n  - pkg: b\n    executable: y\n",
+    )
+    assert [c["pkg"] for c in result["control"]] == ["a", "b"]  # base first, append
+    assert [c["name"] for c in result["control"]] == ["UNKNOWN0", "UNKNOWN1"]
+
+
+def test_keyed_merge_topic_keyed_sensor_merge_and_append(tmp_path: Path) -> None:
+    """sensor_settings merge by `topic`: matched entry updates, new topic appends."""
+    result = _compose(
+        tmp_path,
+        base_yaml=(
+            "robot:\n"
+            "  - name: r\n"
+            "    pkg: p\n"
+            "    executable: e\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        sensor_settings:\n"
+            "          - topic: /depth\n"
+            "            dt: 0.033\n"
+        ),
+        ext_yaml=(
+            "robot:\n"
+            "  - name: r\n"
+            "    sim:\n"
+            "      - ros_parameter: mujoco_setting\n"
+            "        sensor_settings:\n"
+            "          - topic: /depth\n"
+            "            dt: 0.05\n"
+            "          - topic: /new\n"
+            "            dt: 0.01\n"
+        ),
+    )
+    sensors = result["robot"][0]["sim"][0]["sensor_settings"]
+    assert len(sensors) == 2
+    by_topic = {s["topic"]: s for s in sensors}
+    assert by_topic["/depth"]["dt"] == 0.05  # matched and updated
+    assert "/new" in by_topic  # appended
+
+
+def test_name_on_override_does_not_match_keyless_base(tmp_path: Path) -> None:
+    """The key must be on the BASE entry to override it; a name only on the override appends."""
+    result = _compose(
+        tmp_path,
+        base_yaml="control:\n  - pkg: a\n    executable: x\n",
+        ext_yaml="control:\n  - name: foo\n    pkg: a\n    executable: x\n",
+    )
+    assert len(result["control"]) == 2
+    # keyless base entry is frozen and labeled; override keeps its real name
+    assert result["control"][0]["name"] == "UNKNOWN0"
+    assert result["control"][1]["name"] == "foo"
+
+
+def test_unknown_placeholder_cannot_hijack_frozen_entry(tmp_path: Path) -> None:
+    """A downstream `name: UNKNOWN0` cannot address a frozen (anonymous) base entry."""
+    result = _compose(
+        tmp_path,
+        base_yaml="control:\n  - pkg: a\n    executable: x\n",
+        ext_yaml="control:\n  - name: UNKNOWN0\n    pkg: b\n    executable: y\n",
+    )
+    # the placeholder does NOT overwrite the base entry; it appends
+    assert [c["pkg"] for c in result["control"]] == ["a", "b"]
+    # both are anonymous, so both get fresh dense labels (the override is renumbered)
+    assert [c["name"] for c in result["control"]] == ["UNKNOWN0", "UNKNOWN1"]
+
+
+def test_standalone_config_is_not_labeled(tmp_path: Path) -> None:
+    """A config with no `include:` never triggers labeling — returned exactly as written."""
+    standalone = tmp_path / "standalone.yaml"
+    standalone.write_text("control:\n  - pkg: a\n    executable: x\n")
+    result = load_config_file(standalone)
+    assert "name" not in result["control"][0]
+
+
 def test_get_parameters_dict_bundles_obelisk_sections(test_config: Dict[str, Any]) -> None:
     """A controller node's settings collapse into a single obelisk_settings YAML string."""
     node_settings = test_config["control"][0]

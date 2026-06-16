@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -30,12 +31,17 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
     an ``include:`` resolve **relative to the directory of the file containing the include**;
     absolute paths still pass through unchanged. The ``include:`` key is stripped from the result.
 
-    Merge rules (parent = file containing the include, children = files it includes):
-      * List-shaped sections (``control``, ``estimation``, ``robot``, ``sensing``) **concatenate**
-        in include order, with the parent's entries appended last.
-      * Dict-shaped sections (``joystick``, ``viz``) **deep-merge**, with parent values winning on
-        scalar conflicts.
+    Merge rules (parent = file containing the include, children = files it includes) are one
+    uniform recursive merge with the parent winning:
+      * Dicts deep-merge key by key (``joystick``, ``viz``, and any nested mapping).
+      * Lists of mappings **keyed-merge**: an entry whose identity (first of ``name`` / ``id`` /
+        ``key`` / ``ros_parameter`` / ``topic``) matches an existing entry is merged onto it;
+        entries with no match — or no identity — append. Lists of scalars are replaced.
       * Scalar / other keys (e.g. ``config``, ``params_path``): parent wins.
+
+    After the merge, identity-less entries in the node-level list sections (and ``viz.viz_nodes``)
+    are given a reserved ``name: UNKNOWN<n>``; this placeholder is never used as an identity, so an
+    entry must carry a real ``name``/key to be overridable by a downstream include.
 
     Parameters:
         file_path: path to the configuration file.
@@ -106,42 +112,132 @@ def _load_config_recursive(abs_file_path: Path, stack: List[Path]) -> Dict:
         if not inc_path.is_absolute():
             inc_path = base_dir / inc_path
         included = _load_config_recursive(inc_path, new_stack)
-        merged = _merge_obelisk_configs(merged, included)
+        merged = _merge_config(merged, included)
 
     # Parent's own keys take precedence over included ones.
-    return _merge_obelisk_configs(merged, raw)
+    result = _merge_config(merged, raw)
+    # Only the outermost call (stack == []) that actually composed (had includes) labels
+    # anonymous node entries; a standalone, non-composed config is returned unchanged.
+    if not stack and includes:
+        _assign_anonymous_ids(result)
+    return result
 
 
-# Top-level sections whose values are lists of complete node entries; concatenated when merging.
+# Node-level list sections: keyed-merged like everything else, and the only sections the
+# anonymous-id labeling pass writes a synthetic ``name`` into.
 _LIST_SECTIONS = ("control", "estimation", "robot", "sensing")
 
+# Identity precedence for keyed list-merge. First field present on a list element
+# identifies it; ``ros_parameter`` is normalized into the ``key`` namespace.
+_KEY_PRECEDENCE = ("name", "id", "key", "ros_parameter", "topic")
+_SETTING_SUFFIX = "_setting"
 
-def _merge_obelisk_configs(base: Dict, override: Dict) -> Dict:
-    """Merge ``override`` onto ``base`` according to the obelisk schema rules.
+# Reserved placeholder for entries that declare no key. Assigned post-merge as a stable,
+# visible handle; never treated as a real identity, so it can never be overwritten by a
+# later merge (an entry must have a real name/key to be overridable downstream).
+_ANON_PREFIX = "UNKNOWN"
+_ANON_RE = re.compile(rf"^{_ANON_PREFIX}\d+$")
 
-    List-shaped sections concat (with override's entries appended); dicts deep-merge with override
-    winning on scalar conflicts; everything else: override wins.
+
+def _entry_identity(entry: Any) -> Optional[tuple]:
+    """Identity of a list element for keyed merging, or None if it has no real key.
+
+    Precedence: name -> id -> key -> ros_parameter -> topic. ``ros_parameter`` is
+    normalized into the ``key`` namespace (trailing ``_setting`` stripped, mirroring
+    ``_strip_ros_parameter``), so ``ros_parameter: pub_ctrl_setting`` and ``key: pub_ctrl``
+    match. A field whose value is the reserved ``UNKNOWN<n>`` placeholder is skipped, so
+    anonymous entries stay anonymous (and unaddressable) even across re-merges. Returns a
+    ``(namespace, value)`` tuple so values from different fields never collide; None means
+    "no identity" -> append-only, never a merge target.
     """
-    out: Dict[str, Any] = dict(base)
-    for k, v in override.items():
-        if k in _LIST_SECTIONS and isinstance(out.get(k), list) and isinstance(v, list):
-            out[k] = list(out[k]) + list(v)
-        elif isinstance(out.get(k), dict) and isinstance(v, dict):
-            out[k] = _deep_merge(out[k], v)
+    if not isinstance(entry, dict):
+        return None
+    for field in _KEY_PRECEDENCE:
+        if field in entry:
+            val = entry[field]
+            if isinstance(val, str) and _ANON_RE.match(val):
+                continue  # reserved placeholder is never a match key
+            if field == "ros_parameter":
+                if isinstance(val, str) and val.endswith(_SETTING_SUFFIX):
+                    val = val[: -len(_SETTING_SUFFIX)]
+                return ("key", val)
+            return (field, val)
+    return None
+
+
+def _merge_config(base: Any, override: Any) -> Any:
+    """Recursively merge ``override`` onto ``base`` (override wins).
+
+    dict+dict  -> merge key by key (recurse on shared keys)
+    list+list  -> keyed merge when both are non-empty lists of dicts (see
+                  ``_merge_lists``); otherwise ``override`` replaces (scalar vectors)
+    else       -> ``override`` replaces ``base``
+    """
+    if isinstance(base, dict) and isinstance(override, dict):
+        out: Dict[str, Any] = dict(base)
+        for k, v in override.items():
+            out[k] = _merge_config(out[k], v) if k in out else v
+        return out
+    if isinstance(base, list) and isinstance(override, list):
+        return _merge_lists(base, override)
+    return override
+
+
+def _merge_lists(base: List, override: List) -> List:
+    """Keyed merge of two lists; see ``_merge_config`` for when it applies.
+
+    Both lists non-empty and all-dict -> merge by identity: matched override elements
+    deep-merge onto the base element (preserving base order); unmatched or keyless override
+    elements append. Otherwise ``override`` replaces (scalar vectors, empty, or mixed).
+    """
+    if not (
+        base
+        and override
+        and all(isinstance(e, dict) for e in base)
+        and all(isinstance(e, dict) for e in override)
+    ):
+        return list(override)
+
+    out = [dict(e) for e in base]
+    index: Dict[tuple, int] = {}
+    for i, e in enumerate(out):
+        ident = _entry_identity(e)
+        if ident is not None:
+            index.setdefault(ident, i)  # first occurrence wins if base has dups
+    for e in override:
+        ident = _entry_identity(e)
+        if ident is not None and ident in index:
+            i = index[ident]
+            out[i] = _merge_config(out[i], e)
         else:
-            out[k] = v
+            out.append(e)
+            if ident is not None:
+                index.setdefault(ident, len(out) - 1)
     return out
 
 
-def _deep_merge(a: Dict, b: Dict) -> Dict:
-    """Recursive dict merge; ``b`` wins on scalar conflicts. Returns a new dict."""
-    out = dict(a)
-    for k, v in b.items():
-        if isinstance(out.get(k), dict) and isinstance(v, dict):
-            out[k] = _deep_merge(out[k], v)
-        else:
-            out[k] = v
-    return out
+def _assign_anonymous_ids(config: Dict) -> None:
+    """Give every identity-less node entry a reserved, non-matchable ``name: UNKNOWN<n>``.
+
+    Mutates ``config`` in place. Runs once on the fully-merged top-level config. Only the
+    node-level list sections (``_LIST_SECTIONS``) and ``viz.viz_nodes`` are touched -- never
+    ``key``/``ros_parameter``/``topic`` and never ``params``. Entries that already carry a
+    real identity are left untouched; only entries with ``_entry_identity(...) is None`` get
+    a placeholder. Numbering is per-list and dense (``UNKNOWN0``, ``UNKNOWN1``, ...). Because
+    the placeholder is excluded from ``_entry_identity``, an anonymous entry can never be
+    addressed by a downstream merge -- to override an entry you must give it a real ``name``
+    (or other key) in the base.
+    """
+    targets: List[List] = [config[s] for s in _LIST_SECTIONS if isinstance(config.get(s), list)]
+    viz = config.get("viz")
+    if isinstance(viz, dict) and isinstance(viz.get("viz_nodes"), list):
+        targets.append(viz["viz_nodes"])
+    for entries in targets:
+        n = 0
+        for entry in entries:
+            if isinstance(entry, dict) and _entry_identity(entry) is None:
+                entry["name"] = f"{_ANON_PREFIX}{n}"
+                n += 1
 
 
 def _strip_ros_parameter(entry: Dict[str, Any]) -> Dict[str, Any]:
