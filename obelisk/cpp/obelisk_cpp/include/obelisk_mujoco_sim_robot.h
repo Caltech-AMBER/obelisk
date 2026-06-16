@@ -1286,6 +1286,13 @@ namespace obelisk {
 
                         double dist = scan_interface_->apply_max_distance(dists[ii]);
 
+                        if (dist < 0) {
+                            // No hit: publish a NaN sentinel and skip the hit point so we don't
+                            // fabricate a point behind the sensor (opposite the ray) for viz.
+                            msg.data.push_back(std::numeric_limits<float>::quiet_NaN());
+                            continue;
+                        }
+
                         // Compute hit point
                         std::array<double, 3> hit_point = {
                             ray_origin[0] + direction[0] * dist,
