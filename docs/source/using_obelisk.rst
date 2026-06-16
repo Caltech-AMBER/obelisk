@@ -403,12 +403,40 @@ The included files are themselves regular Obelisk YAMLs. They can also have ``in
 
 **Path rules.** The primary file (the one named on ``obk-launch config=…``) resolves the same way it always did: absolute path used as-is, otherwise relative to ``share/obelisk_ros/config/``. Paths inside an ``include:`` directive resolve **relative to the directory of the YAML containing the include**. Absolute paths in include lists pass through unchanged.
 
-**Merge rules.** When merging an outer YAML over its includes:
+**Merge rules.** Merging is one uniform recursive operation (outer YAML wins):
 
-* The list-shaped sections (``control``, ``estimation``, ``robot``, ``sensing``) **concatenate** in include order, with the outer file's entries appended last.
-* The dict-shaped sections (``joystick``, ``viz``) **deep-merge** with the outer file winning on per-key conflicts.
-* Scalar keys (``config``, ``params_path``): the outer file wins.
+* **Dicts deep-merge** key by key (recursing on shared keys). This covers the dict-shaped sections (``joystick``, ``viz``) and any nested mapping.
+* **Lists keyed-merge** when both sides are non-empty lists of mappings: an outer entry whose *identity* matches an inner entry is merged onto it (preserving the inner order); entries with no match — or no identity — are **appended**. This works at any depth, so an extension can restate just the fields that change inside a nested entry (e.g. ``robot[0].sim[0].model_xml_path``) instead of duplicating the whole block. Lists of scalars (e.g. ``params`` vectors, ``geom_groups``) are **replaced** wholesale.
+* **Scalars** (``config``, ``params_path``, …): the outer file wins.
 * The ``include:`` key is stripped from the final result.
+
+**Entry identity (which fields make a list entry overridable).** An entry's identity is the first present of ``name`` → ``id`` → ``key`` → ``ros_parameter`` → ``topic`` (``ros_parameter: foo_setting`` and ``key: foo`` are treated as the same key). Component lists already carry these: publishers/subscribers/timers key on ``key``/``ros_parameter``, ``sim`` entries on ``ros_parameter``, ``sensor_settings`` on ``topic``. The node-level lists (``control``, ``estimation``, ``robot``, ``sensing``, ``viz.viz_nodes``) historically carry only ``pkg``/``executable``, which are **not** used as identity — so **to override a node entry from an extension, add a** ``name:`` **to the base entry and restate the same** ``name:`` **in the extension.**
+
+**Keys are optional; unkeyed entries are frozen.** You only have to name the entries you want to be overridable. An entry with no identity can never be matched by a later merge — it only ever appends (this is the old concatenation behavior). In a composed config such entries are given a reserved ``name: UNKNOWN<n>`` so they have a stable, visible handle. ``UNKNOWN<n>`` is a *reserved* placeholder: it is never treated as an identity, so writing ``name: UNKNOWN0`` in an extension will **not** let you address a frozen entry — give the base entry a real name instead.
+
+For example, a base world and a one-line scene override:
+
+.. code-block:: yaml
+
+  # world_base.yaml
+  robot:
+    - name: g1_sim                       # named -> overridable downstream
+      pkg: obelisk_unitree_cpp
+      executable: obelisk_unitree_sim
+      sim:
+        - ros_parameter: mujoco_setting
+          model_xml_path: nav_flat.xml
+          sensor_settings: [ ... the full sensor block, once ... ]
+
+.. code-block:: yaml
+
+  # world_box.yaml — pure diff
+  include: [world_base.yaml]
+  robot:
+    - name: g1_sim                       # matches the base robot entry
+      sim:
+        - ros_parameter: mujoco_setting  # matches the base sim entry (auto-key)
+          model_xml_path: nav_box.xml    # the only change; sensor_settings inherited
 
 A worked end-to-end example lives at ``obelisk_ws/src/obelisk_ros/config/dummy_composed*.yaml``.
 
