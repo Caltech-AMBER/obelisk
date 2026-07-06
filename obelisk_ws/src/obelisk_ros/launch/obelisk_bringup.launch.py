@@ -137,28 +137,34 @@ def obelisk_setup(context: launch.LaunchContext, launch_args: Dict) -> List:
             obelisk_config["control"],
             "control",
             global_state_node,
+            auto_start,
         )
     if "estimation" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["estimation"],
             "estimation",
             global_state_node,
+            auto_start,
         )
     if "robot" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["robot"],
             "robot",
             global_state_node,
+            auto_start,
         )
     if "sensing" in obelisk_config:
         obelisk_launch_actions += get_launch_actions_from_node_settings(
             obelisk_config["sensing"],
             "sensing",
             global_state_node,
+            auto_start,
         )
     if "viz" in obelisk_config:
         logger.info("Viz present in config file.")
-        obelisk_launch_actions += get_launch_actions_from_viz_settings(obelisk_config["viz"], global_state_node)
+        obelisk_launch_actions += get_launch_actions_from_viz_settings(
+            obelisk_config["viz"], global_state_node, auto_start
+        )
 
     if "joystick" in obelisk_config:
         logger.info("joystick present in config file.")
