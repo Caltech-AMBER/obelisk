@@ -55,6 +55,10 @@ namespace obelisk {
             // Additional Publishers
             this->RegisterObkPublisher<obelisk_sensor_msgs::msg::ObkJointEncoders>(pub_joint_state_key_);
             this->RegisterObkPublisher<sensor_msgs::msg::Imu>(pub_imu_state_key_);
+            // Actual (not commanded) Execution FSM state. Downstream nodes (e.g. the RL
+            // controller) arm off this so they only act when the robot is really in the
+            // matching mode, rather than off the commanded /exec_fsm which may be rejected.
+            this->RegisterObkPublisher<unitree_fsm_msg>(pub_fsm_state_key_);
 
             // Register Execution FSM Subscriber
             this->RegisterObkSubscription<unitree_fsm_msg>(
@@ -125,7 +129,32 @@ namespace obelisk {
                 InitializeLogging();
             }
 
+            // Broadcast the current (INIT) FSM state now that publishers are active, and
+            // start a low-rate heartbeat so a downstream node that (re)starts mid-run can
+            // recover the current state without transient-local QoS.
+            PublishFsmState();
+            fsm_state_heartbeat_timer_ = this->create_wall_timer(
+                std::chrono::milliseconds(200),  // 5 Hz
+                std::bind(&ObeliskUnitreeInterface<MotorStateType, N>::PublishFsmState, this));
+
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+        }
+
+        /**
+         * @brief Publish the current (actual) Execution FSM state on pub_fsm_state.
+         *
+         * No-op unless the lifecycle publisher is activated, so the heartbeat timer is
+         * safe to keep running across deactivation.
+         */
+        void PublishFsmState() {
+            auto pub = this->template GetPublisher<unitree_fsm_msg>(pub_fsm_state_key_);
+            if (!pub->is_activated()) {
+                return;
+            }
+            unitree_fsm_msg msg;
+            msg.header.stamp        = this->now();
+            msg.cmd_exec_fsm_state  = static_cast<uint8_t>(exec_fsm_state_);
+            pub->publish(msg);
         }
 
         const std::unordered_map<ExecFSMState, std::vector<ExecFSMState>> TRANSITIONS = {
@@ -212,6 +241,8 @@ namespace obelisk {
                 // Transition the FSM
                 exec_fsm_state_ = cmd_exec_fsm_state;
                 RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM STATE TRANSITIONED TO " << TRANSITION_STRINGS.at(exec_fsm_state_));
+                // Broadcast the new actual state to downstream arming logic.
+                PublishFsmState();
             } else {
                 if (exec_fsm_state_ == cmd_exec_fsm_state) {
                     RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM ALREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
@@ -325,7 +356,11 @@ namespace obelisk {
         const std::string sub_UNITREE_VEL_CTRL_key_ = "sub_vel_cmd";
         const std::string pub_joint_state_key_ = "pub_sensor";
         const std::string pub_imu_state_key_ = "pub_imu";
+        const std::string pub_fsm_state_key_ = "pub_fsm_state";
         const std::string timer_logging_key_ = "timer_logging";
+
+        // Heartbeat that re-broadcasts the current FSM state (created in on_activate).
+        rclcpp::TimerBase::SharedPtr fsm_state_heartbeat_timer_;
 
         // Logging
         bool logging_;
