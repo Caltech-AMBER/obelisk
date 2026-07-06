@@ -233,6 +233,7 @@ namespace obelisk {
             if (this->pub_temps_) {
                 joint_state.motor_surface_temps.resize(num_motors_);
                 joint_state.motor_winding_temps.resize(num_motors_);
+                joint_state.motor_states.resize(num_motors_);
             }
 
             size_t ind = 0;
@@ -255,7 +256,7 @@ namespace obelisk {
                 if (this->pub_temps_) {
                     joint_state.motor_surface_temps.at(ind) = low_state.motor_state()[i].temperature()[0];
                     joint_state.motor_winding_temps.at(ind) = low_state.motor_state()[i].temperature()[1];
-                    
+                    joint_state.motor_states.at(ind) = low_state.motor_state()[i].motorstate();
                 }
                 
                 ind++;
