@@ -9,7 +9,7 @@ import launch_ros
 import lifecycle_msgs.msg
 import yaml
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import EmitEvent, RegisterEventHandler
+from launch.actions import EmitEvent, OpaqueFunction, RegisterEventHandler
 from launch_ros.actions import LifecycleNode, Node
 from launch_ros.events.lifecycle import ChangeState
 from ruamel.yaml import YAML
@@ -331,6 +331,7 @@ def get_launch_actions_from_node_settings(
     node_settings: Dict,
     node_type: str,
     global_state_node: LifecycleNode,
+    auto_start: str = "false",
 ) -> List[LifecycleNode]:
     """Returns the launch actions associated with a node.
 
@@ -338,6 +339,7 @@ def get_launch_actions_from_node_settings(
         node_settings: the settings dictionary of an Obelisk node.
         node_type: the type of the node.
         global_state_node: the global state node. All Obelisk nodes' lifecycle states match this node's state.
+        auto_start: the bringup's (lowercased) auto_start launch argument; see get_handlers.
 
     Returns:
         A list of launch actions.
@@ -358,7 +360,7 @@ def get_launch_actions_from_node_settings(
             parameters=[parameters_dict],
         )
         launch_actions += [component_node]
-        launch_actions += get_handlers(component_node, global_state_node)
+        launch_actions += get_handlers(component_node, global_state_node, auto_start)
         return launch_actions
 
     node_launch_actions = []
@@ -367,7 +369,9 @@ def get_launch_actions_from_node_settings(
     return node_launch_actions
 
 
-def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: LifecycleNode) -> List[LifecycleNode]:
+def get_launch_actions_from_viz_settings(
+    settings: Dict, global_state_node: LifecycleNode, auto_start: str = "false"
+) -> List[LifecycleNode]:
     """Gets and configures all the launch actions related to viz given the settings from the yaml."""
     launch_actions = []
     if settings["on"]:
@@ -397,7 +401,7 @@ def get_launch_actions_from_viz_settings(settings: Dict, global_state_node: Life
                 parameters=[parameters_dict],
             )
             launch_actions += [component_node]
-            launch_actions += get_handlers(component_node, global_state_node)
+            launch_actions += get_handlers(component_node, global_state_node, auto_start)
 
             # Read the URDF for the robot_state_publisher
             with open(urdf_path, "r") as urdf:
@@ -515,8 +519,16 @@ def get_launch_actions_from_joystick_settings(settings: Dict, global_state_node:
     return launch_actions
 
 
-def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode) -> List:
-    """Gets all the handlers for the Lifecycle node."""
+def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode, auto_start: str = "false") -> List:
+    """Gets all the handlers for the Lifecycle node.
+
+    Parameters:
+        component_node: the Obelisk component node whose lifecycle is being managed.
+        global_state_node: the global state node all Obelisk nodes' lifecycle states match.
+        auto_start: the bringup's (lowercased) auto_start launch argument. When "true"/"activate",
+            the component's initial activation is keyed off ITS OWN configure completion rather
+            than the global state node reaching `active` (see the activate handler comment).
+    """
     # transition events to match the global state node
     configure_event = EmitEvent(
         event=ChangeState(
@@ -570,14 +582,59 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
             entities=[configure_event],
         )
     )
-    activate_handler = RegisterEventHandler(
-        launch_ros.event_handlers.on_state_transition.OnStateTransition(
-            target_lifecycle_node=global_state_node,
-            start_state="activating",
-            goal_state="active",
-            entities=[activate_event],
+    if auto_start in ("true", "activate"):
+        # Auto-start startup ordering: the global state node is a no-op, so it reaches `active`
+        # within milliseconds of `inactive` -- usually before slow-starting component processes
+        # have created their change_state services. launch delivers every emitted ChangeState on
+        # its own service-waiting thread with no per-node ordering, so an activate keyed off the
+        # global transition can reach a component BEFORE its still-undelivered configure, and an
+        # rclpy component then dies on the invalid transition (activate from unconfigured). Key
+        # the initial activation off the component's own configure completion instead, making the
+        # configure -> activate order structural. handle_once so an obk-stop (cleanup) followed
+        # by a re-configure doesn't self-activate; explicit re-activations are handled below.
+        activate_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=component_node,
+                start_state="configuring",
+                goal_state="inactive",
+                entities=[activate_event],
+                handle_once=True,
+            )
         )
-    )
+
+        # Manual deactivate -> activate cycles (obk-activate) still propagate from the global
+        # state node. The first global activation is the auto-start one, covered by the
+        # self-chained handler above, so skip exactly that occurrence; by any later global
+        # activation the component processes are alive with their services up, so the startup
+        # ordering race cannot recur.
+        global_activations = {"count": 0}
+
+        def _reactivate(context: launch.LaunchContext) -> Optional[List]:
+            global_activations["count"] += 1
+            if global_activations["count"] == 1:
+                return None
+            return [activate_event]
+
+        reactivate_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="activating",
+                goal_state="active",
+                entities=[OpaqueFunction(function=_reactivate)],
+            )
+        )
+    else:
+        # Without auto-start, activation only comes from an explicit operator transition of the
+        # global state node, by which point the components have long been configured.
+        activate_handler = RegisterEventHandler(
+            launch_ros.event_handlers.on_state_transition.OnStateTransition(
+                target_lifecycle_node=global_state_node,
+                start_state="activating",
+                goal_state="active",
+                entities=[activate_event],
+            )
+        )
+        reactivate_handler = None
     deactivate_handler = RegisterEventHandler(
         launch_ros.event_handlers.on_state_transition.OnStateTransition(
             target_lifecycle_node=global_state_node,
@@ -627,6 +684,8 @@ def get_handlers(component_node: LifecycleNode, global_state_node: LifecycleNode
         inactive_shutdown_handler,
         active_shutdown_handler,
     ]
+    if reactivate_handler is not None:
+        launch_actions.append(reactivate_handler)
     return launch_actions
 
 
