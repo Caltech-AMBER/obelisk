@@ -198,7 +198,9 @@ namespace obelisk {
             ExecFSMState cmd_exec_fsm_state = static_cast<ExecFSMState>(msg.cmd_exec_fsm_state);
 
             if (exec_fsm_state_ == ExecFSMState::ESTOP) {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "ESTOP TRIGGERED");
+                if (fsm_log_debounce_.ShouldLog(this->now(), -1, FSM_LOG_DEBOUNCE_SEC)) {
+                    RCLCPP_ERROR_STREAM(this->get_logger(), "ESTOP TRIGGERED");
+                }
                 TransitionToDamp();
                 throw std::runtime_error("ESTOP TRIGGERED");
             }
@@ -245,9 +247,16 @@ namespace obelisk {
                 PublishFsmState();
             } else {
                 if (exec_fsm_state_ == cmd_exec_fsm_state) {
-                    RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM ALREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
+                    // key: commanded state (0..6) -- distinct per already-in-state message
+                    if (fsm_log_debounce_.ShouldLog(this->now(), static_cast<int>(cmd_exec_fsm_state), FSM_LOG_DEBOUNCE_SEC)) {
+                        RCLCPP_INFO_STREAM(this->get_logger(), "EXECUTION FSM ALREADY IN COMMANDED STATE " <<  TRANSITION_STRINGS.at(exec_fsm_state_));
+                    }
                 } else {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID: " <<  TRANSITION_STRINGS.at(exec_fsm_state_) << " -> " <<  TRANSITION_STRINGS.at(cmd_exec_fsm_state));
+                    // key: 100 + from*10 + to -- distinct per invalid (from -> to) pair, non-overlapping with the ranges above
+                    int invalid_key = 100 + static_cast<int>(exec_fsm_state_) * 10 + static_cast<int>(cmd_exec_fsm_state);
+                    if (fsm_log_debounce_.ShouldLog(this->now(), invalid_key, FSM_LOG_DEBOUNCE_SEC)) {
+                        RCLCPP_ERROR_STREAM(this->get_logger(), "EXECUTION FSM COMMAND INVALID: " <<  TRANSITION_STRINGS.at(exec_fsm_state_) << " -> " <<  TRANSITION_STRINGS.at(cmd_exec_fsm_state));
+                    }
                 }
             }
         }
@@ -323,6 +332,9 @@ namespace obelisk {
 
         // Execution FSM state variable
         ExecFSMState exec_fsm_state_;
+        // Rate-limits the repeatable FSM log lines below (held damping/kill re-send the
+        // same command every tick). Debounces the LOG ONLY -- transitions/throw unchanged.
+        FsmLogDebounce fsm_log_debounce_;
         bool high_level_ctrl_engaged_;
 
         // ---------- Topics ---------- //

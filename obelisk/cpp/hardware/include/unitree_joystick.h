@@ -250,7 +250,12 @@ namespace obelisk {
             }
             if (commanded){
                 this->GetPublisher<unitree_fsm_msg>(pub_exec_fsm_key_)->publish(fsm_msg);
-                RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick sent Execution FSM Command " << TRANSITION_STRINGS.at(static_cast<ExecFSMState>(fsm_msg.cmd_exec_fsm_state)));
+                // Debounce the LOG ONLY (the publish above always fires -- damping/kill
+                // stay un-gated). Keyed on the commanded state so a fresh command prints
+                // immediately and only same-state repeats are suppressed.
+                if (fsm_log_debounce_.ShouldLog(this->now(), fsm_msg.cmd_exec_fsm_state, FSM_LOG_DEBOUNCE_SEC)) {
+                    RCLCPP_INFO_STREAM(this->get_logger(), "UnitreeJoystick sent Execution FSM Command " << TRANSITION_STRINGS.at(static_cast<ExecFSMState>(fsm_msg.cmd_exec_fsm_state)));
+                }
             }
 
             // Handle printing menu
@@ -426,6 +431,9 @@ namespace obelisk {
         // Publisher key
         const std::string pub_exec_fsm_key_ = "pub_exec_fsm";
         const std::string pub_joy_passthrough_key_ = "pub_joy_passthrough";
+
+        // Rate-limits the "sent Execution FSM Command" log (publish stays un-gated).
+        FsmLogDebounce fsm_log_debounce_;
 
         // Hold velocity bounds
         float v_x_scale_;
