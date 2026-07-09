@@ -77,6 +77,9 @@ namespace obelisk {
             VerifyParameters();
             CreateUnitreePublishers();
 
+            this->RegisterObkTimer(passive_hold_key_,
+                                   std::bind(&G1Interface::PassiveHoldCallback, this));
+
             loco_client_.SetTimeout(command_timeout_);
             loco_client_.Init();
             motion_switcher_client_ = std::make_shared<unitree::robot::b2::MotionSwitcherClient>();
@@ -100,115 +103,82 @@ namespace obelisk {
         }
 
         void ApplyControl(const unitree_control_msg& msg) override {
-            // Only execute of in Low Level Control or Home modes
-            if (exec_fsm_state_ != ExecFSMState::USER_CTRL && exec_fsm_state_ != ExecFSMState::USER_POSE) {
+            // USER_POSE and DAMPING are driven by the passive-hold timer; only USER_CTRL comes here.
+            if (exec_fsm_state_ != ExecFSMState::USER_CTRL) {
                 return;
             }
             RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Applying control to Unitree robot!");
+
+            // ---------- Verify message ---------- //
+            if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
+                RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
+                RCLCPP_ERROR_STREAM(this->get_logger(), "position size: " << msg.pos_target.size());
+                RCLCPP_ERROR_STREAM(this->get_logger(), "velocity size: " << msg.vel_target.size());
+                RCLCPP_ERROR_STREAM(this->get_logger(), "feed forward size: " << msg.feed_forward.size());
+                throw std::runtime_error("[UnitreeRobotInterface] Control message sizes are not self consistent!");
+            }
+
+            if (msg.kp.size() != msg.kd.size()) {
+                throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not self consistent!");
+            }
+
+            // Check that every joint name is in the list and that they are all there
+            std::vector<bool> joint_used(num_motors_, false);
+            if (msg.joint_names.size() != joint_names_.size()) {
+                throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
+            }
+
+            for (size_t j = 0; j < num_motors_; j++) {
+                for (size_t i = 0; i < num_motors_; i++) {
+                    if (msg.joint_names[j] == joint_names_[i]) {
+                        if (joint_used[i]) {
+                            throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
+                        }
+
+                        joint_used[i] = true;
+                    }
+                }
+            }
+            for (size_t j = 0; j < num_motors_; j++) {
+                if (!joint_used[j]) {
+                    throw std::runtime_error("[UnitreeRobotInterface] Control message is missing robot joints!");
+                }
+            }
+
+            // Setup gains
+            bool use_default_gains = true;
+            if (msg.joint_names.size() == msg.kp.size()) {
+                if (msg.kp.size() != num_motors_) {
+                    throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
+                }
+                use_default_gains = false;
+            }
 
             // ---------- Create Packet ---------- //
             LowCmd_ dds_low_command;
             dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
             dds_low_command.mode_machine() = mode_machine_;
 
-            // ------------------------ Execution FSM: Low Level Control ------------------------ //
-            if (exec_fsm_state_ == ExecFSMState::USER_CTRL) {
-                // ---------- Verify message ---------- //
-                if (msg.joint_names.size() != msg.pos_target.size() || msg.joint_names.size() != msg.vel_target.size() || msg.joint_names.size() != msg.feed_forward.size()) {
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "joint name size: " << msg.joint_names.size());
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "position size: " << msg.pos_target.size());
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "velocity size: " << msg.vel_target.size());
-                    RCLCPP_ERROR_STREAM(this->get_logger(), "feed forward size: " << msg.feed_forward.size());
-                    throw std::runtime_error("[UnitreeRobotInterface] Control message sizes are not self consistent!");
+            for (size_t msg_ind = 0; msg_ind < num_motors_; msg_ind++) {
+                int uni_ind = G1_JOINT_MAPPINGS.at(msg.joint_names[msg_ind]);
+                int def_ind = default_joint_mapping_.at(msg.joint_names[msg_ind]);
+                dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                dds_low_command.motor_cmd().at(uni_ind).tau() = msg.feed_forward[msg_ind];
+                dds_low_command.motor_cmd().at(uni_ind).q() = msg.pos_target[msg_ind];
+                dds_low_command.motor_cmd().at(uni_ind).dq() = msg.vel_target[msg_ind];
+                dds_low_command.motor_cmd().at(uni_ind).kp() = use_default_gains ? kp_[def_ind] : msg.kp[msg_ind];
+                dds_low_command.motor_cmd().at(uni_ind).kd() = use_default_gains ? kd_[def_ind] : msg.kd[msg_ind];
+            }
+            if (fixed_waist_) {
+                for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                    int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
                 }
-
-                if (msg.kp.size() != msg.kd.size()) {
-                    throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not self consistent!");
-                }
-
-                // Check that every joint name is in the list and that they are all there
-                std::vector<bool> joint_used(num_motors_, false);
-                if (msg.joint_names.size() != joint_names_.size()) {
-                    throw std::runtime_error("[UnitreeRobotInterface] Control message joint name size does not match robot joint name size!");
-                }
-
-                for (size_t j = 0; j < num_motors_; j++) {
-                    for (size_t i = 0; i < num_motors_; i++) {
-                        if (msg.joint_names[j] == joint_names_[i]) {
-                            if (joint_used[i]) {
-                                throw std::runtime_error("[UnitreeRobotInterface] Control message uses the same joint name twice!");
-                            }
-
-                            joint_used[i] = true;
-                        }
-                    }
-                }
-                for (size_t j = 0; j < num_motors_; j++) {
-                    if (!joint_used[j]) {
-                        throw std::runtime_error("[UnitreeRobotInterface] Control message is missing robot joints!");
-                    }
-                }
-
-                // Setup gains
-                bool use_default_gains = true;
-                if (msg.joint_names.size() == msg.kp.size()) {
-                    if (msg.kp.size() != num_motors_) {
-                        throw std::runtime_error("[UnitreeRobotInterface] Control message gains are not of the right size!");
-                    }
-                    use_default_gains = false;
-                }
-                // Write message
-                for (size_t msg_ind = 0; msg_ind < num_motors_; msg_ind++) {
-                    int uni_ind = G1_JOINT_MAPPINGS.at(msg.joint_names[msg_ind]);
-                    int def_ind = default_joint_mapping_.at(msg.joint_names[msg_ind]);
-                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(uni_ind).tau() = msg.feed_forward[msg_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).q() = msg.pos_target[msg_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).dq() = msg.vel_target[msg_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).kp() = use_default_gains ? kp_[def_ind] : msg.kp[msg_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).kd() = use_default_gains ? kd_[def_ind] : msg.kd[msg_ind];
-                }
-                if (fixed_waist_) {
-                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
-                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
-                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
-                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
-                    }
-                }
-            // ------------------------ Execution FSM: USER POSE ------------------------ //
-            } else if (exec_fsm_state_ == ExecFSMState::USER_POSE) {
-                // Compute time that robot has been in HOME
-                float t = std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
-                // Compute proportion of time relative to transition duration
-                float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
-                // Write message
-                for (size_t def_ind = 0; def_ind < num_motors_; def_ind++) {     // Only go through the non-hand motors
-                    int uni_ind = G1_JOINT_MAPPINGS.at(default_joint_names_[def_ind]);
-                    dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(uni_ind).tau() = 0.;
-                    dds_low_command.motor_cmd().at(uni_ind).q() = (1 - proportion) * start_user_pose_[uni_ind] + proportion * user_pose_[def_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).dq() = 0.;
-                    dds_low_command.motor_cmd().at(uni_ind).kp() = (1 - proportion) * 10 + proportion * kp_[def_ind];
-                    dds_low_command.motor_cmd().at(uni_ind).kd() = kd_[def_ind];
-                }
-                if (fixed_waist_) {
-                    for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
-                        int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
-                        dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
-                        dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).q() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
-                        dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
-                    }
-                }
-            } else {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Execution FSM state not recognized in ApplyControl!");
             }
 
             // Write command to the robot
@@ -345,40 +315,90 @@ namespace obelisk {
 
         void TransitionToDamp() override{
             if (high_level_ctrl_engaged_) {
-                // use high level damping
                 loco_client_.StopMove();
                 loco_client_.Damp();
             } else {
-                // use low level damping
-                LowCmd_ dds_low_command;
-                for (size_t j = 0; j < num_motors_; j++) {
-                    int i = G1_JOINT_MAPPINGS.at(joint_names_[j]);
-                    dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
-                    dds_low_command.motor_cmd().at(i).tau() = 0;
-                    dds_low_command.motor_cmd().at(i).q() = 0;
-                    dds_low_command.motor_cmd().at(i).dq() = 0;
-                    dds_low_command.motor_cmd().at(i).kp() = 0;
-                    dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
-                }
-                if (fixed_waist_) {
-                    for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
-                        int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
-                        dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
-                        dds_low_command.motor_cmd().at(i).tau() = 0;
-                        dds_low_command.motor_cmd().at(i).q() = 0;
-                        dds_low_command.motor_cmd().at(i).dq() = 0;
-                        dds_low_command.motor_cmd().at(i).kp() = 0;
-                        dds_low_command.motor_cmd().at(i).kd() = 0;
-                    }
-                }
-                dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
-                lowcmd_publisher_->Write(dds_low_command);
+                // Write the first damping packet immediately; the passive-hold timer sustains it.
+                WriteDampingCommand();
             }
-            
         }
 
         void TransitionToUnitreeVel() override{
             return;
+        }
+
+        // Fires at `timer_ctrl_setting` rate (~50 Hz). Drives motors autonomously in
+        // USER_POSE (pose ramp) and DAMPING so those states don't depend on the controller
+        // sending messages. No-op in USER_CTRL (the controller drives via ApplyControl).
+        void PassiveHoldCallback() {
+            switch (exec_fsm_state_) {
+                case ExecFSMState::USER_POSE:
+                    WriteUserPoseCommand();
+                    break;
+                case ExecFSMState::DAMPING:
+                    if (!high_level_ctrl_engaged_) WriteDampingCommand();
+                    break;
+                default:
+                    return;
+            }
+        }
+
+        void WriteUserPoseCommand() {
+            float t = std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - user_pose_transition_start_time_).count();
+            float proportion = std::min(t / user_pose_transition_duration_, 1.0f);
+
+            LowCmd_ dds_low_command;
+            dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
+            dds_low_command.mode_machine() = mode_machine_;
+            for (size_t def_ind = 0; def_ind < num_motors_; def_ind++) {
+                int uni_ind = G1_JOINT_MAPPINGS.at(default_joint_names_[def_ind]);
+                dds_low_command.motor_cmd().at(uni_ind).mode() = 1;  // 1:Enable, 0:Disable
+                dds_low_command.motor_cmd().at(uni_ind).tau() = 0.;
+                dds_low_command.motor_cmd().at(uni_ind).q() = (1 - proportion) * start_user_pose_[uni_ind] + proportion * user_pose_[def_ind];
+                dds_low_command.motor_cmd().at(uni_ind).dq() = 0.;
+                dds_low_command.motor_cmd().at(uni_ind).kp() = (1 - proportion) * 10 + proportion * kp_[def_ind];
+                dds_low_command.motor_cmd().at(uni_ind).kd() = kd_[def_ind];
+            }
+            if (fixed_waist_) {
+                for (size_t waist_ind = 0; waist_ind < G1_EXTRA_WAIST; waist_ind++) {
+                    int uni_ind = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[waist_ind]);
+                    dds_low_command.motor_cmd().at(uni_ind).mode() = 0;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(uni_ind).tau() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).q() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).dq() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).kp() = 0;
+                    dds_low_command.motor_cmd().at(uni_ind).kd() = 0;
+                }
+            }
+            dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+            lowcmd_publisher_->Write(dds_low_command);
+        }
+
+        void WriteDampingCommand() {
+            LowCmd_ dds_low_command;
+            for (size_t j = 0; j < num_motors_; j++) {
+                int i = G1_JOINT_MAPPINGS.at(joint_names_[j]);
+                dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
+                dds_low_command.motor_cmd().at(i).tau() = 0;
+                dds_low_command.motor_cmd().at(i).q() = 0;
+                dds_low_command.motor_cmd().at(i).dq() = 0;
+                dds_low_command.motor_cmd().at(i).kp() = 0;
+                dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
+            }
+            if (fixed_waist_) {
+                for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {
+                    int i = G1_JOINT_MAPPINGS.at(G1_EXTRA_WAIST_JOINT_NAMES[j]);
+                    dds_low_command.motor_cmd().at(i).mode() = 0;  // 1:Enable, 0:Disable
+                    dds_low_command.motor_cmd().at(i).tau() = 0;
+                    dds_low_command.motor_cmd().at(i).q() = 0;
+                    dds_low_command.motor_cmd().at(i).dq() = 0;
+                    dds_low_command.motor_cmd().at(i).kp() = 0;
+                    dds_low_command.motor_cmd().at(i).kd() = 0;
+                }
+            }
+            dds_low_command.crc() = Crc32Core((uint32_t *)&dds_low_command, (sizeof(dds_low_command) >> 2) - 1);
+            lowcmd_publisher_->Write(dds_low_command);
         }
 
         bool EngageUnitreeMotionControl() {
@@ -550,6 +570,8 @@ namespace obelisk {
 
         inline static const std::string ROBOT_NAME = "g1";
         const std::string& RobotName() const override { return ROBOT_NAME; }
+
+        const std::string passive_hold_key_ = "timer_ctrl";
 
         bool use_hands_;
         bool fixed_waist_;
