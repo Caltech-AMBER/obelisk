@@ -1539,16 +1539,18 @@ namespace obelisk {
                 Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> dirs_rm = dirs_w;
                 std::vector<int> geomids(num_rays, -1);
                 const mjtNum cutoff = iface.get_max_distance() > 0.0 ? iface.get_max_distance() : mjMAXVAL;
+                // mujoco >= 3.5: ray functions take an optional surface-normal
+                // output (nullptr = not needed)
                 mj_multiRay(this->model_, this->data_, origin.data(), dirs_rm.data(),
                             iface.get_geom_group_mask(), 1, -1, geomids.data(), dists.data(),
-                            num_rays, cutoff);
+                            nullptr, num_rays, cutoff);
             } else {
                 int geom_id[1] = { -1 };
                 for (int ii = 0; ii < num_rays; ++ii) {
                     Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                     Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
                     dists[ii] = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(),
-                                       iface.get_geom_group_mask(), 1, -1, geom_id);
+                                       iface.get_geom_group_mask(), 1, -1, geom_id, nullptr);
                 }
             }
         }

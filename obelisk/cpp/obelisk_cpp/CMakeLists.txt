@@ -40,7 +40,9 @@ if(USE_MUJOCO)
   find_package(Eigen3 REQUIRED)
 
   include(FetchContent)
-  set(MUJOCO_VERSION "3.1.6" CACHE STRING "mujoco version")
+  # >= 3.5.0 required: mj_multiRay's angular culling in <= 3.4 wrongly drops
+  # large slabs near the ray origin (below-ground lidar returns at slab seams)
+  set(MUJOCO_VERSION "3.8.1" CACHE STRING "mujoco version")
   set(COMP_ARCH "x86_64" CACHE STRING "computer architecture")
 
   FetchContent_Declare(
