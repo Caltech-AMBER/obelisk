@@ -377,14 +377,17 @@ namespace obelisk {
 
         void WriteDampingCommand() {
             LowCmd_ dds_low_command;
+            dds_low_command.mode_pr() = static_cast<uint8_t>(mode_pr_);
+            dds_low_command.mode_machine() = mode_machine_;
             for (size_t j = 0; j < num_motors_; j++) {
                 int i = G1_JOINT_MAPPINGS.at(joint_names_[j]);
+                int def_ind = default_joint_mapping_.at(joint_names_[j]);
                 dds_low_command.motor_cmd().at(i).mode() = 1;  // 1:Enable, 0:Disable
                 dds_low_command.motor_cmd().at(i).tau() = 0;
                 dds_low_command.motor_cmd().at(i).q() = 0;
                 dds_low_command.motor_cmd().at(i).dq() = 0;
                 dds_low_command.motor_cmd().at(i).kp() = 0;
-                dds_low_command.motor_cmd().at(i).kd() = kd_damping_[i];
+                dds_low_command.motor_cmd().at(i).kd() = kd_damping_[def_ind];
             }
             if (fixed_waist_) {
                 for (size_t j = 0; j < G1_EXTRA_WAIST; j++) {

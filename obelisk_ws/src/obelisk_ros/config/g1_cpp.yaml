@@ -256,6 +256,10 @@ robot:
       - ros_parameter: timer_logging_setting
         timer_period_sec: 0.2
         callback_group: None
+    # ----- Passive hold (USER_POSE / DAMPING) ----- #
+      - ros_parameter: timer_ctrl_setting
+        timer_period_sec: 0.02  # 50 Hz
+        callback_group: None
 viz:
   on: True
   viz_nodes:
