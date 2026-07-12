@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Obelisk multi-interface Cyclone DDS config: HUB, full multicast.
+
+  Simplest config when multicast works on EVERY link (all wired, no IGMP-snooping
+  switch dropping groups, no wifi). Mainly useful as a baseline to compare against
+  hub.unicast.xml / hub.hybrid.xml. The only multi-NIC-specific part is listing all
+  interfaces explicitly under <Interfaces> -- without that, Cyclone binds to one.
+
+  Fill in HUB_IF_* from `ip -br addr`.
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="HUB_IF_A" multicast="true"/>
+        <NetworkInterface name="HUB_IF_B" multicast="true"/>
+        <NetworkInterface name="HUB_IF_C" multicast="true"/>
+      </Interfaces>
+      <AllowMulticast>true</AllowMulticast>
+    </General>
+  </Domain>
+</CycloneDDS>

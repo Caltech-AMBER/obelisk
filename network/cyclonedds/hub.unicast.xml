@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Obelisk multi-interface Cyclone DDS config: HUB, unicast discovery.
+
+  Use this on the machine that bridges several networks (e.g. a minipc with
+  two ethernet ports + wifi). This is the RECOMMENDED config for fixed-hardware
+  robot setups where every topic has a known publisher/subscriber: discovery is
+  deterministic, needs no multicast, and behaves identically on wifi and ethernet.
+
+  Fill in:
+    HUB_IF_A / HUB_IF_B / HUB_IF_C  -> interface names from `ip -br addr`
+    PEER_*_IP                       -> the IP of each peer on the subnet it shares with the hub
+
+  List ALL interfaces the hub must speak on. Cyclone otherwise binds to a single
+  (default-route) interface, which is the usual reason a multi-NIC host only talks
+  on one network.
+
+  Activate with:
+    export OBELISK_CYCLONEDDS_URI=file://$OBELISK_ROOT/network/cyclonedds/hub.unicast.xml
+    obk
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="HUB_IF_A" multicast="false"/>   <!-- ethernet: jetson1 + lidar -->
+        <NetworkInterface name="HUB_IF_B" multicast="false"/>   <!-- ethernet: jetson2 -->
+        <NetworkInterface name="HUB_IF_C" multicast="false"/>   <!-- wifi: laptop -->
+      </Interfaces>
+      <AllowMulticast>false</AllowMulticast>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <Peers>
+        <Peer Address="PEER_A_IP"/>   <!-- jetson1 -->
+        <Peer Address="PEER_B_IP"/>   <!-- jetson2 -->
+        <Peer Address="PEER_C_IP"/>   <!-- laptop -->
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Obelisk multi-interface Cyclone DDS config: HUB, hybrid discovery.
+
+  Multicast on the ethernet links (efficient, works behind a switch), unicast on
+  wifi where multicast is unreliable. Peers are still listed so wifi discovery
+  does not depend on multicast. Use this if you want ethernet multicast fan-out
+  but have a wifi peer (e.g. the laptop). If in doubt, start with hub.unicast.xml.
+
+  Fill in HUB_IF_* (from `ip -br addr`) and PEER_*_IP as in hub.unicast.xml.
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="HUB_IF_A" multicast="true"/>    <!-- ethernet: jetson1 + lidar -->
+        <NetworkInterface name="HUB_IF_B" multicast="true"/>    <!-- ethernet: jetson2 -->
+        <NetworkInterface name="HUB_IF_C" multicast="false"/>   <!-- wifi: laptop (no multicast) -->
+      </Interfaces>
+      <!-- spdp: multicast for discovery only, unicast for data -->
+      <AllowMulticast>spdp</AllowMulticast>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <Peers>
+        <Peer Address="PEER_C_IP"/>   <!-- laptop: unicast discovery over wifi -->
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>

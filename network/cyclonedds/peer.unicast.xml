@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Obelisk Cyclone DDS config: PEER, unicast (pairs with hub.unicast.xml).
+
+  Put a copy of this on each single-homed peer (jetson1, jetson2, laptop). Each
+  peer has ONE relevant interface and lists ONLY the hub IP reachable on its own
+  subnet:
+
+    jetson1 -> PEER_IF = its ethernet, HUB_IP = hub's IP on subnet A
+    jetson2 -> PEER_IF = its ethernet, HUB_IP = hub's IP on subnet B
+    laptop  -> PEER_IF = its wifi,     HUB_IP = hub's IP on subnet C
+
+  Find the interface with `ip -br addr` on that machine. ROS_DOMAIN_ID must match
+  the hub on every machine.
+
+  Activate the same way as the hub:
+    export OBELISK_CYCLONEDDS_URI=file://$OBELISK_ROOT/network/cyclonedds/peer.unicast.xml
+    obk
+  (or set CYCLONEDDS_URI directly if the peer is not running Obelisk's obk shell.)
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="PEER_IF" multicast="false"/>
+      </Interfaces>
+      <AllowMulticast>false</AllowMulticast>
+    </General>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <Peers>
+        <Peer Address="HUB_IP"/>
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>
