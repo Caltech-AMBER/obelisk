@@ -218,6 +218,73 @@ def test_load_config_absolute_include_path_works(tmp_path: Path) -> None:
     assert result["control"][0]["pkg"] == "abs_pkg"
 
 
+# ---------------------------------------------------------------------- #
+# ${VAR} environment-variable expansion                                   #
+# ---------------------------------------------------------------------- #
+
+
+def test_load_config_expands_env_vars_in_values(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """``${VAR}`` in string values (node params and sim config_path) is expanded at load time."""
+    monkeypatch.setenv("TEST_ROOT", "/opt/deploy")
+    cfg = tmp_path / "cfg.yaml"
+    cfg.write_text(
+        "control:\n"
+        "  - pkg: p\n"
+        "    executable: e\n"
+        "    params:\n"
+        "      seq_path: ${TEST_ROOT}/graph/seqs\n"
+        "    sim:\n"
+        "      - ros_parameter: mujoco_setting\n"
+        "        sensor_settings:\n"
+        "          - config_path: ${TEST_ROOT}/scan/depth.yml\n"
+    )
+    result = load_config_file(cfg)
+    entry = result["control"][0]
+    assert entry["params"]["seq_path"] == "/opt/deploy/graph/seqs"
+    assert entry["sim"][0]["sensor_settings"][0]["config_path"] == "/opt/deploy/scan/depth.yml"
+
+
+def test_load_config_env_var_undefined_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """An undefined ``${VAR}`` raises KeyError naming both the variable and the offending file."""
+    monkeypatch.delenv("DEFINITELY_UNSET_VAR", raising=False)
+    cfg = tmp_path / "cfg.yaml"
+    cfg.write_text("control:\n  - pkg: p\n    executable: e\n    params:\n      x: ${DEFINITELY_UNSET_VAR}/y\n")
+    with pytest.raises(KeyError, match="DEFINITELY_UNSET_VAR"):
+        load_config_file(cfg)
+
+
+def test_load_config_env_var_leaves_scalars_and_bare_dollar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Non-string scalars pass through untouched and a bare ``$`` (no braces) is never expanded."""
+    monkeypatch.setenv("TEST_ROOT", "/opt/deploy")
+    cfg = tmp_path / "cfg.yaml"
+    cfg.write_text(
+        "control:\n"
+        "  - pkg: p\n"
+        "    executable: e\n"
+        "    params:\n"
+        "      seq_nodes: [5.0, 0.0, 0.0]\n"
+        "      cyclic: false\n"
+        "      note: 'costs $5'\n"
+    )
+    params = load_config_file(cfg)["control"][0]["params"]
+    assert params["seq_nodes"] == [5.0, 0.0, 0.0]
+    assert params["cyclic"] is False
+    assert params["note"] == "costs $5"
+
+
+def test_load_config_env_var_in_include_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """``${VAR}`` inside an ``include:`` path is expanded before the include is resolved."""
+    leaf = tmp_path / "leaf.yaml"
+    leaf.write_text("control:\n  - pkg: leaf_pkg\n    executable: e\n")
+    monkeypatch.setenv("TEST_INC_DIR", str(tmp_path))
+    root = tmp_path / "root.yaml"
+    root.write_text("include:\n  - ${TEST_INC_DIR}/leaf.yaml\n")
+    result = load_config_file(root)
+    assert result["control"][0]["pkg"] == "leaf_pkg"
+
+
 def test_load_config_dummy_composed_resolves_to_full_stack() -> None:
     """End-to-end smoke test: dummy_composed.yaml (which uses `include:`) loads into a dict that
     looks like a single-file config — control + estimation + robot + joystick all present, no
