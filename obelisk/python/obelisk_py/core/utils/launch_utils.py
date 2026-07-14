@@ -59,6 +59,51 @@ def load_config_file(file_path: Union[str, Path], package_name: Optional[str] = 
     return _load_config_recursive(abs_file_path, stack=[])
 
 
+# Matches ``${VAR}`` references in config string values. Only the braced form is
+# expanded (never bare ``$VAR``) so an incidental ``$`` in a value is left untouched.
+_ENV_VAR_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def _expand_env_vars(node: Any, source: Path) -> Any:
+    """Recursively expand ``${VAR}`` references in every string value of a loaded config.
+
+    Runs on each YAML file right after it is loaded (before ``include:`` processing and merging),
+    so env vars work in ``include:`` paths, node ``params``, ``sim`` sensor ``config_path`` entries,
+    and any other string leaf. Expansion happens here, in the launch process, before values are
+    serialized into ROS parameters, so downstream nodes (Python *and* C++) receive fully-resolved
+    absolute paths and need no env-var awareness of their own.
+
+    Only the braced ``${VAR}`` form is expanded; a bare ``$`` is left alone. An **undefined**
+    variable raises ``KeyError`` (naming the offending file) so a typo fails fast at launch rather
+    than surfacing later as a confusing file-not-found deep inside a node. Non-string scalars pass
+    through untouched; dict keys are never expanded, only values.
+
+    Parameters:
+        node: the loaded config value (dict / list / str / scalar) to expand in place-ish.
+        source: the file the value came from, used only for error messages.
+
+    Returns:
+        The value with all ``${VAR}`` references in string leaves expanded.
+
+    Raises:
+        KeyError: if a referenced environment variable is not set.
+    """
+    if isinstance(node, dict):
+        return {k: _expand_env_vars(v, source) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_expand_env_vars(v, source) for v in node]
+    if isinstance(node, str):
+
+        def _sub(match: "re.Match") -> str:
+            name = match.group(1)
+            if name not in os.environ:
+                raise KeyError(f"Undefined environment variable ${{{name}}} referenced in obelisk config {source}")
+            return os.environ[name]
+
+        return _ENV_VAR_RE.sub(_sub, node)
+    return node
+
+
 def _resolve_primary_config_path(file_path: Union[str, Path], package_name: Optional[str]) -> Path:
     """Resolve the primary (top-level) config path: absolute as-is, else under <pkg>/share/config/."""
     file_path = str(file_path)
@@ -94,6 +139,11 @@ def _load_config_recursive(abs_file_path: Path, stack: List[Path]) -> Dict:
     # An empty or null YAML file should be treated as an empty mapping rather than failing.
     if raw is None:
         raw = {}
+
+    # Expand ${VAR} references before include-processing and merging, so env vars work in
+    # include paths and in every string leaf (params, sim config_path, etc.). Done per-file
+    # here (not once on the merged result) so includes are expanded in their own file's right.
+    raw = _expand_env_vars(raw, abs_file_path)
 
     includes = raw.pop("include", []) or []
     if not isinstance(includes, list):
