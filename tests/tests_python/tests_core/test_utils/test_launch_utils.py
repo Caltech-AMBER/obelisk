@@ -543,6 +543,20 @@ def test_get_launch_actions_from_node_settings(
     assert isinstance(launch_actions[0], LifecycleNode)
 
 
+def test_get_launch_actions_node_names(test_global_state_node: LifecycleNode) -> None:
+    """A real config `name` names the ROS node; anonymous/placeholder entries keep the positional fallback."""
+    node_settings = [
+        {"pkg": "p", "executable": "e", "name": "graph_planner"},
+        {"pkg": "p", "executable": "e"},
+        {"pkg": "p", "executable": "e", "name": "UNKNOWN0"},
+    ]
+    launch_actions = get_launch_actions_from_node_settings(node_settings, "control", test_global_state_node)
+    nodes = [a for a in launch_actions if isinstance(a, LifecycleNode)]
+    # the raw constructor name (node_name is only readable after the action executes)
+    names = [n._Node__node_name for n in nodes]
+    assert names == ["obelisk_control_graph_planner", "obelisk_control_1", "obelisk_control_2"]
+
+
 def test_get_launch_actions_from_node_settings_invalid_type(test_global_state_node: LifecycleNode) -> None:
     """An unknown node type asserts."""
     invalid = {
