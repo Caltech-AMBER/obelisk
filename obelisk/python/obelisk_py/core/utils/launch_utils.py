@@ -400,10 +400,19 @@ def get_launch_actions_from_node_settings(
         package = node_settings["pkg"]
         executable = node_settings["executable"]
         parameters_dict = get_parameters_dict(node_settings)
+        # Name the ROS node after the entry's config `name` when it has a real one
+        # (the same key the include keyed-merge uses), e.g. `obelisk_control_graph_planner`.
+        # The reserved UNKNOWN<n> placeholder assigned to anonymous entries is not a real
+        # name, so those entries keep the positional `obelisk_{type}_{index}` fallback.
+        cfg_name = node_settings.get("name")
+        if isinstance(cfg_name, str) and cfg_name and not _ANON_RE.match(cfg_name):
+            node_name = f"obelisk_{node_type}_{cfg_name}"
+        else:
+            node_name = f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}"
         launch_actions = []
         component_node = LifecycleNode(
             namespace="",
-            name=f"obelisk_{node_type}" if suffix is None else f"obelisk_{node_type}_{suffix}",
+            name=node_name,
             package=package,
             executable=executable,
             output="both",
