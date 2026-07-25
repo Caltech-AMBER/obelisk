@@ -161,7 +161,7 @@ namespace obelisk {
             {ExecFSMState::INIT, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                                    // Init -> Home, Init -> Damp
             {ExecFSMState::UNITREE_HOME, {ExecFSMState::USER_POSE, ExecFSMState::USER_CTRL, ExecFSMState::UNITREE_VEL_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},  // Home -> Pose, Home -> Low,  Home -> High, Home -> Damp
             {ExecFSMState::USER_POSE, {ExecFSMState::USER_CTRL, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                 // Pose -> Home, Pose -> Low,  Pose -> Damp
-            {ExecFSMState::USER_CTRL, {ExecFSMState::USER_POSE, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                 // Low  -> Home, Low  -> Pose, Low  -> Damp
+            {ExecFSMState::USER_CTRL, {ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                          // Low  -> Damp
             {ExecFSMState::UNITREE_VEL_CTRL, {ExecFSMState::UNITREE_HOME, ExecFSMState::DAMPING, ExecFSMState::ESTOP}},                                                         // High -> Home, High -> Damp
             {ExecFSMState::DAMPING, {ExecFSMState::UNITREE_HOME, ExecFSMState::USER_POSE, ExecFSMState::ESTOP}},                                                              // Damp -> Home, Damp -> Pose
             {ExecFSMState::ESTOP, {}}                                                                                                                                          // Estop (None)
