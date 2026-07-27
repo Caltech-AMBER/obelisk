@@ -1280,6 +1280,17 @@ namespace obelisk {
                         viz_bucket.reserve(scan_interface_->get_num_rays() / scan_viz_decimation_ + 1);
                     }
 
+                    // When a per-direction mask compacted the ray set, only the unmasked
+                    // rays were cast; the ObkScan must stay DENSE (length dense_num_rays in
+                    // v*nh+h order), so pre-fill with NaN (no-hit) and scatter the cast rays
+                    // back via the dense index. Unmasked path keeps the original push_back.
+                    const bool scan_masked = scan_interface_->is_masked();
+                    if (scan_masked) {
+                        msg.data.assign(scan_interface_->get_dense_num_rays(),
+                                        std::numeric_limits<float>::quiet_NaN());
+                    }
+                    const std::vector<int>& dense_idx = scan_interface_->get_dense_index();
+
                     for (int ii = 0; ii < scan_interface_->get_num_rays(); ++ii) {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
@@ -1289,7 +1300,10 @@ namespace obelisk {
                         if (dist < 0) {
                             // No hit: publish a NaN sentinel and skip the hit point so we don't
                             // fabricate a point behind the sensor (opposite the ray) for viz.
-                            msg.data.push_back(std::numeric_limits<float>::quiet_NaN());
+                            // (In masked mode the dense array is already NaN-filled -> just skip.)
+                            if (!scan_masked) {
+                                msg.data.push_back(std::numeric_limits<float>::quiet_NaN());
+                            }
                             continue;
                         }
 
@@ -1300,7 +1314,11 @@ namespace obelisk {
                             ray_origin[2] + direction[2] * dist
                         };
                         float ret = scan_interface_->get_return(hit_point, dist);
-                        msg.data.push_back(ret);
+                        if (scan_masked) {
+                            msg.data[dense_idx[ii]] = ret;    // scatter to the dense grid position
+                        } else {
+                            msg.data.push_back(ret);
+                        }
                         if (scan_viz_enabled_ && ii % scan_viz_decimation_ == 0) {
                             viz_bucket.push_back({hit_point[0], hit_point[1], hit_point[2]});
                         }

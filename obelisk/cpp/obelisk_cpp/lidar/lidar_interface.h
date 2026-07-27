@@ -2,6 +2,11 @@
 
 #include "ray_caster_interface.h"
 
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -197,12 +202,81 @@ class LidarInterface : public RayCasterInterface {
         // Apply the same offset rotation to the optical axis
         image_forward_local_ = quat_apply(offset.rot, image_forward_local_);
         image_forward_local_.normalize();
+
+        // Optional per-direction occlusion mask: cast ONLY the unmasked rays (drop
+        // masked rows here so mj_multiRay batches fewer rays), and remember where each
+        // kept ray sits in the dense nv*nh grid so dense consumers (ObkScan) can scatter
+        // the results back with a no-hit sentinel at masked bins.
+        if (pattern["mask"]) {
+            apply_mask(load_mask(pattern["mask"], nv, nh));
+        }
     }
 
+    // ---- masked-scan support (RayCasterInterface overrides) ----
+    int get_dense_num_rays() const override {
+        return masked_ ? dense_num_rays_ : get_num_rays();
+    }
+    bool is_masked() const override { return masked_; }
+    const std::vector<int>& get_dense_index() const override { return dense_index_; }
+
   private:
+    // Read the mask (1 = masked) as a flat nv*nh row-major (v*nh+h) vector. Accepts a
+    // path to a text grid (numpy savetxt: '#'-comment lines, then comma/space-separated
+    // 0/1 rows) or an inline YAML list of 0/1 of length nv*nh.
+    std::vector<char> load_mask(const YAML::Node& node, int nv, int nh) const {
+        const int n = nv * nh;
+        std::vector<char> mask;
+        mask.reserve(n);
+        if (node.IsSequence()) {
+            for (const auto& v : node) mask.push_back(v.as<int>() != 0 ? 1 : 0);
+        } else {
+            const std::string path = node.as<std::string>();
+            std::ifstream f(path);
+            if (!f) throw std::runtime_error("Lidar mask file not found: " + path);
+            std::string line;
+            while (std::getline(f, line)) {
+                if (line.empty() || line[0] == '#') continue;
+                for (char& c : line) if (c == ',') c = ' ';   // accept comma- or space-separated
+                std::istringstream ss(line);
+                int val;
+                while (ss >> val) mask.push_back(val != 0 ? 1 : 0);
+            }
+        }
+        if (static_cast<int>(mask.size()) != n) {
+            throw std::runtime_error("Lidar mask has " + std::to_string(mask.size()) +
+                                     " entries, expected channels*horizontal = " +
+                                     std::to_string(n) + " (v*nh+h order)");
+        }
+        return mask;
+    }
+
+    // Compact ray_starts_local_/ray_directions_local_ to the unmasked rays, building
+    // the compacted->dense index map. get_num_rays() then returns the reduced count.
+    void apply_mask(const std::vector<char>& mask) {
+        const int dense = static_cast<int>(ray_directions_local_.rows());
+        MatrixX3d starts_keep(dense, 3), dirs_keep(dense, 3);
+        dense_index_.clear();
+        dense_index_.reserve(dense);
+        int kept = 0;
+        for (int i = 0; i < dense; ++i) {
+            if (mask[i]) continue;                 // masked -> not cast
+            starts_keep.row(kept) = ray_starts_local_.row(i);
+            dirs_keep.row(kept) = ray_directions_local_.row(i);
+            dense_index_.push_back(i);
+            ++kept;
+        }
+        ray_starts_local_ = starts_keep.topRows(kept);
+        ray_directions_local_ = dirs_keep.topRows(kept);
+        dense_num_rays_ = dense;
+        masked_ = true;
+    }
+
     int nv_ = 0;
     int nh_ = 0;
     Vector3d image_forward_local_ = Vector3d::Zero();
+    bool masked_ = false;
+    int dense_num_rays_ = 0;
+    std::vector<int> dense_index_;   // compacted ray index -> dense (v*nh+h) index
 };
 
 } // namespace obelisk

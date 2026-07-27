@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace obelisk {
 
@@ -77,6 +78,30 @@ class RayCasterInterface {
      * @brief Get number of rays in the pattern
      */
     int get_num_rays() const { return static_cast<int>(ray_starts_local_.rows()); }
+
+    /**
+     * @brief Number of rays in the FULL dense grid (before any mask compaction).
+     *
+     * Without a mask this equals get_num_rays(). With a per-direction occlusion mask
+     * the sensor casts only the unmasked rays (get_num_rays() shrinks), but dense
+     * consumers (e.g. the ObkScan grid, length nv*nh in v*nh+h order) still expect
+     * the full count -- scatter the cast rays back via get_dense_index().
+     */
+    virtual int get_dense_num_rays() const { return get_num_rays(); }
+
+    /**
+     * @brief True if a per-direction mask compacted the ray set (fewer rays cast).
+     */
+    virtual bool is_masked() const { return false; }
+
+    /**
+     * @brief Map from compacted ray index -> dense grid index (v*nh+h). Size ==
+     * get_num_rays(); empty when unmasked (dense == compacted, identity).
+     */
+    virtual const std::vector<int>& get_dense_index() const {
+        static const std::vector<int> kEmpty;
+        return kEmpty;
+    }
 
     /**
      * @brief Get ray starts in local frame (read-only)
