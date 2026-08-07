@@ -599,31 +599,39 @@ namespace obelisk {
                         throw std::runtime_error("scan config missing pattern.type");
                     }
 
+                    // One entry per DepthImage sensor, keyed by sensor_key so several can
+                    // coexist. sensor_key is unique per config entry (publishers_ and timers_
+                    // already rely on that), so this cannot collide.
                     const std::string type_str = type_node.as<std::string>();
+                    DepthSensor depth_sensor;
                     if (type_str == "lidar_scan") {
-                        depth_scan_interface_ = std::make_unique<obelisk::LidarInterface>(scan_config);
+                        depth_sensor.iface = std::make_shared<obelisk::LidarInterface>(scan_config);
                     } else if (type_str == "depth_camera") {
-                        depth_scan_interface_ = std::make_unique<obelisk::DepthInterface>(scan_config);
+                        depth_sensor.iface = std::make_shared<obelisk::DepthInterface>(scan_config);
                     } else {
-                        RCLCPP_ERROR_STREAM(
-                            this->get_logger(),
+                        // Throw, not log: the width check below dereferences this, so logging
+                        // and falling through was a null dereference one line later.
+                        throw std::runtime_error(
                             "DepthImage sensor type only supports 'lidar_scan' or 'depth_camera' pattern, got: " + type_str
                         );
                     }
 
-                    if (depth_scan_interface_->get_image_width() < 0 || depth_scan_interface_->get_image_height() < 0) {
+                    if (depth_sensor.iface->get_image_width() < 0 || depth_sensor.iface->get_image_height() < 0) {
                         throw std::runtime_error("DepthImage sensor requires a scan interface with image dimensions");
                     }
 
                     // Read viz_decimation from config (optional, default: 1)
                     if (scan_config["viz_decimation"]) {
-                        depth_viz_decimation_ = std::max(1, scan_config["viz_decimation"].as<int>());
+                        depth_sensor.viz_decimation = std::max(1, scan_config["viz_decimation"].as<int>());
                     }
 
                     // Read viz enable flag from config (optional, default: true)
                     if (scan_config["viz"]) {
-                        depth_viz_enabled_ = scan_config["viz"].as<bool>();
+                        depth_sensor.viz_enabled = scan_config["viz"].as<bool>();
                     }
+
+                    // Must be in the map BEFORE CreateTimerCallback below, which looks it up.
+                    depth_sensors_[sensor_key] = std::move(depth_sensor);
 
                     // Add the timer to the list
                     this->timers_[sensor_key] = this->create_wall_timer(
@@ -1439,10 +1447,20 @@ namespace obelisk {
                 // ------------------------------------------ //
                 // ------------ Depth Image Sensor ---------- //
                 // ------------------------------------------ //
-                auto cb = [publisher, sensor_names, mj_sensor_types, sensor_key, this]() {
+                // Resolve THIS sensor's caster once, here, and capture it by value. ParseSensors
+                // fills depth_sensors_[sensor_key] before creating the timer, so .at() cannot
+                // throw; capturing an owning shared_ptr keeps the caster alive for the timer's
+                // lifetime and keeps the map off the tick path entirely (no lock needed for it).
+                const DepthSensor& depth_cfg = depth_sensors_.at(sensor_key);
+                auto depth_iface             = depth_cfg.iface;
+                const int viz_decimation     = depth_cfg.viz_decimation;
+                const bool viz_enabled       = depth_cfg.viz_enabled;
+
+                auto cb = [publisher, sensor_names, mj_sensor_types, sensor_key, depth_iface,
+                           viz_decimation, viz_enabled, this]() {
                     std::lock_guard<std::mutex> lock(sensor_data_mut_);
 
-                    std::string site = depth_scan_interface_->get_site();
+                    std::string site = depth_iface->get_site();
                     int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
                     if (site_id == -1) {
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + site);
@@ -1456,36 +1474,36 @@ namespace obelisk {
                          data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
 
                     // Optical axis: center-of-FOV ray direction in world frame
-                    Eigen::Vector3d forward = rot * depth_scan_interface_->get_image_forward_local();
+                    Eigen::Vector3d forward = rot * depth_iface->get_image_forward_local();
 
-                    int img_w = depth_scan_interface_->get_image_width();
-                    int img_h = depth_scan_interface_->get_image_height();
-                    int num_rays = depth_scan_interface_->get_num_rays();
+                    int img_w = depth_iface->get_image_width();
+                    int img_h = depth_iface->get_image_height();
+                    int num_rays = depth_iface->get_num_rays();
 
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     starts_w.resize(num_rays, 3);
                     dirs_w.resize(num_rays, 3);
 
-                    depth_scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+                    depth_iface->compute_rays_world(rot, pos, starts_w, dirs_w);
 
                     // Cast all rays (batched via mj_multiRay for common-origin sensors)
                     std::vector<mjtNum> dists;
-                    CastRays(*depth_scan_interface_, starts_w, dirs_w, dists);
+                    CastRays(*depth_iface, starts_w, dirs_w, dists);
 
                     // Build depth image buffer in natural ray order (row 0 = top of image),
                     // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
                     std::vector<float> depth_buffer(num_rays);
                     auto& viz_bucket = scan_viz_points_[sensor_key];
-                    if (depth_viz_enabled_) {
+                    if (viz_enabled) {
                         viz_bucket.clear();
-                        viz_bucket.reserve(num_rays / depth_viz_decimation_ + 1);
+                        viz_bucket.reserve(num_rays / viz_decimation + 1);
                     }
 
                     for (int ii = 0; ii < num_rays; ++ii) {
                         Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                         Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
 
-                        double dist = depth_scan_interface_->apply_max_distance(dists[ii]);
+                        double dist = depth_iface->apply_max_distance(dists[ii]);
 
                         if (dist < 0) {
                             // No hit - set to NaN
@@ -1495,7 +1513,7 @@ namespace obelisk {
                             depth_buffer[ii] = static_cast<float>(dist * direction.dot(forward));
 
                             // Store hit point for visualization
-                            if (depth_viz_enabled_ && ii % depth_viz_decimation_ == 0) {
+                            if (viz_enabled && ii % viz_decimation == 0) {
                                 viz_bucket.push_back({
                                     ray_origin[0] + direction[0] * dist,
                                     ray_origin[1] + direction[1] * dist,
@@ -1507,7 +1525,7 @@ namespace obelisk {
 
                     // Build sensor_msgs::msg::Image (32FC1)
                     sensor_msgs::msg::Image msg;
-                    msg.header.frame_id = depth_scan_interface_->get_frame();
+                    msg.header.frame_id = depth_iface->get_frame();
                     msg.header.stamp = this->now();
                     msg.height = static_cast<uint32_t>(img_h);
                     msg.width = static_cast<uint32_t>(img_w);
@@ -1739,12 +1757,24 @@ namespace obelisk {
 
         // For the height map
         std::unique_ptr<obelisk::RayCasterInterface> scan_interface_;
-        std::unique_ptr<obelisk::RayCasterInterface> depth_scan_interface_;
         int scan_viz_decimation_ = 1;
-        int depth_viz_decimation_ = 1;
         bool scan_viz_enabled_ = true;
-        bool depth_viz_enabled_ = true;
         int scan_dots_idx_;
+
+        // Ray-caster state for ONE DepthImage sensor entry. Keyed by sensor_key, because a
+        // config may declare several: a single member here meant the second entry overwrote
+        // the first and every camera then cast the last-parsed camera's rays, at the right
+        // rate on the right topic, so it looked like it worked.
+        struct DepthSensor {
+            std::shared_ptr<obelisk::RayCasterInterface> iface;
+            int viz_decimation = 1;
+            bool viz_enabled   = true;
+        };
+
+        // Written only by ParseSensors (on_configure); each timer callback captures its own
+        // entry by value at construction, so the tick path never reads this map and it needs
+        // no lock of its own.
+        std::unordered_map<std::string, DepthSensor> depth_sensors_;
 
         // Constants
         static constexpr float TIME_STEP_DEFAULT   = 0.002;
