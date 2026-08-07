@@ -144,6 +144,33 @@ robot:
                 offset:
                   pos: [0.0, 0.0, 0.0]
                   rot: [1.0, 0.0, 0.0, 0.0]
+
+          # ---- A SECOND depth camera, deliberately 16x12 and on a different site ----
+          # This is a regression guard, not a feature demo: each DepthImage entry gets its
+          # own ray caster, so the two topics must report their OWN dimensions.
+          #     ros2 topic echo /obelisk/dummy/depth  --once --field height   # 24
+          #     ros2 topic echo /obelisk/dummy/depth2 --once --field height   # 12
+          # Before the per-sensor map both reported 12, because a single shared interface
+          # member was overwritten by whichever entry was parsed last.
+          - topic: /obelisk/dummy/depth2
+            dt: 0.05
+            msg_type: DepthImage
+            sensor_names:
+              tip_pos_sensor: framepos
+            scan_config:
+              site_name: imu_site
+              geom_groups: [0]
+              frame: world
+              pattern:
+                type: depth_camera
+                width: 16
+                height: 12
+                intrinsic_matrix: [12.9964, 0.0, 7.4968,
+                                   0.0, 13.9352, 5.9983,
+                                   0.0, 0.0, 1.0]
+                offset:
+                  pos: [0.0, 0.0, 0.0]
+                  rot: [1.0, 0.0, 0.0, 0.0]
 joystick:
   on: True
   pub_topic: /obelisk/dummy/joy
