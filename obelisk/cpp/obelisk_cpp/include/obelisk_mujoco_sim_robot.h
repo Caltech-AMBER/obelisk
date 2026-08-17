@@ -846,7 +846,12 @@ namespace obelisk {
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
                     obelisk_sensor_msgs::msg::ObkJointEncoders msg;
 
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    // Snapshot, then work unlocked. This group is the worst offender for lock
+                    // hold time -- at 500 Hz with 29 joints it did 58 mj_name2id lookups, 58
+                    // Clock::now() calls and 29 std::string allocations inside the critical
+                    // section, none of which touch mjData.
+                    std::vector<mjtNum> sensordata;
+                    SnapshotSensorData(&sensordata);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
@@ -858,7 +863,7 @@ namespace obelisk {
                         //  will not align.
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "jointpos") {
-                            msg.joint_pos.emplace_back(this->data_->sensordata[sensor_addr]);
+                            msg.joint_pos.emplace_back(sensordata[sensor_addr]);
                             int joint_id = this->model_->sensor_objid[sensor_id];
                             if (joint_id == -1) {
                                 RCLCPP_ERROR_STREAM(this->get_logger(), "Joint associated with "
@@ -868,7 +873,7 @@ namespace obelisk {
                                 msg.joint_names.emplace_back(this->model_->names + this->model_->name_jntadr[joint_id]);
                             }
                         } else if (mj_sensor_types.at(i) == "jointvel") {
-                            msg.joint_vel.emplace_back(this->data_->sensordata[sensor_addr]);
+                            msg.joint_vel.emplace_back(sensordata[sensor_addr]);
                         } else {
                             RCLCPP_ERROR_STREAM(
                                 this->get_logger(),
@@ -876,9 +881,11 @@ namespace obelisk {
                                           << " is not associated with a valid Mujoco sensor type! Current sensor type: "
                                           << mj_sensor_types.at(i));
                         }
-
-                        msg.header.stamp = this->now();
                     }
+                    // Stamped ONCE. This was inside the loop, so it was recomputed per sensor and
+                    // the message kept the LAST one -- 58 Clock::now() calls per tick for a value
+                    // that is overwritten 57 times, and Clock::now() takes the clock's own mutex.
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
@@ -895,7 +902,8 @@ namespace obelisk {
                     // *** Note *** Mujoco does not support adding noise natively since v3.14.
                     // TODO: Consider adding noise here ourselves
 
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    std::vector<mjtNum> sensordata;
+                    SnapshotSensorData(&sensordata);
                     bool has_acc       = false;
                     bool has_gyro      = false;
                     bool has_framequat = false;
@@ -912,9 +920,9 @@ namespace obelisk {
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "accelerometer") {
                             if (!has_acc) {
-                                msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
-                                msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.linear_acceleration.x = sensordata[sensor_addr];
+                                msg.linear_acceleration.y = sensordata[sensor_addr + 1];
+                                msg.linear_acceleration.z = sensordata[sensor_addr + 2];
 
                                 // Accelerometers are always mounted to sites
                                 int site_id = this->model_->sensor_objid[sensor_id];
@@ -929,9 +937,9 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "gyro") {
                             if (!has_gyro) {
-                                msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
-                                msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.angular_velocity.x = sensordata[sensor_addr];
+                                msg.angular_velocity.y = sensordata[sensor_addr + 1];
+                                msg.angular_velocity.z = sensordata[sensor_addr + 2];
                                 has_gyro               = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -940,10 +948,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.orientation.w = this->data_->sensordata[sensor_addr];
-                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
-                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
-                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                msg.orientation.w = sensordata[sensor_addr];
+                                msg.orientation.x = sensordata[sensor_addr + 1];
+                                msg.orientation.y = sensordata[sensor_addr + 2];
+                                msg.orientation.z = sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -958,8 +966,9 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        msg.header.stamp = this->now();
                     }
+                    // Stamped ONCE, after the loop. See the JointEncoders callback.
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
@@ -969,10 +978,14 @@ namespace obelisk {
                 // ------------------------------------------ //
                 // -------- Standard IMU call back ---------- //
                 // ------------------------------------------ //
+                // NOTE(dead code): this branch tests the SAME condition as the Imu branch above,
+                // so an if-constexpr chain can never reach it -- it is an unreachable duplicate,
+                // kept building only because a discarded branch is still parsed. Worth deleting.
                 auto cb = [publisher, sensor_names, mj_sensor_types, this]() {
                     sensor_msgs::msg::Imu msg;
 
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    std::vector<mjtNum> sensordata;
+                    SnapshotSensorData(&sensordata);
                     bool has_acc       = false;
                     bool has_gyro      = false;
                     bool has_framequat = false;
@@ -986,9 +999,9 @@ namespace obelisk {
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "accelerometer") {
                             if (!has_acc) {
-                                msg.linear_acceleration.x = this->data_->sensordata[sensor_addr];
-                                msg.linear_acceleration.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.linear_acceleration.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.linear_acceleration.x = sensordata[sensor_addr];
+                                msg.linear_acceleration.y = sensordata[sensor_addr + 1];
+                                msg.linear_acceleration.z = sensordata[sensor_addr + 2];
 
                                 int site_id = this->model_->sensor_objid[sensor_id];
                                 msg.header.frame_id =
@@ -1002,9 +1015,9 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "gyro") {
                             if (!has_gyro) {
-                                msg.angular_velocity.x = this->data_->sensordata[sensor_addr];
-                                msg.angular_velocity.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.angular_velocity.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.angular_velocity.x = sensordata[sensor_addr];
+                                msg.angular_velocity.y = sensordata[sensor_addr + 1];
+                                msg.angular_velocity.z = sensordata[sensor_addr + 2];
                                 has_gyro               = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -1013,10 +1026,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.orientation.w = this->data_->sensordata[sensor_addr];
-                                msg.orientation.x = this->data_->sensordata[sensor_addr + 1];
-                                msg.orientation.y = this->data_->sensordata[sensor_addr + 2];
-                                msg.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                msg.orientation.w = sensordata[sensor_addr];
+                                msg.orientation.x = sensordata[sensor_addr + 1];
+                                msg.orientation.y = sensordata[sensor_addr + 2];
+                                msg.orientation.z = sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -1031,8 +1044,9 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        msg.header.stamp = this->now();
                     }
+                    // Stamped ONCE, after the loop. See the JointEncoders callback.
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
@@ -1048,7 +1062,8 @@ namespace obelisk {
                     bool has_framepos  = false;
                     bool has_framequat = false;
 
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    std::vector<mjtNum> sensordata;
+                    SnapshotSensorData(&sensordata);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
@@ -1061,9 +1076,9 @@ namespace obelisk {
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "framepos") {
                             if (!has_framepos) {
-                                msg.pose.position.x = this->data_->sensordata[sensor_addr];
-                                msg.pose.position.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.pose.position.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.pose.position.x = sensordata[sensor_addr];
+                                msg.pose.position.y = sensordata[sensor_addr + 1];
+                                msg.pose.position.z = sensordata[sensor_addr + 2];
 
                                 // // Framepos sensors can be mounted to different objects
                                 // int obj_type = this->model_->sensor_objtype[sensor_id];
@@ -1124,10 +1139,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.pose.orientation.w = this->data_->sensordata[sensor_addr];
-                                msg.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
-                                msg.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
-                                msg.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                msg.pose.orientation.w = sensordata[sensor_addr];
+                                msg.pose.orientation.x = sensordata[sensor_addr + 1];
+                                msg.pose.orientation.y = sensordata[sensor_addr + 2];
+                                msg.pose.orientation.z = sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -1142,8 +1157,9 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        msg.header.stamp = this->now();
                     }
+                    // Stamped ONCE, after the loop. See the JointEncoders callback.
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
@@ -1168,7 +1184,8 @@ namespace obelisk {
                     bool has_velocimeter = false;
                     bool has_gyro = false;
 
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                    std::vector<mjtNum> sensordata;
+                    SnapshotSensorData(&sensordata);
                     for (size_t i = 0; i < sensor_names.size(); i++) {
                         int sensor_id = mj_name2id(this->model_, mjOBJ_SENSOR, sensor_names.at(i).c_str());
                         if (sensor_id == -1) {
@@ -1181,9 +1198,9 @@ namespace obelisk {
                         int sensor_addr = this->model_->sensor_adr[sensor_id];
                         if (mj_sensor_types.at(i) == "framepos") {
                             if (!has_framepos) {
-                                msg.pose.pose.position.x = this->data_->sensordata[sensor_addr];
-                                msg.pose.pose.position.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.pose.pose.position.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.pose.pose.position.x = sensordata[sensor_addr];
+                                msg.pose.pose.position.y = sensordata[sensor_addr + 1];
+                                msg.pose.pose.position.z = sensordata[sensor_addr + 2];
 
                                 if (this->model_->sensor_refid[sensor_id] == -1) {
                                     msg.header.frame_id = "world"; // TODO: Consider not hard-coding this
@@ -1219,10 +1236,10 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "framequat") {
                             if (!has_framequat) {
-                                msg.pose.pose.orientation.w = this->data_->sensordata[sensor_addr];
-                                msg.pose.pose.orientation.x = this->data_->sensordata[sensor_addr + 1];
-                                msg.pose.pose.orientation.y = this->data_->sensordata[sensor_addr + 2];
-                                msg.pose.pose.orientation.z = this->data_->sensordata[sensor_addr + 3];
+                                msg.pose.pose.orientation.w = sensordata[sensor_addr];
+                                msg.pose.pose.orientation.x = sensordata[sensor_addr + 1];
+                                msg.pose.pose.orientation.y = sensordata[sensor_addr + 2];
+                                msg.pose.pose.orientation.z = sensordata[sensor_addr + 3];
                                 has_framequat     = true;
                             } else {
                                 RCLCPP_ERROR_STREAM(this->get_logger(),
@@ -1231,17 +1248,17 @@ namespace obelisk {
                             }
                         } else if (mj_sensor_types.at(i) == "velocimeter") {
                             if (!has_velocimeter) {
-                                msg.twist.twist.linear.x = this->data_->sensordata[sensor_addr];
-                                msg.twist.twist.linear.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.twist.twist.linear.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.twist.twist.linear.x = sensordata[sensor_addr];
+                                msg.twist.twist.linear.y = sensordata[sensor_addr + 1];
+                                msg.twist.twist.linear.z = sensordata[sensor_addr + 2];
 
                                 has_velocimeter = true;
                             }
                         } else if (mj_sensor_types.at(i) == "gyro") {
                             if (!has_gyro) {
-                                msg.twist.twist.angular.x = this->data_->sensordata[sensor_addr];
-                                msg.twist.twist.angular.y = this->data_->sensordata[sensor_addr + 1];
-                                msg.twist.twist.angular.z = this->data_->sensordata[sensor_addr + 2];
+                                msg.twist.twist.angular.x = sensordata[sensor_addr];
+                                msg.twist.twist.angular.y = sensordata[sensor_addr + 1];
+                                msg.twist.twist.angular.z = sensordata[sensor_addr + 2];
 
                                 has_gyro = true;
                             }
@@ -1253,8 +1270,9 @@ namespace obelisk {
                                           << mj_sensor_types.at(i));
                         }
 
-                        msg.header.stamp = this->now();
                     }
+                    // Stamped ONCE, after the loop. See the JointEncoders callback.
+                    msg.header.stamp = this->now();
                     publisher->publish(msg);
                 };
 
@@ -1556,6 +1574,28 @@ namespace obelisk {
                 return cb;
             }
 
+        }
+
+        /**
+         * @brief Copy mjData's whole sensordata array out, under the lock.
+         *
+         * The non-ray sensor callbacks read nothing else from mjData, and everything else they do
+         * -- resolving sensor names, stamping the header, building the message, publishing --
+         * touches only mjModel (immutable after load) or the message itself. Snapshotting lets
+         * all of that run OUTSIDE sensor_data_mut_, which the simulation thread needs for every
+         * mj_step. Holding it across a publish is what starved the sim: with a 1 kHz IMU and a
+         * 500 Hz encoder group, the sim thread was seen inside mj_step in 1 of 25 sampled stacks.
+         *
+         * VizTimerCallback already worked this way; this is the same shape, factored out.
+         *
+         * @param[out] out Resized to mjModel::nsensordata and filled. The resize happens BEFORE
+         *                 the lock so an allocation can never land inside the critical section.
+         */
+        void SnapshotSensorData(std::vector<mjtNum>* out) {
+            out->resize(static_cast<size_t>(this->model_->nsensordata));
+            std::lock_guard<std::mutex> lock(sensor_data_mut_);
+            std::memcpy(out->data(), this->data_->sensordata,
+                        static_cast<size_t>(this->model_->nsensordata) * sizeof(mjtNum));
         }
 
         /**
