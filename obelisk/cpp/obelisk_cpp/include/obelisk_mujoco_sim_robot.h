@@ -437,7 +437,19 @@ namespace obelisk {
             }
             num_sensors_ = 0;
 
-            callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+            // MUTUALLY EXCLUSIVE, not Reentrant. Every sensor callback below takes
+            // sensor_data_mut_ for its whole body, so a Reentrant group buys no parallelism
+            // whatsoever -- the callbacks serialize on the mutex either way. What it does buy
+            // is a convoy: a MultiThreadedExecutor defaults to hardware_concurrency() threads
+            // (14 on a Jetson Thor), the high-rate timers can never catch up once the mutex is
+            // congested, so the executor dispatches them onto EVERY free thread and all of them
+            // pile onto one futex. The simulation thread needs that same mutex 1000 times a
+            // second and loses the race almost every time: sampled stacks showed it inside
+            // mj_step in 1 of 25 samples while 5-6 threads sat in the IMU and joint-encoder
+            // callbacks. Measured on a 29-DoF humanoid with two depth cameras and a lidar, the
+            // world ran at 0.066x real time; serializing the group here is what makes the
+            // simulation thread's 1 ms budget reachable again.
+            callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
             for (const auto& entry : sensor_settings) {
                 if (!entry["dt"]) {
