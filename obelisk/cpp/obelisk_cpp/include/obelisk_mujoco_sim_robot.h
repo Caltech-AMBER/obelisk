@@ -211,6 +211,12 @@ namespace obelisk {
             }
 
             data_ = mj_makeData(model_);
+            // A second mjData the ray casters own. mj_multiRay reads the kinematic state AND
+            // writes the mjData arena, so a caster needs a real writable mjData -- it cannot work
+            // from a few copied scalars. Copying one costs ~40 us against a cast that costs
+            // milliseconds, so the COPY goes inside sensor_data_mut_ and the CAST comes out of it,
+            // and the simulation thread never waits on a ray cast.
+            sensor_data_ = mj_makeData(model_);
 
             // Create the rendering thread
             rendering_thread_ = std::thread(std::bind(&ObeliskMujocoRobot::SimRender, this));
@@ -260,7 +266,13 @@ namespace obelisk {
             }
 
             RCLCPP_WARN_STREAM(this->get_logger(), "Cleaning up simulation data and model...");
-            // free MuJoCo model and data
+            // free MuJoCo model and data. Take snapshot_mut_ first: a ray-cast callback may still
+            // be mid-cast against sensor_data_, and freeing it underneath one is a use-after-free.
+            {
+                std::lock_guard<std::mutex> snap(snapshot_mut_);
+                mj_deleteData(sensor_data_);
+                sensor_data_ = NULL;
+            }
             mj_deleteData(data_);
             mj_deleteModel(model_);
 
@@ -1285,8 +1297,6 @@ namespace obelisk {
                 auto cb = [publisher, sensor_names, mj_sensor_types, sensor_key, this]() {
                     // This sensor is always made up of:
                     //  - Framepos
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
-
                     obelisk_sensor_msgs::msg::ObkScan msg;
                     std::string site = scan_interface_->get_site();
                     int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
@@ -1294,27 +1304,40 @@ namespace obelisk {
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + scan_interface_->get_site());
                     }
 
-                    // Starting ray origin position (top-left corner of scan)
-                    // position (world)
-                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
-                    Eigen::Matrix3d rot;
-                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
-                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
-                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
-
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     starts_w.resize(scan_interface_->get_num_rays(), 3);
                     dirs_w.resize(scan_interface_->get_num_rays(), 3);
-
-                    scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
-
-                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
                     std::vector<mjtNum> dists;
-                    CastRays(*scan_interface_, starts_w, dirs_w, dists);
 
-                    auto& viz_bucket = scan_viz_points_[sensor_key];
+                    // The simulation mutex is held only for the ~40 us mj_copyData inside
+                    // SnapshotSimData; the pose read, the ray geometry and the cast all run
+                    // against that snapshot under snapshot_mut_ instead, so the simulation thread
+                    // never waits on a cast. Pose and cast come from the same snapshot, so the
+                    // rays are built from exactly the state they are cast against.
+                    {
+                        std::lock_guard<std::mutex> snap(snapshot_mut_);
+                        SnapshotSimData();
+
+                        // Starting ray origin position (top-left corner of scan)
+                        // position (world)
+                        Eigen::Vector3d pos(sensor_data_->site_xpos[3*site_id + 0], sensor_data_->site_xpos[3*site_id + 1], sensor_data_->site_xpos[3*site_id + 2]);
+                        Eigen::Matrix3d rot;
+                        rot << sensor_data_->site_xmat[9*site_id + 0], sensor_data_->site_xmat[9*site_id + 1], sensor_data_->site_xmat[9*site_id + 2],
+                             sensor_data_->site_xmat[9*site_id + 3], sensor_data_->site_xmat[9*site_id + 4], sensor_data_->site_xmat[9*site_id + 5],
+                             sensor_data_->site_xmat[9*site_id + 6], sensor_data_->site_xmat[9*site_id + 7], sensor_data_->site_xmat[9*site_id + 8];
+
+                        scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                        // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                        CastRays(*scan_interface_, sensor_data_, starts_w, dirs_w, dists);
+                    }
+
+                    // Built into a LOCAL, then swapped in under the lock below: the render thread
+                    // reads scan_viz_points_ while holding sensor_data_mut_, so filling the map
+                    // entry out here directly would race it (and inserting the key could
+                    // invalidate an iteration in progress).
+                    std::vector<std::array<double, 3>> viz_bucket;
                     if (scan_viz_enabled_) {
-                        viz_bucket.clear();
                         viz_bucket.reserve(scan_interface_->get_num_rays() / scan_viz_decimation_ + 1);
                     }
 
@@ -1362,6 +1385,11 @@ namespace obelisk {
                         }
                     }
 
+                    if (scan_viz_enabled_) {
+                        std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                        scan_viz_points_[sensor_key].swap(viz_bucket);
+                    }
+
                     msg.header.frame_id = scan_interface_->get_frame();
                     msg.header.stamp = this->now();
                     publisher->publish(msg);
@@ -1374,31 +1402,37 @@ namespace obelisk {
                 // ----------- PointCloud2 Sensor ----------- //
                 // ------------------------------------------ //
                 auto cb = [publisher, sensor_names, mj_sensor_types, sensor_key, this]() {
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
-
                     std::string site = scan_interface_->get_site();
                     int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
                     if (site_id == -1) {
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + scan_interface_->get_site());
                     }
 
-                    // Site position and rotation in world frame
-                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
-                    Eigen::Matrix3d rot;
-                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
-                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
-                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
-
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     int num_rays = scan_interface_->get_num_rays();
                     starts_w.resize(num_rays, 3);
                     dirs_w.resize(num_rays, 3);
-
-                    scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
-
-                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
                     std::vector<mjtNum> dists;
-                    CastRays(*scan_interface_, starts_w, dirs_w, dists);
+
+                    // See the ObkScan callback. For a 21600-ray lidar the cast is ~15 ms, which
+                    // is why it must not run under the simulation mutex, and the loop plus the
+                    // PointCloud2 build below need no mjData at all.
+                    {
+                        std::lock_guard<std::mutex> snap(snapshot_mut_);
+                        SnapshotSimData();
+
+                        // Site position and rotation in world frame
+                        Eigen::Vector3d pos(sensor_data_->site_xpos[3*site_id + 0], sensor_data_->site_xpos[3*site_id + 1], sensor_data_->site_xpos[3*site_id + 2]);
+                        Eigen::Matrix3d rot;
+                        rot << sensor_data_->site_xmat[9*site_id + 0], sensor_data_->site_xmat[9*site_id + 1], sensor_data_->site_xmat[9*site_id + 2],
+                             sensor_data_->site_xmat[9*site_id + 3], sensor_data_->site_xmat[9*site_id + 4], sensor_data_->site_xmat[9*site_id + 5],
+                             sensor_data_->site_xmat[9*site_id + 6], sensor_data_->site_xmat[9*site_id + 7], sensor_data_->site_xmat[9*site_id + 8];
+
+                        scan_interface_->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                        // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                        CastRays(*scan_interface_, sensor_data_, starts_w, dirs_w, dists);
+                    }
 
                     // Local-frame rays for body-frame point cloud
                     const auto& starts_l = scan_interface_->get_ray_starts_local();
@@ -1407,9 +1441,9 @@ namespace obelisk {
                     // Collect hit points
                     std::vector<std::array<float, 3>> points;
                     points.reserve(num_rays);
-                    auto& viz_bucket = scan_viz_points_[sensor_key];
+                    // Local, then swapped in under the lock -- the render thread reads the map.
+                    std::vector<std::array<double, 3>> viz_bucket;
                     if (scan_viz_enabled_) {
-                        viz_bucket.clear();
                         viz_bucket.reserve(num_rays / scan_viz_decimation_ + 1);
                     }
 
@@ -1436,6 +1470,11 @@ namespace obelisk {
                                 viz_bucket.push_back({wx, wy, wz});
                             }
                         }
+                    }
+
+                    if (scan_viz_enabled_) {
+                        std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                        scan_viz_points_[sensor_key].swap(viz_bucket);
                     }
 
                     // Build PointCloud2 message
@@ -1488,23 +1527,11 @@ namespace obelisk {
 
                 auto cb = [publisher, sensor_names, mj_sensor_types, sensor_key, depth_iface,
                            viz_decimation, viz_enabled, this]() {
-                    std::lock_guard<std::mutex> lock(sensor_data_mut_);
-
                     std::string site = depth_iface->get_site();
                     int site_id = mj_name2id(model_, mjOBJ_SITE, site.c_str());
                     if (site_id == -1) {
                         throw std::runtime_error("Sensor not found in Mujoco! Make sure your XML has the site: " + site);
                     }
-
-                    // Site position and rotation in world frame
-                    Eigen::Vector3d pos(data_->site_xpos[3*site_id + 0], data_->site_xpos[3*site_id + 1], data_->site_xpos[3*site_id + 2]);
-                    Eigen::Matrix3d rot;
-                    rot << data_->site_xmat[9*site_id + 0], data_->site_xmat[9*site_id + 1], data_->site_xmat[9*site_id + 2],
-                         data_->site_xmat[9*site_id + 3], data_->site_xmat[9*site_id + 4], data_->site_xmat[9*site_id + 5],
-                         data_->site_xmat[9*site_id + 6], data_->site_xmat[9*site_id + 7], data_->site_xmat[9*site_id + 8];
-
-                    // Optical axis: center-of-FOV ray direction in world frame
-                    Eigen::Vector3d forward = rot * depth_iface->get_image_forward_local();
 
                     int img_w = depth_iface->get_image_width();
                     int img_h = depth_iface->get_image_height();
@@ -1513,19 +1540,38 @@ namespace obelisk {
                     obelisk::RayCasterInterface::MatrixX3d starts_w, dirs_w;
                     starts_w.resize(num_rays, 3);
                     dirs_w.resize(num_rays, 3);
-
-                    depth_iface->compute_rays_world(rot, pos, starts_w, dirs_w);
-
-                    // Cast all rays (batched via mj_multiRay for common-origin sensors)
                     std::vector<mjtNum> dists;
-                    CastRays(*depth_iface, starts_w, dirs_w, dists);
+                    Eigen::Vector3d forward;
+
+                    // See the ObkScan callback. A pair of these at 50 Hz was the single largest
+                    // contributor to the world falling below real time: ~5 ms of cast each, 100 ms
+                    // of every wall second, previously all of it inside the simulation mutex.
+                    {
+                        std::lock_guard<std::mutex> snap(snapshot_mut_);
+                        SnapshotSimData();
+
+                        // Site position and rotation in world frame
+                        Eigen::Vector3d pos(sensor_data_->site_xpos[3*site_id + 0], sensor_data_->site_xpos[3*site_id + 1], sensor_data_->site_xpos[3*site_id + 2]);
+                        Eigen::Matrix3d rot;
+                        rot << sensor_data_->site_xmat[9*site_id + 0], sensor_data_->site_xmat[9*site_id + 1], sensor_data_->site_xmat[9*site_id + 2],
+                             sensor_data_->site_xmat[9*site_id + 3], sensor_data_->site_xmat[9*site_id + 4], sensor_data_->site_xmat[9*site_id + 5],
+                             sensor_data_->site_xmat[9*site_id + 6], sensor_data_->site_xmat[9*site_id + 7], sensor_data_->site_xmat[9*site_id + 8];
+
+                        // Optical axis: center-of-FOV ray direction in world frame
+                        forward = rot * depth_iface->get_image_forward_local();
+
+                        depth_iface->compute_rays_world(rot, pos, starts_w, dirs_w);
+
+                        // Cast all rays (batched via mj_multiRay for common-origin sensors)
+                        CastRays(*depth_iface, sensor_data_, starts_w, dirs_w, dists);
+                    }
 
                     // Build depth image buffer in natural ray order (row 0 = top of image),
                     // matching DepthInterface iteration, Isaac Lab, and sensor_msgs/Image convention.
                     std::vector<float> depth_buffer(num_rays);
-                    auto& viz_bucket = scan_viz_points_[sensor_key];
+                    // Local, then swapped in under the lock -- the render thread reads the map.
+                    std::vector<std::array<double, 3>> viz_bucket;
                     if (viz_enabled) {
-                        viz_bucket.clear();
                         viz_bucket.reserve(num_rays / viz_decimation + 1);
                     }
 
@@ -1551,6 +1597,11 @@ namespace obelisk {
                                 });
                             }
                         }
+                    }
+
+                    if (viz_enabled) {
+                        std::lock_guard<std::mutex> lock(sensor_data_mut_);
+                        scan_viz_points_[sensor_key].swap(viz_bucket);
                     }
 
                     // Build sensor_msgs::msg::Image (32FC1)
@@ -1599,20 +1650,43 @@ namespace obelisk {
         }
 
         /**
+         * @brief Refresh the ray casters' mjData snapshot from the live simulation state.
+         *
+         * mj_multiRay reads the kinematic state and WRITES the mjData arena, so a caster needs a
+         * real writable mjData and cannot be served from a few copied scalars. mj_copyData costs
+         * ~40 us on a 29-DoF humanoid scene while a 780-ray depth cast costs ~5 ms and a
+         * 21600-ray lidar scan ~15 ms -- so copying under sensor_data_mut_ and casting outside it
+         * takes the sensors off the mutex the simulation thread needs 1000 times a second, for
+         * about 2 ms of extra lock per wall second.
+         *
+         * The reading a sensor then produces is one snapshot old at most, which is what a real
+         * sensor's reading is anyway.
+         *
+         * @warning Call with snapshot_mut_ held, and keep holding it across the cast.
+         */
+        void SnapshotSimData() {
+            std::lock_guard<std::mutex> lock(sensor_data_mut_);
+            mj_copyData(sensor_data_, model_, data_);
+        }
+
+        /**
          * @brief Cast all rays of a ray-caster sensor, filling per-ray hit distances.
          *
          * For sensors whose rays share a single origin (LIDAR, depth camera) the cast is
          * batched through mj_multiRay, which builds the bounding-volume hierarchy once and
          * reuses it across rays. Grid-origin sensors (height scan) fall back to per-ray mj_ray.
          *
-         * @warning Reads/writes the mjData arena; must be called while holding sensor_data_mut_.
+         * @warning Reads/writes the arena of the mjData passed in, so it must not be the live
+         *          `data_` unless sensor_data_mut_ is held. Callers pass the snapshot and hold
+         *          snapshot_mut_ instead -- see SnapshotSimData.
          *
          * @param iface The ray caster describing the ray pattern.
+         * @param data The mjData to cast against (the snapshot, in every current caller).
          * @param starts_w Nx3 ray start positions in world frame.
          * @param dirs_w Nx3 unit ray directions in world frame.
          * @param[out] dists Per-ray hit distance (mj_ray no-hit sentinel -1), resized to N.
          */
-        void CastRays(const obelisk::RayCasterInterface& iface,
+        void CastRays(const obelisk::RayCasterInterface& iface, mjData* data,
                       const obelisk::RayCasterInterface::MatrixX3d& starts_w,
                       const obelisk::RayCasterInterface::MatrixX3d& dirs_w,
                       std::vector<mjtNum>& dists) {
@@ -1629,7 +1703,7 @@ namespace obelisk {
                 const mjtNum cutoff = iface.get_max_distance() > 0.0 ? iface.get_max_distance() : mjMAXVAL;
                 // mujoco >= 3.5: ray functions take an optional surface-normal
                 // output (nullptr = not needed)
-                mj_multiRay(this->model_, this->data_, origin.data(), dirs_rm.data(),
+                mj_multiRay(this->model_, data, origin.data(), dirs_rm.data(),
                             iface.get_geom_group_mask(), 1, -1, geomids.data(), dists.data(),
                             nullptr, num_rays, cutoff);
             } else {
@@ -1637,7 +1711,7 @@ namespace obelisk {
                 for (int ii = 0; ii < num_rays; ++ii) {
                     Eigen::Vector3d ray_origin = starts_w.row(ii).transpose();
                     Eigen::Vector3d direction  = dirs_w.row(ii).transpose();
-                    dists[ii] = mj_ray(this->model_, this->data_, ray_origin.data(), direction.data(),
+                    dists[ii] = mj_ray(this->model_, data, ray_origin.data(), direction.data(),
                                        iface.get_geom_group_mask(), 1, -1, geom_id, nullptr);
                 }
             }
@@ -1761,6 +1835,13 @@ namespace obelisk {
         // MuJoCo data structures
         mjModel* model_ = NULL; // MuJoCo model
         mjData* data_   = NULL; // MuJoCo data
+        //! The ray casters' private mjData. Written only by SnapshotSimData, read (and its arena
+        //! written) by the casts, all under snapshot_mut_. See SnapshotSimData for why a copy.
+        mjData* sensor_data_ = NULL;
+        //! Serialises the ray-cast sensors against each other over sensor_data_. Separate from
+        //! sensor_data_mut_ on purpose: a cast must NOT hold the mutex the sim thread needs.
+        //! Held across the copy and the cast, so a cast always sees a self-consistent state.
+        std::mutex snapshot_mut_;
         mjvCamera cam;          // abstract camera
         mjvOption opt;          // visualization options
         mjvScene scn;           // abstract scene
