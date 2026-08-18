@@ -449,19 +449,36 @@ namespace obelisk {
             }
             num_sensors_ = 0;
 
-            // MUTUALLY EXCLUSIVE, not Reentrant. Every sensor callback below takes
-            // sensor_data_mut_ for its whole body, so a Reentrant group buys no parallelism
-            // whatsoever -- the callbacks serialize on the mutex either way. What it does buy
-            // is a convoy: a MultiThreadedExecutor defaults to hardware_concurrency() threads
-            // (14 on a Jetson Thor), the high-rate timers can never catch up once the mutex is
-            // congested, so the executor dispatches them onto EVERY free thread and all of them
-            // pile onto one futex. The simulation thread needs that same mutex 1000 times a
-            // second and loses the race almost every time: sampled stacks showed it inside
-            // mj_step in 1 of 25 samples while 5-6 threads sat in the IMU and joint-encoder
-            // callbacks. Measured on a 29-DoF humanoid with two depth cameras and a lidar, the
-            // world ran at 0.066x real time; serializing the group here is what makes the
-            // simulation thread's 1 ms budget reachable again.
-            callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+            // REENTRANT. This was MutuallyExclusive for one commit, on the reasoning that
+            // "every sensor callback takes sensor_data_mut_ for its whole body, so a Reentrant
+            // group buys no parallelism whatsoever". That was TRUE when written and is no
+            // longer: the two commits AFTER it moved every expensive thing out of that mutex.
+            // A callback now holds sensor_data_mut_ only for a memcpy of sensordata
+            // (SnapshotSensorData) or a ~40 us mj_copyData (SnapshotSimData), and does its
+            // publishing -- and its 5 ms depth / 15 ms lidar ray casts -- outside it, under
+            // snapshot_mut_.
+            //
+            // So the convoy that justified serialising is gone: the sim thread now contends for
+            // a mutex held for microseconds. The COST of serialising is not gone. Ray casting is
+            // roughly 650 ms of work per wall second (two depth cameras at 50 Hz x ~5 ms, plus a
+            // 21600-ray lidar at 10 Hz x ~15 ms), and on ONE thread the 1 kHz IMU and 500 Hz
+            // encoder timers must queue behind all of it.
+            //
+            // Measured on a 32-core x86 box whose sim was ALREADY at 1.0000x real time before
+            // any of this work, running the full 29-DoF humanoid stack with a controller
+            // attached: MutuallyExclusive cost the IMU 995 -> 855 Hz and the encoders
+            // 500 -> 462 Hz and bought nothing, because there was no convoy left to prevent.
+            // Reentrant restores 1000 / 500 Hz with the real-time factor unchanged at 1.0000x.
+            //
+            // NOT yet re-measured on the Jetson Thor, which is the box the convoy was found on
+            // and the only one that can show the fix still holds. A 32-core x86 machine cannot
+            // reproduce the convoy at all -- the pre-fix header also runs at 1.0000x there, even
+            // pinned to 6 cores -- so this change is justified by the two snapshot commits
+            // removing the mechanism, not by an experiment that reproduces it.
+            //
+            // Lock ordering is unchanged (snapshot_mut_ then sensor_data_mut_, never the
+            // reverse), so no deadlock risk is reintroduced.
+            callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
             for (const auto& entry : sensor_settings) {
                 if (!entry["dt"]) {
