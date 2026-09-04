@@ -34,6 +34,14 @@ add_executable(UtilsTest
     tests_utils.cpp
     )
 
+# Header-only, no ROS: joy_debounce.h is a pure state machine so it gets its own target
+# rather than an include-path bolt-on to one of the ROS-linked ones above.
+add_executable(HardwareTest
+    test_joy_debounce.cpp
+    )
+target_include_directories(HardwareTest PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../obelisk/cpp/hardware/include)
+
 target_link_libraries(NodeTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(NodeTest PUBLIC Obelisk::Core)
 
@@ -42,6 +50,8 @@ target_link_libraries(VizTest PUBLIC Obelisk::Core Obelisk::Viz)
 
 target_link_libraries(UtilsTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(UtilsTest PUBLIC Obelisk::Utils)
+
+target_link_libraries(HardwareTest PRIVATE Catch2::Catch2WithMain)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -52,3 +62,4 @@ include(Catch)
 catch_discover_tests(NodeTest)
 catch_discover_tests(VizTest)
 catch_discover_tests(UtilsTest)
+catch_discover_tests(HardwareTest)

@@ -10,6 +10,7 @@
 #include "obelisk_control_msgs/msg/execution_fsm.hpp"
 #include "obelisk_control_msgs/msg/velocity_command.hpp"
 #include "unitree_fsm.h"
+#include "joy_debounce.h"
 
 
 namespace obelisk {
@@ -62,6 +63,31 @@ namespace obelisk {
             w_z_scale_ = this->get_parameter("w_z_scale").as_double();
             this->declare_parameter<float>("axis_threshold", -0.1);
             axis_threshold_ = this->get_parameter("axis_threshold").as_double();
+
+            // Spurious-press filter for FSM bindings that live on an ANALOG axis (the
+            // triggers). See joy_debounce.h for the measurements behind the defaults and
+            // for why digital bindings are deliberately left alone. Restore the old
+            // unfiltered behaviour with axis_press_threshold = axis_threshold and
+            // axis_confirm_samples = 1.
+            this->declare_parameter<float>("axis_press_threshold", -0.5);
+            axis_press_threshold_ = this->get_parameter("axis_press_threshold").as_double();
+            this->declare_parameter<float>("axis_release_threshold", -0.15);
+            axis_release_threshold_ = this->get_parameter("axis_release_threshold").as_double();
+            this->declare_parameter<int>("axis_confirm_samples", 2);
+            axis_confirm_samples_ = this->get_parameter("axis_confirm_samples").as_int();
+            // The Schmitt band is [press, release] with press the DEEPER (more negative)
+            // end. Inverting them would make the filter latch on and never release, so
+            // fail at construction rather than at the first pull.
+            if (axis_release_threshold_ < axis_press_threshold_) throw std::runtime_error(
+                std::string("[UnitreeJoystick] axis_release_threshold (")
+                + std::to_string(axis_release_threshold_)
+                + std::string(") must be shallower than axis_press_threshold (")
+                + std::to_string(axis_press_threshold_) + std::string(")")
+            );
+            if (axis_confirm_samples_ < 1) throw std::runtime_error(
+                std::string("[UnitreeJoystick] axis_confirm_samples must be >= 1, got ")
+                + std::to_string(axis_confirm_samples_)
+            );
 
             // Handle Execution FSM buttons
             this->declare_parameter<int>("menu_button", static_cast<int>(ButtonMap::MENU));
@@ -180,6 +206,15 @@ namespace obelisk {
             );
 
 
+            // One filter per FSM binding, so a pad with two triggers bound cannot have one
+            // binding's confirmation count disturbed by the other.
+            for (AxisPressFilter* f : {&estop_filter_, &damping_filter_, &user_pose_filter_,
+                                       &unitree_home_filter_, &low_level_ctrl_filter_,
+                                       &high_level_ctrl_filter_}) {
+                f->Configure(axis_press_threshold_, axis_release_threshold_,
+                             axis_confirm_samples_, axis_threshold_);
+            }
+
             // Register publishers
             this->RegisterObkPublisher<unitree_fsm_msg>(pub_exec_fsm_key_);
             this->RegisterObkPublisher<sensor_msgs::msg::Joy>(pub_joy_passthrough_key_);
@@ -216,31 +251,59 @@ namespace obelisk {
 
       protected:
         void UpdateXHat(__attribute__((unused)) const sensor_msgs::msg::Joy& msg) override {
+            // Evaluate EVERY FSM binding exactly once per message, up front and
+            // unconditionally, BEFORE any branching on the results.
+            //
+            // The bindings on an analog axis are stateful now (joy_debounce.h counts
+            // consecutive samples past the press threshold), and the branches below are
+            // an if/else chain plus a 0.5 s rate gate -- so evaluating a binding inside
+            // its own branch would only feed the filter on the ticks where every earlier
+            // binding happened to be idle and the gate happened to be open, leaving it
+            // with a stale confirmation count. Reading them all here keeps every filter
+            // fed on every sample and keeps the branching pure.
+            const bool estop_pressed = getFilteredButton(
+                msg, estop_filter_, estop_, estop_on_layer_, estop_on_axis_, estop_on_dpad_, "ESTOP");
+            const bool damping_pressed = getFilteredButton(
+                msg, damping_filter_, damping_button_, damping_button_on_layer_,
+                damping_button_on_axis_, damping_button_on_dpad_, "DAMPING");
+            const bool user_pose_pressed = getFilteredButton(
+                msg, user_pose_filter_, user_pose_button_, user_pose_button_on_layer_,
+                user_pose_button_on_axis_, user_pose_button_on_dpad_, "USER_POSE");
+            const bool unitree_home_pressed = getFilteredButton(
+                msg, unitree_home_filter_, unitree_home_button_, unitree_home_button_on_layer_,
+                unitree_home_button_on_axis_, unitree_home_button_on_dpad_, "UNITREE_HOME");
+            const bool user_ctrl_pressed = getFilteredButton(
+                msg, low_level_ctrl_filter_, low_level_ctrl_button_, low_level_ctrl_button_on_layer_,
+                low_level_ctrl_button_on_axis_, low_level_ctrl_button_on_dpad_, "USER_CTRL");
+            const bool unitree_ctrl_pressed = getFilteredButton(
+                msg, high_level_ctrl_filter_, high_level_ctrl_button_, high_level_ctrl_button_on_layer_,
+                high_level_ctrl_button_on_axis_, high_level_ctrl_button_on_dpad_, "UNITREE_VEL_CTRL");
+
             // Trigger FSM
             // First, check for damping or estop
             bool commanded = false;
             unitree_fsm_msg fsm_msg;
             fsm_msg.header.stamp = this->now();
-            if (getEstopButton(msg)) {
+            if (estop_pressed) {
                 fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::ESTOP);             // ESTOP
                 commanded = true;
-            } else if (getDampingButton(msg)) {
+            } else if (damping_pressed) {
                 fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::DAMPING);           // Damping
                 commanded = true;
             }
 
             static rclcpp::Time last_fsm_msg = this->now();
             if ((this->now() - last_fsm_msg).seconds() > 0.5) {
-                if (getUserPoseButton(msg)) {
+                if (user_pose_pressed) {
                     fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::USER_POSE);         // User Pose
                     commanded = true;
-                } else if (getUnitreeHomeButton(msg)) {
+                } else if (unitree_home_pressed) {
                     fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::UNITREE_HOME);      // Unitree Stand
                     commanded = true;
-                } else if (getUserCtrlButton(msg)) {
+                } else if (user_ctrl_pressed) {
                     fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::USER_CTRL);         // User Control
                     commanded = true;
-                } else if (getUnitreeCtrlButton(msg)) {
+                } else if (unitree_ctrl_pressed) {
                     fsm_msg.cmd_exec_fsm_state = static_cast<uint8_t>(ExecFSMState::UNITREE_VEL_CTRL);  // Unitree Control
                     commanded = true;
                 }
@@ -361,27 +424,55 @@ namespace obelisk {
             return BUTTON_NAMES.count(static_cast<ButtonMap>(btn)) > 0;
         }
 
-        bool getEstopButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, estop_, estop_on_layer_, estop_on_axis_, estop_on_dpad_);
-        }
+        /**
+         * Read one FSM binding through its spurious-press filter.
+         *
+         * STATEFUL for axis bindings -- call it exactly once per binding per received
+         * message (see the note at the top of UpdateXHat). Digital and D-pad bindings are
+         * passed straight to getButton(): joy_node emits a single message for a digital
+         * press, so requiring consecutive samples there would reject short real presses.
+         */
+        bool getFilteredButton(const sensor_msgs::msg::Joy& msg, AxisPressFilter& filt, int btn,
+                               bool on_layer, bool on_axis, bool on_dpad, const char* action) {
+            if (!on_axis) {
+                return getButton(msg, btn, on_layer, on_axis, on_dpad);
+            }
 
-        bool getDampingButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, damping_button_, damping_button_on_layer_, damping_button_on_axis_, damping_button_on_dpad_);
-        }
+            // With the layer released the binding is not addressable at all, so feed the
+            // filter a RELEASED sample (triggers rest at +1.0) rather than the live axis.
+            // Otherwise a trigger already held down would arrive pre-confirmed and fire on
+            // the very sample the layer button closes.
+            float value = 1.0f;
+            int code    = btn;
+            if (!on_layer ||
+                getButton(msg, layer_button_, false, layer_button_on_axis_, layer_button_on_dpad_)) {
+                if (on_layer) code -= LAYER_OFFSET;
+                value = getAxisValue(msg, code - AXIS_OFFSET);
+            }
 
-        bool getUserPoseButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, user_pose_button_, user_pose_button_on_layer_, user_pose_button_on_axis_, user_pose_button_on_dpad_);
-        }
+            const bool pressed = filt.Update(value);
 
-        bool getUnitreeHomeButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, unitree_home_button_, unitree_home_button_on_layer_, unitree_home_button_on_axis_, unitree_home_button_on_dpad_);
-        }
-
-        bool getUserCtrlButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, low_level_ctrl_button_, low_level_ctrl_button_on_layer_, low_level_ctrl_button_on_axis_, low_level_ctrl_button_on_dpad_);
-        }
-        bool getUnitreeCtrlButton(const sensor_msgs::msg::Joy& msg) {
-            return getButton(msg, high_level_ctrl_button_, high_level_ctrl_button_on_layer_, high_level_ctrl_button_on_axis_, high_level_ctrl_button_on_dpad_);
+            // Report every attempt the UNFILTERED code would have acted on and this one
+            // did not. Unthrottled on purpose: these are rare (11 across 76 recorded runs)
+            // and each one is either a caught accident or the operator being told their
+            // pull was too soft -- neither is safe to silently drop. The suffix says which
+            // it was, so a filter that turns out to be too strict is visible immediately.
+            if (filt.last_reject() != AxisPressFilter::Reject::NONE) {
+                std::string why;
+                if (filt.last_reject() == AxisPressFilter::Reject::UNCONFIRMED) {
+                    why = "deep enough but held for fewer than "
+                        + std::to_string(filt.confirm_samples()) + " samples";
+                } else {
+                    why = "only reached " + std::to_string(filt.last_peak())
+                        + ", needs " + std::to_string(filt.press_at());
+                }
+                RCLCPP_WARN_STREAM(this->get_logger(),
+                    "[UnitreeJoystick] IGNORED a spurious " << action << " press on "
+                    << BUTTON_NAMES.at(static_cast<ButtonMap>(btn)) << ": " << why
+                    << ". Pull firmly. (" << filt.rejected() << " ignored / "
+                    << filt.accepted() << " accepted this session)");
+            }
+            return pressed;
         }
 
         bool getButton(const sensor_msgs::msg::Joy& msg, int btn, bool on_layer, bool on_axis, bool on_dpad){
@@ -440,6 +531,17 @@ namespace obelisk {
         float v_y_scale_; 
         float w_z_scale_;
         float axis_threshold_;
+
+        // Spurious-press filtering for FSM bindings on an analog axis (joy_debounce.h).
+        float axis_press_threshold_;
+        float axis_release_threshold_;
+        int axis_confirm_samples_;
+        AxisPressFilter estop_filter_;
+        AxisPressFilter damping_filter_;
+        AxisPressFilter user_pose_filter_;
+        AxisPressFilter unitree_home_filter_;
+        AxisPressFilter low_level_ctrl_filter_;
+        AxisPressFilter high_level_ctrl_filter_;
 
         // Hold button locations for execution fsm
         int damping_button_;
